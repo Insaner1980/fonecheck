@@ -22,3 +22,6 @@ object CameraTest
 
 @Serializable
 object SensorTest
+
+@Serializable
+object ConnectivityTest

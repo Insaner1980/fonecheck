@@ -161,4 +161,81 @@
     <string name="sensor_btn_face_down">Näyttö alas</string>
     <string name="sensor_btn_face_up">Näyttö ylös</string>
     <string name="sensor_btn_rotate">Pyöritä</string>
+
+    <!-- Connectivity Test Screen -->
+    <string name="conn_test_title">Yhteydet</string>
+    <string name="conn_not_available">Ei saatavilla</string>
+    <string name="conn_supported">Tuettu</string>
+    <string name="conn_not_supported">Ei tuettu</string>
+
+    <!-- WiFi -->
+    <string name="conn_wifi_title">Wi-Fi</string>
+    <string name="conn_wifi_not_supported">Wi-Fi-laitteistoa ei ole tässä laitteessa.</string>
+    <string name="conn_wifi_not_connected">Ei yhdistetty Wi-Fi-verkkoon.</string>
+    <string name="conn_wifi_ssid">SSID</string>
+    <string name="conn_wifi_signal">Signaali</string>
+    <string name="conn_wifi_signal_level">Signaalitaso</string>
+    <string name="conn_wifi_frequency">Taajuus</string>
+    <string name="conn_wifi_link_speed">Linkin nopeus</string>
+    <string name="conn_wifi_standard">Wi-Fi-standardi</string>
+    <string name="conn_wifi_ip">IP-osoite</string>
+    <string name="conn_wifi_gateway">Yhdyskäytävä</string>
+    <string name="conn_wifi_dns1">DNS 1</string>
+    <string name="conn_wifi_dns2">DNS 2</string>
+
+    <!-- Bluetooth -->
+    <string name="conn_bluetooth_title">Bluetooth</string>
+    <string name="conn_bt_not_supported">Bluetooth-laitteistoa ei ole tässä laitteessa.</string>
+    <string name="conn_bt_status">Tila</string>
+    <string name="conn_bt_name">Nimi</string>
+    <string name="conn_bt_ble">Bluetooth LE</string>
+    <string name="conn_bt_version">Versio</string>
+    <string name="conn_bt_bonded">Paritetut laitteet</string>
+
+    <!-- NFC -->
+    <string name="conn_nfc_title">NFC</string>
+    <string name="conn_nfc_not_supported">NFC-laitteistoa ei ole tässä laitteessa.</string>
+    <string name="conn_nfc_status">Tila</string>
+    <string name="conn_nfc_hce">Host Card Emulation</string>
+
+    <!-- GPS -->
+    <string name="conn_gps_title">GPS</string>
+    <string name="conn_gps_not_supported">GPS-laitteistoa ei ole tässä laitteessa.</string>
+    <string name="conn_gps_provider">GPS-palvelu</string>
+    <string name="conn_gps_status">Tila</string>
+    <string name="conn_gps_ready">Valmis</string>
+    <string name="conn_gps_searching">Etsitään…</string>
+    <string name="conn_gps_fixed">Lukittu</string>
+    <string name="conn_gps_failed">Aikakatkaisu</string>
+    <string name="conn_gps_elapsed">Kulunut aika</string>
+    <string name="conn_gps_fix_time">Lukitusaika</string>
+    <string name="conn_gps_latitude">Leveysaste</string>
+    <string name="conn_gps_longitude">Pituusaste</string>
+    <string name="conn_gps_accuracy">Tarkkuus</string>
+    <string name="conn_gps_altitude">Korkeus</string>
+    <string name="conn_gps_speed">Nopeus</string>
+    <string name="conn_gps_satellites_visible">Näkyvät satelliitit</string>
+    <string name="conn_gps_satellites_used">Käytetyt satelliitit</string>
+    <string name="conn_gps_satellite_info">Satelliittitiedot</string>
+    <string name="conn_gps_constellation">Järjestelmä</string>
+    <string name="conn_gps_used">Käytössä</string>
+    <string name="conn_gps_more_sats">+ %1$d lisää</string>
+    <string name="conn_gps_start_fix">Aloita GPS-lukitus</string>
+    <string name="conn_gps_retest">Testaa uudelleen</string>
+    <string name="conn_grant_location">Myönnä sijaintioikeus</string>
+
+    <!-- Mobile Network -->
+    <string name="conn_mobile_title">Mobiiliverkko</string>
+    <string name="conn_mobile_not_supported">Puhelinlaitteistoa ei ole tässä laitteessa.</string>
+    <string name="conn_mobile_status">Datayhteys</string>
+    <string name="conn_mobile_operator">Operaattori</string>
+    <string name="conn_mobile_sim_operator">SIM-operaattori</string>
+    <string name="conn_mobile_phone_type">Puhelintyyppi</string>
+    <string name="conn_mobile_network_type">Verkkotyyppi</string>
+    <string name="conn_mobile_signal">Signaali</string>
+    <string name="conn_mobile_signal_level">Signaalitaso</string>
+    <string name="conn_mobile_roaming">Verkkovierailu</string>
+    <string name="conn_mobile_cell_id">Solun tunnus</string>
+    <string name="conn_mobile_mcc_mnc">MCC / MNC</string>
+    <string name="conn_grant_phone">Myönnä puhelinoikeus</string>
 </resources>
