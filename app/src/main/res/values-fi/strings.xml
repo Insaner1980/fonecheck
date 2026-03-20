@@ -1,3 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Device Info Screen -->
+    <string name="device_info_title">Laite</string>
+    <string name="os_info_title">Käyttöjärjestelmä</string>
+    <string name="drm_info_title">DRM</string>
+    <string name="security_info_title">Turvallisuus</string>
+
+    <string name="label_model">Malli</string>
+    <string name="label_manufacturer">Valmistaja</string>
+    <string name="label_brand">Tuotemerkki</string>
+    <string name="label_product">Tuote</string>
+    <string name="label_android_version">Android-versio</string>
+    <string name="label_api_level">API-taso</string>
+    <string name="label_security_patch">Tietoturvapäivitys</string>
+    <string name="label_build_number">Koontinumero</string>
+    <string name="label_kernel">Ydin</string>
+    <string name="label_baseband">Kantataajuus</string>
+    <string name="label_bootloader">Käynnistyslatain</string>
+    <string name="label_widevine">Widevine-taso</string>
+    <string name="label_root_detected">Root havaittu</string>
+    <string name="label_developer_options">Kehittäjäasetukset</string>
+    <string name="label_usb_debugging">USB-virheenkorjaus</string>
+
+    <string name="status_yes">Kyllä</string>
+    <string name="status_no">Ei</string>
+    <string name="status_enabled">Käytössä</string>
+    <string name="status_disabled">Pois käytöstä</string>
 </resources>

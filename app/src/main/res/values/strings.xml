@@ -1,4 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">PhoneCheck</string>
+
+    <!-- Device Info Screen -->
+    <string name="device_info_title">Device</string>
+    <string name="os_info_title">Operating System</string>
+    <string name="drm_info_title">DRM</string>
+    <string name="security_info_title">Security</string>
+
+    <string name="label_model">Model</string>
+    <string name="label_manufacturer">Manufacturer</string>
+    <string name="label_brand">Brand</string>
+    <string name="label_product">Product</string>
+    <string name="label_android_version">Android Version</string>
+    <string name="label_api_level">API Level</string>
+    <string name="label_security_patch">Security Patch</string>
+    <string name="label_build_number">Build Number</string>
+    <string name="label_kernel">Kernel</string>
+    <string name="label_baseband">Baseband</string>
+    <string name="label_bootloader">Bootloader</string>
+    <string name="label_widevine">Widevine Level</string>
+    <string name="label_root_detected">Root Detected</string>
+    <string name="label_developer_options">Developer Options</string>
+    <string name="label_usb_debugging">USB Debugging</string>
+
+    <string name="status_yes">Yes</string>
+    <string name="status_no">No</string>
+    <string name="status_enabled">Enabled</string>
+    <string name="status_disabled">Disabled</string>
 </resources>
