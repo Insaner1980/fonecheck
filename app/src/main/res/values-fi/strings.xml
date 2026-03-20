@@ -48,4 +48,16 @@
     <string name="perf_gpu_renderer">Renderöijä</string>
     <string name="perf_gpu_vendor">Valmistaja</string>
     <string name="perf_gpu_vulkan">Vulkan</string>
+
+    <!-- SIM & Telephony Screen -->
+    <string name="sim_telephony_title">Puhelinverkko</string>
+    <string name="sim_slot_title">SIM-paikka %1$d</string>
+    <string name="label_phone_type">Puhelintyyppi</string>
+    <string name="label_phone_count">Puhelinten määrä</string>
+    <string name="label_dual_sim">Kaksi SIM-korttia</string>
+    <string name="label_data_network">Dataverkko</string>
+    <string name="label_sim_status">Tila</string>
+    <string name="label_operator">Operaattori</string>
+    <string name="label_country">Maa</string>
+    <string name="label_network_type">Verkkotyyppi</string>
 </resources>

@@ -50,4 +50,16 @@
     <string name="perf_gpu_renderer">Renderer</string>
     <string name="perf_gpu_vendor">Vendor</string>
     <string name="perf_gpu_vulkan">Vulkan</string>
+
+    <!-- SIM & Telephony Screen -->
+    <string name="sim_telephony_title">Telephony</string>
+    <string name="sim_slot_title">SIM Slot %1$d</string>
+    <string name="label_phone_type">Phone Type</string>
+    <string name="label_phone_count">Phone Count</string>
+    <string name="label_dual_sim">Dual SIM</string>
+    <string name="label_data_network">Data Network</string>
+    <string name="label_sim_status">Status</string>
+    <string name="label_operator">Operator</string>
+    <string name="label_country">Country</string>
+    <string name="label_network_type">Network Type</string>
 </resources>

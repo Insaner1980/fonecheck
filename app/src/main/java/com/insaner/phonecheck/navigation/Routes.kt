@@ -10,3 +10,6 @@ object DeviceInfo
 
 @Serializable
 object PerformanceInfo
+
+@Serializable
+object SimTelephony
