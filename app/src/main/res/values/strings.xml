@@ -28,4 +28,26 @@
     <string name="status_no">No</string>
     <string name="status_enabled">Enabled</string>
     <string name="status_disabled">Disabled</string>
+
+    <!-- Confidence Badge -->
+    <string name="confidence_high">Accurate</string>
+    <string name="confidence_low">Estimated</string>
+    <string name="confidence_unavailable">Unavailable</string>
+
+    <!-- Performance Info Screen -->
+    <string name="perf_cpu_title">CPU</string>
+    <string name="perf_cpu_model">Model</string>
+    <string name="perf_cpu_architecture">Architecture</string>
+    <string name="perf_cpu_cores">Cores</string>
+    <string name="perf_cpu_clock_speeds">Clock Speeds</string>
+    <string name="perf_cpu_core_label">Core %1$d</string>
+    <string name="perf_cpu_freq_range">%1$s (%2$s – %3$s)</string>
+    <string name="perf_ram_title">RAM</string>
+    <string name="perf_ram_total">Total</string>
+    <string name="perf_ram_available">Available</string>
+    <string name="perf_gpu_title">GPU</string>
+    <string name="perf_gpu_gles_version">OpenGL ES</string>
+    <string name="perf_gpu_renderer">Renderer</string>
+    <string name="perf_gpu_vendor">Vendor</string>
+    <string name="perf_gpu_vulkan">Vulkan</string>
 </resources>

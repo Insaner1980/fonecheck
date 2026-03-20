@@ -7,3 +7,6 @@ object Home
 
 @Serializable
 object DeviceInfo
+
+@Serializable
+object PerformanceInfo

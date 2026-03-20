@@ -10,6 +10,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.insaner.phonecheck.ui.screens.deviceinfo.DeviceInfoScreen
+import com.insaner.phonecheck.ui.screens.performance.PerformanceInfoScreen
 
 @Composable
 fun PhoneCheckNavHost(
@@ -31,6 +32,9 @@ fun PhoneCheckNavHost(
         }
         composable<DeviceInfo> {
             DeviceInfoScreen()
+        }
+        composable<PerformanceInfo> {
+            PerformanceInfoScreen()
         }
     }
 }
