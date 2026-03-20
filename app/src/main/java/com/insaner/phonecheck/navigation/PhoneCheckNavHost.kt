@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.insaner.phonecheck.ui.screens.audio.AudioTestScreen
 import com.insaner.phonecheck.ui.screens.deviceinfo.DeviceInfoScreen
 import com.insaner.phonecheck.ui.screens.performance.PerformanceInfoScreen
 import com.insaner.phonecheck.ui.screens.simtelephony.SimTelephonyScreen
@@ -39,6 +40,9 @@ fun PhoneCheckNavHost(
         }
         composable<SimTelephony> {
             SimTelephonyScreen()
+        }
+        composable<AudioTest> {
+            AudioTestScreen()
         }
     }
 }

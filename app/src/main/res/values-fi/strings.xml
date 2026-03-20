@@ -60,4 +60,38 @@
     <string name="label_operator">Operaattori</string>
     <string name="label_country">Maa</string>
     <string name="label_network_type">Verkkotyyppi</string>
+
+    <!-- Audio Test Screen -->
+    <string name="audio_test_title">Ääni</string>
+    <string name="audio_speaker_title">Kaiutintesti</string>
+    <string name="audio_speaker_description">Napauta taajuutta soittaaksesi äänen kaiuttimesta. Varmista, että kuulet jokaisen äänen selkeästi.</string>
+    <string name="audio_stereo_title">Stereotesti</string>
+    <string name="audio_stereo_description">Testaa vasenta ja oikeaa äänikanavaa erikseen stereolähdön tarkistamiseksi.</string>
+    <string name="audio_earpiece_title">Kuuloketesti</string>
+    <string name="audio_earpiece_description">Soita 1 kHz ääni kuulokekaiuttimesta. Pidä puhelin korvallasi kuunnellaksesi.</string>
+    <string name="audio_microphone_title">Mikrofonitesti</string>
+    <string name="audio_microphone_description">Nauhoita ääntä ja toista se varmistaaksesi, että mikrofoni toimii. Vaatii mikrofonin käyttöoikeuden.</string>
+    <string name="audio_headphone_title">Kuulokeliitäntä</string>
+    <string name="audio_headphone_description">Kytke langalliset kuulokkeet tai kuulokemikrofoni testataksesi tunnistusta.</string>
+    <string name="audio_volume_title">Äänenvoimakkuuspainikkeet</string>
+    <string name="audio_volume_description">Paina laitteiston äänenvoimakkuuspainikkeita varmistaaksesi, että ne toimivat.</string>
+
+    <string name="audio_stop">Pysäytä</string>
+    <string name="audio_play_earpiece">Soita kuulokeääni</string>
+    <string name="audio_record">Nauhoita</string>
+    <string name="audio_stop_recording">Lopeta nauhoitus</string>
+    <string name="audio_playback">Toista</string>
+    <string name="audio_level">Taso</string>
+    <string name="audio_db_value">%.1f dB</string>
+    <string name="audio_left">Vasen</string>
+    <string name="audio_right">Oikea</string>
+    <string name="audio_both">Molemmat</string>
+    <string name="audio_headphone_status">Tila</string>
+    <string name="audio_headphone_type">Tyyppi</string>
+    <string name="audio_connected">Yhdistetty</string>
+    <string name="audio_disconnected">Ei yhdistetty</string>
+    <string name="audio_volume_level">Äänenvoimakkuus</string>
+    <string name="audio_volume_up">Ääni +</string>
+    <string name="audio_volume_down">Ääni −</string>
+    <string name="audio_reset">Nollaa</string>
 </resources>
