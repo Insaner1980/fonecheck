@@ -130,4 +130,37 @@
     <string name="camera_all_resolutions">All Resolutions</string>
     <string name="camera_more_resolutions">+ %1$d more</string>
     <string name="camera_autofocus">Autofocus</string>
+
+    <!-- Sensor Test Screen -->
+    <string name="sensor_test_title">Sensors</string>
+    <string name="sensor_summary_title">Sensor Overview</string>
+    <string name="sensor_description">Tap any sensor to see real-time values and detailed info. Try the interactive challenges to verify sensors are responding.</string>
+    <string name="sensor_count">Sensors Detected</string>
+    <string name="sensor_live_values">Live Values</string>
+    <string name="sensor_info_title">Sensor Info</string>
+    <string name="sensor_challenges_title">Challenges</string>
+    <string name="sensor_name">Name</string>
+    <string name="sensor_vendor">Vendor</string>
+    <string name="sensor_version">Version</string>
+    <string name="sensor_resolution">Resolution</string>
+    <string name="sensor_max_range">Max Range</string>
+    <string name="sensor_power">Power</string>
+    <string name="sensor_min_delay">Min Delay</string>
+    <string name="sensor_wake_up">Wake-Up</string>
+    <string name="sensor_on_change">On-change</string>
+
+    <string name="sensor_challenge_passed">Passed!</string>
+    <string name="sensor_challenge_shake">Shake your phone!</string>
+    <string name="sensor_challenge_tilt_left">Tilt your phone left!</string>
+    <string name="sensor_challenge_tilt_right">Tilt your phone right!</string>
+    <string name="sensor_challenge_face_down">Place your phone face down!</string>
+    <string name="sensor_challenge_face_up">Place your phone face up!</string>
+    <string name="sensor_challenge_rotate">Rotate your phone!</string>
+
+    <string name="sensor_btn_shake">Shake</string>
+    <string name="sensor_btn_tilt_left">Tilt Left</string>
+    <string name="sensor_btn_tilt_right">Tilt Right</string>
+    <string name="sensor_btn_face_down">Face Down</string>
+    <string name="sensor_btn_face_up">Face Up</string>
+    <string name="sensor_btn_rotate">Rotate</string>
 </resources>

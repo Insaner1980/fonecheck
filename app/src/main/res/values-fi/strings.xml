@@ -128,4 +128,37 @@
     <string name="camera_all_resolutions">Kaikki resoluutiot</string>
     <string name="camera_more_resolutions">+ %1$d lisää</string>
     <string name="camera_autofocus">Automaattitarkennus</string>
+
+    <!-- Sensor Test Screen -->
+    <string name="sensor_test_title">Anturit</string>
+    <string name="sensor_summary_title">Anturien yhteenveto</string>
+    <string name="sensor_description">Napauta anturia nähdäksesi reaaliaikaiset arvot ja tarkemmat tiedot. Kokeile interaktiivisia haasteita varmistaaksesi anturien toimivuuden.</string>
+    <string name="sensor_count">Havaitut anturit</string>
+    <string name="sensor_live_values">Reaaliaikaiset arvot</string>
+    <string name="sensor_info_title">Anturin tiedot</string>
+    <string name="sensor_challenges_title">Haasteet</string>
+    <string name="sensor_name">Nimi</string>
+    <string name="sensor_vendor">Valmistaja</string>
+    <string name="sensor_version">Versio</string>
+    <string name="sensor_resolution">Tarkkuus</string>
+    <string name="sensor_max_range">Enimmäisalue</string>
+    <string name="sensor_power">Virrankulutus</string>
+    <string name="sensor_min_delay">Minimiviive</string>
+    <string name="sensor_wake_up">Herätys</string>
+    <string name="sensor_on_change">Muutoksella</string>
+
+    <string name="sensor_challenge_passed">Läpäisty!</string>
+    <string name="sensor_challenge_shake">Ravista puhelintasi!</string>
+    <string name="sensor_challenge_tilt_left">Kallista puhelinta vasemmalle!</string>
+    <string name="sensor_challenge_tilt_right">Kallista puhelinta oikealle!</string>
+    <string name="sensor_challenge_face_down">Aseta puhelin näyttö alaspäin!</string>
+    <string name="sensor_challenge_face_up">Aseta puhelin näyttö ylöspäin!</string>
+    <string name="sensor_challenge_rotate">Pyöritä puhelintasi!</string>
+
+    <string name="sensor_btn_shake">Ravista</string>
+    <string name="sensor_btn_tilt_left">Vasemmalle</string>
+    <string name="sensor_btn_tilt_right">Oikealle</string>
+    <string name="sensor_btn_face_down">Näyttö alas</string>
+    <string name="sensor_btn_face_up">Näyttö ylös</string>
+    <string name="sensor_btn_rotate">Pyöritä</string>
 </resources>

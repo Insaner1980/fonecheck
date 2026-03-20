@@ -19,3 +19,6 @@ object AudioTest
 
 @Serializable
 object CameraTest
+
+@Serializable
+object SensorTest
