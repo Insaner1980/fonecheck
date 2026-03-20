@@ -16,3 +16,6 @@ object SimTelephony
 
 @Serializable
 object AudioTest
+
+@Serializable
+object CameraTest

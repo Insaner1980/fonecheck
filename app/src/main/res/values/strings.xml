@@ -96,4 +96,38 @@
     <string name="audio_volume_up">Vol Up</string>
     <string name="audio_volume_down">Vol Down</string>
     <string name="audio_reset">Reset</string>
+
+    <!-- Camera Test Screen -->
+    <string name="camera_test_title">Camera</string>
+    <string name="camera_capture_title">Camera Capture</string>
+    <string name="camera_capture_description">Open front or rear camera, preview, and capture a photo to verify resolution.</string>
+    <string name="camera_rear">Rear Camera</string>
+    <string name="camera_front">Front Camera</string>
+    <string name="camera_capture">Capture</string>
+    <string name="camera_stop">Stop</string>
+    <string name="camera_captured">Captured</string>
+
+    <string name="camera_flash_title">Flash / Torch</string>
+    <string name="camera_flash_description">Toggle the camera flash to verify the torch works.</string>
+    <string name="camera_flash_on">On</string>
+    <string name="camera_flash_off">Off</string>
+    <string name="camera_flash_na">Not Available</string>
+    <string name="camera_flash_not_tested">Not Tested</string>
+    <string name="camera_flash_turn_on">Turn On</string>
+    <string name="camera_flash_turn_off">Turn Off</string>
+    <string name="camera_no_flash">This device does not have a flash.</string>
+
+    <string name="camera_rear_caps_title">Rear Camera Capabilities</string>
+    <string name="camera_front_caps_title">Front Camera Capabilities</string>
+    <string name="camera_error_title">Error</string>
+    <string name="camera_max_resolution">Max Resolution</string>
+    <string name="camera_sensor_size">Sensor Array</string>
+    <string name="camera_zoom">Zoom Range</string>
+    <string name="camera_ois">OIS</string>
+    <string name="camera_flash">Flash</string>
+    <string name="camera_focal_lengths">Focal Lengths</string>
+    <string name="camera_fps_ranges">FPS Ranges</string>
+    <string name="camera_all_resolutions">All Resolutions</string>
+    <string name="camera_more_resolutions">+ %1$d more</string>
+    <string name="camera_autofocus">Autofocus</string>
 </resources>

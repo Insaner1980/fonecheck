@@ -94,4 +94,38 @@
     <string name="audio_volume_up">Ääni +</string>
     <string name="audio_volume_down">Ääni −</string>
     <string name="audio_reset">Nollaa</string>
+
+    <!-- Camera Test Screen -->
+    <string name="camera_test_title">Kamera</string>
+    <string name="camera_capture_title">Kameran kuvaus</string>
+    <string name="camera_capture_description">Avaa etu- tai takakamera, esikatsele ja ota kuva resoluution tarkistamiseksi.</string>
+    <string name="camera_rear">Takakamera</string>
+    <string name="camera_front">Etukamera</string>
+    <string name="camera_capture">Kuvaa</string>
+    <string name="camera_stop">Pysäytä</string>
+    <string name="camera_captured">Kuvattu</string>
+
+    <string name="camera_flash_title">Salama / Taskulamppu</string>
+    <string name="camera_flash_description">Kytke kameran salama päälle varmistaaksesi taskulampun toimivuuden.</string>
+    <string name="camera_flash_on">Päällä</string>
+    <string name="camera_flash_off">Pois</string>
+    <string name="camera_flash_na">Ei saatavilla</string>
+    <string name="camera_flash_not_tested">Ei testattu</string>
+    <string name="camera_flash_turn_on">Päälle</string>
+    <string name="camera_flash_turn_off">Pois päältä</string>
+    <string name="camera_no_flash">Tässä laitteessa ei ole salamaa.</string>
+
+    <string name="camera_rear_caps_title">Takakameran ominaisuudet</string>
+    <string name="camera_front_caps_title">Etukameran ominaisuudet</string>
+    <string name="camera_error_title">Virhe</string>
+    <string name="camera_max_resolution">Enimmäisresoluutio</string>
+    <string name="camera_sensor_size">Kennon koko</string>
+    <string name="camera_zoom">Zoomausalue</string>
+    <string name="camera_ois">OIS</string>
+    <string name="camera_flash">Salama</string>
+    <string name="camera_focal_lengths">Polttovälit</string>
+    <string name="camera_fps_ranges">FPS-alueet</string>
+    <string name="camera_all_resolutions">Kaikki resoluutiot</string>
+    <string name="camera_more_resolutions">+ %1$d lisää</string>
+    <string name="camera_autofocus">Automaattitarkennus</string>
 </resources>
