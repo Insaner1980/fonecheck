@@ -96,4 +96,148 @@
     <string name="audio_volume_up">Vol Up</string>
     <string name="audio_volume_down">Vol Down</string>
     <string name="audio_reset">Reset</string>
+
+    <!-- Camera Test Screen -->
+    <string name="camera_test_title">Camera</string>
+    <string name="camera_capture_title">Camera Capture</string>
+    <string name="camera_capture_description">Open front or rear camera, preview, and capture a photo to verify resolution.</string>
+    <string name="camera_rear">Rear Camera</string>
+    <string name="camera_front">Front Camera</string>
+    <string name="camera_capture">Capture</string>
+    <string name="camera_stop">Stop</string>
+    <string name="camera_captured">Captured</string>
+
+    <string name="camera_flash_title">Flash / Torch</string>
+    <string name="camera_flash_description">Toggle the camera flash to verify the torch works.</string>
+    <string name="camera_flash_on">On</string>
+    <string name="camera_flash_off">Off</string>
+    <string name="camera_flash_na">Not Available</string>
+    <string name="camera_flash_not_tested">Not Tested</string>
+    <string name="camera_flash_turn_on">Turn On</string>
+    <string name="camera_flash_turn_off">Turn Off</string>
+    <string name="camera_no_flash">This device does not have a flash.</string>
+
+    <string name="camera_rear_caps_title">Rear Camera Capabilities</string>
+    <string name="camera_front_caps_title">Front Camera Capabilities</string>
+    <string name="camera_error_title">Error</string>
+    <string name="camera_max_resolution">Max Resolution</string>
+    <string name="camera_sensor_size">Sensor Array</string>
+    <string name="camera_zoom">Zoom Range</string>
+    <string name="camera_ois">OIS</string>
+    <string name="camera_flash">Flash</string>
+    <string name="camera_focal_lengths">Focal Lengths</string>
+    <string name="camera_fps_ranges">FPS Ranges</string>
+    <string name="camera_all_resolutions">All Resolutions</string>
+    <string name="camera_more_resolutions">+ %1$d more</string>
+    <string name="camera_autofocus">Autofocus</string>
+
+    <!-- Sensor Test Screen -->
+    <string name="sensor_test_title">Sensors</string>
+    <string name="sensor_summary_title">Sensor Overview</string>
+    <string name="sensor_description">Tap any sensor to see real-time values and detailed info. Try the interactive challenges to verify sensors are responding.</string>
+    <string name="sensor_count">Sensors Detected</string>
+    <string name="sensor_live_values">Live Values</string>
+    <string name="sensor_info_title">Sensor Info</string>
+    <string name="sensor_challenges_title">Challenges</string>
+    <string name="sensor_name">Name</string>
+    <string name="sensor_vendor">Vendor</string>
+    <string name="sensor_version">Version</string>
+    <string name="sensor_resolution">Resolution</string>
+    <string name="sensor_max_range">Max Range</string>
+    <string name="sensor_power">Power</string>
+    <string name="sensor_min_delay">Min Delay</string>
+    <string name="sensor_wake_up">Wake-Up</string>
+    <string name="sensor_on_change">On-change</string>
+
+    <string name="sensor_challenge_passed">Passed!</string>
+    <string name="sensor_challenge_shake">Shake your phone!</string>
+    <string name="sensor_challenge_tilt_left">Tilt your phone left!</string>
+    <string name="sensor_challenge_tilt_right">Tilt your phone right!</string>
+    <string name="sensor_challenge_face_down">Place your phone face down!</string>
+    <string name="sensor_challenge_face_up">Place your phone face up!</string>
+    <string name="sensor_challenge_rotate">Rotate your phone!</string>
+
+    <string name="sensor_btn_shake">Shake</string>
+    <string name="sensor_btn_tilt_left">Tilt Left</string>
+    <string name="sensor_btn_tilt_right">Tilt Right</string>
+    <string name="sensor_btn_face_down">Face Down</string>
+    <string name="sensor_btn_face_up">Face Up</string>
+    <string name="sensor_btn_rotate">Rotate</string>
+
+    <!-- Connectivity Test Screen -->
+    <string name="conn_test_title">Connectivity</string>
+    <string name="conn_not_available">Not Available</string>
+    <string name="conn_supported">Supported</string>
+    <string name="conn_not_supported">Not Supported</string>
+
+    <!-- WiFi -->
+    <string name="conn_wifi_title">Wi-Fi</string>
+    <string name="conn_wifi_not_supported">Wi-Fi hardware not available on this device.</string>
+    <string name="conn_wifi_not_connected">Not connected to a Wi-Fi network.</string>
+    <string name="conn_wifi_ssid">SSID</string>
+    <string name="conn_wifi_signal">Signal</string>
+    <string name="conn_wifi_signal_level">Signal Level</string>
+    <string name="conn_wifi_frequency">Frequency</string>
+    <string name="conn_wifi_link_speed">Link Speed</string>
+    <string name="conn_wifi_standard">Wi-Fi Standard</string>
+    <string name="conn_wifi_ip">IP Address</string>
+    <string name="conn_wifi_gateway">Gateway</string>
+    <string name="conn_wifi_dns1">DNS 1</string>
+    <string name="conn_wifi_dns2">DNS 2</string>
+
+    <!-- Bluetooth -->
+    <string name="conn_bluetooth_title">Bluetooth</string>
+    <string name="conn_bt_not_supported">Bluetooth hardware not available on this device.</string>
+    <string name="conn_bt_status">Status</string>
+    <string name="conn_bt_name">Name</string>
+    <string name="conn_bt_ble">Bluetooth LE</string>
+    <string name="conn_bt_version">Version</string>
+    <string name="conn_bt_bonded">Paired Devices</string>
+
+    <!-- NFC -->
+    <string name="conn_nfc_title">NFC</string>
+    <string name="conn_nfc_not_supported">NFC hardware not available on this device.</string>
+    <string name="conn_nfc_status">Status</string>
+    <string name="conn_nfc_hce">Host Card Emulation</string>
+
+    <!-- GPS -->
+    <string name="conn_gps_title">GPS</string>
+    <string name="conn_gps_not_supported">GPS hardware not available on this device.</string>
+    <string name="conn_gps_provider">GPS Provider</string>
+    <string name="conn_gps_status">Status</string>
+    <string name="conn_gps_ready">Ready</string>
+    <string name="conn_gps_searching">Searching…</string>
+    <string name="conn_gps_fixed">Fixed</string>
+    <string name="conn_gps_failed">Timed Out</string>
+    <string name="conn_gps_elapsed">Elapsed</string>
+    <string name="conn_gps_fix_time">Fix Time</string>
+    <string name="conn_gps_latitude">Latitude</string>
+    <string name="conn_gps_longitude">Longitude</string>
+    <string name="conn_gps_accuracy">Accuracy</string>
+    <string name="conn_gps_altitude">Altitude</string>
+    <string name="conn_gps_speed">Speed</string>
+    <string name="conn_gps_satellites_visible">Satellites Visible</string>
+    <string name="conn_gps_satellites_used">Satellites Used</string>
+    <string name="conn_gps_satellite_info">Satellite Details</string>
+    <string name="conn_gps_constellation">Constellation</string>
+    <string name="conn_gps_used">Fix</string>
+    <string name="conn_gps_more_sats">+ %1$d more</string>
+    <string name="conn_gps_start_fix">Start GPS Fix</string>
+    <string name="conn_gps_retest">Re-test</string>
+    <string name="conn_grant_location">Grant Location Permission</string>
+
+    <!-- Mobile Network -->
+    <string name="conn_mobile_title">Mobile Network</string>
+    <string name="conn_mobile_not_supported">Telephony hardware not available on this device.</string>
+    <string name="conn_mobile_status">Data State</string>
+    <string name="conn_mobile_operator">Operator</string>
+    <string name="conn_mobile_sim_operator">SIM Operator</string>
+    <string name="conn_mobile_phone_type">Phone Type</string>
+    <string name="conn_mobile_network_type">Network Type</string>
+    <string name="conn_mobile_signal">Signal</string>
+    <string name="conn_mobile_signal_level">Signal Level</string>
+    <string name="conn_mobile_roaming">Roaming</string>
+    <string name="conn_mobile_cell_id">Cell ID</string>
+    <string name="conn_mobile_mcc_mnc">MCC / MNC</string>
+    <string name="conn_grant_phone">Grant Phone Permission</string>
 </resources>

@@ -94,4 +94,148 @@
     <string name="audio_volume_up">Ääni +</string>
     <string name="audio_volume_down">Ääni −</string>
     <string name="audio_reset">Nollaa</string>
+
+    <!-- Camera Test Screen -->
+    <string name="camera_test_title">Kamera</string>
+    <string name="camera_capture_title">Kameran kuvaus</string>
+    <string name="camera_capture_description">Avaa etu- tai takakamera, esikatsele ja ota kuva resoluution tarkistamiseksi.</string>
+    <string name="camera_rear">Takakamera</string>
+    <string name="camera_front">Etukamera</string>
+    <string name="camera_capture">Kuvaa</string>
+    <string name="camera_stop">Pysäytä</string>
+    <string name="camera_captured">Kuvattu</string>
+
+    <string name="camera_flash_title">Salama / Taskulamppu</string>
+    <string name="camera_flash_description">Kytke kameran salama päälle varmistaaksesi taskulampun toimivuuden.</string>
+    <string name="camera_flash_on">Päällä</string>
+    <string name="camera_flash_off">Pois</string>
+    <string name="camera_flash_na">Ei saatavilla</string>
+    <string name="camera_flash_not_tested">Ei testattu</string>
+    <string name="camera_flash_turn_on">Päälle</string>
+    <string name="camera_flash_turn_off">Pois päältä</string>
+    <string name="camera_no_flash">Tässä laitteessa ei ole salamaa.</string>
+
+    <string name="camera_rear_caps_title">Takakameran ominaisuudet</string>
+    <string name="camera_front_caps_title">Etukameran ominaisuudet</string>
+    <string name="camera_error_title">Virhe</string>
+    <string name="camera_max_resolution">Enimmäisresoluutio</string>
+    <string name="camera_sensor_size">Kennon koko</string>
+    <string name="camera_zoom">Zoomausalue</string>
+    <string name="camera_ois">OIS</string>
+    <string name="camera_flash">Salama</string>
+    <string name="camera_focal_lengths">Polttovälit</string>
+    <string name="camera_fps_ranges">FPS-alueet</string>
+    <string name="camera_all_resolutions">Kaikki resoluutiot</string>
+    <string name="camera_more_resolutions">+ %1$d lisää</string>
+    <string name="camera_autofocus">Automaattitarkennus</string>
+
+    <!-- Sensor Test Screen -->
+    <string name="sensor_test_title">Anturit</string>
+    <string name="sensor_summary_title">Anturien yhteenveto</string>
+    <string name="sensor_description">Napauta anturia nähdäksesi reaaliaikaiset arvot ja tarkemmat tiedot. Kokeile interaktiivisia haasteita varmistaaksesi anturien toimivuuden.</string>
+    <string name="sensor_count">Havaitut anturit</string>
+    <string name="sensor_live_values">Reaaliaikaiset arvot</string>
+    <string name="sensor_info_title">Anturin tiedot</string>
+    <string name="sensor_challenges_title">Haasteet</string>
+    <string name="sensor_name">Nimi</string>
+    <string name="sensor_vendor">Valmistaja</string>
+    <string name="sensor_version">Versio</string>
+    <string name="sensor_resolution">Tarkkuus</string>
+    <string name="sensor_max_range">Enimmäisalue</string>
+    <string name="sensor_power">Virrankulutus</string>
+    <string name="sensor_min_delay">Minimiviive</string>
+    <string name="sensor_wake_up">Herätys</string>
+    <string name="sensor_on_change">Muutoksella</string>
+
+    <string name="sensor_challenge_passed">Läpäisty!</string>
+    <string name="sensor_challenge_shake">Ravista puhelintasi!</string>
+    <string name="sensor_challenge_tilt_left">Kallista puhelinta vasemmalle!</string>
+    <string name="sensor_challenge_tilt_right">Kallista puhelinta oikealle!</string>
+    <string name="sensor_challenge_face_down">Aseta puhelin näyttö alaspäin!</string>
+    <string name="sensor_challenge_face_up">Aseta puhelin näyttö ylöspäin!</string>
+    <string name="sensor_challenge_rotate">Pyöritä puhelintasi!</string>
+
+    <string name="sensor_btn_shake">Ravista</string>
+    <string name="sensor_btn_tilt_left">Vasemmalle</string>
+    <string name="sensor_btn_tilt_right">Oikealle</string>
+    <string name="sensor_btn_face_down">Näyttö alas</string>
+    <string name="sensor_btn_face_up">Näyttö ylös</string>
+    <string name="sensor_btn_rotate">Pyöritä</string>
+
+    <!-- Connectivity Test Screen -->
+    <string name="conn_test_title">Yhteydet</string>
+    <string name="conn_not_available">Ei saatavilla</string>
+    <string name="conn_supported">Tuettu</string>
+    <string name="conn_not_supported">Ei tuettu</string>
+
+    <!-- WiFi -->
+    <string name="conn_wifi_title">Wi-Fi</string>
+    <string name="conn_wifi_not_supported">Wi-Fi-laitteistoa ei ole tässä laitteessa.</string>
+    <string name="conn_wifi_not_connected">Ei yhdistetty Wi-Fi-verkkoon.</string>
+    <string name="conn_wifi_ssid">SSID</string>
+    <string name="conn_wifi_signal">Signaali</string>
+    <string name="conn_wifi_signal_level">Signaalitaso</string>
+    <string name="conn_wifi_frequency">Taajuus</string>
+    <string name="conn_wifi_link_speed">Linkin nopeus</string>
+    <string name="conn_wifi_standard">Wi-Fi-standardi</string>
+    <string name="conn_wifi_ip">IP-osoite</string>
+    <string name="conn_wifi_gateway">Yhdyskäytävä</string>
+    <string name="conn_wifi_dns1">DNS 1</string>
+    <string name="conn_wifi_dns2">DNS 2</string>
+
+    <!-- Bluetooth -->
+    <string name="conn_bluetooth_title">Bluetooth</string>
+    <string name="conn_bt_not_supported">Bluetooth-laitteistoa ei ole tässä laitteessa.</string>
+    <string name="conn_bt_status">Tila</string>
+    <string name="conn_bt_name">Nimi</string>
+    <string name="conn_bt_ble">Bluetooth LE</string>
+    <string name="conn_bt_version">Versio</string>
+    <string name="conn_bt_bonded">Paritetut laitteet</string>
+
+    <!-- NFC -->
+    <string name="conn_nfc_title">NFC</string>
+    <string name="conn_nfc_not_supported">NFC-laitteistoa ei ole tässä laitteessa.</string>
+    <string name="conn_nfc_status">Tila</string>
+    <string name="conn_nfc_hce">Host Card Emulation</string>
+
+    <!-- GPS -->
+    <string name="conn_gps_title">GPS</string>
+    <string name="conn_gps_not_supported">GPS-laitteistoa ei ole tässä laitteessa.</string>
+    <string name="conn_gps_provider">GPS-palvelu</string>
+    <string name="conn_gps_status">Tila</string>
+    <string name="conn_gps_ready">Valmis</string>
+    <string name="conn_gps_searching">Etsitään…</string>
+    <string name="conn_gps_fixed">Lukittu</string>
+    <string name="conn_gps_failed">Aikakatkaisu</string>
+    <string name="conn_gps_elapsed">Kulunut aika</string>
+    <string name="conn_gps_fix_time">Lukitusaika</string>
+    <string name="conn_gps_latitude">Leveysaste</string>
+    <string name="conn_gps_longitude">Pituusaste</string>
+    <string name="conn_gps_accuracy">Tarkkuus</string>
+    <string name="conn_gps_altitude">Korkeus</string>
+    <string name="conn_gps_speed">Nopeus</string>
+    <string name="conn_gps_satellites_visible">Näkyvät satelliitit</string>
+    <string name="conn_gps_satellites_used">Käytetyt satelliitit</string>
+    <string name="conn_gps_satellite_info">Satelliittitiedot</string>
+    <string name="conn_gps_constellation">Järjestelmä</string>
+    <string name="conn_gps_used">Käytössä</string>
+    <string name="conn_gps_more_sats">+ %1$d lisää</string>
+    <string name="conn_gps_start_fix">Aloita GPS-lukitus</string>
+    <string name="conn_gps_retest">Testaa uudelleen</string>
+    <string name="conn_grant_location">Myönnä sijaintioikeus</string>
+
+    <!-- Mobile Network -->
+    <string name="conn_mobile_title">Mobiiliverkko</string>
+    <string name="conn_mobile_not_supported">Puhelinlaitteistoa ei ole tässä laitteessa.</string>
+    <string name="conn_mobile_status">Datayhteys</string>
+    <string name="conn_mobile_operator">Operaattori</string>
+    <string name="conn_mobile_sim_operator">SIM-operaattori</string>
+    <string name="conn_mobile_phone_type">Puhelintyyppi</string>
+    <string name="conn_mobile_network_type">Verkkotyyppi</string>
+    <string name="conn_mobile_signal">Signaali</string>
+    <string name="conn_mobile_signal_level">Signaalitaso</string>
+    <string name="conn_mobile_roaming">Verkkovierailu</string>
+    <string name="conn_mobile_cell_id">Solun tunnus</string>
+    <string name="conn_mobile_mcc_mnc">MCC / MNC</string>
+    <string name="conn_grant_phone">Myönnä puhelinoikeus</string>
 </resources>
