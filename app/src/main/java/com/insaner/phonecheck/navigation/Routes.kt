@@ -13,3 +13,6 @@ object PerformanceInfo
 
 @Serializable
 object SimTelephony
+
+@Serializable
+object AudioTest

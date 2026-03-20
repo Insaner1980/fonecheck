@@ -62,4 +62,38 @@
     <string name="label_operator">Operator</string>
     <string name="label_country">Country</string>
     <string name="label_network_type">Network Type</string>
+
+    <!-- Audio Test Screen -->
+    <string name="audio_test_title">Audio</string>
+    <string name="audio_speaker_title">Speaker Test</string>
+    <string name="audio_speaker_description">Tap a frequency to play a tone through the speaker. Verify you can hear each tone clearly.</string>
+    <string name="audio_stereo_title">Stereo Test</string>
+    <string name="audio_stereo_description">Test left and right audio channels separately to verify stereo output.</string>
+    <string name="audio_earpiece_title">Earpiece Test</string>
+    <string name="audio_earpiece_description">Play a 1 kHz tone through the earpiece speaker. Hold the phone to your ear to listen.</string>
+    <string name="audio_microphone_title">Microphone Test</string>
+    <string name="audio_microphone_description">Record audio and play it back to verify the microphone is working. Requires microphone permission.</string>
+    <string name="audio_headphone_title">Headphone Jack</string>
+    <string name="audio_headphone_description">Plug in wired headphones or a headset to test detection.</string>
+    <string name="audio_volume_title">Volume Buttons</string>
+    <string name="audio_volume_description">Press the hardware volume buttons to verify they are working.</string>
+
+    <string name="audio_stop">Stop</string>
+    <string name="audio_play_earpiece">Play Earpiece Tone</string>
+    <string name="audio_record">Record</string>
+    <string name="audio_stop_recording">Stop Recording</string>
+    <string name="audio_playback">Play Back</string>
+    <string name="audio_level">Level</string>
+    <string name="audio_db_value">%.1f dB</string>
+    <string name="audio_left">Left</string>
+    <string name="audio_right">Right</string>
+    <string name="audio_both">Both</string>
+    <string name="audio_headphone_status">Status</string>
+    <string name="audio_headphone_type">Type</string>
+    <string name="audio_connected">Connected</string>
+    <string name="audio_disconnected">Disconnected</string>
+    <string name="audio_volume_level">Volume</string>
+    <string name="audio_volume_up">Vol Up</string>
+    <string name="audio_volume_down">Vol Down</string>
+    <string name="audio_reset">Reset</string>
 </resources>
