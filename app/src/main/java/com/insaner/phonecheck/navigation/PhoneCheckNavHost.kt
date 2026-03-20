@@ -11,6 +11,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.insaner.phonecheck.ui.screens.deviceinfo.DeviceInfoScreen
 import com.insaner.phonecheck.ui.screens.performance.PerformanceInfoScreen
+import com.insaner.phonecheck.ui.screens.simtelephony.SimTelephonyScreen
 
 @Composable
 fun PhoneCheckNavHost(
@@ -35,6 +36,9 @@ fun PhoneCheckNavHost(
         }
         composable<PerformanceInfo> {
             PerformanceInfoScreen()
+        }
+        composable<SimTelephony> {
+            SimTelephonyScreen()
         }
     }
 }
