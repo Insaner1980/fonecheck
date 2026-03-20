@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.insaner.phonecheck.ui.screens.deviceinfo.DeviceInfoScreen
 
 @Composable
 fun PhoneCheckNavHost(
@@ -27,6 +28,9 @@ fun PhoneCheckNavHost(
             ) {
                 Text("PhoneCheck")
             }
+        }
+        composable<DeviceInfo> {
+            DeviceInfoScreen()
         }
     }
 }
