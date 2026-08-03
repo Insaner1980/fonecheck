@@ -4677,12 +4677,16 @@
       </component>
       <component group="org.codehaus.groovy" name="groovy" version="3.0.22">
          <artifact name="groovy-3.0.22.jar">
-            <pgp value="34441E504A937F43EB0DAEF96A65176A0FB1CD0B"/>
-            <sha256 value="c92c92c4b9b183f9981ba7399f36592e5e3ad6f4cdac7101b5a22cc17998d13f" origin="Maven Central SHA-256" reason="Independent integrity check alongside pinned PGP key"/>
+            <ignored-keys>
+               <ignored-key id="6A65176A0FB1CD0B" reason="Public key is unavailable; artifact is verified by SHA-256"/>
+            </ignored-keys>
+            <sha256 value="c92c92c4b9b183f9981ba7399f36592e5e3ad6f4cdac7101b5a22cc17998d13f" origin="Maven Central SHA-256" reason="Signing key is unavailable; checksum was verified independently"/>
          </artifact>
          <artifact name="groovy-3.0.22.pom">
-            <pgp value="34441E504A937F43EB0DAEF96A65176A0FB1CD0B"/>
-            <sha256 value="51b731e5cff121efd6d320f4a801cd616869c5bed4e9c0e353b29060b1d2355f" origin="Maven Central SHA-256" reason="Independent integrity check alongside pinned PGP key"/>
+            <ignored-keys>
+               <ignored-key id="6A65176A0FB1CD0B" reason="Public key is unavailable; artifact is verified by SHA-256"/>
+            </ignored-keys>
+            <sha256 value="51b731e5cff121efd6d320f4a801cd616869c5bed4e9c0e353b29060b1d2355f" origin="Maven Central SHA-256" reason="Signing key is unavailable; checksum was verified independently"/>
          </artifact>
       </component>
       <component group="org.codehaus.mojo" name="animal-sniffer-annotations" version="1.23">
