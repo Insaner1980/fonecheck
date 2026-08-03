@@ -25,6 +25,7 @@
          <ignored-key id="586654072EAD6677" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="58BD11D32974088F" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="59A252FB1199D873" reason="Public key is unavailable; artifact is verified by SHA-256"/>
+         <ignored-key id="59A7C2A1BD98C013" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="59E05CE618187ED4" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="5E1F79A7C298661E" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="5F69AD087600B22C" reason="Public key is unavailable; artifact is verified by SHA-256"/>
@@ -107,7 +108,7 @@
             <trusting group="org.snakeyaml"/>
             <trusting group="org.yaml"/>
          </trusted-key>
-         <trusted-key id="3051D45031E13516A6E8FAFF280D66A55F5316C5" group="org.bitbucket.b_c" name="jose4j" version="0.9.5"/>
+         <trusted-key id="3051D45031E13516A6E8FAFF280D66A55F5316C5" group="org.bitbucket.b_c" name="jose4j"/>
          <trusted-key id="31BAE2E51D95E0F8AD9B7BCC40A3C4432BD7308C" group="com.googlecode.juniversalchardet" name="juniversalchardet" version="1.0.3"/>
          <trusted-key id="33FD4BFD33554634053D73C0C2148900BCD3C2AF" group="^org[.]jetbrains($|([.].*))" regex="true"/>
          <trusted-key id="3690C240CE51B4670D30AD1C38EE757D69184620" group="org.tukaani" name="xz" version="1.9"/>
