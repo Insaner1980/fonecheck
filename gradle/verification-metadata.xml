@@ -39,6 +39,8 @@
          <ignored-key id="7FE9900F412D622E" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="ABE9F3126BB741C1" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="D908A43FB7EC07AC" reason="Public key is unavailable; artifact is verified by SHA-256"/>
+         <ignored-key id="E88979FB9B30ACF2" reason="Public key is unavailable; artifact is verified by SHA-256"/>
+         <ignored-key id="FD533C07C264648F" reason="Public key is unavailable; artifact is verified by SHA-256"/>
       </ignored-keys>
       <trusted-keys>
          <trusted-key id="03C123038C20AAE9E286C857479D601F3A7B5C1A" group="com.github.ajalt.clikt"/>
