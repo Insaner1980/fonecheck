@@ -676,7 +676,10 @@
       </component>
       <component group="com.github.skydoves.compose.stability.analyzer" name="com.github.skydoves.compose.stability.analyzer.gradle.plugin" version="0.2.20">
          <artifact name="com.github.skydoves.compose.stability.analyzer.gradle.plugin-0.2.20.pom">
-            <sha256 value="134d36555d610974705165058121f190e9bf2e71ccb41d02eb31fc975fef3dce" origin="Verified from Maven Central and Gradle Plugin Portal" reason="Artifact is not signed"/>
+            <ignored-keys>
+               <ignored-key id="87581FAE204D94248E212DD2D7662013FA1A5596" reason="Use the independently verified repository SHA-256 for this plugin marker"/>
+            </ignored-keys>
+            <sha256 value="134d36555d610974705165058121f190e9bf2e71ccb41d02eb31fc975fef3dce" origin="Verified from Maven Central and Gradle Plugin Portal" reason="Plugin marker is verified by its repository checksum"/>
          </artifact>
       </component>
       <component group="com.google.auto" name="auto-parent" version="6">
