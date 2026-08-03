@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1254" height="1254" viewBox="0 0 1254 1254" role="img" aria-labelledby="title desc">
+  <title id="title">fonecheck logo</title>
+  <desc id="desc">Purple rounded device outline crossed by a rising cyan diagnostic band on a deep navy background.</desc>
+
+  <defs>
+    <radialGradient id="background" cx="50%" cy="48%" r="76%">
+      <stop offset="0" stop-color="#03031c"/>
+      <stop offset="0.72" stop-color="#02021a"/>
+      <stop offset="1" stop-color="#010119"/>
+    </radialGradient>
+
+    <linearGradient id="violet" x1="401" y1="228" x2="852" y2="1025" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8c55fb"/>
+      <stop offset="0.52" stop-color="#884ff7"/>
+      <stop offset="1" stop-color="#8c55fb"/>
+    </linearGradient>
+
+    <linearGradient id="cyan" x1="354" y1="803" x2="896" y2="507" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00def2"/>
+      <stop offset="0.54" stop-color="#00e1f5"/>
+      <stop offset="1" stop-color="#00ddea"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1254" height="1254" fill="url(#background)"/>
+
+  <path
+    fill="url(#violet)"
+    d="
+      M 409 646
+      C 404 647 401 644 401 639
+      V 325
+      C 401 271 444 228 497 228
+      H 756
+      C 809 228 852 271 852 325
+      V 481
+      C 852 488 849 493 843 496
+      L 800 514
+      C 793 517 787 513 787 506
+      V 347
+      C 787 316 763 291 732 291
+      H 521
+      C 489 291 464 316 464 347
+      V 619
+      C 464 625 461 629 455 631
+      L 409 646
+      Z
+    "/>
+
+  <path
+    fill="url(#violet)"
+    d="
+      M 410 805
+      L 455 789
+      C 461 787 464 791 464 798
+      V 906
+      C 464 938 489 963 521 963
+      H 732
+      C 763 963 787 938 787 906
+      V 701
+      C 787 696 790 693 795 691
+      L 844 673
+      C 849 671 852 675 852 681
+      V 928
+      C 852 982 809 1025 756 1025
+      H 497
+      C 444 1025 401 982 401 928
+      V 819
+      C 401 813 404 808 410 805
+      Z
+    "/>
+
+  <path
+    fill="url(#cyan)"
+    d="
+      M 890 507
+      C 893 506 896 510 896 514
+      V 552
+      C 896 597 872 626 828 642
+      L 421 771
+      C 395 779 376 789 362 801
+      C 359 805 354 802 354 798
+      V 749
+      C 354 716 376 692 412 680
+      L 800 557
+      C 837 545 865 530 885 510
+      C 887 508 889 507 890 507
+      Z
+    "/>
+</svg>

@@ -5,14 +5,19 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
+    alias(libs.plugins.stability.analyzer)
+    alias(libs.plugins.ktlint)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.owasp.dependency.check)
 }
 
 android {
-    namespace = "com.insaner.phonecheck"
+    namespace = "com.insaner.fonecheck"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.insaner.phonecheck"
+        applicationId = "com.insaner.fonecheck"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
@@ -27,7 +32,7 @@ android {
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -50,9 +55,87 @@ android {
     }
 }
 
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom("$rootDir/config/detekt/detekt.yml")
+    parallel = true
+}
+
+ktlint {
+    android.set(true)
+    filter {
+        exclude("**/build/**")
+        exclude("**/generated/**")
+    }
+}
+
+dependencyCheck {
+    formats = listOf("HTML", "JSON", "SARIF")
+    outputDirectory = rootProject.layout.projectDirectory.dir("reports")
+    suppressionFiles =
+        listOf(
+            rootProject.layout.projectDirectory
+                .file("config/dependency-check/suppressions.xml")
+                .asFile.absolutePath,
+        )
+    failBuildOnUnusedSuppressionRule = true
+    data {
+        directory =
+            providers
+                .environmentVariable("DEPENDENCY_CHECK_DATA_DIRECTORY")
+                .orElse(
+                    rootProject.layout.projectDirectory
+                        .dir(".gradle/dependency-check-data")
+                        .asFile.absolutePath,
+                ).get()
+    }
+    autoUpdate =
+        providers
+            .environmentVariable("DEPENDENCY_CHECK_AUTO_UPDATE")
+            .map { it.equals("true", ignoreCase = true) || it == "1" || it.equals("yes", ignoreCase = true) }
+            .getOrElse(true)
+    failBuildOnCVSS =
+        providers
+            .environmentVariable("DEPENDENCY_CHECK_FAIL_BUILD_ON_CVSS")
+            .map { it.toFloatOrNull() ?: 7f }
+            .getOrElse(7f)
+    scanConfigurations = listOf("debugRuntimeClasspath", "releaseRuntimeClasspath")
+    skipTestGroups = true
+    analyzers {
+        ossIndex {
+            enabled = false
+        }
+    }
+    nvd {
+        providers
+            .environmentVariable("NVD_API_KEY")
+            .orNull
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { apiKey = it }
+        providers
+            .environmentVariable("NVD_API_DELAY_MS")
+            .orNull
+            ?.toIntOrNull()
+            ?.takeIf { it > 0 }
+            ?.let { delay = it }
+        providers
+            .environmentVariable("NVD_API_MAX_RETRY_COUNT")
+            .orNull
+            ?.toIntOrNull()
+            ?.takeIf { it > 0 }
+            ?.let { maxRetryCount = it }
+    }
+}
+
 dependencies {
+    detektPlugins(libs.compose.rules.detekt)
+    ktlintRuleset(libs.compose.rules.ktlint)
+    lintChecks(libs.android.security.lints)
+
     // Core
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.activity.compose)
@@ -63,6 +146,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.material.icons.core)
     debugImplementation(libs.androidx.ui.tooling)
 
     // Navigation
@@ -75,7 +159,6 @@ dependencies {
 
     // Room
     implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
     // CameraX
@@ -83,6 +166,9 @@ dependencies {
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
+
+    // Biometric
+    implementation(libs.androidx.biometric)
 
     // Serialization
     implementation(libs.kotlinx.serialization.json)

@@ -1,0 +1,111 @@
+complexity:
+  CyclomaticComplexMethod:
+    allowedComplexity: 30
+    excludes:
+      - '**/*Screen.kt'
+  LargeClass:
+    allowedLines: 800
+  LongMethod:
+    allowedLines: 110
+    excludes:
+      - '**/*Screen.kt'
+      - '**/FonecheckNavHost.kt'
+  LongParameterList:
+    allowedFunctionParameters: 10
+    allowedConstructorParameters: 10
+    ignoreDefaultParameters: true
+  TooManyFunctions:
+    allowedFunctionsPerFile: 30
+    allowedFunctionsPerClass: 30
+    allowedFunctionsPerInterface: 30
+    allowedFunctionsPerObject: 30
+    allowedFunctionsPerEnum: 30
+    ignoreAnnotatedFunctions:
+      - 'Preview'
+
+naming:
+  FunctionNaming:
+    ignoreAnnotated:
+      - 'Composable'
+  TopLevelPropertyNaming:
+    constantPattern: '[A-Za-z][_A-Za-z0-9]*'
+
+style:
+  MagicNumber:
+    active: false
+  MaxLineLength:
+    maxLineLength: 120
+  ReturnCount:
+    max: 3
+    excludeGuardClauses: true
+  UnusedPrivateFunction:
+    ignoreAnnotated:
+      - 'Preview'
+  WildcardImport:
+    active: false
+
+Compose:
+  ComposableAnnotationNaming:
+    active: true
+  ComposableNaming:
+    active: true
+  ComposableParamOrder:
+    active: true
+  CompositionLocalAllowlist:
+    active: true
+  CompositionLocalNaming:
+    active: true
+  ContentEmitterReturningValues:
+    active: true
+  ContentSlotReused:
+    active: true
+  ContentTrailingLambda:
+    active: true
+  DefaultsVisibility:
+    active: true
+  LambdaParameterEventTrailing:
+    active: true
+  LambdaParameterInRestartableEffect:
+    active: true
+  Material2:
+    active: false
+  ModifierClickableOrder:
+    active: true
+  ModifierComposed:
+    active: true
+  ModifierMissing:
+    active: true
+  ModifierNaming:
+    active: true
+  ModifierNotUsedAtRoot:
+    active: true
+  ModifierReused:
+    active: true
+  ModifierWithoutDefault:
+    active: true
+  MultipleEmitters:
+    active: true
+  MutableParams:
+    active: true
+  MutableStateAutoboxing:
+    active: true
+  MutableStateParam:
+    active: true
+  ParameterNaming:
+    active: true
+  PreviewAnnotationNaming:
+    active: true
+  PreviewNaming:
+    active: false
+  PreviewPublic:
+    active: true
+  RememberContentMissing:
+    active: true
+  RememberMissing:
+    active: true
+  UnstableCollections:
+    active: false
+  ViewModelForwarding:
+    active: true
+  ViewModelInjection:
+    active: true

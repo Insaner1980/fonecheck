@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/splash_logo_vector">
+    <target
+        android:name="upper_group"
+        android:animation="@animator/splash_upper_motion" />
+    <target
+        android:name="lower_group"
+        android:animation="@animator/splash_lower_motion" />
+    <target
+        android:name="upper_path"
+        android:animation="@animator/splash_part_fade" />
+    <target
+        android:name="lower_path"
+        android:animation="@animator/splash_part_fade" />
+    <target
+        android:name="cyan_group"
+        android:animation="@animator/splash_cyan_motion" />
+    <target
+        android:name="cyan_path"
+        android:animation="@animator/splash_cyan_fade" />
+    <target
+        android:name="cyan_flash_path"
+        android:animation="@animator/splash_cyan_flash" />
+    <target
+        android:name="wordmark_first_group"
+        android:animation="@animator/splash_wordmark_first_motion" />
+    <target
+        android:name="wordmark_first_path"
+        android:animation="@animator/splash_wordmark_first_fade" />
+    <target
+        android:name="wordmark_middle_group"
+        android:animation="@animator/splash_wordmark_middle_motion" />
+    <target
+        android:name="wordmark_middle_path"
+        android:animation="@animator/splash_wordmark_middle_fade" />
+    <target
+        android:name="wordmark_last_group"
+        android:animation="@animator/splash_wordmark_last_motion" />
+    <target
+        android:name="wordmark_last_path"
+        android:animation="@animator/splash_wordmark_last_fade" />
+    <target
+        android:name="brand_group"
+        android:animation="@animator/splash_logo_pulse" />
+</animated-vector>

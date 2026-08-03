@@ -1,0 +1,21 @@
+{
+  "name": "fonecheck-deepsec-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DeepSec scanning workspace for fonecheck",
+  "type": "module",
+  "workspaces": [],
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "deepsec": "deepsec",
+    "deepsec:scan": "deepsec scan --project-id fonecheck",
+    "deepsec:process": "deepsec process --project-id fonecheck --agent codex --model gpt-5.6-luna",
+    "deepsec:revalidate": "deepsec revalidate --project-id fonecheck --agent codex --model gpt-5.6-luna --min-severity HIGH",
+    "deepsec:export": "deepsec export --project-id fonecheck --format md-dir --out ./findings",
+    "deepsec:report": "pnpm run deepsec:scan && pnpm run deepsec:process && pnpm run deepsec:export",
+    "deepsec:report:custom": "pnpm run deepsec:report"
+  },
+  "dependencies": {
+    "deepsec": "2.2.9"
+  }
+}

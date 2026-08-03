@@ -1,7 +1,7 @@
-# PhoneCheck — Phone Diagnostics App
+# fonecheck — Phone Diagnostics App
 
 ## Package
-`com.insaner.phonecheck`
+`com.insaner.fonecheck`
 
 ## SDK Targets
 - minSdk: 26
@@ -11,7 +11,16 @@
 ## Build System
 - Kotlin DSL (`build.gradle.kts`)
 - Version catalog (`gradle/libs.versions.toml`)
-- Kotlin 2.1.0, AGP 8.7.3
+- Kotlin 2.1.0, AGP 8.9.1, Gradle 8.11.1
+
+## Key Dependencies
+- Compose BOM 2026.03.00
+- Material 3 (+ explicit material-icons-core)
+- Hilt 2.57.1 (KSP)
+- Room 2.8.4 (room-ktx merged into room-runtime)
+- Navigation Compose 2.9.7
+- CameraX 1.5.1
+- Lifecycle 2.9.1
 
 ## Architecture
 - Jetpack Compose + Material 3
@@ -22,18 +31,18 @@
 
 ## Folder Structure
 ```
-app/src/main/java/com/insaner/phonecheck/
-├── PhoneCheckApp.kt              # @HiltAndroidApp Application
+app/src/main/java/com/insaner/fonecheck/
+├── FonecheckApp.kt              # @HiltAndroidApp Application
 ├── data/
 │   ├── local/                    # Room database, DAOs, entities
 │   └── repository/               # Repository implementations
 ├── di/                           # Hilt modules
 ├── domain/
-│   ├── model/                    # Domain models
-│   └── usecase/                  # Use cases
+│   └── model/                    # Domain models
 ├── navigation/                   # Routes + NavHost
 └── ui/
     ├── MainActivity.kt           # @AndroidEntryPoint activity
+    ├── components/               # Shared composables (InfoRow, InfoCard, StatusRow, ConfidenceBadge, TestSectionCard, StatusBadge, SectionBox)
     ├── screens/                   # Feature screens (composables + viewmodels)
     └── theme/                    # Color, Type, Theme
 ```
@@ -70,7 +79,39 @@ app/src/main/java/com/insaner/phonecheck/
 - Default: English (`values/strings.xml`)
 - Finnish: (`values-fi/strings.xml`)
 
-## Build Commands
+## Shared UI Components
+Reusable composables in `ui/components/`:
+- `InfoRow` — Label + monospace value row
+- `InfoCard` — Card with title and optional `ConfidenceBadge`
+- `StatusRow` — Label + colored status value (Green400/Yellow400)
+- `ConfidenceBadge` — HIGH/LOW/UNAVAILABLE badge
+- `TestSectionCard` — Expandable card with icon box, title, StatusBadge, AnimatedVisibility content
+- `StatusBadge` — Color-coded status pill (text + tinted background)
+- `SectionBox` — Content wrapper with Neutral850 rounded background
+
+New info screens MUST use these shared components instead of defining local copies.
+
+## Code Review Triggers
+`CODE_REVIEW.md` contains tagged review items. Check relevant items at these trigger points:
+- **When editing a file**: check for `NEXT TOUCH` items mentioning that file
+- **When creating a new screen**: check `NOW` items for patterns to follow (shared components, state class conventions)
+- **Before starting Phase 4**: check all `PRE-PHASE 4` items (8 items — domain models, database, persistence)
+- **Before release builds**: check all `PRE-RELEASE` items (32 items — security, accessibility, performance)
+- **When making architectural decisions**: check `DECIDE` items (3 items — repository pattern, use case layer, Phase 1 priority)
+
+## State Class Conventions
+- **Complex screens (>10 fields)**: Use nested sub-states with `expandedSection` (see BatteryTestState, ConnectivityTestState)
+- **Simple screens**: Flat data class is fine (see CameraTestState, SensorTestState)
+- **Async operations**: Include `error: String? = null` field for error state
+- **Naming**: `private _state: MutableStateFlow` + `public state: StateFlow`
+
+## Semantic Colors
+- Green400: success, pass, good, enabled
+- Yellow400: warning, caution, highlighted
+- Red400: error, fail, disabled, bad
+
+## Build Commands (reference only)
+**Do NOT run gradle builds from Claude Code** — user builds manually in terminal due to CPU constraints.
 ```bash
 ./gradlew assembleDebug       # Debug build
 ./gradlew assembleRelease     # Release build

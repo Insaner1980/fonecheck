@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "PhoneCheck"
+rootProject.name = "fonecheck"
 include(":app")

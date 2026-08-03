@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!--
+      Työkalu- ja riippuvuusversiot päivitetään erillisenä, varmennettuna huoltotyönä.
+      Esimerkiksi AGP 9.3 vaatii samalla Gradle 9.5 -migraation, joten Android lint
+      ei saa muuttaa yhteensopivaa työkaluketjua yksittäisen lc-ajon yhteydessä.
+    -->
+    <issue id="AndroidGradlePluginVersion" severity="ignore" />
+    <issue id="GradleDependency" severity="ignore" />
+
+    <!-- Adaptive launcher -kuvake kuuluu API 26 -muotoiseen resurssihakemistoon. -->
+    <issue id="ObsoleteSdkInt">
+        <ignore path="src/main/res/mipmap-anydpi-v26" />
+    </issue>
+
+    <!--
+      Splash-vektori on tarkoituksella suuri ja sen pitkät nimetyt polut ovat
+      animated-vector-animaation kohteita. Rasterointi tai polkujen yhdistäminen
+      poistaisi animaation.
+    -->
+    <issue id="VectorPath">
+        <ignore path="src/main/res/drawable/splash_logo_vector.xml" />
+    </issue>
+    <issue id="VectorRaster">
+        <ignore path="src/main/res/drawable/splash_logo_vector.xml" />
+    </issue>
+</lint>

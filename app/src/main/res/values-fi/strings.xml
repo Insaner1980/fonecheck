@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="navigation_back">Takaisin</string>
     <!-- Device Info Screen -->
     <string name="device_info_title">Laite</string>
     <string name="os_info_title">Käyttöjärjestelmä</string>
@@ -62,7 +63,6 @@
     <string name="label_network_type">Verkkotyyppi</string>
 
     <!-- Audio Test Screen -->
-    <string name="audio_test_title">Ääni</string>
     <string name="audio_speaker_title">Kaiutintesti</string>
     <string name="audio_speaker_description">Napauta taajuutta soittaaksesi äänen kaiuttimesta. Varmista, että kuulet jokaisen äänen selkeästi.</string>
     <string name="audio_stereo_title">Stereotesti</string>
@@ -96,7 +96,6 @@
     <string name="audio_reset">Nollaa</string>
 
     <!-- Camera Test Screen -->
-    <string name="camera_test_title">Kamera</string>
     <string name="camera_capture_title">Kameran kuvaus</string>
     <string name="camera_capture_description">Avaa etu- tai takakamera, esikatsele ja ota kuva resoluution tarkistamiseksi.</string>
     <string name="camera_rear">Takakamera</string>
@@ -126,11 +125,11 @@
     <string name="camera_focal_lengths">Polttovälit</string>
     <string name="camera_fps_ranges">FPS-alueet</string>
     <string name="camera_all_resolutions">Kaikki resoluutiot</string>
-    <string name="camera_more_resolutions">+ %1$d lisää</string>
     <string name="camera_autofocus">Automaattitarkennus</string>
+    <string name="camera_show_technical_details">Näytä tekniset tiedot</string>
+    <string name="camera_hide_technical_details">Piilota tekniset tiedot</string>
 
     <!-- Sensor Test Screen -->
-    <string name="sensor_test_title">Anturit</string>
     <string name="sensor_summary_title">Anturien yhteenveto</string>
     <string name="sensor_description">Napauta anturia nähdäksesi reaaliaikaiset arvot ja tarkemmat tiedot. Kokeile interaktiivisia haasteita varmistaaksesi anturien toimivuuden.</string>
     <string name="sensor_count">Havaitut anturit</string>
@@ -163,7 +162,6 @@
     <string name="sensor_btn_rotate">Pyöritä</string>
 
     <!-- Connectivity Test Screen -->
-    <string name="conn_test_title">Yhteydet</string>
     <string name="conn_not_available">Ei saatavilla</string>
     <string name="conn_supported">Tuettu</string>
     <string name="conn_not_supported">Ei tuettu</string>
@@ -219,7 +217,10 @@
     <string name="conn_gps_satellite_info">Satelliittitiedot</string>
     <string name="conn_gps_constellation">Järjestelmä</string>
     <string name="conn_gps_used">Käytössä</string>
-    <string name="conn_gps_more_sats">+ %1$d lisää</string>
+    <plurals name="conn_gps_more_sats">
+        <item quantity="one">+ %1$d lisää</item>
+        <item quantity="other">+ %1$d lisää</item>
+    </plurals>
     <string name="conn_gps_start_fix">Aloita GPS-lukitus</string>
     <string name="conn_gps_retest">Testaa uudelleen</string>
     <string name="conn_grant_location">Myönnä sijaintioikeus</string>
@@ -238,4 +239,242 @@
     <string name="conn_mobile_cell_id">Solun tunnus</string>
     <string name="conn_mobile_mcc_mnc">MCC / MNC</string>
     <string name="conn_grant_phone">Myönnä puhelinoikeus</string>
+
+    <!-- Battery Test Screen -->
+    <string name="batt_basic_title">Perustiedot</string>
+    <string name="batt_charging_title">Lataus</string>
+    <string name="batt_health_title">Kunto</string>
+    <string name="batt_capacity_title">Kapasiteetti</string>
+    <string name="batt_manufacturer_title">Valmistaja</string>
+
+    <!-- Basic -->
+    <string name="batt_level">Varaustaso</string>
+    <string name="batt_voltage">Jännite</string>
+    <string name="batt_temperature">Lämpötila</string>
+    <string name="batt_health_label">Kunto</string>
+    <string name="batt_technology">Teknologia</string>
+
+    <!-- Health statuses -->
+    <string name="batt_health_good">Hyvä</string>
+    <string name="batt_health_overheat">Ylikuumentunut</string>
+    <string name="batt_health_dead">Tyhjä</string>
+    <string name="batt_health_over_voltage">Ylijännite</string>
+    <string name="batt_health_failure">Määrittämätön virhe</string>
+    <string name="batt_health_cold">Kylmä</string>
+    <string name="batt_health_unknown">Tuntematon</string>
+
+    <!-- Charging -->
+    <string name="batt_charging_status">Tila</string>
+    <string name="batt_plug_type">Liitäntätyyppi</string>
+    <string name="batt_charging_current">Virta</string>
+    <string name="batt_status_charging">Lataa</string>
+    <string name="batt_status_discharging">Purkautuu</string>
+    <string name="batt_status_full">Täynnä</string>
+    <string name="batt_status_not_charging">Ei lataa</string>
+    <string name="batt_status_unknown">Tuntematon</string>
+    <string name="batt_plug_ac">Verkkovirta</string>
+    <string name="batt_plug_usb">USB</string>
+    <string name="batt_plug_wireless">Langaton</string>
+    <string name="batt_plug_none">Ei liitetty</string>
+
+    <!-- Health advanced -->
+    <string name="batt_health_status">Kuntotila</string>
+    <string name="batt_cycle_count">Lataussyklien määrä</string>
+    <string name="batt_health_percentage">Kunto %</string>
+    <string name="batt_requires_api34">Vaatii Android 14+</string>
+
+    <!-- Capacity -->
+    <string name="batt_design_capacity">Nimelliskapasiteetti</string>
+    <string name="batt_capacity_unavailable_note">Nimelliskapasiteettia ei voitu lukea PowerProfile-heijastuksella. Tämä on normaalia joillakin laitteilla.</string>
+
+    <!-- Manufacturer -->
+    <string name="batt_mfr_name">Valmistaja</string>
+    <string name="batt_mfr_profile">Profiili</string>
+    <string name="batt_mfr_generic">Yleinen</string>
+    <string name="batt_mfr_samsung_note1">Samsung saattaa ilmoittaa teoreettisen enimmäislatausvirran todellisen sijaan.</string>
+    <string name="batt_mfr_samsung_note2">Akun kuntotiedot voivat olla Samsung Knoxin rajoittamia.</string>
+    <string name="batt_mfr_samsung_current_note">Samsung ilmoittaa teoreettisen enimmäisvirran, ei reaaliaikaista.</string>
+    <string name="batt_mfr_oneplus_note1">OnePlus SUPERVOOC voi ilmoittaa negatiivisia virta-arvoja latauksen aikana.</string>
+    <string name="batt_mfr_oneplus_note2">Latausvirran etumerkki korjataan automaattisesti latauksen aikana.</string>
+    <string name="batt_mfr_oneplus_current_note">OnePlus-virran etumerkki automaattisesti korjattu SUPERVOOCille.</string>
+    <string name="batt_mfr_pixel_note1">Pixel-laitteet tarjoavat tarkan reaaliaikaisen latausvirran.</string>
+
+    <!-- Home Screen -->
+    <string name="home_device_summary">Laitteen yhteenveto</string>
+    <string name="home_run_all">Aja kaikki testit</string>
+    <string name="run_all_preparing_title">Valmistellaan koko testi</string>
+    <string name="run_all_preparing_description">fonecheck pyytää vain automaattisiin laitteistotarkistuksiin tarvittavat oikeudet.</string>
+    <string name="run_all_automatic_title">Puhelinta testataan</string>
+    <string name="run_all_automatic_description">Laitteen, suorituskyvyn, SIM-kortin, mikrofonin, yhteyksien, akun ja laitteiston ominaisuudet luetaan automaattisesti.</string>
+    <string name="run_all_interactive_progress">Pikatarkistus %1$d/%2$d</string>
+    <string name="run_all_display_title">Tarkista näyttö</string>
+    <string name="run_all_display_description">Tarkista jokaisesta tasaväristä kuolleet pikselit, kirkkaat pisteet, varjot ja kuvan kiinnipalaminen.</string>
+    <string name="run_all_next_color">Näytä seuraava väri</string>
+    <string name="run_all_display_question">Näyttivätkö kaikki värit tasaisilta ja puhtailta?</string>
+    <string name="run_all_looks_good">Näyttää hyvältä</string>
+    <string name="run_all_found_problem">Löysin ongelman</string>
+    <string name="run_all_audio_title">Kuuntele testiääntä</string>
+    <string name="run_all_audio_description">fonecheck toistaa lyhyen kaiutinäänen. Vahvista, kuulitko sen selvästi.</string>
+    <string name="run_all_play_again">Toista uudelleen</string>
+    <string name="run_all_heard_tone">Kuulin äänen</string>
+    <string name="run_all_no_tone">Ääntä ei kuulu</string>
+    <string name="run_all_camera_title">Takakameraa testataan</string>
+    <string name="run_all_camera_description">Esikatselu avataan ja yksi kuva otetaan automaattisesti.</string>
+    <string name="run_all_sensor_title">Testaa liikeanturi</string>
+    <string name="run_all_sensor_description">Ravista puhelinta kevyesti. Testi jatkuu automaattisesti, kun liike havaitaan.</string>
+    <string name="run_all_vibration_title">Tunsitko värinän?</string>
+    <string name="run_all_vibration_description">fonecheck toisti juuri lyhyen värinäkuvion.</string>
+    <string name="run_all_felt_vibration">Tunsin värinän</string>
+    <string name="run_all_no_vibration">Värinää ei tunnu</string>
+    <string name="run_all_buttons_title">Testaa äänenvoimakkuuspainikkeet</string>
+    <string name="run_all_buttons_description">Paina kerran ääni ylös ja ääni alas. Testi jatkuu automaattisesti, kun molemmat havaitaan.</string>
+    <string name="run_all_biometrics_title">Varmista biometrinen anturi</string>
+    <string name="run_all_biometrics_description">Varmista sormenjälki- tai kasvojentunnistus järjestelmän kehotteessa.</string>
+    <string name="run_all_skip">Ohita tämä tarkistus</string>
+    <string name="run_all_results_title">Puhelimesi raportti</string>
+    <string name="run_all_results_description">Automaattiset ja vuorovaikutteiset tarkistukset on ryhmitelty alle kategorioittain.</string>
+    <string name="run_all_overall_score">Kokonaispisteet</string>
+    <plurals name="run_all_passed_count">
+        <item quantity="one">%1$d läpäisty</item>
+        <item quantity="other">%1$d läpäisty</item>
+    </plurals>
+    <plurals name="run_all_warning_count">
+        <item quantity="one">%1$d varoitus</item>
+        <item quantity="other">%1$d varoitusta</item>
+    </plurals>
+    <plurals name="run_all_failed_count">
+        <item quantity="one">%1$d ongelma</item>
+        <item quantity="other">%1$d ongelmaa</item>
+    </plurals>
+    <plurals name="run_all_unavailable_count">
+        <item quantity="one">%1$d ei saatavilla</item>
+        <item quantity="other">%1$d ei saatavilla</item>
+    </plurals>
+    <string name="run_all_needs_attention">Vaatii huomiota</string>
+    <string name="run_all_completed">Valmiit</string>
+    <string name="run_all_not_completed">Ei suoritettu</string>
+    <string name="run_all_view_details">Näytä tiedot</string>
+    <string name="run_all_hide_details">Piilota tiedot</string>
+    <string name="run_all_open_test">Avaa yksittäinen testi</string>
+    <string name="run_all_done">Valmis</string>
+    <string name="run_all_status_pass">Läpäisty</string>
+    <string name="run_all_status_warning">Varoitus</string>
+    <string name="run_all_status_fail">Hylätty</string>
+    <string name="run_all_status_info">Tieto</string>
+    <string name="run_all_status_unavailable">Ei saatavilla</string>
+    <string name="run_all_status_not_tested">Ei testattu</string>
+    <string name="run_all_summary_pass">Tarkistukset onnistuivat</string>
+    <string name="run_all_summary_warning">Osa tarkistuksista vaatii huomiota</string>
+    <string name="run_all_summary_fail">Ongelma havaittiin</string>
+    <string name="run_all_summary_unavailable">Laitteistoa ei ole saatavilla</string>
+    <string name="run_all_summary_not_tested">Tarkistusta ei suoritettu</string>
+    <string name="run_all_check_security">Suojaustila</string>
+    <string name="run_all_check_visual_display">Pikseli- ja burn-in-tarkistus</string>
+    <string name="run_all_check_speaker">Kaiuttimen ääni</string>
+    <string name="run_all_check_microphone">Mikrofonin ääni</string>
+    <string name="run_all_check_headphones">Liitetyt kuulokkeet</string>
+    <string name="run_all_check_motion_sensor">Liikevaste</string>
+    <string name="run_all_check_volume_buttons">Äänenvoimakkuuspainikkeet</string>
+    <string name="run_all_detail_security">Root: %1$s, kehittäjäasetukset: %2$s, USB-virheenkorjaus: %3$s</string>
+    <plurals name="run_all_detail_cpu">
+        <item quantity="one">%1$d ydin, %2$s</item>
+        <item quantity="other">%1$d ydintä, %2$s</item>
+    </plurals>
+    <string name="run_all_detail_ram">Yhteensä %1$s, vapaana %2$s</string>
+    <string name="run_all_detail_gpu">%1$s, Vulkan: %2$s</string>
+    <string name="run_all_detail_sim">%1$s, %2$s, %3$s</string>
+    <string name="run_all_detail_display">%1$d × %2$d, %3$.0f Hz</string>
+    <plurals name="run_all_detail_sensor_count">
+        <item quantity="one">%1$d anturi havaittu</item>
+        <item quantity="other">%1$d anturia havaittu</item>
+    </plurals>
+    <string name="run_all_detail_temperature">%1$.1f °C</string>
+    <plurals name="run_all_detail_haptics">
+        <item quantity="one">Amplitudin hallinta: %1$s, %2$d efekti</item>
+        <item quantity="other">Amplitudin hallinta: %1$s, %2$d efektiä</item>
+    </plurals>
+    <string name="run_all_detail_buttons">Ääni ylös: %1$s, ääni alas: %2$s</string>
+    <string name="run_all_permission_missing">Oikeutta ei myönnetty</string>
+    <string name="run_all_audio_recorded">Mikrofoni tuotti äänidataa</string>
+    <string name="run_all_no_audio_data">Mikrofonista ei havaittu äänidataa</string>
+    <string name="run_all_no_headphones">Langallisia tai USB-kuulokkeita ei ole liitetty</string>
+    <string name="run_all_manual_confirmed">Käyttäjä vahvisti tarkistuksen</string>
+    <string name="run_all_manual_failed">Käyttäjä ilmoitti ongelmasta</string>
+    <string name="run_all_manual_skipped">Vuorovaikutteinen tarkistus ohitettiin</string>
+    <string name="home_categories_title">Testikategoriat</string>
+    <string name="home_categories_subtitle">Valitse tarkasteltava tai testattava kategoria</string>
+
+    <string name="home_cat_device">Laite</string>
+    <string name="home_cat_performance">Suorituskyky</string>
+    <string name="home_cat_sim">SIM</string>
+    <string name="home_cat_display">Näyttö</string>
+    <string name="home_cat_audio">Ääni</string>
+    <string name="home_cat_camera">Kamera</string>
+    <string name="home_cat_sensors">Anturit</string>
+    <string name="home_cat_connectivity">Yhteydet</string>
+    <string name="home_cat_battery">Akku</string>
+    <string name="home_cat_vibration">Värinä</string>
+    <string name="home_cat_buttons">Painikkeet</string>
+    <string name="home_cat_biometrics">Biometriikka</string>
+
+    <!-- Display Test Screen -->
+    <string name="display_dead_pixel_title">Kuollut pikseli -testi</string>
+    <string name="display_dead_pixel_desc">Napauta vaihtaaksesi värejä (R/G/B/W/B). Etsi juuttuneita tai kuolleita pikseleitä. Pitkä painallus poistuu.</string>
+    <string name="display_touch_title">Kosketusnäyttötesti</string>
+    <string name="display_touch_desc">Piirrä ruudukkoon varmistaaksesi kosketusvasteen koko näytöllä.</string>
+    <string name="display_touch_points">Kosketuspisteet</string>
+    <string name="display_touch_reset">Tyhjennä ruudukko</string>
+    <string name="display_burnin_title">Burn-in-tarkistus</string>
+    <string name="display_burnin_desc">Näytä harmaa näyttö burn-in- tai kuvanpidätystarkistusta varten. Pitkä painallus poistuu.</string>
+    <string name="display_info_title">Näytön tiedot</string>
+    <string name="display_resolution">Resoluutio</string>
+    <string name="display_density">Tiheys</string>
+    <string name="display_refresh_rate">Virkistystaajuus</string>
+    <string name="display_hdr">HDR</string>
+    <string name="display_wide_color">Laaja väriavaruus</string>
+    <string name="display_brightness">Kirkkaus</string>
+    <string name="display_auto_brightness">Automaattinen kirkkaus</string>
+    <string name="display_start_test">Aloita testi</string>
+    <string name="display_tap_to_cycle">Napauta vaihtaaksesi värejä, pitkä painallus poistuu</string>
+    <string name="display_long_press_exit">Pitkä painallus poistuu</string>
+
+    <!-- Vibration Test Screen -->
+    <string name="vibration_motor_title">Moottorin testi</string>
+    <string name="vibration_short">Lyhyt</string>
+    <string name="vibration_long">Pitkä</string>
+    <string name="vibration_pattern">Kuvio</string>
+    <string name="vibration_did_you_feel">Tunsitko värinän?</string>
+    <string name="vibration_yes">Kyllä</string>
+    <string name="vibration_no">Ei</string>
+    <string name="vibration_haptic_title">Haptiset ominaisuudet</string>
+    <string name="vibration_amplitude_control">Amplitudin hallinta</string>
+    <string name="vibration_effects_supported">Tuetut efektit</string>
+    <string name="vibration_primitives_supported">Tuetut primitiivit</string>
+    <string name="vibration_has_vibrator">Värinämoottori</string>
+
+    <!-- Button Test Screen -->
+    <string name="button_test_title">Painikkeet</string>
+    <string name="button_volume_up">Ääni ylös</string>
+    <string name="button_volume_down">Ääni alas</string>
+    <string name="button_power">Virtapainike</string>
+    <string name="button_press_now">Paina nyt!</string>
+    <string name="button_detected">Havaittu</string>
+    <string name="button_not_detected">Ei havaittu</string>
+    <string name="button_power_note">Virtapainiketta ei voi testata suoraan. Näytön päällä/pois-tunnistusta käytetään korvikkeena.</string>
+    <string name="button_start_test">Aloita testi</string>
+    <string name="button_reset">Nollaa</string>
+
+    <!-- Biometric Test Screen -->
+    <string name="biometric_capabilities_title">Ominaisuudet</string>
+    <string name="biometric_strong">Vahva (luokka 3)</string>
+    <string name="biometric_weak">Heikko (luokka 2)</string>
+    <string name="biometric_device_credential">Laitteen tunniste</string>
+    <string name="biometric_test_auth">Testaa tunnistautuminen</string>
+    <string name="biometric_auth_success">Tunnistautuminen onnistui</string>
+    <string name="biometric_auth_failed">Tunnistautuminen epäonnistui</string>
+    <string name="biometric_auth_error">Virhe: %1$s</string>
+    <string name="biometric_not_available">Biometrinen tunnistautuminen ei saatavilla</string>
+    <string name="biometric_prompt_title">fonecheck</string>
+    <string name="biometric_prompt_subtitle">Varmista biometrinen anturi</string>
+    <string name="biometric_prompt_cancel">Peruuta</string>
 </resources>

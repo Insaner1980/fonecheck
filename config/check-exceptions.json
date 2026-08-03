@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "exceptions": [
+    {
+      "id": "fonecheck-mobsf-target-sdk",
+      "tool": "mobsfscan",
+      "rule": "android_task_hijacking2",
+      "scope": "app/src/main/AndroidManifest.xml targetSdk inference",
+      "reason": "mobsfscan reads the source manifest and does not resolve the Gradle targetSdk value.",
+      "owner": "project-maintainers",
+      "added": "2026-07-29",
+      "expires": "2026-10-31",
+      "tracking": "local-review:fonecheck-mobsf-target-sdk",
+      "sourcePath": "app/build.gradle.kts",
+      "selector": "targetSdk = 36",
+      "findingPath": "app/src/main/AndroidManifest.xml"
+    }
+  ]
+}

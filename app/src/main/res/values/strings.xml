@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCheck</string>
+    <string name="app_name" translatable="false">fonecheck</string>
+    <string name="navigation_back">Back</string>
 
     <!-- Device Info Screen -->
     <string name="device_info_title">Device</string>
@@ -64,7 +65,6 @@
     <string name="label_network_type">Network Type</string>
 
     <!-- Audio Test Screen -->
-    <string name="audio_test_title">Audio</string>
     <string name="audio_speaker_title">Speaker Test</string>
     <string name="audio_speaker_description">Tap a frequency to play a tone through the speaker. Verify you can hear each tone clearly.</string>
     <string name="audio_stereo_title">Stereo Test</string>
@@ -98,7 +98,6 @@
     <string name="audio_reset">Reset</string>
 
     <!-- Camera Test Screen -->
-    <string name="camera_test_title">Camera</string>
     <string name="camera_capture_title">Camera Capture</string>
     <string name="camera_capture_description">Open front or rear camera, preview, and capture a photo to verify resolution.</string>
     <string name="camera_rear">Rear Camera</string>
@@ -128,11 +127,11 @@
     <string name="camera_focal_lengths">Focal Lengths</string>
     <string name="camera_fps_ranges">FPS Ranges</string>
     <string name="camera_all_resolutions">All Resolutions</string>
-    <string name="camera_more_resolutions">+ %1$d more</string>
     <string name="camera_autofocus">Autofocus</string>
+    <string name="camera_show_technical_details">Show technical details</string>
+    <string name="camera_hide_technical_details">Hide technical details</string>
 
     <!-- Sensor Test Screen -->
-    <string name="sensor_test_title">Sensors</string>
     <string name="sensor_summary_title">Sensor Overview</string>
     <string name="sensor_description">Tap any sensor to see real-time values and detailed info. Try the interactive challenges to verify sensors are responding.</string>
     <string name="sensor_count">Sensors Detected</string>
@@ -165,7 +164,6 @@
     <string name="sensor_btn_rotate">Rotate</string>
 
     <!-- Connectivity Test Screen -->
-    <string name="conn_test_title">Connectivity</string>
     <string name="conn_not_available">Not Available</string>
     <string name="conn_supported">Supported</string>
     <string name="conn_not_supported">Not Supported</string>
@@ -221,7 +219,10 @@
     <string name="conn_gps_satellite_info">Satellite Details</string>
     <string name="conn_gps_constellation">Constellation</string>
     <string name="conn_gps_used">Fix</string>
-    <string name="conn_gps_more_sats">+ %1$d more</string>
+    <plurals name="conn_gps_more_sats">
+        <item quantity="one">+ %1$d more</item>
+        <item quantity="other">+ %1$d more</item>
+    </plurals>
     <string name="conn_gps_start_fix">Start GPS Fix</string>
     <string name="conn_gps_retest">Re-test</string>
     <string name="conn_grant_location">Grant Location Permission</string>
@@ -240,4 +241,242 @@
     <string name="conn_mobile_cell_id">Cell ID</string>
     <string name="conn_mobile_mcc_mnc">MCC / MNC</string>
     <string name="conn_grant_phone">Grant Phone Permission</string>
+
+    <!-- Battery Test Screen -->
+    <string name="batt_basic_title">Basic Info</string>
+    <string name="batt_charging_title">Charging</string>
+    <string name="batt_health_title">Health</string>
+    <string name="batt_capacity_title">Capacity</string>
+    <string name="batt_manufacturer_title">Manufacturer</string>
+
+    <!-- Basic -->
+    <string name="batt_level">Level</string>
+    <string name="batt_voltage">Voltage</string>
+    <string name="batt_temperature">Temperature</string>
+    <string name="batt_health_label">Health</string>
+    <string name="batt_technology">Technology</string>
+
+    <!-- Health statuses -->
+    <string name="batt_health_good">Good</string>
+    <string name="batt_health_overheat">Overheat</string>
+    <string name="batt_health_dead">Dead</string>
+    <string name="batt_health_over_voltage">Over Voltage</string>
+    <string name="batt_health_failure">Unspecified Failure</string>
+    <string name="batt_health_cold">Cold</string>
+    <string name="batt_health_unknown">Unknown</string>
+
+    <!-- Charging -->
+    <string name="batt_charging_status">Status</string>
+    <string name="batt_plug_type">Plug Type</string>
+    <string name="batt_charging_current">Current</string>
+    <string name="batt_status_charging">Charging</string>
+    <string name="batt_status_discharging">Discharging</string>
+    <string name="batt_status_full">Full</string>
+    <string name="batt_status_not_charging">Not Charging</string>
+    <string name="batt_status_unknown">Unknown</string>
+    <string name="batt_plug_ac">AC</string>
+    <string name="batt_plug_usb">USB</string>
+    <string name="batt_plug_wireless">Wireless</string>
+    <string name="batt_plug_none">None</string>
+
+    <!-- Health advanced -->
+    <string name="batt_health_status">Health Status</string>
+    <string name="batt_cycle_count">Cycle Count</string>
+    <string name="batt_health_percentage">Health %</string>
+    <string name="batt_requires_api34">Requires Android 14+</string>
+
+    <!-- Capacity -->
+    <string name="batt_design_capacity">Design Capacity</string>
+    <string name="batt_capacity_unavailable_note">Design capacity could not be read via PowerProfile reflection. This is normal on some devices.</string>
+
+    <!-- Manufacturer -->
+    <string name="batt_mfr_name">Manufacturer</string>
+    <string name="batt_mfr_profile">Profile</string>
+    <string name="batt_mfr_generic">Generic</string>
+    <string name="batt_mfr_samsung_note1">Samsung may report max theoretical charging current instead of real-time value.</string>
+    <string name="batt_mfr_samsung_note2">Battery health details may be restricted by Samsung Knox.</string>
+    <string name="batt_mfr_samsung_current_note">Samsung reports max theoretical current, not real-time.</string>
+    <string name="batt_mfr_oneplus_note1">OnePlus SUPERVOOC may report negative current values during charging.</string>
+    <string name="batt_mfr_oneplus_note2">Charging current sign is auto-corrected when charging is detected.</string>
+    <string name="batt_mfr_oneplus_current_note">OnePlus current sign auto-corrected for SUPERVOOC.</string>
+    <string name="batt_mfr_pixel_note1">Pixel devices provide accurate real-time charging current.</string>
+
+    <!-- Home Screen -->
+    <string name="home_device_summary">Device Summary</string>
+    <string name="home_run_all">Run All Tests</string>
+    <string name="run_all_preparing_title">Preparing the full test</string>
+    <string name="run_all_preparing_description">fonecheck requests only the permissions needed for automatic hardware checks.</string>
+    <string name="run_all_automatic_title">Testing your phone</string>
+    <string name="run_all_automatic_description">Reading device, performance, SIM, microphone, connectivity, battery and hardware capabilities automatically.</string>
+    <string name="run_all_interactive_progress">Quick check %1$d of %2$d</string>
+    <string name="run_all_display_title">Check the display</string>
+    <string name="run_all_display_description">Inspect each solid color for dead pixels, bright spots, shadows or burn-in.</string>
+    <string name="run_all_next_color">Show next color</string>
+    <string name="run_all_display_question">Did every color look even and clean?</string>
+    <string name="run_all_looks_good">Looks good</string>
+    <string name="run_all_found_problem">I found a problem</string>
+    <string name="run_all_audio_title">Listen for the test tone</string>
+    <string name="run_all_audio_description">fonecheck plays a short speaker tone. Confirm whether you heard it clearly.</string>
+    <string name="run_all_play_again">Play again</string>
+    <string name="run_all_heard_tone">I heard it</string>
+    <string name="run_all_no_tone">No sound</string>
+    <string name="run_all_camera_title">Testing the rear camera</string>
+    <string name="run_all_camera_description">Opening a preview and capturing one frame automatically.</string>
+    <string name="run_all_sensor_title">Test the motion sensor</string>
+    <string name="run_all_sensor_description">Shake the phone gently. The test continues automatically when movement is detected.</string>
+    <string name="run_all_vibration_title">Did you feel the vibration?</string>
+    <string name="run_all_vibration_description">fonecheck has just played a short vibration pattern.</string>
+    <string name="run_all_felt_vibration">I felt it</string>
+    <string name="run_all_no_vibration">No vibration</string>
+    <string name="run_all_buttons_title">Test the volume buttons</string>
+    <string name="run_all_buttons_description">Press Volume Up and Volume Down once. The test continues automatically after both are detected.</string>
+    <string name="run_all_biometrics_title">Verify the biometric sensor</string>
+    <string name="run_all_biometrics_description">Use the system prompt to verify fingerprint or face authentication.</string>
+    <string name="run_all_skip">Skip this check</string>
+    <string name="run_all_results_title">Your phone report</string>
+    <string name="run_all_results_description">Automatic and interactive checks are grouped by category below.</string>
+    <string name="run_all_overall_score">Overall score</string>
+    <plurals name="run_all_passed_count">
+        <item quantity="one">%1$d passed</item>
+        <item quantity="other">%1$d passed</item>
+    </plurals>
+    <plurals name="run_all_warning_count">
+        <item quantity="one">%1$d warning</item>
+        <item quantity="other">%1$d warnings</item>
+    </plurals>
+    <plurals name="run_all_failed_count">
+        <item quantity="one">%1$d issue</item>
+        <item quantity="other">%1$d issues</item>
+    </plurals>
+    <plurals name="run_all_unavailable_count">
+        <item quantity="one">%1$d unavailable</item>
+        <item quantity="other">%1$d unavailable</item>
+    </plurals>
+    <string name="run_all_needs_attention">Needs attention</string>
+    <string name="run_all_completed">Completed</string>
+    <string name="run_all_not_completed">Not completed</string>
+    <string name="run_all_view_details">View details</string>
+    <string name="run_all_hide_details">Hide details</string>
+    <string name="run_all_open_test">Open individual test</string>
+    <string name="run_all_done">Done</string>
+    <string name="run_all_status_pass">Pass</string>
+    <string name="run_all_status_warning">Warning</string>
+    <string name="run_all_status_fail">Fail</string>
+    <string name="run_all_status_info">Info</string>
+    <string name="run_all_status_unavailable">Not available</string>
+    <string name="run_all_status_not_tested">Not tested</string>
+    <string name="run_all_summary_pass">Checks completed successfully</string>
+    <string name="run_all_summary_warning">Some checks need attention</string>
+    <string name="run_all_summary_fail">A problem was detected</string>
+    <string name="run_all_summary_unavailable">Hardware not available</string>
+    <string name="run_all_summary_not_tested">Check was not completed</string>
+    <string name="run_all_check_security">Security state</string>
+    <string name="run_all_check_visual_display">Pixel and burn-in check</string>
+    <string name="run_all_check_speaker">Speaker output</string>
+    <string name="run_all_check_microphone">Microphone input</string>
+    <string name="run_all_check_headphones">Connected headphones</string>
+    <string name="run_all_check_motion_sensor">Motion response</string>
+    <string name="run_all_check_volume_buttons">Volume buttons</string>
+    <string name="run_all_detail_security">Root: %1$s, Developer options: %2$s, USB debugging: %3$s</string>
+    <plurals name="run_all_detail_cpu">
+        <item quantity="one">%1$d core, %2$s</item>
+        <item quantity="other">%1$d cores, %2$s</item>
+    </plurals>
+    <string name="run_all_detail_ram">%1$s total, %2$s available</string>
+    <string name="run_all_detail_gpu">%1$s, Vulkan: %2$s</string>
+    <string name="run_all_detail_sim">%1$s, %2$s, %3$s</string>
+    <string name="run_all_detail_display">%1$d × %2$d, %3$.0f Hz</string>
+    <plurals name="run_all_detail_sensor_count">
+        <item quantity="one">%1$d sensor detected</item>
+        <item quantity="other">%1$d sensors detected</item>
+    </plurals>
+    <string name="run_all_detail_temperature">%1$.1f °C</string>
+    <plurals name="run_all_detail_haptics">
+        <item quantity="one">Amplitude control: %1$s, %2$d effect</item>
+        <item quantity="other">Amplitude control: %1$s, %2$d effects</item>
+    </plurals>
+    <string name="run_all_detail_buttons">Volume up: %1$s, Volume down: %2$s</string>
+    <string name="run_all_permission_missing">Permission was not granted</string>
+    <string name="run_all_audio_recorded">Microphone produced audio data</string>
+    <string name="run_all_no_audio_data">No microphone audio was detected</string>
+    <string name="run_all_no_headphones">No wired or USB headphones connected</string>
+    <string name="run_all_manual_confirmed">User confirmed the check</string>
+    <string name="run_all_manual_failed">User reported a problem</string>
+    <string name="run_all_manual_skipped">Interactive check was skipped</string>
+    <string name="home_categories_title">Test Categories</string>
+    <string name="home_categories_subtitle">Choose a category to inspect or test</string>
+
+    <string name="home_cat_device">Device</string>
+    <string name="home_cat_performance">Performance</string>
+    <string name="home_cat_sim">SIM</string>
+    <string name="home_cat_display">Display</string>
+    <string name="home_cat_audio">Audio</string>
+    <string name="home_cat_camera">Camera</string>
+    <string name="home_cat_sensors">Sensors</string>
+    <string name="home_cat_connectivity">Connectivity</string>
+    <string name="home_cat_battery">Battery</string>
+    <string name="home_cat_vibration">Vibration</string>
+    <string name="home_cat_buttons">Buttons</string>
+    <string name="home_cat_biometrics">Biometrics</string>
+
+    <!-- Display Test Screen -->
+    <string name="display_dead_pixel_title">Dead Pixel Test</string>
+    <string name="display_dead_pixel_desc">Tap to cycle through colors (R/G/B/W/B). Look for stuck or dead pixels. Long-press to exit.</string>
+    <string name="display_touch_title">Touch Screen Test</string>
+    <string name="display_touch_desc">Draw on the grid to verify touch response across the entire screen.</string>
+    <string name="display_touch_points">Touch Points</string>
+    <string name="display_touch_reset">Reset Grid</string>
+    <string name="display_burnin_title">Burn-in Check</string>
+    <string name="display_burnin_desc">View a gray screen to check for burn-in or image retention. Long-press to exit.</string>
+    <string name="display_info_title">Display Info</string>
+    <string name="display_resolution">Resolution</string>
+    <string name="display_density">Density</string>
+    <string name="display_refresh_rate">Refresh Rate</string>
+    <string name="display_hdr">HDR</string>
+    <string name="display_wide_color">Wide Color Gamut</string>
+    <string name="display_brightness">Brightness</string>
+    <string name="display_auto_brightness">Auto-Brightness</string>
+    <string name="display_start_test">Start Test</string>
+    <string name="display_tap_to_cycle">Tap to cycle colors, long-press to exit</string>
+    <string name="display_long_press_exit">Long-press to exit</string>
+
+    <!-- Vibration Test Screen -->
+    <string name="vibration_motor_title">Motor Test</string>
+    <string name="vibration_short">Short</string>
+    <string name="vibration_long">Long</string>
+    <string name="vibration_pattern">Pattern</string>
+    <string name="vibration_did_you_feel">Did you feel it?</string>
+    <string name="vibration_yes">Yes</string>
+    <string name="vibration_no">No</string>
+    <string name="vibration_haptic_title">Haptic Capabilities</string>
+    <string name="vibration_amplitude_control">Amplitude Control</string>
+    <string name="vibration_effects_supported">Effects Supported</string>
+    <string name="vibration_primitives_supported">Primitives Supported</string>
+    <string name="vibration_has_vibrator">Has Vibrator</string>
+
+    <!-- Button Test Screen -->
+    <string name="button_test_title">Buttons</string>
+    <string name="button_volume_up">Volume Up</string>
+    <string name="button_volume_down">Volume Down</string>
+    <string name="button_power">Power Button</string>
+    <string name="button_press_now">Press now!</string>
+    <string name="button_detected">Detected</string>
+    <string name="button_not_detected">Not Detected</string>
+    <string name="button_power_note">Power button cannot be directly tested. Screen on/off detection used as proxy.</string>
+    <string name="button_start_test">Start Test</string>
+    <string name="button_reset">Reset</string>
+
+    <!-- Biometric Test Screen -->
+    <string name="biometric_capabilities_title">Capabilities</string>
+    <string name="biometric_strong">Strong (Class 3)</string>
+    <string name="biometric_weak">Weak (Class 2)</string>
+    <string name="biometric_device_credential">Device Credential</string>
+    <string name="biometric_test_auth">Test Authentication</string>
+    <string name="biometric_auth_success">Authentication Successful</string>
+    <string name="biometric_auth_failed">Authentication Failed</string>
+    <string name="biometric_auth_error">Error: %1$s</string>
+    <string name="biometric_not_available">Biometric authentication not available</string>
+    <string name="biometric_prompt_title">fonecheck</string>
+    <string name="biometric_prompt_subtitle">Verify biometric sensor</string>
+    <string name="biometric_prompt_cancel">Cancel</string>
 </resources>
