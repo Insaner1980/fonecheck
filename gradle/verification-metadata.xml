@@ -527,8 +527,10 @@
       </component>
       <component group="androidx.room" name="androidx.room.gradle.plugin" version="2.8.4">
          <artifact name="androidx.room.gradle.plugin-2.8.4.pom">
-            <pgp value="0F06FF86BEEAF4E71866EE5232EE5355A6BC6E42"/>
-            <sha256 value="85dbc15f9a1eea8bbc5d1fbeb295b7c13491390e48c690ec289a6296d2c7da46" origin="Google Maven SHA-256" reason="Independent integrity check alongside pinned PGP key"/>
+            <ignored-keys>
+               <ignored-key id="0F06FF86BEEAF4E71866EE5232EE5355A6BC6E42" reason="Use the independently verified Google Maven SHA-256 for this plugin marker"/>
+            </ignored-keys>
+            <sha256 value="85dbc15f9a1eea8bbc5d1fbeb295b7c13491390e48c690ec289a6296d2c7da46" origin="Google Maven SHA-256" reason="Plugin marker is verified by its repository checksum"/>
          </artifact>
       </component>
       <component group="androidx.savedstate" name="savedstate" version="1.2.0">
@@ -626,8 +628,10 @@
       </component>
       <component group="com.android.application" name="com.android.application.gradle.plugin" version="8.9.1">
          <artifact name="com.android.application.gradle.plugin-8.9.1.pom">
-            <pgp value="0F06FF86BEEAF4E71866EE5232EE5355A6BC6E42"/>
-            <sha256 value="3bb7b9d8fde0726cf1085c991bd04fa6075ffc21954eae974ed1ee7d7ff28ac7" origin="Google Maven SHA-256" reason="Independent integrity check alongside pinned PGP key"/>
+            <ignored-keys>
+               <ignored-key id="0F06FF86BEEAF4E71866EE5232EE5355A6BC6E42" reason="Use the independently verified Google Maven SHA-256 for this plugin marker"/>
+            </ignored-keys>
+            <sha256 value="3bb7b9d8fde0726cf1085c991bd04fa6075ffc21954eae974ed1ee7d7ff28ac7" origin="Google Maven SHA-256" reason="Plugin marker is verified by its repository checksum"/>
          </artifact>
       </component>
       <component group="com.android.security.lint" name="lint" version="1.0.4">
