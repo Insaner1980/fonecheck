@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  dependency-audit-baseline:
+  dependency-owner-audit:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -23,19 +23,17 @@ jobs:
           java-version: '17'
       - uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
       - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
-      - name: Generate active dependency verification baseline
+      - name: Trace build-tool dependency owners
         shell: bash
         run: |
-          mv gradle/verification-metadata.xml "$RUNNER_TEMP/verification-metadata.original.xml"
-          ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug \
-            --write-verification-metadata sha256 \
+          ./gradlew buildEnvironment :app:buildEnvironment \
             --no-daemon \
-            --console=plain
-          test -s gradle/verification-metadata.xml
+            --console=plain | tee "$RUNNER_TEMP/build-environment.txt"
+          test -s "$RUNNER_TEMP/build-environment.txt"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: active-dependency-verification-${{ github.sha }}
-          path: gradle/verification-metadata.xml
+          name: build-environment-${{ github.sha }}
+          path: ${{ runner.temp }}/build-environment.txt
           if-no-files-found: error
           retention-days: 1
 
