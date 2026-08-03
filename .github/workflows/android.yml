@@ -29,7 +29,6 @@ jobs:
           mv gradle/verification-metadata.xml "$RUNNER_TEMP/verification-metadata.original.xml"
           ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug \
             --write-verification-metadata sha256 \
-            --dry-run \
             --no-daemon \
             --console=plain
           test -s gradle/verification-metadata.xml
