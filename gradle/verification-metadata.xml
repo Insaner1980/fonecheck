@@ -694,7 +694,10 @@
       </component>
       <component group="com.google.dagger.hilt.android" name="com.google.dagger.hilt.android.gradle.plugin" version="2.57.1">
          <artifact name="com.google.dagger.hilt.android.gradle.plugin-2.57.1.pom">
-            <sha256 value="386740090bccc0637f2846ccdd7ed531539f1e4cfbafea05ea3a062486b0539a" origin="Verified from Maven Central and Gradle Plugin Portal" reason="Artifact is not signed"/>
+            <ignored-keys>
+               <ignored-key id="0F9FE62F88E938D8" reason="Public key is unavailable on the GitHub runner; use the pinned SHA-256"/>
+            </ignored-keys>
+            <sha256 value="386740090bccc0637f2846ccdd7ed531539f1e4cfbafea05ea3a062486b0539a" origin="Verified from Maven Central and Gradle Plugin Portal" reason="Signing key could not be downloaded"/>
          </artifact>
       </component>
       <component group="com.google.devtools.ksp" name="com.google.devtools.ksp.gradle.plugin" version="2.1.0-1.0.29">
@@ -788,7 +791,10 @@
       </component>
       <component group="dev.detekt" name="dev.detekt.gradle.plugin" version="2.0.0-alpha.5">
          <artifact name="dev.detekt.gradle.plugin-2.0.0-alpha.5.pom">
-            <sha256 value="006e240a95233401c25db49ae200d742676c4584fd4bcf65d40b2e67660061fa" origin="Verified from Maven Central" reason="Repository metadata differs between official sources">
+            <ignored-keys>
+               <ignored-key id="F0D0AE433308B042" reason="Public key is unavailable on the GitHub runner; use the pinned SHA-256"/>
+            </ignored-keys>
+            <sha256 value="006e240a95233401c25db49ae200d742676c4584fd4bcf65d40b2e67660061fa" origin="Verified from Maven Central" reason="Signing key is unavailable and repository metadata differs between official sources">
                <also-trust value="18fe3064b621b6819224b6640030681a8e2c6d88b6d7e7e9f51702438cc12c43"/>
             </sha256>
          </artifact>
