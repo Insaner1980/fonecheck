@@ -528,7 +528,7 @@
       <component group="androidx.room" name="androidx.room.gradle.plugin" version="2.8.4">
          <artifact name="androidx.room.gradle.plugin-2.8.4.pom">
             <ignored-keys>
-               <ignored-key id="0F06FF86BEEAF4E71866EE5232EE5355A6BC6E42" reason="Use the independently verified Google Maven SHA-256 for this plugin marker"/>
+               <ignored-key id="32EE5355A6BC6E42" reason="Use the independently verified Google Maven SHA-256 for this plugin marker"/>
             </ignored-keys>
             <sha256 value="85dbc15f9a1eea8bbc5d1fbeb295b7c13491390e48c690ec289a6296d2c7da46" origin="Google Maven SHA-256" reason="Plugin marker is verified by its repository checksum"/>
          </artifact>
@@ -629,7 +629,7 @@
       <component group="com.android.application" name="com.android.application.gradle.plugin" version="8.9.1">
          <artifact name="com.android.application.gradle.plugin-8.9.1.pom">
             <ignored-keys>
-               <ignored-key id="0F06FF86BEEAF4E71866EE5232EE5355A6BC6E42" reason="Use the independently verified Google Maven SHA-256 for this plugin marker"/>
+               <ignored-key id="32EE5355A6BC6E42" reason="Use the independently verified Google Maven SHA-256 for this plugin marker"/>
             </ignored-keys>
             <sha256 value="3bb7b9d8fde0726cf1085c991bd04fa6075ffc21954eae974ed1ee7d7ff28ac7" origin="Google Maven SHA-256" reason="Plugin marker is verified by its repository checksum"/>
          </artifact>
@@ -677,7 +677,7 @@
       <component group="com.github.skydoves.compose.stability.analyzer" name="com.github.skydoves.compose.stability.analyzer.gradle.plugin" version="0.2.20">
          <artifact name="com.github.skydoves.compose.stability.analyzer.gradle.plugin-0.2.20.pom">
             <ignored-keys>
-               <ignored-key id="87581FAE204D94248E212DD2D7662013FA1A5596" reason="Use the independently verified repository SHA-256 for this plugin marker"/>
+               <ignored-key id="D7662013FA1A5596" reason="Use the independently verified repository SHA-256 for this plugin marker"/>
             </ignored-keys>
             <sha256 value="134d36555d610974705165058121f190e9bf2e71ccb41d02eb31fc975fef3dce" origin="Verified from Maven Central and Gradle Plugin Portal" reason="Plugin marker is verified by its repository checksum"/>
          </artifact>
@@ -700,7 +700,7 @@
       <component group="com.google.devtools.ksp" name="com.google.devtools.ksp.gradle.plugin" version="2.1.0-1.0.29">
          <artifact name="com.google.devtools.ksp.gradle.plugin-2.1.0-1.0.29.pom">
             <ignored-keys>
-               <ignored-key id="24D04176586361FDA94EE0315F7786DF73E61F56" reason="Public key is unavailable on the GitHub runner; use the pinned SHA-256"/>
+               <ignored-key id="5F7786DF73E61F56" reason="Public key is unavailable on the GitHub runner; use the pinned SHA-256"/>
             </ignored-keys>
             <sha256 value="054d154158279087960a76d2c03c54ce9206a32c644756d001c1d4489695cc27" origin="Verified from Maven Central and Gradle Plugin Portal" reason="Signing key could not be downloaded"/>
          </artifact>
@@ -966,7 +966,7 @@
       <component group="org.ow2" name="ow2" version="1.5.1">
          <artifact name="ow2-1.5.1.pom">
             <ignored-keys>
-               <ignored-key id="10F3C7A02ECA55E502BADCF3991EFB94DB91127D" reason="Public key is unavailable on the GitHub runner; use the pinned SHA-256"/>
+               <ignored-key id="991EFB94DB91127D" reason="Public key is unavailable on the GitHub runner; use the pinned SHA-256"/>
             </ignored-keys>
             <sha256 value="321ddbb7ee6fe4f53dea6b4cd6db74154d6bfa42391c1f763b361b9f485acf05" origin="Verified from Maven Central" reason="Signing key could not be downloaded"/>
          </artifact>
@@ -979,13 +979,13 @@
       <component group="org.semver4j" name="semver4j" version="5.8.0">
          <artifact name="semver4j-5.8.0.jar">
             <ignored-keys>
-               <ignored-key id="45B1912987CB9DFA6A0D9693067091F1549B293F" reason="Public key is unavailable on the GitHub runner; use the pinned SHA-256"/>
+               <ignored-key id="067091F1549B293F" reason="Public key is unavailable on the GitHub runner; use the pinned SHA-256"/>
             </ignored-keys>
             <sha256 value="ca4055d354c9ad37bcb03b932a4bb8288166ec069c75d8ceaff14f8c76197fe6" origin="Verified from Maven Central" reason="Signing key could not be downloaded"/>
          </artifact>
          <artifact name="semver4j-5.8.0.pom">
             <ignored-keys>
-               <ignored-key id="45B1912987CB9DFA6A0D9693067091F1549B293F" reason="Public key is unavailable on the GitHub runner; use the pinned SHA-256"/>
+               <ignored-key id="067091F1549B293F" reason="Public key is unavailable on the GitHub runner; use the pinned SHA-256"/>
             </ignored-keys>
             <sha256 value="b2976c6c3099584c3dc91346438a3df82ebb2543b8a8c43221d6520a8a91c573" origin="Verified from Maven Central" reason="Signing key could not be downloaded"/>
          </artifact>
