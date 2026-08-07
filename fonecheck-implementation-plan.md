@@ -270,7 +270,7 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - Käyttäjän uusinta-ajo tarvitaan, jotta riippuvuusresoluutio voi edetä seuraavaan vaiheeseen. Tässä korjauksessa ei ajettu Gradlea.
 - Käyttäjän kohdennettu `RunAllTestsViewModelTest`-ajo onnistui ensimmäisen korjauksen jälkeen. Android-testin Kotlin-käännös eteni `:app:checkDebugAndroidTestAarMetadata`-vaiheeseen ja paljasti 28 aiemmin ratkaisemattoman AndroidX Test-, Compose UI Test-, Room Test-, Hamcrest- ja JavaWriter-artefaktin verification-puutteet.
 - Kaikki 28 välimuistikopiota vastaavat tuoreita Google Maven- tai Maven Central -latauksia sekä julkaisijan SHA-256- tai SHA-1-checksumia. Lisätty täsmälliset SHA-256-pinnit; kolme Maven Central -allekirjoituspoikkeusta rajattiin vain raportissa nimettyihin POM-artefakteihin. Globaalia avainluottamusta tai verification-asetuksia ei muutettu.
-- Android-testin Kotlin-käännöksen uusinta-ajo tarvitaan. Tässä korjauksessa ei ajettu Gradlea.
+- Käyttäjä ilmoitti commitin `e7c31cc` jälkeen ajon `./gradlew.bat :app:compileDebugAndroidTestKotlin` onnistuneen. Yhdessä aiemmin onnistuneeksi ilmoitetun kohdistetun `RunAllTestsViewModelTest`-ajon kanssa Task 3:n acceptance on täytetty. Codex ei ajanut Gradlea.
 
 ### 4. Replace the placeholder database with the production report schema
 
