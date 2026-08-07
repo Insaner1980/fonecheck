@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 
 enum class RunAllStage {
+    PREFLIGHT,
     PERMISSIONS,
     AUTOMATIC,
     DISPLAY,
@@ -48,12 +49,23 @@ data class ManualCheckResults(
 )
 
 data class RunAllTestsState(
-    val stage: RunAllStage = RunAllStage.PERMISSIONS,
+    val stage: RunAllStage = RunAllStage.PREFLIGHT,
     val permissions: RunAllPermissions = RunAllPermissions(),
+    val selections: RunAllSelections = RunAllSelections(),
+    val hardware: RunAllHardwareProfile = RunAllHardwareProfile(),
+    val plan: RunAllPlan = RunAllPlan.EMPTY,
     val manualChecks: ManualCheckResults = ManualCheckResults(),
     val displayColorIndex: Int = 0,
     val report: DiagnosticReport? = null,
-)
+) {
+    val progress: RunAllProgress?
+        get() =
+            if (stage in plan.interactiveStages) {
+                plan.progressFor(stage)
+            } else {
+                null
+            }
+}
 
 @HiltViewModel
 class RunAllTestsViewModel
@@ -66,16 +78,40 @@ class RunAllTestsViewModel
         val state: StateFlow<RunAllTestsState> = _state
         private val reportStartedAt = Instant.ofEpochMilli(clock.currentTimeMillis())
 
+        fun updateSelections(selections: RunAllSelections) {
+            if (_state.value.stage != RunAllStage.PREFLIGHT) return
+            _state.value = _state.value.copy(selections = selections)
+        }
+
+        fun onPreflightAccepted(
+            selections: RunAllSelections,
+            hardware: RunAllHardwareProfile,
+        ) {
+            _state.value =
+                _state.value.copy(
+                    stage = RunAllStage.PERMISSIONS,
+                    selections = selections,
+                    hardware = hardware,
+                )
+        }
+
         fun onPermissionsResolved(permissions: RunAllPermissions) {
+            val plan =
+                RunAllStagePlanner.plan(
+                    hardware = _state.value.hardware,
+                    permissions = permissions,
+                    selections = _state.value.selections,
+                )
             _state.value =
                 _state.value.copy(
                     permissions = permissions,
-                    stage = RunAllStage.AUTOMATIC,
+                    plan = plan,
+                    stage = plan.stages.firstOrNull() ?: RunAllStage.RESULTS,
                 )
         }
 
         fun onAutomaticChecksComplete() {
-            moveTo(RunAllStage.DISPLAY)
+            advance()
         }
 
         fun nextDisplayColor(lastColorIndex: Int) {
@@ -86,31 +122,31 @@ class RunAllTestsViewModel
         }
 
         fun recordDisplay(result: Boolean?) {
-            recordManualCheck(RunAllStage.AUDIO) { it.copy(display = result) }
+            recordManualCheck { it.copy(display = result) }
         }
 
         fun recordSpeaker(result: Boolean?) {
-            recordManualCheck(RunAllStage.CAMERA) { it.copy(speaker = result) }
+            recordManualCheck { it.copy(speaker = result) }
         }
 
         fun recordCamera(result: Boolean?) {
-            recordManualCheck(RunAllStage.SENSORS) { it.copy(camera = result) }
+            recordManualCheck { it.copy(camera = result) }
         }
 
         fun recordSensors(result: Boolean?) {
-            recordManualCheck(RunAllStage.VIBRATION) { it.copy(sensors = result) }
+            recordManualCheck { it.copy(sensors = result) }
         }
 
         fun recordVibration(result: Boolean?) {
-            recordManualCheck(RunAllStage.BUTTONS) { it.copy(vibration = result) }
+            recordManualCheck { it.copy(vibration = result) }
         }
 
         fun recordButtons(result: Boolean?) {
-            recordManualCheck(RunAllStage.BIOMETRICS) { it.copy(buttons = result) }
+            recordManualCheck { it.copy(buttons = result) }
         }
 
         fun recordBiometrics(result: Boolean?) {
-            recordManualCheck(RunAllStage.RESULTS) { it.copy(biometrics = result) }
+            recordManualCheck { it.copy(biometrics = result) }
         }
 
         fun completeReport(
@@ -136,18 +172,20 @@ class RunAllTestsViewModel
         }
 
         private fun recordManualCheck(
-            nextStage: RunAllStage,
             update: (ManualCheckResults) -> ManualCheckResults,
         ) {
             _state.value =
                 _state.value.copy(
                     manualChecks = update(_state.value.manualChecks),
-                    stage = nextStage,
                 )
+            advance()
         }
 
-        private fun moveTo(stage: RunAllStage) {
-            _state.value = _state.value.copy(stage = stage)
+        private fun advance() {
+            val currentIndex = _state.value.plan.stages.indexOf(_state.value.stage)
+            if (currentIndex < 0) return
+            val nextStage = _state.value.plan.stages.getOrNull(currentIndex + 1) ?: RunAllStage.RESULTS
+            _state.value = _state.value.copy(stage = nextStage)
         }
 
     }

@@ -118,21 +118,37 @@ fun RunAllTestsScreen(
     VibrationLifecycleEffect(vibrationViewModel)
     ButtonLifecycleEffect(buttonViewModel)
     val previewView = remember { PreviewView(context) }
+    val microphoneHardwareAvailable =
+        remember(context) {
+            context.packageManager.hasSystemFeature(PackageManager.FEATURE_MICROPHONE)
+        }
+    val cameraHardwareAvailable =
+        remember(context) {
+            context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)
+        }
+    val motionSensorAvailable =
+        remember(context) {
+            context.packageManager.hasSystemFeature(PackageManager.FEATURE_SENSOR_ACCELEROMETER)
+        }
+    val hardwareProfile =
+        RunAllHardwareProfile(
+            microphoneAvailable = microphoneHardwareAvailable,
+            cameraAvailable = cameraHardwareAvailable,
+            motionSensorAvailable = motionSensorAvailable,
+            vibratorAvailable = vibrationState.haptic.hasVibrator,
+            biometricsAvailable =
+                biometricState.capability.strongAvailable ||
+                    biometricState.capability.weakAvailable,
+        )
     val microphonePermission =
         rememberPermissionController(
             kind = PermissionKind.MICROPHONE,
-            hardwareAvailable =
-                remember(context) {
-                    context.packageManager.hasSystemFeature(PackageManager.FEATURE_MICROPHONE)
-                },
+            hardwareAvailable = microphoneHardwareAvailable,
         )
     val cameraPermission =
         rememberPermissionController(
             kind = PermissionKind.CAMERA,
-            hardwareAvailable =
-                remember(context) {
-                    context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)
-                },
+            hardwareAvailable = cameraHardwareAvailable,
         )
     val locationPermission =
         rememberPermissionController(
@@ -188,6 +204,7 @@ fun RunAllTestsScreen(
 
     LaunchedEffect(sessionState.stage) {
         when (sessionState.stage) {
+            RunAllStage.PREFLIGHT,
             RunAllStage.PERMISSIONS -> Unit
 
             RunAllStage.AUTOMATIC -> {
@@ -202,18 +219,22 @@ fun RunAllTestsScreen(
                     performanceViewModel.startBenchmark()
                     performanceViewModel.state.first { it.benchmarkPhase != BenchmarkPhase.RUNNING }
                 }
-                val storageCompleted =
-                    withTimeoutOrNull(STORAGE_TIMEOUT_MS) {
-                        storageViewModel.state.first { !it.isInfoLoading }
-                        storageViewModel.startBenchmark()
-                        storageViewModel.state.first {
-                            it.benchmarkPhase != StorageBenchmarkPhase.RUNNING
-                        }
-                    } != null
-                if (!storageCompleted) storageViewModel.cancelBenchmark()
+                if (sessionState.selections.includeStorageBenchmark) {
+                    val storageCompleted =
+                        withTimeoutOrNull(STORAGE_TIMEOUT_MS) {
+                            storageViewModel.state.first { !it.isInfoLoading }
+                            storageViewModel.startBenchmark()
+                            storageViewModel.state.first {
+                                it.benchmarkPhase != StorageBenchmarkPhase.RUNNING
+                            }
+                        } != null
+                    if (!storageCompleted) storageViewModel.cancelBenchmark()
+                } else {
+                    storageViewModel.skipBenchmark()
+                }
                 audioViewModel.updateHeadphoneState()
                 connectivityViewModel.onPermissionsGranted()
-                if (sessionState.permissions.microphone) {
+                if (sessionState.selections.includeMicrophone && sessionState.permissions.microphone) {
                     audioViewModel.startRecording(AUTOMATIC_MICROPHONE_DURATION_MS)
                     withTimeoutOrNull(AUTOMATIC_MICROPHONE_TIMEOUT_MS) {
                         while (audioViewModel.state.value.isRecording) {
@@ -378,22 +399,43 @@ fun RunAllTestsScreen(
     }
 
     when (sessionState.stage) {
+        RunAllStage.PREFLIGHT ->
+            FullCheckPreflightScreen(
+                selections = sessionState.selections,
+                onSelectionsChange = sessionViewModel::updateSelections,
+                onContinue = {
+                    sessionViewModel.onPreflightAccepted(
+                        selections = sessionState.selections,
+                        hardware = hardwareProfile,
+                    )
+                },
+                modifier = modifier,
+            )
+
         RunAllStage.PERMISSIONS ->
-            PermissionPreflightScreen(
+            PermissionReviewScreen(
                 prompts =
-                    listOf(
-                        PermissionPrompt(
-                            state = microphonePermission.state,
-                            rationale = stringResource(R.string.permission_rationale_microphone),
-                            onRequest = { requestPermission(microphonePermission) },
-                            onOpenSettings = microphonePermission::openSettings,
-                        ),
-                        PermissionPrompt(
-                            state = cameraPermission.state,
-                            rationale = stringResource(R.string.permission_rationale_camera),
-                            onRequest = { requestPermission(cameraPermission) },
-                            onOpenSettings = cameraPermission::openSettings,
-                        ),
+                    listOfNotNull(
+                        if (sessionState.selections.includeMicrophone) {
+                            PermissionPrompt(
+                                state = microphonePermission.state,
+                                rationale = stringResource(R.string.permission_rationale_microphone),
+                                onRequest = { requestPermission(microphonePermission) },
+                                onOpenSettings = microphonePermission::openSettings,
+                            )
+                        } else {
+                            null
+                        },
+                        if (sessionState.selections.includeCamera) {
+                            PermissionPrompt(
+                                state = cameraPermission.state,
+                                rationale = stringResource(R.string.permission_rationale_camera),
+                                onRequest = { requestPermission(cameraPermission) },
+                                onOpenSettings = cameraPermission::openSettings,
+                            )
+                        } else {
+                            null
+                        },
                         PermissionPrompt(
                             state = locationPermission.state,
                             rationale = stringResource(R.string.permission_rationale_location),
@@ -417,7 +459,17 @@ fun RunAllTestsScreen(
                     permissionControllers.forEach(PermissionController::refresh)
                     connectivityViewModel.onPermissionsGranted()
                     simViewModel.refresh()
-                    sessionViewModel.onPermissionsResolved(currentPermissions(context))
+                    val permissions = currentPermissions(context)
+                    sessionViewModel.onPermissionsResolved(
+                        permissions.copy(
+                            microphone =
+                                permissions.microphone &&
+                                    sessionState.selections.includeMicrophone,
+                            camera =
+                                permissions.camera &&
+                                    sessionState.selections.includeCamera,
+                        ),
+                    )
                 },
                 modifier = modifier,
             )
@@ -436,6 +488,7 @@ fun RunAllTestsScreen(
         RunAllStage.DISPLAY ->
             DisplayCheckStep(
                 colorIndex = sessionState.displayColorIndex,
+                progress = requireNotNull(sessionState.progress),
                 onNextColor = {
                     sessionViewModel.nextDisplayColor(displayTestPatterns.lastIndex)
                 },
@@ -445,6 +498,7 @@ fun RunAllTestsScreen(
         RunAllStage.AUDIO ->
             AudioCheckStep(
                 isPlaying = audioState.isPlaying,
+                progress = requireNotNull(sessionState.progress),
                 onPlayAgain = {
                     scope.launch {
                         playSpeakerTone(audioViewModel)
@@ -459,11 +513,13 @@ fun RunAllTestsScreen(
             CameraCheckStep(
                 previewView = previewView,
                 state = cameraState,
+                progress = requireNotNull(sessionState.progress),
             )
 
         RunAllStage.SENSORS ->
             SensorCheckStep(
                 state = sensorState,
+                progress = requireNotNull(sessionState.progress),
                 onSkip = {
                     sensorViewModel.skipChallenge()
                     sessionViewModel.recordSensors(null)
@@ -472,6 +528,7 @@ fun RunAllTestsScreen(
 
         RunAllStage.VIBRATION ->
             VibrationCheckStep(
+                progress = requireNotNull(sessionState.progress),
                 onPlayAgain = vibrationViewModel::vibratePattern,
                 onStop = vibrationViewModel::cancelVibration,
                 onSkip = {
@@ -484,6 +541,7 @@ fun RunAllTestsScreen(
         RunAllStage.BUTTONS ->
             ButtonCheckStep(
                 state = buttonState,
+                progress = requireNotNull(sessionState.progress),
                 onRetry = buttonViewModel::retry,
                 onSkip = {
                     buttonViewModel.skip()
@@ -494,6 +552,7 @@ fun RunAllTestsScreen(
         RunAllStage.BIOMETRICS ->
             BiometricCheckStep(
                 state = biometricState,
+                progress = requireNotNull(sessionState.progress),
                 onSkip = {
                     biometricViewModel.cancelAuthentication()
                     biometricPrompt?.cancelAuthentication()
@@ -536,12 +595,16 @@ fun RunAllTestsScreen(
                     snapshots,
                     sessionState.manualChecks,
                     sessionState.permissions,
+                    sessionState.selections,
+                    sessionState.hardware,
                     capturedAt,
                 ) {
                     RunAllSnapshotMapper.map(
                         snapshots = snapshots,
                         manual = sessionState.manualChecks,
                         permissions = sessionState.permissions,
+                        selections = sessionState.selections,
+                        hardware = sessionState.hardware,
                         capturedAt = capturedAt,
                     )
                 }

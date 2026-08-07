@@ -18,10 +18,69 @@ import com.insaner.fonecheck.runtime.IdProvider
 import java.time.Instant
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RunAllTestsViewModelTest {
+    @Test
+    fun preflightChoicesAndResolvedPermissionsBuildTheActivePlan() {
+        val viewModel = runAllViewModel()
+        val selections = RunAllSelections(includeCamera = true, includeStorageBenchmark = false)
+        val hardware =
+            RunAllHardwareProfile(
+                microphoneAvailable = true,
+                cameraAvailable = true,
+                motionSensorAvailable = false,
+                vibratorAvailable = false,
+                biometricsAvailable = true,
+            )
+
+        assertEquals(RunAllStage.PREFLIGHT, viewModel.state.value.stage)
+        viewModel.onPreflightAccepted(selections, hardware)
+        assertEquals(RunAllStage.PERMISSIONS, viewModel.state.value.stage)
+
+        viewModel.onPermissionsResolved(
+            RunAllPermissions(
+                microphone = true,
+                camera = false,
+                location = false,
+                phone = false,
+                bluetooth = false,
+            ),
+        )
+
+        val state = viewModel.state.value
+        assertEquals(RunAllStage.AUTOMATIC, state.stage)
+        assertEquals(selections, state.selections)
+        assertFalse(RunAllStage.CAMERA in state.plan.stages)
+        assertFalse(RunAllStage.SENSORS in state.plan.stages)
+        assertFalse(RunAllStage.VIBRATION in state.plan.stages)
+        assertTrue(RunAllStage.RESULTS in state.plan.stages)
+    }
+
+    @Test
+    fun completionAdvancesThroughOnlyThePlannedInteractiveStages() {
+        val viewModel = runAllViewModel()
+        viewModel.onPreflightAccepted(
+            selections = RunAllSelections(includeSpeaker = false, includeCamera = false),
+            hardware = RunAllHardwareProfile(),
+        )
+        viewModel.onPermissionsResolved(RunAllPermissions())
+
+        viewModel.onAutomaticChecksComplete()
+        assertEquals(RunAllStage.DISPLAY, viewModel.state.value.stage)
+        assertEquals(RunAllProgress(position = 1, total = 2), viewModel.state.value.progress)
+
+        viewModel.recordDisplay(true)
+        assertEquals(RunAllStage.BUTTONS, viewModel.state.value.stage)
+        assertEquals(RunAllProgress(position = 2, total = 2), viewModel.state.value.progress)
+
+        viewModel.recordButtons(null)
+        assertEquals(RunAllStage.RESULTS, viewModel.state.value.stage)
+    }
+
     @Test
     fun completeReportUsesInjectedIdentityAndTimestamps() =
         runTest {
@@ -99,4 +158,10 @@ class RunAllTestsViewModelTest {
         )
 
     private fun appContext() = ReportAppContext(versionName = "1.0.0", versionCode = 1L)
+
+    private fun runAllViewModel() =
+        RunAllTestsViewModel(
+            clock = EpochMillisClock { 100L },
+            idProvider = IdProvider { "report" },
+        )
 }

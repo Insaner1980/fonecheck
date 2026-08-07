@@ -711,6 +711,13 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Applicability-säännöt voivat erkaantua standalone-kategorioista; niiden tulee käyttää samaa catalog/policy-lähdettä.
 - **Decision required:** Kyllä, network/storage/audio/camera-valinnat kohdassa 1.
 
+#### Implementation/status log — 2026-08-08
+
+- Full Check avautuu nyt preflightiin ennen ensimmäistä lupapyyntöä. Lokalisoitu näkymä kertoo interaktiiviset vahvistukset, äänen ja värinän, 64 MiB:n väliaikaisen app-cache-kirjoituksen, lupatarpeet, unsupported-käytöksen, paikallisen raportin, skip-mahdollisuudet sekä sen, ettei verkon nopeustestiä tai tulosten lähetystä tehdä.
+- Speaker-, microphone-, camera- ja storage benchmark -valinnat ovat hyväksytyn oletuksen mukaisesti oletuksena päällä mutta käyttäjän poistettavissa ennen lupia. Kamera- ja mikrofonilupaa ei pyydetä pois valitulle työkuormalle, ja valinta, luvan epääminen sekä laitteiston puuttuminen säilyvät raportissa erillisinä `SKIPPED`, `PERMISSION_DENIED` ja `HARDWARE_UNAVAILABLE`/`NOT_APPLICABLE`-tiloina.
+- `RunAllStagePlanner` johtaa 14 kategorian suunnitelman suoraan `DiagnosticCatalog`-järjestyksestä, havaituista hardware-ominaisuuksista, ratkaistuista luvista ja preflight-valinnoista. Kiinteä seitsemän vaiheen progress poistui; interaktiivinen position/total lasketaan todellisesta sovellettavien vaiheiden listasta, ja optional denial ei estä automaattisia tai muita interaktiivisia tarkistuksia.
+- Stage planner-, ViewModel- ja snapshot-mapper-unit-testit kattavat catalog-järjestyksen, hardware-/permission-/skip-yhdistelmät, dynaamisen etenemisen sekä coverageen vaikuttavat reason-tilat. Koko `:app:testDebugUnitTest`, Android-testien Kotlin-käännös, `:app:lintDebug` ja `:app:assembleDebug` läpäisevät. Preflightin Compose-testi kääntyy, mutta instrumentoitua testiä ei voitu ajaa, koska `adb devices -l` ei löytänyt yhdistettyä laitetta. `PROJECT.md`-dokumentointi ja `ktlintCheck` jätettiin koskematta käyttäjän keskeneräisten tiedostomuutosten vuoksi; jälkimmäisellä on ennestään tunnettu dependency-verification-este.
+
 ### 23. Rebuild Full Check orchestration and lifecycle ownership
 
 - **Objective:** Tehdä 14 kategorian state machine idempotentiksi ja peruutettavaksi.

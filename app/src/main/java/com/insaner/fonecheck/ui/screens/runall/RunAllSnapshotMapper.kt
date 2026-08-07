@@ -71,6 +71,8 @@ object RunAllSnapshotMapper {
         snapshots: DiagnosticSnapshots,
         manual: ManualCheckResults,
         permissions: RunAllPermissions,
+        selections: RunAllSelections = RunAllSelections(),
+        hardware: RunAllHardwareProfile = RunAllHardwareProfile.ALL_AVAILABLE,
         capturedAt: Instant,
     ): List<DiagnosticCategorySnapshot> {
         val evidenceByCategory =
@@ -79,13 +81,15 @@ object RunAllSnapshotMapper {
                 DiagnosticCategoryId.PERFORMANCE to performanceEvidence(snapshots, capturedAt),
                 DiagnosticCategoryId.SIM to simEvidence(snapshots, permissions, capturedAt),
                 DiagnosticCategoryId.DISPLAY to displayEvidence(snapshots, manual, capturedAt),
-                DiagnosticCategoryId.AUDIO to audioEvidence(snapshots, manual, permissions, capturedAt),
-                DiagnosticCategoryId.CAMERA to cameraEvidence(snapshots, manual, permissions, capturedAt),
+                DiagnosticCategoryId.AUDIO to
+                    audioEvidence(snapshots, manual, permissions, selections, hardware, capturedAt),
+                DiagnosticCategoryId.CAMERA to
+                    cameraEvidence(snapshots, manual, permissions, selections, hardware, capturedAt),
                 DiagnosticCategoryId.SENSORS to sensorEvidence(snapshots, manual, capturedAt),
                 DiagnosticCategoryId.CONNECTIVITY to connectivityEvidence(snapshots, capturedAt),
                 DiagnosticCategoryId.BATTERY to batteryEvidence(snapshots, capturedAt),
                 DiagnosticCategoryId.THERMAL to thermalEvidence(snapshots, capturedAt),
-                DiagnosticCategoryId.STORAGE to storageEvidence(snapshots, capturedAt),
+                DiagnosticCategoryId.STORAGE to storageEvidence(snapshots, selections, capturedAt),
                 DiagnosticCategoryId.VIBRATION to vibrationEvidence(snapshots, manual, capturedAt),
                 DiagnosticCategoryId.BUTTONS to buttonEvidence(snapshots.buttons, manual, capturedAt),
                 DiagnosticCategoryId.BIOMETRICS to biometricEvidence(snapshots, manual, capturedAt),
@@ -316,10 +320,25 @@ object RunAllSnapshotMapper {
         snapshots: DiagnosticSnapshots,
         manual: ManualCheckResults,
         permissions: RunAllPermissions,
+        selections: RunAllSelections,
+        hardware: RunAllHardwareProfile,
         capturedAt: Instant,
     ): List<DiagnosticEvidence> {
         val microphone =
-            if (!permissions.microphone) {
+            if (!selections.includeMicrophone) {
+                notTested(
+                    DiagnosticCategoryId.AUDIO,
+                    "microphone",
+                    capturedAt,
+                    EvidenceReasonCode.SKIPPED,
+                )
+            } else if (!hardware.microphoneAvailable) {
+                unavailable(
+                    DiagnosticCategoryId.AUDIO,
+                    "microphone",
+                    capturedAt,
+                )
+            } else if (!permissions.microphone) {
                 notTested(
                     DiagnosticCategoryId.AUDIO,
                     "microphone",
@@ -346,7 +365,17 @@ object RunAllSnapshotMapper {
                 }
             }
         return listOf(
-            manualEvidence(DiagnosticCategoryId.AUDIO, "speaker", manual.speaker, capturedAt),
+            if (selections.includeSpeaker) {
+                manualEvidence(DiagnosticCategoryId.AUDIO, "speaker", manual.speaker, capturedAt)
+            } else {
+                notTested(
+                    DiagnosticCategoryId.AUDIO,
+                    "speaker",
+                    capturedAt,
+                    EvidenceReasonCode.SKIPPED,
+                    EvidenceSource.USER_CONFIRMATION,
+                )
+            },
             microphone,
             evidence(
                 categoryId = DiagnosticCategoryId.AUDIO,
@@ -362,6 +391,8 @@ object RunAllSnapshotMapper {
         snapshots: DiagnosticSnapshots,
         manual: ManualCheckResults,
         permissions: RunAllPermissions,
+        selections: RunAllSelections,
+        hardware: RunAllHardwareProfile,
         capturedAt: Instant,
     ): List<DiagnosticEvidence> {
         val capture = snapshots.camera.lastCapture
@@ -378,7 +409,22 @@ object RunAllSnapshotMapper {
                 snapshots.camera.frontCapabilities != null,
                 capturedAt,
             ),
-            if (permissions.camera) {
+            if (!selections.includeCamera) {
+                notTested(
+                    DiagnosticCategoryId.CAMERA,
+                    "capture",
+                    capturedAt,
+                    EvidenceReasonCode.SKIPPED,
+                    EvidenceSource.USER_CONFIRMATION,
+                )
+            } else if (!hardware.cameraAvailable) {
+                unavailable(
+                    DiagnosticCategoryId.CAMERA,
+                    "capture",
+                    capturedAt,
+                    source = EvidenceSource.USER_CONFIRMATION,
+                )
+            } else if (permissions.camera) {
                 manualEvidence(DiagnosticCategoryId.CAMERA, "capture", manual.camera, capturedAt)
             } else {
                 notTested(
@@ -1068,6 +1114,7 @@ object RunAllSnapshotMapper {
 
     private fun storageEvidence(
         snapshots: DiagnosticSnapshots,
+        selections: RunAllSelections,
         capturedAt: Instant,
     ): List<DiagnosticEvidence> {
         val state = snapshots.storage
@@ -1119,11 +1166,12 @@ object RunAllSnapshotMapper {
                 storageUnavailable("removable_volume_count", capturedAt),
             )
 
-        return infoEvidence + storageBenchmarkEvidence(state, capturedAt)
+        return infoEvidence + storageBenchmarkEvidence(state, selections.includeStorageBenchmark, capturedAt)
     }
 
     private fun storageBenchmarkEvidence(
         state: StorageTestState,
+        included: Boolean,
         capturedAt: Instant,
     ): List<DiagnosticEvidence> {
         val result = state.benchmarkResult
@@ -1138,7 +1186,12 @@ object RunAllSnapshotMapper {
                     storageRateEvidence("sequential_read", requireNotNull(result.readMebibytesPerSecond), result.capturedAt),
                 )
             } else {
-                val reason = storageBenchmarkReason(state)
+                val reason =
+                    if (included) {
+                        storageBenchmarkReason(state)
+                    } else {
+                        EvidenceReasonCode.SKIPPED
+                    }
                 listOf(
                     notTested(
                         categoryId = DiagnosticCategoryId.STORAGE,

@@ -810,6 +810,60 @@ class RunAllSnapshotMapperTest {
         assertEquals(EvidenceReasonCode.BIOMETRIC_LOCKOUT, evidence.getValue("biometrics.authentication").reason)
     }
 
+    @Test
+    fun preflightSkipsRemainDistinctFromPermissionDenialAndAbsentHardware() {
+        val capturedAt = Instant.parse("2026-08-08T12:00:00Z")
+        val skipped =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots = diagnosticSnapshotsWithSensitiveConnectivity(),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(),
+                    selections =
+                        RunAllSelections(
+                            includeSpeaker = false,
+                            includeMicrophone = false,
+                            includeCamera = false,
+                            includeStorageBenchmark = false,
+                        ),
+                    capturedAt = capturedAt,
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+
+        assertEquals(EvidenceReasonCode.SKIPPED, skipped.getValue("audio.speaker").reason)
+        assertEquals(EvidenceReasonCode.SKIPPED, skipped.getValue("audio.microphone").reason)
+        assertEquals(EvidenceReasonCode.SKIPPED, skipped.getValue("camera.capture").reason)
+        assertEquals(EvidenceReasonCode.SKIPPED, skipped.getValue("storage.sequential_write").reason)
+
+        val denied =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots = diagnosticSnapshotsWithSensitiveConnectivity(),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(),
+                    selections = RunAllSelections(),
+                    hardware = RunAllHardwareProfile.ALL_AVAILABLE,
+                    capturedAt = capturedAt,
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+        assertEquals(EvidenceReasonCode.PERMISSION_DENIED, denied.getValue("audio.microphone").reason)
+        assertEquals(EvidenceReasonCode.PERMISSION_DENIED, denied.getValue("camera.capture").reason)
+
+        val absent =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots = diagnosticSnapshotsWithSensitiveConnectivity(),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(),
+                    selections = RunAllSelections(),
+                    hardware = RunAllHardwareProfile(),
+                    capturedAt = capturedAt,
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+        assertEquals(EvidenceReasonCode.HARDWARE_UNAVAILABLE, absent.getValue("audio.microphone").reason)
+        assertEquals(Applicability.NOT_APPLICABLE, absent.getValue("camera.capture").applicability)
+    }
+
     private fun diagnosticSnapshotsWithSensitiveConnectivity() =
         DiagnosticSnapshots(
             device = deviceInfo(),

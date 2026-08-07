@@ -542,8 +542,23 @@
     <!-- Home Screen -->
     <string name="home_device_summary">Laitteen yhteenveto</string>
     <string name="home_run_all">Aja kaikki testit</string>
-    <string name="run_all_preparing_title">Valmistellaan koko testi</string>
-    <string name="run_all_preparing_description">fonecheck pyytää vain automaattisiin laitteistotarkistuksiin tarvittavat oikeudet. Automaattinen vaihe kirjoittaa ja poistaa yhden 64 MiB:n tiedoston sovelluksen yksityisessä välimuistissa; testin voi ohittaa sen aikana.</string>
+    <string name="run_all_preflight_title">Ennen koko tarkistusta</string>
+    <string name="run_all_preflight_description">Tarkista, mitä fonecheck tekee, ennen kuin yhtään lupapyyntöä näytetään.</string>
+    <string name="run_all_preflight_interactions">Tarkistat näytön ja käytät tuettuja kamera-, liike-, äänenvoimakkuuspainike-, värinä-, kaiutin- ja biometriikkatarkistuksia.</string>
+    <string name="run_all_preflight_audio_vibration">Valittu äänitesti toistaa lyhyen kaiutinäänen ja tallentaa lyhyen mikrofoninäytteen suhteellista tasolukemaa varten. Värinä voi tuntua voimakkaalta.</string>
+    <string name="run_all_preflight_storage">Tallennustilatesti kirjoittaa, lukee ja poistaa yhden väliaikaisen 64 MiB:n tiedoston fonecheckin yksityisessä välimuistissa.</string>
+    <string name="run_all_preflight_permissions">Luvat pyydetään seuraavalla ruudulla vain tarvittaessa. Epääminen rajaa kattavuutta mutta ei hylkää tai estä koko tarkistusta.</string>
+    <string name="run_all_preflight_unsupported">Puuttuva laitteisto merkitään soveltumattomaksi. Jokaisen vuorovaikutteisen tarkistuksen voi ohittaa tai keskeyttää.</string>
+    <string name="run_all_preflight_local_report">Raporttitiedot pysyvät tällä laitteella eikä niitä lähetetä verkkoon. Raakaääntä, kamerakuvia, tarkkaa sijaintia, verkkonimiä tai solutunnisteita ei tallenneta.</string>
+    <string name="run_all_preflight_no_network">Internet- tai verkkonopeustestiä ei suoriteta.</string>
+    <string name="run_all_preflight_choices_title">Sisällytettävä valinnainen työ</string>
+    <string name="run_all_preflight_speaker_option">Kaiutinääni ja vahvistus</string>
+    <string name="run_all_preflight_microphone_option">Lyhyt mikrofoninäyte</string>
+    <string name="run_all_preflight_camera_option">Kameran esikatselu ja kuvanotto</string>
+    <string name="run_all_preflight_storage_option">64 MiB:n yksityisen välimuistin tallennustilatesti</string>
+    <string name="run_all_preflight_start">Tarkista luvat</string>
+    <string name="run_all_preparing_title">Tarkista luvat</string>
+    <string name="run_all_preparing_description">Salli mukaan haluamasi käyttöoikeudet ja jatka. Puuttuva tai evätty valinnainen oikeus raportoidaan erikseen eikä sitä tulkita laitteistoviaksi.</string>
     <string name="run_all_permissions_continue">Jatka käytettävissä olevilla oikeuksilla</string>
     <string name="run_all_automatic_title">Puhelinta testataan</string>
     <string name="run_all_automatic_description">Laitetiedot luetaan ja rajatut suorituskyky- sekä sovelluksen yksityiset tallennustilatarkistukset suoritetaan. Väliaikainen 64 MiB:n tiedosto poistetaan tarkistuksen jälkeen.</string>

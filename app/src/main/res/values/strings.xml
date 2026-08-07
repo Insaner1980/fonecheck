@@ -548,8 +548,23 @@
     <!-- Home Screen -->
     <string name="home_device_summary">Device Summary</string>
     <string name="home_run_all">Run All Tests</string>
-    <string name="run_all_preparing_title">Preparing the full test</string>
-    <string name="run_all_preparing_description">fonecheck requests only the permissions needed for automatic hardware checks. The automatic stage writes and deletes one 64 MiB file in the app-private cache; you can skip it while it runs.</string>
+    <string name="run_all_preflight_title">Before the full check</string>
+    <string name="run_all_preflight_description">Review what fonecheck will do before any permission request appears.</string>
+    <string name="run_all_preflight_interactions">You will inspect the display and use supported camera, motion, volume-button, vibration, speaker, and biometric checks.</string>
+    <string name="run_all_preflight_audio_vibration">Selected audio plays a short speaker tone and records a brief microphone sample for a relative level reading. Vibration can feel strong.</string>
+    <string name="run_all_preflight_storage">The storage benchmark writes, reads, and deletes one temporary 64 MiB file in fonecheck’s private cache.</string>
+    <string name="run_all_preflight_permissions">Permissions are requested on the next screen only when needed. Denial limits coverage but does not fail or block the full check.</string>
+    <string name="run_all_preflight_unsupported">Unavailable hardware is marked not applicable. Every interactive check can be skipped or exited.</string>
+    <string name="run_all_preflight_local_report">Report data stays on this device and is not uploaded. Raw audio, camera images, precise location, network names, and cell identifiers are not saved.</string>
+    <string name="run_all_preflight_no_network">No internet or network-speed test is performed.</string>
+    <string name="run_all_preflight_choices_title">Included optional work</string>
+    <string name="run_all_preflight_speaker_option">Speaker tone and confirmation</string>
+    <string name="run_all_preflight_microphone_option">Brief microphone sample</string>
+    <string name="run_all_preflight_camera_option">Camera preview and capture</string>
+    <string name="run_all_preflight_storage_option">64 MiB private-cache storage benchmark</string>
+    <string name="run_all_preflight_start">Review permissions</string>
+    <string name="run_all_preparing_title">Review permissions</string>
+    <string name="run_all_preparing_description">Allow the access you want to include, then continue. Missing or denied optional access is reported separately and never treated as hardware failure.</string>
     <string name="run_all_permissions_continue">Continue with available access</string>
     <string name="run_all_automatic_title">Testing your phone</string>
     <string name="run_all_automatic_description">Reading device information and running bounded performance and app-private storage checks. The temporary 64 MiB storage file is deleted after the check.</string>
