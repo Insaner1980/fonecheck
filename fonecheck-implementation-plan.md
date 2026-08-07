@@ -355,6 +355,7 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - Run All jäädyttää nyt yhden canonical `DiagnosticReport`in, ja Compose-tulosnäkymä muodostaa lokalisoidut UI-rivit vasta raportin stable check ID-, status-, reason- ja typed value -kentistä. Android-bound `RunAllReportBuilder` ja legacy `TestSession` -polku poistettiin.
 - Canonical tulosnäkymän tests-first Compose-testi tuotti odotetun REDin vanhasta `TestSession`-parametrista, minkä jälkeen tuotanto- ja Android-testien Kotlin-käännös läpäisivät. Varsinainen instrumentaatioajo estyy nykyisellä Android 17 -laitteella ennen assertioita Espresso-virheeseen `InputManager.getInstance`; sama ympäristövirhe toistuu muuttamattomassa `FonecheckThemeSmokeTest`issä.
 - `ktlintCheck` ei käynnistynyt, koska ktlintin omista artifacteista puuttuu dependency-verification-tietueita. Käyttäjän keskeneräistä `verification-metadata.xml`-muutosta ei muokattu eikä uusia tarkistussummia hyväksytty automaattisesti. Task 6:n määritetyt unit-acceptance-portit ovat GREEN.
+- Commitin `a8e8a82` jälkeen koko `:app:testDebugUnitTest` läpäisi tuoreen ajon. Task 6 on valmis; Codex ajaa jatkossa suunnitelman Gradle-verifioinnit käyttäjän pyynnön mukaisesti.
 
 ### 7. Implement a unified permission-state and standalone permission flow
 
