@@ -351,6 +351,10 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - Lisätty Androidista riippumattomat versionoitu snapshot-malli, assembly request ja `ReportAssembler`. Assembler validoi snapshotit, järjestää Full Checkin `DiagnosticCatalog`in mukaan, muodostaa aggregate-statukset ja delegoi score/coverage-laskennan muuttamattomalle `ScoreCalculator`ille.
 - Käyttäjä ilmoitti kohdistetun assembler-unit-testin ja debug-unit-testien Kotlin-käännöksen onnistuneen. Pure assembler on GREEN; Codex ei ajanut Gradlea.
 - Lisätty tests-first Run All -integraatiotestit catalog-järjestetylle, privacy-safe snapshot-mappaukselle sekä ensimmäisen canonical raportin deterministiselle jäädytykselle. Käyttäjän kohdistettu unit-testiajo tuotti odotetun REDin; daemon-loki vahvisti syyksi vain tarkoituksella puuttuneen mapperin ja ViewModel-rajapinnan seurannaisvirheineen.
+- Käyttäjän pyynnöstä Codex ajaa tästä eteenpäin Gradle-verifioinnit. `ReportAssemblerTest`, `RunAllSnapshotMapperTest` ja `RunAllTestsViewModelTest` läpäisivät kohdistetun debug-unit-testiajon.
+- Run All jäädyttää nyt yhden canonical `DiagnosticReport`in, ja Compose-tulosnäkymä muodostaa lokalisoidut UI-rivit vasta raportin stable check ID-, status-, reason- ja typed value -kentistä. Android-bound `RunAllReportBuilder` ja legacy `TestSession` -polku poistettiin.
+- Canonical tulosnäkymän tests-first Compose-testi tuotti odotetun REDin vanhasta `TestSession`-parametrista, minkä jälkeen tuotanto- ja Android-testien Kotlin-käännös läpäisivät. Varsinainen instrumentaatioajo estyy nykyisellä Android 17 -laitteella ennen assertioita Espresso-virheeseen `InputManager.getInstance`; sama ympäristövirhe toistuu muuttamattomassa `FonecheckThemeSmokeTest`issä.
+- `ktlintCheck` ei käynnistynyt, koska ktlintin omista artifacteista puuttuu dependency-verification-tietueita. Käyttäjän keskeneräistä `verification-metadata.xml`-muutosta ei muokattu eikä uusia tarkistussummia hyväksytty automaattisesti. Task 6:n määritetyt unit-acceptance-portit ovat GREEN.
 
 ### 7. Implement a unified permission-state and standalone permission flow
 

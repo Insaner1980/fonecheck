@@ -3,6 +3,7 @@ package com.insaner.fonecheck.ui.screens.runall
 import android.os.BatteryManager
 import com.insaner.fonecheck.domain.model.Applicability
 import com.insaner.fonecheck.domain.model.Confidence
+import com.insaner.fonecheck.domain.model.DeviceInfo
 import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticCategorySnapshot
@@ -14,7 +15,33 @@ import com.insaner.fonecheck.domain.model.EvidenceReasonCode
 import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.EvidenceUnitCode
 import com.insaner.fonecheck.domain.model.EvidenceValue
+import com.insaner.fonecheck.domain.model.PerformanceInfo
+import com.insaner.fonecheck.domain.model.SimTelephonyInfo
+import com.insaner.fonecheck.ui.screens.audio.AudioTestState
+import com.insaner.fonecheck.ui.screens.battery.BatteryTestState
+import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestState
+import com.insaner.fonecheck.ui.screens.buttons.ButtonTestState
+import com.insaner.fonecheck.ui.screens.camera.CameraTestState
+import com.insaner.fonecheck.ui.screens.connectivity.ConnectivityTestState
+import com.insaner.fonecheck.ui.screens.display.DisplayTestState
+import com.insaner.fonecheck.ui.screens.sensor.SensorTestState
+import com.insaner.fonecheck.ui.screens.vibration.VibrationTestState
 import java.time.Instant
+
+data class DiagnosticSnapshots(
+    val device: DeviceInfo,
+    val performance: PerformanceInfo,
+    val sim: SimTelephonyInfo,
+    val display: DisplayTestState,
+    val audio: AudioTestState,
+    val camera: CameraTestState,
+    val sensors: SensorTestState,
+    val connectivity: ConnectivityTestState,
+    val battery: BatteryTestState,
+    val vibration: VibrationTestState,
+    val buttons: ButtonTestState,
+    val biometrics: BiometricTestState,
+)
 
 object RunAllSnapshotMapper {
     fun map(

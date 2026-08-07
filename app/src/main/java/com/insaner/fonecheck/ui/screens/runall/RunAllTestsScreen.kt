@@ -21,10 +21,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
+import androidx.core.content.pm.PackageInfoCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.model.ReportAppContext
+import com.insaner.fonecheck.domain.model.ReportDeviceContext
 import com.insaner.fonecheck.ui.screens.audio.AudioTestViewModel
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestViewModel
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestViewModel
@@ -39,6 +42,7 @@ import com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge
 import com.insaner.fonecheck.ui.screens.sensor.SensorTestViewModel
 import com.insaner.fonecheck.ui.screens.simtelephony.SimTelephonyViewModel
 import com.insaner.fonecheck.ui.screens.vibration.VibrationTestViewModel
+import java.time.Instant
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -324,25 +328,49 @@ fun RunAllTestsScreen(
                     buttons = buttonState,
                     biometrics = biometricState,
                 )
-            val categories =
+            val capturedAt = remember { Instant.now() }
+            val categorySnapshots =
                 remember(
                     snapshots,
                     sessionState.manualChecks,
                     sessionState.permissions,
+                    capturedAt,
                 ) {
-                    RunAllReportBuilder.build(
-                        context = context,
+                    RunAllSnapshotMapper.map(
                         snapshots = snapshots,
                         manual = sessionState.manualChecks,
                         permissions = sessionState.permissions,
+                        capturedAt = capturedAt,
                     )
                 }
-            LaunchedEffect(categories) {
-                sessionViewModel.completeSession(deviceViewModel.deviceInfo, categories)
+            val deviceContext =
+                remember(deviceViewModel.deviceInfo) {
+                    with(deviceViewModel.deviceInfo) {
+                        ReportDeviceContext(
+                            manufacturer = manufacturer,
+                            model = model,
+                            brand = brand,
+                            product = product,
+                            androidRelease = androidVersion,
+                            apiLevel = apiLevel,
+                            securityPatch = securityPatch,
+                        )
+                    }
+                }
+            val appContext =
+                remember(context) {
+                    val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                    ReportAppContext(
+                        versionName = packageInfo.versionName.orEmpty(),
+                        versionCode = PackageInfoCompat.getLongVersionCode(packageInfo),
+                    )
+                }
+            LaunchedEffect(categorySnapshots, deviceContext, appContext) {
+                sessionViewModel.completeReport(deviceContext, appContext, categorySnapshots)
             }
-            sessionState.session?.let { session ->
+            sessionState.report?.let { report ->
                 RunAllResultsScreen(
-                    session = session,
+                    report = report,
                     onOpenCategory = onOpenCategory,
                     onDone = onDone,
                     modifier = modifier.fillMaxSize(),

@@ -1,17 +1,13 @@
 package com.insaner.fonecheck.ui.screens.runall
 
 import androidx.lifecycle.ViewModel
-import com.insaner.fonecheck.domain.model.CategoryTestResult
 import com.insaner.fonecheck.domain.model.DiagnosticCategorySnapshot
 import com.insaner.fonecheck.domain.model.DiagnosticReport
-import com.insaner.fonecheck.domain.model.DeviceInfo
 import com.insaner.fonecheck.domain.model.ReportAppContext
 import com.insaner.fonecheck.domain.model.ReportAssembler
 import com.insaner.fonecheck.domain.model.ReportAssemblyRequest
 import com.insaner.fonecheck.domain.model.ReportDeviceContext
 import com.insaner.fonecheck.domain.model.ReportKind
-import com.insaner.fonecheck.domain.model.TestSession
-import com.insaner.fonecheck.domain.model.TestStatus
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.IdProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -56,7 +52,6 @@ data class RunAllTestsState(
     val permissions: RunAllPermissions = RunAllPermissions(),
     val manualChecks: ManualCheckResults = ManualCheckResults(),
     val displayColorIndex: Int = 0,
-    val session: TestSession? = null,
     val report: DiagnosticReport? = null,
 )
 
@@ -118,25 +113,6 @@ class RunAllTestsViewModel
             recordManualCheck(RunAllStage.RESULTS) { it.copy(biometrics = result) }
         }
 
-        fun completeSession(
-            deviceInfo: DeviceInfo,
-            categories: List<CategoryTestResult>,
-        ) {
-            if (_state.value.session != null) return
-
-            _state.value =
-                _state.value.copy(
-                    session =
-                        TestSession(
-                            id = idProvider.newId(),
-                            timestamp = clock.currentTimeMillis(),
-                            deviceInfo = deviceInfo,
-                            categories = categories,
-                            overallScore = calculateOverallScore(categories),
-                        ),
-                )
-        }
-
         fun completeReport(
             device: ReportDeviceContext,
             app: ReportAppContext,
@@ -174,16 +150,4 @@ class RunAllTestsViewModel
             _state.value = _state.value.copy(stage = stage)
         }
 
-        private fun calculateOverallScore(categories: List<CategoryTestResult>): Int {
-            val scores =
-                categories.mapNotNull { category ->
-                    when (category.status) {
-                        TestStatus.Pass, is TestStatus.Info -> 100
-                        is TestStatus.Warning -> 65
-                        is TestStatus.Fail -> 0
-                        TestStatus.NotAvailable, TestStatus.NotTested -> null
-                    }
-                }
-            return if (scores.isEmpty()) 0 else scores.average().toInt()
-        }
     }

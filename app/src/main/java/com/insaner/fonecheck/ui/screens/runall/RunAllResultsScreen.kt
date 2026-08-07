@@ -1,5 +1,6 @@
 package com.insaner.fonecheck.ui.screens.runall
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -35,8 +36,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.CategoryTestResult
+import com.insaner.fonecheck.domain.model.DiagnosticCategoryResult
+import com.insaner.fonecheck.domain.model.DiagnosticEvidence
+import com.insaner.fonecheck.domain.model.DiagnosticReport
+import com.insaner.fonecheck.domain.model.DiagnosticStatus
+import com.insaner.fonecheck.domain.model.EvidenceReasonCode
+import com.insaner.fonecheck.domain.model.EvidenceUnitCode
+import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.TestResult
-import com.insaner.fonecheck.domain.model.TestSession
 import com.insaner.fonecheck.domain.model.TestStatus
 import com.insaner.fonecheck.navigation.diagnosticDestinations
 import com.insaner.fonecheck.ui.components.StandardCard
@@ -48,21 +55,29 @@ import com.insaner.fonecheck.ui.theme.Yellow400
 
 @Composable
 fun RunAllResultsScreen(
-    session: TestSession,
+    report: DiagnosticReport,
     onOpenCategory: (Any) -> Unit,
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val categories =
+        report.categories.mapNotNull { category ->
+            if (diagnosticDestinations.none { it.category == category.categoryId }) {
+                null
+            } else {
+                category.toUiResult()
+            }
+        }
     val attentionResults =
-        session.categories.filter {
+        categories.filter {
             it.status is TestStatus.Fail || it.status is TestStatus.Warning
         }
     val completedResults =
-        session.categories.filter {
+        categories.filter {
             it.status == TestStatus.Pass || it.status is TestStatus.Info
         }
     val incompleteResults =
-        session.categories.filter {
+        categories.filter {
             it.status == TestStatus.NotAvailable || it.status == TestStatus.NotTested
         }
     var expandedCategoryName by rememberSaveable(attentionResults) {
@@ -75,7 +90,7 @@ fun RunAllResultsScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            ResultsSummaryCard(session)
+            ResultsSummaryCard(report.score.value, categories)
         }
 
         if (attentionResults.isNotEmpty()) {
@@ -169,18 +184,22 @@ private fun toggleExpanded(
 ): String? = if (currentCategoryName == result.category.name) null else result.category.name
 
 @Composable
-private fun ResultsSummaryCard(session: TestSession) {
-    val passed = session.categories.count { it.status == TestStatus.Pass }
-    val warnings = session.categories.count { it.status is TestStatus.Warning }
-    val failed = session.categories.count { it.status is TestStatus.Fail }
+private fun ResultsSummaryCard(
+    score: Int?,
+    categories: List<CategoryTestResult>,
+) {
+    val passed = categories.count { it.status == TestStatus.Pass }
+    val warnings = categories.count { it.status is TestStatus.Warning }
+    val failed = categories.count { it.status is TestStatus.Fail }
     val unavailable =
-        session.categories.count {
+        categories.count {
             it.status == TestStatus.NotAvailable || it.status == TestStatus.NotTested
         }
     val scoreColor =
         when {
-            session.overallScore >= 85 -> Green400
-            session.overallScore >= 65 -> Yellow400
+            score == null -> Neutral400
+            score >= 85 -> Green400
+            score >= 65 -> Yellow400
             else -> Red400
         }
 
@@ -207,7 +226,7 @@ private fun ResultsSummaryCard(session: TestSession) {
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = session.overallScore.toString(),
+                        text = score?.toString() ?: "—",
                         style = MaterialTheme.typography.displayMedium,
                         color = scoreColor,
                         fontWeight = FontWeight.Bold,
@@ -247,6 +266,156 @@ private fun ResultsSummaryCard(session: TestSession) {
         }
     }
 }
+
+@Composable
+private fun DiagnosticCategoryResult.toUiResult(): CategoryTestResult =
+    CategoryTestResult(
+        category = categoryId,
+        status = aggregateStatus.toLegacyStatus(),
+        summary = categorySummary(aggregateStatus),
+        results = evidence.map { it.toUiResult() },
+    )
+
+@Composable
+private fun DiagnosticEvidence.toUiResult(): TestResult =
+    TestResult(
+        id = checkId.value,
+        name = evidenceLabel(checkId.value),
+        status = status.toLegacyStatus(),
+        detail = evidenceDetail(this),
+        confidence = confidence,
+        timestamp = capturedAt.toEpochMilli(),
+    )
+
+private fun DiagnosticStatus.toLegacyStatus(): TestStatus =
+    when (this) {
+        DiagnosticStatus.PASS -> TestStatus.Pass
+        DiagnosticStatus.FAIL -> TestStatus.Fail()
+        DiagnosticStatus.WARNING -> TestStatus.Warning()
+        DiagnosticStatus.INFO -> TestStatus.Info("")
+        DiagnosticStatus.NOT_AVAILABLE -> TestStatus.NotAvailable
+        DiagnosticStatus.NOT_TESTED -> TestStatus.NotTested
+    }
+
+@Composable
+private fun categorySummary(status: DiagnosticStatus): String =
+    stringResource(
+        when (status) {
+            DiagnosticStatus.PASS, DiagnosticStatus.INFO -> R.string.run_all_summary_pass
+            DiagnosticStatus.WARNING -> R.string.run_all_summary_warning
+            DiagnosticStatus.FAIL -> R.string.run_all_summary_fail
+            DiagnosticStatus.NOT_AVAILABLE -> R.string.run_all_summary_unavailable
+            DiagnosticStatus.NOT_TESTED -> R.string.run_all_summary_not_tested
+        },
+    )
+
+@Composable
+private fun evidenceLabel(checkId: String): String =
+    evidenceLabelResId(checkId)?.let { stringResource(it) } ?: checkId
+
+@StringRes
+private fun evidenceLabelResId(checkId: String): Int? =
+    when (checkId) {
+        "device.identity" -> R.string.device_info_title
+        "device.security" -> R.string.run_all_check_security
+        "performance.cpu" -> R.string.perf_cpu_title
+        "performance.ram" -> R.string.perf_ram_title
+        "performance.gpu" -> R.string.perf_gpu_title
+        "sim.inventory" -> R.string.sim_telephony_title
+        "sim.network" -> R.string.conn_mobile_network_type
+        "display.info" -> R.string.display_info_title
+        "display.visual" -> R.string.run_all_check_visual_display
+        "audio.speaker" -> R.string.run_all_check_speaker
+        "audio.microphone" -> R.string.run_all_check_microphone
+        "audio.headphones" -> R.string.run_all_check_headphones
+        "camera.rear" -> R.string.camera_rear
+        "camera.front" -> R.string.camera_front
+        "camera.capture" -> R.string.camera_capture_title
+        "sensors.inventory" -> R.string.sensor_count
+        "sensors.motion" -> R.string.run_all_check_motion_sensor
+        "connectivity.wifi" -> R.string.conn_wifi_title
+        "connectivity.bluetooth" -> R.string.conn_bluetooth_title
+        "connectivity.gps" -> R.string.conn_gps_title
+        "connectivity.mobile" -> R.string.conn_mobile_title
+        "battery.health" -> R.string.batt_health_title
+        "battery.temperature" -> R.string.batt_temperature
+        "battery.level" -> R.string.batt_level
+        "vibration.hardware" -> R.string.vibration_has_vibrator
+        "vibration.motor" -> R.string.vibration_motor_title
+        "buttons.volume" -> R.string.run_all_check_volume_buttons
+        "buttons.power" -> R.string.button_power
+        "biometrics.capability" -> R.string.biometric_capabilities_title
+        "biometrics.authentication" -> R.string.biometric_test_auth
+        else -> null
+    }
+
+@Composable
+private fun evidenceDetail(evidence: DiagnosticEvidence): String? =
+    evidence.value?.let { evidenceValueLabel(it, evidence.unit) }
+        ?: evidence.reason?.let { reasonLabel(it) }
+
+@Composable
+private fun evidenceValueLabel(
+    value: EvidenceValue,
+    unit: EvidenceUnitCode?,
+): String =
+    when (value) {
+        is EvidenceValue.BooleanValue ->
+            stringResource(if (value.value) R.string.status_yes else R.string.status_no)
+
+        is EvidenceValue.IntValue ->
+            when (unit?.value) {
+                "percent" -> "${value.value}%"
+                else -> value.value.toString()
+            }
+
+        is EvidenceValue.LongValue -> value.value.toString()
+        is EvidenceValue.DecimalValue -> value.value.toPlainString()
+        is EvidenceValue.DoubleValue ->
+            if (unit?.value == "celsius") {
+                stringResource(R.string.run_all_detail_temperature, value.value)
+            } else {
+                value.value.toString()
+            }
+
+        is EvidenceValue.RawTextValue -> value.value
+        is EvidenceValue.StableTextCodeValue -> stableTextLabel(value.value)
+    }
+
+@Composable
+private fun stableTextLabel(code: String): String =
+    stringResource(
+        when (code) {
+            "good" -> R.string.batt_health_good
+            "overheat" -> R.string.batt_health_overheat
+            "dead" -> R.string.batt_health_dead
+            "over_voltage" -> R.string.batt_health_over_voltage
+            "unspecified_failure" -> R.string.batt_health_failure
+            "cold" -> R.string.batt_health_cold
+            "strong" -> R.string.biometric_strong
+            "weak" -> R.string.biometric_weak
+            "unavailable" -> R.string.biometric_not_available
+            else -> R.string.batt_health_unknown
+        },
+    )
+
+@Composable
+private fun reasonLabel(reason: EvidenceReasonCode): String =
+    stringResource(
+        when (reason) {
+            EvidenceReasonCode.PERMISSION_DENIED -> R.string.run_all_permission_missing
+            EvidenceReasonCode.SKIPPED, EvidenceReasonCode.CANCELLED -> R.string.run_all_manual_skipped
+            EvidenceReasonCode.USER_CONFIRMED_FAILURE -> R.string.run_all_manual_failed
+            EvidenceReasonCode.HARDWARE_UNAVAILABLE,
+            EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED,
+            -> R.string.run_all_status_unavailable
+
+            EvidenceReasonCode.DISABLED -> R.string.status_disabled
+            EvidenceReasonCode.DEGRADED -> R.string.run_all_summary_warning
+            EvidenceReasonCode.ERROR -> R.string.run_all_summary_fail
+            else -> R.string.run_all_summary_not_tested
+        },
+    )
 
 @Composable
 private fun SummaryCount(
