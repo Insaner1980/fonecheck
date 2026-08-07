@@ -286,6 +286,15 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Vanha kehitysasennus kaatuu ilman sovittua datan tyhjennystä; JSON-payloadin decoder-yhteensopivuus.
 - **Decision required:** Kyllä, kohdan 1 database baseline.
 
+#### Implementation/status log — 2026-08-07
+
+- Julkaisematon placeholder-kanta on korvattu production version 1 `reports`-taululla. `ReportEntity` validoi suoran konstruktion stable kind/state -koodit, category-only-säännön, aikajärjestyksen, positiiviset versiot, score/coverage-rajat, ei-negatiiviset laskurit sekä applicable-laskurin yhtälön.
+- `ReportDao` insertoi yhden immutable raporttirivin `ABORT`-konfliktikäytännöllä, palauttaa Historyä varten vain rajatun newest-first-summaryprojektion, lukee täyden rivin ID:llä ja sallii vain yhden tai kaikkien raporttien poiston. Sisällön update-operaatiota ei ole.
+- `FonecheckDatabase` exportoi skeeman ja exposeeraa DAO:n. Stale tyhjä `1.json` poistettiin; aito compiler-generoitu production-v1-skeema on pending käyttäjän KSP-ajoon ja lisätään versionhallintaan vasta sen jälkeen. Identity hashia tai muuta generated metadataa ei kirjoitettu käsin.
+- Lisätty entity-invarianttien unit-testit, in-memory Room DAO -testi insert/read- ja newest-first-summarypoluille sekä Room 2.8.4 `MigrationTestHelper` -harness v1-exportille. Gradlea ei ajettu projektisäännön mukaisesti, joten testien compile/run ja schema-harness odottavat käyttäjän ajoa aidon `1.json`:n generoimiseksi.
+- Production-v1-päätöksen mukaisesti placeholderille ei ole migrationia tai destructive fallbackia. Vanha kehitysasennus on tyhjennettävä tai poistettava ennen uuden kannan avaamista.
+- Kaikki kahdeksan `PRE-PHASE 4` -kohtaa arvioitiin: placeholder ja schema export korjattiin tässä; domain-/DeviceInfo-huomiot ovat nykykäytön ja Task 2:n perusteella stale/resolved; ViewModelien error/event-huomiot eivät blokkaa skeemaa; persistence/Phase 4 -roadmap jatkuu Taskeissa 5–7 eikä sitä merkitty valmiiksi. `PROJECT.md`:ää ei muokattu käyttäjän commitoimattoman uudelleenkirjoituksen vuoksi.
+
 ### 5. Implement immutable report persistence and mappings
 
 - **Objective:** Tarjota yksi tuotantokelpoinen raporttien tallennusrajapinta.

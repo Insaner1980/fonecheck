@@ -4,8 +4,10 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [PlaceholderEntity::class],
+    entities = [ReportEntity::class],
     version = 1,
-    exportSchema = false,
+    exportSchema = true,
 )
-abstract class FonecheckDatabase : RoomDatabase()
+abstract class FonecheckDatabase : RoomDatabase() {
+    abstract fun reportDao(): ReportDao
+}
