@@ -344,6 +344,11 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Nykyisten englanninkielisten näyttöarvojen muuttaminen stable codeiksi paljastaa kategorioiden puutteita.
 - **Decision required:** Ei.
 
+#### Implementation/status log — 2026-08-07
+
+- Lisätty tests-first `ReportAssemblerTest` täydelle, 71 prosentin partial-, kokonaan unavailable- ja category-only-raportille. Testi lukitsee catalog-järjestyksen, nykyisen `ScoreCalculator`-semantiikan, snapshot-version ja deterministisen repository-JSON-serialisoinnin.
+- Puhdasta assembleria tai snapshot-mallia ei ole vielä lisätty. Odotettu RED odottaa käyttäjän kohdistettua unit-testiajoa ennen tuotantokoodia.
+
 ### 7. Implement a unified permission-state and standalone permission flow
 
 - **Objective:** Tehdä käyttöoikeuksista ennustettavia kaikissa kategorioissa.
