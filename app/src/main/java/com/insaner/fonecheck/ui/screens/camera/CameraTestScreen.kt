@@ -3,6 +3,8 @@ package com.insaner.fonecheck.ui.screens.camera
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.OptIn as ExperimentalOptIn
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -156,6 +158,7 @@ fun CameraTestScreen(
 }
 
 @Composable
+@ExperimentalOptIn(markerClass = [ExperimentalCamera2Interop::class])
 private fun CameraPreviewCard(
     state: CameraTestState,
     viewModel: CameraTestViewModel,

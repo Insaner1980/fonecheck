@@ -44,7 +44,13 @@ class AndroidSimTelephonyProvider
             val phoneCount =
                 SimTelephonyProbe.modemCount(
                     sdkInt = Build.VERSION.SDK_INT,
-                    activeModemCount = { telephonyManager.activeModemCount },
+                    activeModemCount = {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            telephonyManager.activeModemCount
+                        } else {
+                            0
+                        }
+                    },
                     legacyPhoneCount = {
                         @Suppress("DEPRECATION")
                         telephonyManager.phoneCount

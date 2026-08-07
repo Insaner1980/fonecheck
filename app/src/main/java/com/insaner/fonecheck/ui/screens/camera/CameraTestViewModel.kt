@@ -7,6 +7,7 @@ import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CameraMetadata
 import android.util.Log
 import android.util.Size
+import androidx.annotation.OptIn as ExperimentalOptIn
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraSelector
@@ -249,6 +250,7 @@ class CameraTestViewModel
             return "%.1f MP".format(mp)
         }
 
+        @ExperimentalOptIn(markerClass = [ExperimentalCamera2Interop::class])
         fun startPreview(
             previewView: PreviewView,
             lifecycleOwner: LifecycleOwner,
