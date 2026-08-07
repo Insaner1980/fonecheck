@@ -12,6 +12,8 @@ import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkStore
 import com.insaner.fonecheck.ui.screens.storage.StorageInfoProvider
 import com.insaner.fonecheck.ui.screens.thermal.AndroidThermalPlatform
 import com.insaner.fonecheck.ui.screens.thermal.ThermalPlatform
+import com.insaner.fonecheck.ui.screens.vibration.AndroidVibrationPlatform
+import com.insaner.fonecheck.ui.screens.vibration.VibrationPlatform
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -54,6 +56,9 @@ object RuntimeModule {
 
     @Provides
     fun provideStorageBenchmarkRunner(runner: DefaultStorageBenchmarkRunner): StorageBenchmarkRunner = runner
+
+    @Provides
+    fun provideVibrationPlatform(platform: AndroidVibrationPlatform): VibrationPlatform = platform
 
     @Provides
     @IoDispatcher

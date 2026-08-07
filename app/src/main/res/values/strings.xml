@@ -570,7 +570,7 @@
     <string name="run_all_sensor_title">Test the motion sensor</string>
     <string name="run_all_sensor_description">Shake the phone gently. The test continues automatically when movement is detected.</string>
     <string name="run_all_vibration_title">Did you feel the vibration?</string>
-    <string name="run_all_vibration_description">fonecheck has just played a short vibration pattern.</string>
+    <string name="run_all_vibration_description">fonecheck has just played a short vibration pattern. Patterned vibration can feel strong; stop, replay, confirm, or skip it at any time.</string>
     <string name="run_all_felt_vibration">I felt it</string>
     <string name="run_all_no_vibration">No vibration</string>
     <string name="run_all_buttons_title">Test the volume buttons</string>
@@ -727,6 +727,37 @@
     <string name="vibration_effects_supported">Effects Supported</string>
     <string name="vibration_primitives_supported">Primitives Supported</string>
     <string name="vibration_has_vibrator">Has Vibrator</string>
+    <string name="vibration_motor_icon">VIB</string>
+    <string name="vibration_haptic_icon">HAP</string>
+    <string name="vibration_ready">Ready</string>
+    <string name="vibration_felt">Felt</string>
+    <string name="vibration_not_felt">Not felt</string>
+    <string name="vibration_skipped">Skipped</string>
+    <string name="vibration_none">None</string>
+    <plurals name="vibration_effect_count">
+        <item quantity="one">%1$d effect</item>
+        <item quantity="other">%1$d effects</item>
+    </plurals>
+    <string name="vibration_stop">Stop vibration</string>
+    <string name="vibration_skip">Skip physical confirmation</string>
+    <string name="vibration_unavailable">Android reports that this device has no vibrator.</string>
+    <string name="vibration_strength_warning">Long and patterned vibrations may feel strong or uncomfortable. Stop at any time.</string>
+    <string name="vibration_accessibility_note">If vibration is uncomfortable or cannot be perceived reliably, skip the physical confirmation. API capability remains reported separately.</string>
+    <string name="vibration_api_requires_android_11">Requires Android 11+</string>
+    <string name="vibration_primitives_require_android_12">Requires Android 12+</string>
+    <string name="vibration_capability_note">API support means Android reports a native effect or primitive. It does not confirm that the vibration was physically felt.</string>
+    <string name="vibration_effect_click">Click</string>
+    <string name="vibration_effect_double_click">Double click</string>
+    <string name="vibration_effect_heavy_click">Heavy click</string>
+    <string name="vibration_effect_tick">Tick</string>
+    <string name="vibration_primitive_click">Click</string>
+    <string name="vibration_primitive_thud">Thud</string>
+    <string name="vibration_primitive_spin">Spin</string>
+    <string name="vibration_primitive_quick_rise">Quick rise</string>
+    <string name="vibration_primitive_slow_rise">Slow rise</string>
+    <string name="vibration_primitive_quick_fall">Quick fall</string>
+    <string name="vibration_primitive_tick">Tick</string>
+    <string name="vibration_primitive_low_tick">Low tick</string>
 
     <!-- Button Test Screen -->
     <string name="button_test_title">Buttons</string>

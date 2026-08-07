@@ -55,6 +55,9 @@ import com.insaner.fonecheck.ui.screens.storage.StorageInfo
 import com.insaner.fonecheck.ui.screens.storage.StorageTestState
 import com.insaner.fonecheck.ui.screens.thermal.ThermalSeverityCode
 import com.insaner.fonecheck.ui.screens.thermal.ThermalTestState
+import com.insaner.fonecheck.ui.screens.vibration.HapticCapabilityState
+import com.insaner.fonecheck.ui.screens.vibration.VibrationEffectCode
+import com.insaner.fonecheck.ui.screens.vibration.VibrationPrimitiveCode
 import com.insaner.fonecheck.ui.screens.vibration.VibrationTestState
 import java.time.Instant
 import org.junit.Assert.assertEquals
@@ -662,6 +665,39 @@ class RunAllSnapshotMapperTest {
         assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue("storage.sequential_write").status)
         assertEquals(EvidenceReasonCode.INSUFFICIENT_SPACE, evidence.getValue("storage.sequential_write").reason)
         assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue("storage.sequential_read").status)
+    }
+
+    @Test
+    fun vibrationApiSupportAndPhysicalConfirmationRemainSeparateEvidence() {
+        val capturedAt = Instant.parse("2026-08-08T12:00:00Z")
+        val vibration =
+            VibrationTestState(
+                haptic =
+                    HapticCapabilityState(
+                        hasVibrator = true,
+                        hasAmplitudeControl = true,
+                        effectsApiSupported = true,
+                        supportedEffects = listOf(VibrationEffectCode.CLICK, VibrationEffectCode.TICK),
+                        primitivesApiSupported = true,
+                        supportedPrimitives = listOf(VibrationPrimitiveCode.CLICK),
+                    ),
+            )
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots = diagnosticSnapshotsWithSensitiveConnectivity().copy(vibration = vibration),
+                    manual = ManualCheckResults(vibration = true),
+                    permissions = RunAllPermissions(),
+                    capturedAt = capturedAt,
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+
+        assertEquals(DiagnosticStatus.PASS, evidence.getValue("vibration.hardware").status)
+        assertEquals(EvidenceValue.BooleanValue(true), evidence.getValue("vibration.amplitude_control").value)
+        assertEquals(EvidenceValue.IntValue(2), evidence.getValue("vibration.effects").value)
+        assertEquals(EvidenceValue.IntValue(1), evidence.getValue("vibration.primitives").value)
+        assertEquals(EvidenceSource.USER_CONFIRMATION, evidence.getValue("vibration.motor").source)
+        assertEquals(EvidenceValue.BooleanValue(true), evidence.getValue("vibration.motor").value)
     }
 
     private fun diagnosticSnapshotsWithSensitiveConnectivity() =

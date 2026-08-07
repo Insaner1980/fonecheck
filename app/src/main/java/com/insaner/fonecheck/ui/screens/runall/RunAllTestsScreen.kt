@@ -50,6 +50,7 @@ import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkPhase
 import com.insaner.fonecheck.ui.screens.storage.StorageTestViewModel
 import com.insaner.fonecheck.ui.screens.thermal.ThermalMonitoringEffect
 import com.insaner.fonecheck.ui.screens.thermal.ThermalTestViewModel
+import com.insaner.fonecheck.ui.screens.vibration.VibrationLifecycleEffect
 import com.insaner.fonecheck.ui.screens.vibration.VibrationTestViewModel
 import java.time.Instant
 import kotlinx.coroutines.delay
@@ -109,6 +110,7 @@ fun RunAllTestsScreen(
     val biometricState by biometricViewModel.state.collectAsStateWithLifecycle()
     val simState by simViewModel.state.collectAsStateWithLifecycle()
     ThermalMonitoringEffect(thermalViewModel)
+    VibrationLifecycleEffect(vibrationViewModel)
     val previewView = remember { PreviewView(context) }
     val microphonePermission =
         rememberPermissionController(
@@ -336,6 +338,7 @@ fun RunAllTestsScreen(
                 RunAllStage.AUDIO -> audioViewModel.stopTone()
                 RunAllStage.CAMERA -> cameraViewModel.stopPreview()
                 RunAllStage.SENSORS -> sensorViewModel.clearChallenge()
+                RunAllStage.VIBRATION -> vibrationViewModel.cancelVibration()
                 RunAllStage.AUTOMATIC -> storageViewModel.cancelBenchmark()
                 else -> Unit
             }
@@ -438,6 +441,11 @@ fun RunAllTestsScreen(
         RunAllStage.VIBRATION ->
             VibrationCheckStep(
                 onPlayAgain = vibrationViewModel::vibratePattern,
+                onStop = vibrationViewModel::cancelVibration,
+                onSkip = {
+                    vibrationViewModel.cancelVibration()
+                    sessionViewModel.recordVibration(null)
+                },
                 onResult = sessionViewModel::recordVibration,
             )
 

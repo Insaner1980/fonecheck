@@ -306,6 +306,8 @@ fun SensorCheckStep(
 @Composable
 fun VibrationCheckStep(
     onPlayAgain: () -> Unit,
+    onStop: () -> Unit,
+    onSkip: () -> Unit,
     onResult: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -318,6 +320,12 @@ fun VibrationCheckStep(
         OutlinedButton(onClick = onPlayAgain) {
             Text(stringResource(R.string.run_all_play_again))
         }
+        OutlinedButton(
+            onClick = onStop,
+            modifier = Modifier.padding(top = 8.dp),
+        ) {
+            Text(stringResource(R.string.vibration_stop))
+        }
         Spacer(modifier = Modifier.height(20.dp))
         ConfirmationButtons(
             positiveText = stringResource(R.string.run_all_felt_vibration),
@@ -325,6 +333,12 @@ fun VibrationCheckStep(
             onPositive = { onResult(true) },
             onNegative = { onResult(false) },
         )
+        OutlinedButton(
+            onClick = onSkip,
+            modifier = Modifier.padding(top = 8.dp),
+        ) {
+            Text(stringResource(R.string.vibration_skip))
+        }
     }
 }
 

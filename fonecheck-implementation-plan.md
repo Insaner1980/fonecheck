@@ -645,6 +645,14 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Voimakkuus ja supported effect -raportointi vaihtelevat laitteittain.
 - **Decision required:** Ei.
 
+#### Implementation/status log — 2026-08-08
+
+- Värinätoisto on siirretty testattavan `VibrationPlatform`-rajapinnan taakse. Android 12+:ssa käytetään `VibratorManager.defaultVibrator`ia ja vanhemmilla tuetuilla versioilla legacy-palvelua. Uusi pattern pysäyttää aina ViewModelin omistaman aiemman värinän ennen käynnistystä.
+- `cancelVibration()` on idempotentti, ja sama tarkka omistettu toisto pysäytetään standalone-näkymän lifecycle `ON_STOP`issa/disposessa, Run All -vaiheen vaihtuessa sekä ViewModelin `onCleared()`-polussa. Lyhyen, pitkän ja kuvioidun efektin luonnollinen päättyminen vapauttaa omistajuuden ilman ylimääräistä cancel-kutsua.
+- UI tarjoaa replay-painikkeet, aktiivisen pysäytyksen, pass/fail-vahvistuksen ja eksplisiittisen skip-vaihtoehdon. Pitkän/kuvioidun värinän mahdollisesta epämukavuudesta varoitetaan ennen painikkeita, ja saavutettava vaihtoehto ohjeistaa ohittamaan fyysisen vahvistuksen tarvittaessa.
+- Hardware presence, amplitude control, definite native effect support ja primitive support ovat Android API -evidenceä; käyttäjän “felt vibration” on erillinen manual evidence. `UNKNOWN`-efektitukea ei tulkita tuetuksi [Vibrator API:n](https://developer.android.com/reference/android/os/Vibrator) mukaisesti. Effect-kysely rajataan Android 11+:aan ja koko käytetty primitive-luettelo Android 12+:aan.
+- Fake-platform-testit kattavat uuden patternin overlap-cancelin, idempotentin cancelin, luonnollisen päättymisen, no-vibrator-polun, support-mappauksen, fyysisen vahvistuksen erillisyyden ja `onCleared()`-cleanupin. Mapper-testit todentavat API- ja manual-evidencen erillisyyden. Koko `:app:testDebugUnitTest`, Android-testien Kotlin-käännös, `:app:lintDebug` ja `:app:assembleDebug` läpäisevät. Fyysinen legacy/amplitude/composition-koe odottaa laitetta, sillä `adb devices -l` ei löytänyt yhdistettyä laitetta. Käyttäjän keskeneräisiä `PROJECT.md`- ja `verification-metadata.xml`-muutoksia ei muokattu.
+
 ### 20. Make Buttons testing bounded and truthful
 
 - **Objective:** Poistaa indefinite polling ja väärä “all buttons” -mielikuva.

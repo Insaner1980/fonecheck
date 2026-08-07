@@ -564,7 +564,7 @@
     <string name="run_all_sensor_title">Testaa liikeanturi</string>
     <string name="run_all_sensor_description">Ravista puhelinta kevyesti. Testi jatkuu automaattisesti, kun liike havaitaan.</string>
     <string name="run_all_vibration_title">Tunsitko värinän?</string>
-    <string name="run_all_vibration_description">fonecheck toisti juuri lyhyen värinäkuvion.</string>
+    <string name="run_all_vibration_description">fonecheck toisti juuri lyhyen värinäkuvion. Kuvioitu värinä voi tuntua voimakkaalta; sen voi pysäyttää, toistaa, vahvistaa tai ohittaa milloin tahansa.</string>
     <string name="run_all_felt_vibration">Tunsin värinän</string>
     <string name="run_all_no_vibration">Värinää ei tunnu</string>
     <string name="run_all_buttons_title">Testaa äänenvoimakkuuspainikkeet</string>
@@ -721,6 +721,37 @@
     <string name="vibration_effects_supported">Tuetut efektit</string>
     <string name="vibration_primitives_supported">Tuetut primitiivit</string>
     <string name="vibration_has_vibrator">Värinämoottori</string>
+    <string name="vibration_motor_icon">VÄR</string>
+    <string name="vibration_haptic_icon">HAP</string>
+    <string name="vibration_ready">Valmis</string>
+    <string name="vibration_felt">Tuntui</string>
+    <string name="vibration_not_felt">Ei tuntunut</string>
+    <string name="vibration_skipped">Ohitettu</string>
+    <string name="vibration_none">Ei mitään</string>
+    <plurals name="vibration_effect_count">
+        <item quantity="one">%1$d efekti</item>
+        <item quantity="other">%1$d efektiä</item>
+    </plurals>
+    <string name="vibration_stop">Pysäytä värinä</string>
+    <string name="vibration_skip">Ohita fyysinen vahvistus</string>
+    <string name="vibration_unavailable">Android ilmoittaa, ettei laitteessa ole värinämoottoria.</string>
+    <string name="vibration_strength_warning">Pitkä tai kuvioitu värinä voi tuntua voimakkaalta tai epämiellyttävältä. Sen voi pysäyttää milloin tahansa.</string>
+    <string name="vibration_accessibility_note">Jos värinä tuntuu epämiellyttävältä tai sitä ei voi havaita luotettavasti, ohita fyysinen vahvistus. API-ominaisuudet raportoidaan erikseen.</string>
+    <string name="vibration_api_requires_android_11">Vaatii Android 11:n tai uudemman</string>
+    <string name="vibration_primitives_require_android_12">Vaatii Android 12:n tai uudemman</string>
+    <string name="vibration_capability_note">API-tuki tarkoittaa, että Android ilmoittaa natiivin efektin tai primitiivin. Se ei vahvista, että värinä tuntui fyysisesti.</string>
+    <string name="vibration_effect_click">Napsautus</string>
+    <string name="vibration_effect_double_click">Kaksoisnapsautus</string>
+    <string name="vibration_effect_heavy_click">Voimakas napsautus</string>
+    <string name="vibration_effect_tick">Tikitys</string>
+    <string name="vibration_primitive_click">Napsautus</string>
+    <string name="vibration_primitive_thud">Tömäys</string>
+    <string name="vibration_primitive_spin">Pyörähdys</string>
+    <string name="vibration_primitive_quick_rise">Nopea nousu</string>
+    <string name="vibration_primitive_slow_rise">Hidas nousu</string>
+    <string name="vibration_primitive_quick_fall">Nopea lasku</string>
+    <string name="vibration_primitive_tick">Tikitys</string>
+    <string name="vibration_primitive_low_tick">Matala tikitys</string>
 
     <!-- Button Test Screen -->
     <string name="button_test_title">Painikkeet</string>

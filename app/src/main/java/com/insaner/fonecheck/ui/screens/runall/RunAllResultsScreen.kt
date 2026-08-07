@@ -382,6 +382,9 @@ private fun evidenceLabelResId(checkId: String): Int? =
         "storage.benchmark_location" -> R.string.storage_benchmark_location
         "storage.benchmark_cleanup" -> R.string.storage_benchmark_cleanup
         "vibration.hardware" -> R.string.vibration_has_vibrator
+        "vibration.amplitude_control" -> R.string.vibration_amplitude_control
+        "vibration.effects" -> R.string.vibration_effects_supported
+        "vibration.primitives" -> R.string.vibration_primitives_supported
         "vibration.motor" -> R.string.vibration_motor_title
         "buttons.volume" -> R.string.run_all_check_volume_buttons
         "buttons.power" -> R.string.button_power

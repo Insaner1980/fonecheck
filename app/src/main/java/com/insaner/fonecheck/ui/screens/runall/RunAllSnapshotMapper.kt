@@ -881,9 +881,35 @@ object RunAllSnapshotMapper {
         manual: ManualCheckResults,
         capturedAt: Instant,
     ): List<DiagnosticEvidence> {
-        val hasVibrator = snapshots.vibration.haptic.hasVibrator
+        val haptic = snapshots.vibration.haptic
+        val hasVibrator = haptic.hasVibrator
         return listOf(
             presence(DiagnosticCategoryId.VIBRATION, "hardware", hasVibrator, capturedAt),
+            if (hasVibrator) {
+                evidence(
+                    categoryId = DiagnosticCategoryId.VIBRATION,
+                    id = "amplitude_control",
+                    status = DiagnosticStatus.INFO,
+                    value = EvidenceValue.BooleanValue(haptic.hasAmplitudeControl),
+                    capturedAt = capturedAt,
+                )
+            } else {
+                unavailable(DiagnosticCategoryId.VIBRATION, "amplitude_control", capturedAt)
+            },
+            vibrationCapabilityEvidence(
+                id = "effects",
+                hasVibrator = hasVibrator,
+                apiSupported = haptic.effectsApiSupported,
+                count = haptic.supportedEffectsCount,
+                capturedAt = capturedAt,
+            ),
+            vibrationCapabilityEvidence(
+                id = "primitives",
+                hasVibrator = hasVibrator,
+                apiSupported = haptic.primitivesApiSupported,
+                count = haptic.supportedPrimitivesCount,
+                capturedAt = capturedAt,
+            ),
             if (hasVibrator) {
                 manualEvidence(DiagnosticCategoryId.VIBRATION, "motor", manual.vibration, capturedAt)
             } else {
@@ -896,6 +922,36 @@ object RunAllSnapshotMapper {
             },
         )
     }
+
+    private fun vibrationCapabilityEvidence(
+        id: String,
+        hasVibrator: Boolean,
+        apiSupported: Boolean,
+        count: Int,
+        capturedAt: Instant,
+    ): DiagnosticEvidence =
+        when {
+            !hasVibrator -> unavailable(DiagnosticCategoryId.VIBRATION, id, capturedAt)
+            !apiSupported ->
+                evidence(
+                    categoryId = DiagnosticCategoryId.VIBRATION,
+                    id = id,
+                    status = DiagnosticStatus.NOT_AVAILABLE,
+                    confidence = Confidence.UNAVAILABLE,
+                    applicability = Applicability.NOT_APPLICABLE,
+                    reason = EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED,
+                    capturedAt = capturedAt,
+                )
+            else ->
+                evidence(
+                    categoryId = DiagnosticCategoryId.VIBRATION,
+                    id = id,
+                    status = DiagnosticStatus.INFO,
+                    value = EvidenceValue.IntValue(count),
+                    unit = EvidenceUnitCode("count"),
+                    capturedAt = capturedAt,
+                )
+        }
 
     private fun thermalEvidence(
         snapshots: DiagnosticSnapshots,
