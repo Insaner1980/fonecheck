@@ -57,7 +57,12 @@ class RunAllSnapshotMapperTest {
         assertEquals(DiagnosticCatalog.categories, snapshots.map { it.categoryId })
         assertTrue(snapshots.all { it.version == DiagnosticSnapshotVersion.CURRENT })
         assertTrue(snapshots.all { it.evidence.isNotEmpty() })
-        assertTrue(snapshots.flatMap { it.evidence }.all { it.capturedAt == capturedAt })
+        assertTrue(
+            snapshots
+                .filterNot { it.categoryId == DiagnosticCategoryId.DEVICE }
+                .flatMap { it.evidence }
+                .all { it.capturedAt == capturedAt },
+        )
         assertTrue(
             snapshots.flatMap { it.evidence }.all { evidence ->
                 evidence.checkId.value.startsWith("${evidence.categoryId.stableId}.")
@@ -104,6 +109,26 @@ class RunAllSnapshotMapperTest {
         assertEquals(DiagnosticStatus.NOT_AVAILABLE, evidence.getValue("vibration.hardware").status)
         assertEquals(Applicability.NOT_APPLICABLE, evidence.getValue("vibration.hardware").applicability)
         assertEquals(EvidenceReasonCode.HARDWARE_UNAVAILABLE, evidence.getValue("vibration.hardware").reason)
+    }
+
+    @Test
+    fun rootArtifactHeuristicRemainsInformationalWhenNothingIsDetected() {
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots = diagnosticSnapshotsWithSensitiveConnectivity(),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(),
+                    capturedAt = Instant.parse("2026-08-07T12:00:30Z"),
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+                .getValue("device.security")
+
+        assertEquals(DiagnosticStatus.INFO, evidence.status)
+        assertEquals(Confidence.LOW, evidence.confidence)
+        assertEquals(EvidenceSource.ESTIMATE, evidence.source)
+        assertEquals(EvidenceValue.BooleanValue(false), evidence.value)
+        assertEquals(Instant.parse("2026-08-07T12:00:00Z"), evidence.capturedAt)
     }
 
     private fun diagnosticSnapshotsWithSensitiveConnectivity() =
@@ -167,9 +192,10 @@ class RunAllSnapshotMapperTest {
             basebandVersion = "baseband",
             bootloaderVersion = "bootloader",
             widevineLevel = "L1",
-            isRooted = false,
+            rootArtifactDetected = false,
             developerOptionsEnabled = false,
             usbDebuggingEnabled = false,
+            capturedAt = Instant.parse("2026-08-07T12:00:00Z"),
         )
 
     private fun performanceInfo() =
