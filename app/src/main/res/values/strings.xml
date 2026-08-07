@@ -324,7 +324,7 @@
     <string name="conn_wifi_signal">Signal</string>
     <string name="conn_wifi_signal_level">Signal Level</string>
     <string name="conn_wifi_frequency">Frequency</string>
-    <string name="conn_wifi_link_speed">Link Speed</string>
+    <string name="conn_wifi_link_speed">Negotiated Wi-Fi link speed</string>
     <string name="conn_wifi_standard">Wi-Fi Standard</string>
     <string name="conn_wifi_ip">IP Address</string>
     <string name="conn_wifi_gateway">Gateway</string>
@@ -337,7 +337,6 @@
     <string name="conn_bt_status">Status</string>
     <string name="conn_bt_name">Name</string>
     <string name="conn_bt_ble">Bluetooth LE</string>
-    <string name="conn_bt_version">Version</string>
     <string name="conn_bt_bonded">Paired Devices</string>
 
     <!-- NFC -->
@@ -345,6 +344,7 @@
     <string name="conn_nfc_not_supported">NFC hardware not available on this device.</string>
     <string name="conn_nfc_status">Status</string>
     <string name="conn_nfc_hce">Host Card Emulation</string>
+    <string name="conn_nfc_capability_only">This reports NFC capability and enabled state only; it does not verify a physical NFC exchange.</string>
 
     <!-- GPS -->
     <string name="conn_gps_title">GPS</string>
@@ -355,8 +355,11 @@
     <string name="conn_gps_searching">Searching…</string>
     <string name="conn_gps_fixed">Fixed</string>
     <string name="conn_gps_failed">Timed Out</string>
+    <string name="conn_gps_start_failed">Could not start</string>
+    <string name="conn_gps_privacy_ephemeral">Exact location is shown only on this screen and is not saved in the report.</string>
     <string name="conn_gps_elapsed">Elapsed</string>
     <string name="conn_gps_fix_time">Fix Time</string>
+    <string name="conn_gps_fix_duration_format">%1$.1f s</string>
     <string name="conn_gps_latitude">Latitude</string>
     <string name="conn_gps_longitude">Longitude</string>
     <string name="conn_gps_accuracy">Accuracy</string>
@@ -379,6 +382,10 @@
     <string name="conn_mobile_title">Mobile Network</string>
     <string name="conn_mobile_not_supported">Telephony hardware not available on this device.</string>
     <string name="conn_mobile_status">Data State</string>
+    <string name="conn_mobile_data_connected">Connected</string>
+    <string name="conn_mobile_data_connecting">Connecting</string>
+    <string name="conn_mobile_data_disconnected">Disconnected</string>
+    <string name="conn_mobile_data_suspended">Suspended</string>
     <string name="conn_mobile_operator">Operator</string>
     <string name="conn_mobile_sim_operator">SIM Operator</string>
     <string name="conn_mobile_phone_type">Phone Type</string>

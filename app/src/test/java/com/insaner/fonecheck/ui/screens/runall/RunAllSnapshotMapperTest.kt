@@ -25,9 +25,14 @@ import com.insaner.fonecheck.ui.screens.battery.BatteryTestState
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestState
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestState
 import com.insaner.fonecheck.ui.screens.camera.CameraTestState
+import com.insaner.fonecheck.ui.screens.connectivity.BluetoothAccessCode
+import com.insaner.fonecheck.ui.screens.connectivity.BluetoothState
 import com.insaner.fonecheck.ui.screens.connectivity.ConnectivityTestState
+import com.insaner.fonecheck.ui.screens.connectivity.GpsFailureCode
+import com.insaner.fonecheck.ui.screens.connectivity.GpsFixStatus
 import com.insaner.fonecheck.ui.screens.connectivity.GpsState
 import com.insaner.fonecheck.ui.screens.connectivity.MobileNetworkState
+import com.insaner.fonecheck.ui.screens.connectivity.NfcState
 import com.insaner.fonecheck.ui.screens.connectivity.WifiState
 import com.insaner.fonecheck.ui.screens.display.DisplayTestState
 import com.insaner.fonecheck.ui.screens.sensor.GuidedSensorCatalog
@@ -313,6 +318,96 @@ class RunAllSnapshotMapperTest {
         assertEquals(EvidenceSource.AUTOMATIC_MEASUREMENT, evidence.getValue("sensors.motion").source)
     }
 
+    @Test
+    fun connectivityEvidenceSeparatesPermissionCapabilityAndPhysicalFixWithoutPrivateValues() {
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots =
+                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                            connectivity =
+                                ConnectivityTestState(
+                                    wifi = WifiState(isAvailable = true, isConnected = true, ssid = "private-ssid"),
+                                    bluetooth =
+                                        BluetoothState(
+                                            isAvailable = true,
+                                            access = BluetoothAccessCode.PERMISSION_DENIED,
+                                        ),
+                                    nfc =
+                                        NfcState(
+                                            isAvailable = true,
+                                            isEnabled = true,
+                                            supportsHostCardEmulation = true,
+                                        ),
+                                    gps =
+                                        GpsState(
+                                            isAvailable = true,
+                                            isEnabled = true,
+                                            fixStatus = GpsFixStatus.FIXED,
+                                            latitude = 60.1699,
+                                            longitude = 24.9384,
+                                            fixTimeMs = 3_500L,
+                                        ),
+                                    mobileNetwork =
+                                        MobileNetworkState(
+                                            isAvailable = true,
+                                            isConnected = true,
+                                            operatorName = "private-operator",
+                                            cellId = "private-cell-id",
+                                        ),
+                                ),
+                        ),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(),
+                    capturedAt = Instant.parse("2026-08-08T12:00:00Z"),
+                ).single { it.categoryId == DiagnosticCategoryId.CONNECTIVITY }
+                .evidence
+                .associateBy { it.checkId.value }
+
+        assertEquals(DiagnosticStatus.INFO, evidence.getValue("connectivity.wifi").status)
+        assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue("connectivity.bluetooth").status)
+        assertEquals(EvidenceReasonCode.PERMISSION_DENIED, evidence.getValue("connectivity.bluetooth").reason)
+        assertEquals(DiagnosticStatus.INFO, evidence.getValue("connectivity.nfc").status)
+        assertEquals(DiagnosticStatus.INFO, evidence.getValue("connectivity.nfc_hce").status)
+        assertEquals(DiagnosticStatus.PASS, evidence.getValue("connectivity.gps").status)
+        assertEquals(EvidenceSource.AUTOMATIC_MEASUREMENT, evidence.getValue("connectivity.gps").source)
+        assertEquals(EvidenceValue.LongValue(3_500L), evidence.getValue("connectivity.gps").value)
+        assertEquals(DiagnosticStatus.INFO, evidence.getValue("connectivity.mobile").status)
+
+        val rawValues = evidence.values.mapNotNull { (it.value as? EvidenceValue.RawTextValue)?.value }
+        assertFalse(rawValues.any { it.contains("private") || it.contains("60.1699") || it.contains("24.9384") })
+    }
+
+    @Test
+    fun gpsTimeoutIsADegradedObservationInsteadOfAHardwareFailureClaim() {
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots =
+                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                            connectivity =
+                                ConnectivityTestState(
+                                    gps =
+                                        GpsState(
+                                            isAvailable = true,
+                                            isEnabled = true,
+                                            fixStatus = GpsFixStatus.FAILED,
+                                            failure = GpsFailureCode.TIMEOUT,
+                                        ),
+                                ),
+                        ),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(),
+                    capturedAt = Instant.parse("2026-08-08T12:00:00Z"),
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+                .getValue("connectivity.gps")
+
+        assertEquals(DiagnosticStatus.WARNING, evidence.status)
+        assertEquals(Confidence.LOW, evidence.confidence)
+        assertEquals(EvidenceReasonCode.TIMEOUT, evidence.reason)
+    }
+
     private fun diagnosticSnapshotsWithSensitiveConnectivity() =
         DiagnosticSnapshots(
             device = deviceInfo(),
@@ -330,7 +425,6 @@ class RunAllSnapshotMapperTest {
                             isAvailable = true,
                             isConnected = true,
                             ssid = "private-ssid",
-                            bssid = "00:11:22:33:44:55",
                             ipAddress = "192.0.2.10",
                         ),
                     gps =

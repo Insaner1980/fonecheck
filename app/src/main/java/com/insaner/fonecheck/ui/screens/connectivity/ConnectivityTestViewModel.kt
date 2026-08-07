@@ -11,6 +11,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.location.GnssStatus
+import android.location.Location
+import android.location.LocationListener
 import android.location.LocationManager
 import android.net.ConnectivityManager
 import android.net.Network
@@ -20,6 +22,8 @@ import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
 import android.nfc.NfcManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.telephony.CellInfo
 import android.telephony.CellInfoGsm
 import android.telephony.CellInfoLte
@@ -30,14 +34,14 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.net.Inet4Address
-import java.net.NetworkInterface
-import java.net.SocketException
-import javax.inject.Inject
 
 // ── WiFi ────────────────────────────────────────────────────────────────────────
 
@@ -45,7 +49,6 @@ data class WifiState(
     val isAvailable: Boolean = false,
     val isConnected: Boolean = false,
     val ssid: String? = null,
-    val bssid: String? = null,
     val signalStrengthDbm: Int? = null,
     val signalLevel: Int? = null,
     val frequencyMhz: Int? = null,
@@ -54,8 +57,6 @@ data class WifiState(
     val gateway: String? = null,
     val dns1: String? = null,
     val dns2: String? = null,
-    val macAddress: String? = null,
-    val channelWidth: String? = null,
     val wifiStandard: String? = null,
 )
 
@@ -63,11 +64,11 @@ data class WifiState(
 
 data class BluetoothState(
     val isAvailable: Boolean = false,
-    val isEnabled: Boolean = false,
+    val access: BluetoothAccessCode = BluetoothAccessCode.HARDWARE_ABSENT,
+    val isEnabled: Boolean? = null,
     val name: String? = null,
     val bleSupported: Boolean = false,
     val bondedDeviceCount: Int = 0,
-    val bluetoothVersion: String? = null,
 )
 
 // ── NFC ─────────────────────────────────────────────────────────────────────────
@@ -85,6 +86,11 @@ enum class GpsFixStatus {
     SEARCHING,
     FIXED,
     FAILED,
+}
+
+enum class GpsFailureCode {
+    TIMEOUT,
+    START_FAILED,
 }
 
 data class GpsSatelliteInfo(
@@ -105,13 +111,12 @@ data class GpsState(
     val accuracy: Float? = null,
     val altitude: Double? = null,
     val speed: Float? = null,
-    val bearing: Float? = null,
     val fixTimeMs: Long? = null,
     val satelliteCount: Int = 0,
     val satellitesUsed: Int = 0,
     val satellites: List<GpsSatelliteInfo> = emptyList(),
-    val searchStartTime: Long = 0L,
     val elapsedSearchMs: Long = 0L,
+    val failure: GpsFailureCode? = null,
 )
 
 // ── Mobile Network ──────────────────────────────────────────────────────────────
@@ -120,18 +125,25 @@ data class MobileNetworkState(
     val isAvailable: Boolean = false,
     val isConnected: Boolean = false,
     val operatorName: String? = null,
-    val networkOperator: String? = null,
     val simOperatorName: String? = null,
     val networkType: String? = null,
-    val dataState: String? = null,
+    val dataState: MobileDataStateCode? = null,
     val signalStrengthDbm: Int? = null,
     val signalLevel: Int? = null,
-    val isRoaming: Boolean = false,
+    val isRoaming: Boolean? = null,
     val phoneType: String? = null,
     val cellId: String? = null,
     val mcc: String? = null,
     val mnc: String? = null,
 )
+
+enum class MobileDataStateCode {
+    CONNECTED,
+    CONNECTING,
+    DISCONNECTED,
+    SUSPENDED,
+    UNKNOWN,
+}
 
 private data class CellNetworkSnapshot(
     val signalDbm: Int? = null,
@@ -178,10 +190,12 @@ class ConnectivityTestViewModel
         private val nfcManager = context.getSystemService(NfcManager::class.java)
 
         private val _state = MutableStateFlow(ConnectivityTestState())
-        val state: StateFlow<ConnectivityTestState> = _state
+        val state: StateFlow<ConnectivityTestState> = _state.asStateFlow()
 
-        private var gnssCallback: GnssStatus.Callback? = null
-        private var gpsSearchJob: kotlinx.coroutines.Job? = null
+        private val gpsSearchGate = GpsSearchGate(GPS_SEARCH_TIMEOUT_MILLIS)
+        private val gnssCallbackOwner = CallbackOwner<GnssStatus.Callback>(::unregisterGnssCallback)
+        private val locationListenerOwner = CallbackOwner<LocationListener>(::removeLocationListener)
+        private var gpsSearchJob: Job? = null
         private var networkCallback: ConnectivityManager.NetworkCallback? = null
         private var bluetoothReceiver: BroadcastReceiver? = null
 
@@ -193,8 +207,8 @@ class ConnectivityTestViewModel
         }
 
         fun checkPermissions() {
-            _state.value =
-                _state.value.copy(
+            _state.update {
+                it.copy(
                     hasLocationPermission =
                         ContextCompat.checkSelfPermission(
                             context,
@@ -206,19 +220,22 @@ class ConnectivityTestViewModel
                             Manifest.permission.READ_PHONE_STATE,
                         ) == PackageManager.PERMISSION_GRANTED,
                 )
+            }
         }
 
         fun onPermissionsGranted() {
             checkPermissions()
+            if (!_state.value.hasLocationPermission) clearProtectedGpsData()
             refreshAll()
         }
 
         fun toggleSection(section: ConnectivitySection) {
             val current = _state.value.expandedSection
-            _state.value =
-                _state.value.copy(
+            _state.update {
+                it.copy(
                     expandedSection = if (current == section) null else section,
                 )
+            }
         }
 
         fun refreshAll() {
@@ -235,7 +252,7 @@ class ConnectivityTestViewModel
         private fun refreshWifi() {
             val hasWifi = context.packageManager.hasSystemFeature(PackageManager.FEATURE_WIFI)
             if (!hasWifi) {
-                _state.value = _state.value.copy(wifi = WifiState(isAvailable = false))
+                _state.update { it.copy(wifi = WifiState(isAvailable = false)) }
                 return
             }
 
@@ -247,23 +264,24 @@ class ConnectivityTestViewModel
             var signalDbm: Int? = null
             var frequency: Int? = null
             var linkSpeed: Int? = null
-            var channelWidth: String? = null
             var wifiStandard: String? = null
 
-            if (isWifiConnected && caps != null) {
+            if (isWifiConnected) {
                 val wifiInfo =
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        caps.transportInfo as? WifiInfo
+                        caps?.transportInfo as? WifiInfo
                     } else {
                         @Suppress("DEPRECATION")
                         wifiManager.connectionInfo
                     }
                 wifiInfo?.let { info ->
-                    ssid =
-                        info.ssid
-                            ?.removePrefix("\"")
-                            ?.removeSuffix("\"")
-                            ?.takeIf { it != "<unknown ssid>" }
+                    if (_state.value.hasLocationPermission) {
+                        ssid =
+                            info.ssid
+                                ?.removePrefix("\"")
+                                ?.removeSuffix("\"")
+                                ?.takeIf { it != "<unknown ssid>" }
+                    }
                     signalDbm = info.rssi.takeIf { it != -127 }
                     frequency = info.frequency.takeIf { it > 0 }
                     linkSpeed = info.linkSpeed.takeIf { it > 0 }
@@ -280,18 +298,26 @@ class ConnectivityTestViewModel
                 }
             }
 
-            val signalLevel = signalDbm?.let { WifiManager.calculateSignalLevel(it, 5) }
+            val signalLevel = signalDbm?.let(::wifiSignalLevel)
 
-            // IP + DNS from DhcpInfo (legacy but reliable)
-            @Suppress("DEPRECATION")
-            val dhcp = wifiManager?.dhcpInfo
-            val ipAddress = getLocalIpAddress()
-            val gateway = dhcp?.gateway?.takeIf { it != 0 }?.let { intToIp(it) }
-            val dns1 = dhcp?.dns1?.takeIf { it != 0 }?.let { intToIp(it) }
-            val dns2 = dhcp?.dns2?.takeIf { it != 0 }?.let { intToIp(it) }
+            val linkProperties = network?.let(connectivityManager::getLinkProperties)
+            val ipAddress =
+                linkProperties
+                    ?.linkAddresses
+                    ?.firstOrNull { it.address.address.size == IPV4_ADDRESS_BYTES }
+                    ?.address
+                    ?.hostAddress
+            val gateway =
+                linkProperties
+                    ?.routes
+                    ?.firstOrNull { it.isDefaultRoute && it.gateway != null }
+                    ?.gateway
+                    ?.hostAddress
+            val dns1 = linkProperties?.dnsServers?.getOrNull(0)?.hostAddress
+            val dns2 = linkProperties?.dnsServers?.getOrNull(1)?.hostAddress
 
-            _state.value =
-                _state.value.copy(
+            _state.update {
+                it.copy(
                     wifi =
                         WifiState(
                             isAvailable = true,
@@ -305,49 +331,47 @@ class ConnectivityTestViewModel
                             gateway = gateway,
                             dns1 = dns1,
                             dns2 = dns2,
-                            channelWidth = channelWidth,
                             wifiStandard = wifiStandard,
                         ),
                 )
+            }
         }
 
         private fun registerNetworkCallback() {
             val callback =
                 object : ConnectivityManager.NetworkCallback() {
                     override fun onAvailable(network: Network) {
-                        refreshWifi()
+                        refreshNetworkState()
                     }
 
                     override fun onLost(network: Network) {
-                        refreshWifi()
+                        refreshNetworkState()
                     }
 
                     override fun onCapabilitiesChanged(
                         network: Network,
                         caps: NetworkCapabilities,
                     ) {
-                        refreshWifi()
+                        refreshNetworkState()
                     }
                 }
             networkCallback = callback
             connectivityManager.registerDefaultNetworkCallback(callback)
         }
 
-        private fun getLocalIpAddress(): String? =
-            try {
-                NetworkInterface
-                    .getNetworkInterfaces()
-                    ?.asSequence()
-                    ?.filter { it.name.startsWith("wlan") || it.name.startsWith("eth") }
-                    ?.flatMap { it.inetAddresses.asSequence() }
-                    ?.firstOrNull { !it.isLoopbackAddress && it is Inet4Address }
-                    ?.hostAddress
-            } catch (_: SocketException) {
-                null
-            }
+        private fun refreshNetworkState() {
+            refreshWifi()
+            refreshMobileNetwork()
+        }
 
-        private fun intToIp(ip: Int): String =
-            "${ip and 0xFF}.${ip shr 8 and 0xFF}.${ip shr 16 and 0xFF}.${ip shr 24 and 0xFF}"
+        private fun wifiSignalLevel(rssiDbm: Int): Int =
+            when {
+                rssiDbm >= -55 -> 4
+                rssiDbm >= -65 -> 3
+                rssiDbm >= -75 -> 2
+                rssiDbm >= -85 -> 1
+                else -> 0
+            }
 
         // ── Bluetooth ───────────────────────────────────────────────────────────────
 
@@ -358,10 +382,16 @@ class ConnectivityTestViewModel
             val hasBle = context.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)
 
             if (!hasBt || adapter == null) {
-                _state.value =
-                    _state.value.copy(
-                        bluetooth = BluetoothState(isAvailable = false, bleSupported = hasBle),
+                _state.update {
+                    it.copy(
+                        bluetooth =
+                            BluetoothState(
+                                isAvailable = false,
+                                access = BluetoothAccessCode.HARDWARE_ABSENT,
+                                bleSupported = hasBle,
+                            ),
                     )
+                }
                 return
             }
 
@@ -375,27 +405,55 @@ class ConnectivityTestViewModel
                     true
                 }
 
-            val name = if (hasPermission) adapter.name else null
-            val bondedCount = if (hasPermission) adapter.bondedDevices?.size ?: 0 else 0
+            val access =
+                BluetoothAccessPolicy.evaluate(
+                    sdkInt = Build.VERSION.SDK_INT,
+                    hardwareAvailable = true,
+                    permissionGranted = hasPermission,
+                )
+            val canReadProtectedState =
+                access == BluetoothAccessCode.GRANTED || access == BluetoothAccessCode.NOT_REQUIRED
+            val protectedState =
+                if (canReadProtectedState) {
+                    try {
+                        BluetoothProtectedState(
+                            isEnabled = adapter.isEnabled,
+                            name = adapter.name,
+                            bondedDeviceCount = adapter.bondedDevices?.size ?: 0,
+                        )
+                    } catch (_: SecurityException) {
+                        null
+                    }
+                } else {
+                    null
+                }
+            val effectiveAccess =
+                if (canReadProtectedState && protectedState == null) {
+                    BluetoothAccessCode.PERMISSION_DENIED
+                } else {
+                    access
+                }
 
-            _state.value =
-                _state.value.copy(
+            _state.update {
+                it.copy(
                     bluetooth =
                         BluetoothState(
                             isAvailable = true,
-                            isEnabled = hasPermission && adapter.isEnabled,
-                            name = name,
+                            access = effectiveAccess,
+                            isEnabled = protectedState?.isEnabled,
+                            name = protectedState?.name,
                             bleSupported = hasBle,
-                            bondedDeviceCount = bondedCount,
-                            bluetoothVersion = detectBluetoothVersion(),
+                            bondedDeviceCount = protectedState?.bondedDeviceCount ?: 0,
                         ),
                 )
+            }
         }
 
-        private fun detectBluetoothVersion(): String? {
-            val hasBle = context.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)
-            return if (hasBle) "4.0+" else "Classic"
-        }
+        private data class BluetoothProtectedState(
+            val isEnabled: Boolean,
+            val name: String?,
+            val bondedDeviceCount: Int,
+        )
 
         private fun registerBluetoothReceiver() {
             val receiver =
@@ -410,7 +468,14 @@ class ConnectivityTestViewModel
                     }
                 }
             bluetoothReceiver = receiver
-            context.registerReceiver(receiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
+            // Bluetooth framework broadcasts can originate from a privileged non-system UID.
+            // The receiver ignores payload data and only refreshes state from Android APIs.
+            ContextCompat.registerReceiver(
+                context,
+                receiver,
+                IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED),
+                ContextCompat.RECEIVER_EXPORTED,
+            )
         }
 
         // ── NFC ─────────────────────────────────────────────────────────────────────
@@ -420,8 +485,8 @@ class ConnectivityTestViewModel
             val hasNfc = context.packageManager.hasSystemFeature(PackageManager.FEATURE_NFC)
             val hasHce = context.packageManager.hasSystemFeature(PackageManager.FEATURE_NFC_HOST_CARD_EMULATION)
 
-            _state.value =
-                _state.value.copy(
+            _state.update {
+                it.copy(
                     nfc =
                         NfcState(
                             isAvailable = hasNfc && nfcAdapter != null,
@@ -429,34 +494,38 @@ class ConnectivityTestViewModel
                             supportsHostCardEmulation = hasHce,
                         ),
                 )
+            }
         }
 
         // ── GPS ─────────────────────────────────────────────────────────────────────
 
         private fun refreshGpsAvailability() {
             val hasGps = context.packageManager.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS)
-            val isEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-            _state.value =
-                _state.value.copy(
+            val isEnabled = hasGps && locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+            _state.update {
+                it.copy(
                     gps =
-                        _state.value.gps.copy(
+                        it.gps.copy(
                             isAvailable = hasGps,
                             isEnabled = isEnabled,
                         ),
                 )
+            }
+            if (!hasGps || !isEnabled) cancelGpsFix()
         }
 
         @SuppressLint("MissingPermission")
         fun startGpsFix() {
-            if (!_state.value.hasLocationPermission) return
+            val gps = _state.value.gps
+            if (!_state.value.hasLocationPermission || !gps.isAvailable || !gps.isEnabled) return
 
             val startTime = System.currentTimeMillis()
-            _state.value =
-                _state.value.copy(
+            val token = gpsSearchGate.start(startTime) ?: return
+            _state.update {
+                it.copy(
                     gps =
-                        _state.value.gps.copy(
+                        it.gps.copy(
                             fixStatus = GpsFixStatus.SEARCHING,
-                            searchStartTime = startTime,
                             elapsedSearchMs = 0L,
                             satellites = emptyList(),
                             satelliteCount = 0,
@@ -464,14 +533,18 @@ class ConnectivityTestViewModel
                             latitude = null,
                             longitude = null,
                             accuracy = null,
+                            altitude = null,
+                            speed = null,
                             fixTimeMs = null,
+                            failure = null,
                         ),
                 )
+            }
 
-            // GNSS status callback for satellite info
-            val callback =
+            val gnssCallback =
                 object : GnssStatus.Callback() {
                     override fun onSatelliteStatusChanged(status: GnssStatus) {
+                        if (!gpsSearchGate.isActive(token)) return
                         val sats = mutableListOf<GpsSatelliteInfo>()
                         var usedCount = 0
                         for (i in 0 until status.satelliteCount) {
@@ -488,76 +561,173 @@ class ConnectivityTestViewModel
                                 ),
                             )
                         }
-                        _state.value =
-                            _state.value.copy(
+                        _state.update {
+                            it.copy(
                                 gps =
-                                    _state.value.gps.copy(
+                                    it.gps.copy(
                                         satelliteCount = status.satelliteCount,
                                         satellitesUsed = usedCount,
                                         satellites = sats.sortedByDescending { it.cn0DbHz },
                                     ),
                             )
+                        }
                     }
                 }
-            gnssCallback = callback
-            locationManager.registerGnssStatusCallback(callback, null)
+            val locationListener =
+                object : LocationListener {
+                    override fun onLocationChanged(location: Location) {
+                        if (!gpsSearchGate.complete(token)) return
+                        val fixTime = System.currentTimeMillis() - startTime
+                        _state.update {
+                            it.copy(
+                                gps =
+                                    it.gps.copy(
+                                        fixStatus = GpsFixStatus.FIXED,
+                                        latitude = location.latitude,
+                                        longitude = location.longitude,
+                                        accuracy = location.accuracy,
+                                        altitude = if (location.hasAltitude()) location.altitude else null,
+                                        speed = if (location.hasSpeed()) location.speed else null,
+                                        fixTimeMs = fixTime,
+                                        elapsedSearchMs = fixTime,
+                                        failure = null,
+                                    ),
+                            )
+                        }
+                        releaseGpsCallbacks()
+                    }
+                }
 
-            // Request location updates
-            locationManager.requestLocationUpdates(
-                LocationManager.GPS_PROVIDER,
-                100L,
-                0f,
-            ) { location ->
-                val fixTime = System.currentTimeMillis() - startTime
-                _state.value =
-                    _state.value.copy(
-                        gps =
-                            _state.value.gps.copy(
-                                fixStatus = GpsFixStatus.FIXED,
-                                latitude = location.latitude,
-                                longitude = location.longitude,
-                                accuracy = location.accuracy,
-                                altitude = if (location.hasAltitude()) location.altitude else null,
-                                speed = if (location.hasSpeed()) location.speed else null,
-                                bearing = if (location.hasBearing()) location.bearing else null,
-                                fixTimeMs = fixTime,
-                            ),
+            try {
+                gnssCallbackOwner.replace(gnssCallback)
+                val gnssRegistered =
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        locationManager.registerGnssStatusCallback(context.mainExecutor, gnssCallback)
+                    } else {
+                        locationManager.registerGnssStatusCallback(
+                            gnssCallback,
+                            Handler(Looper.getMainLooper()),
+                        )
+                    }
+                if (!gnssRegistered) {
+                    gnssCallbackOwner.clear()
+                }
+                locationListenerOwner.replace(locationListener)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    locationManager.requestLocationUpdates(
+                        LocationManager.GPS_PROVIDER,
+                        GPS_MIN_UPDATE_MILLIS,
+                        0f,
+                        context.mainExecutor,
+                        locationListener,
                     )
-                stopGpsFix()
+                } else {
+                    locationManager.requestLocationUpdates(
+                        LocationManager.GPS_PROVIDER,
+                        GPS_MIN_UPDATE_MILLIS,
+                        0f,
+                        locationListener,
+                    )
+                }
+            } catch (_: RuntimeException) {
+                gpsSearchGate.cancel(token)
+                releaseGpsCallbacks()
+                _state.update {
+                    it.copy(
+                        gps = it.gps.copy(fixStatus = GpsFixStatus.FAILED, failure = GpsFailureCode.START_FAILED),
+                    )
+                }
+                return
             }
 
-            // Elapsed time ticker + timeout
             gpsSearchJob =
                 viewModelScope.launch {
-                    val timeout = 60_000L
-                    while (_state.value.gps.fixStatus == GpsFixStatus.SEARCHING) {
+                    while (gpsSearchGate.isActive(token)) {
+                        delay(GPS_TICK_MILLIS)
                         val elapsed = System.currentTimeMillis() - startTime
-                        _state.value =
-                            _state.value.copy(
-                                gps = _state.value.gps.copy(elapsedSearchMs = elapsed),
-                            )
-                        if (elapsed > timeout) {
-                            _state.value =
-                                _state.value.copy(
-                                    gps = _state.value.gps.copy(fixStatus = GpsFixStatus.FAILED),
-                                )
-                            stopGpsFix()
-                            break
+                        when (gpsSearchGate.tick(token, System.currentTimeMillis())) {
+                            GpsSearchTick.ACTIVE ->
+                                _state.update {
+                                    it.copy(gps = it.gps.copy(elapsedSearchMs = elapsed))
+                                }
+
+                            GpsSearchTick.TIMED_OUT -> {
+                                _state.update {
+                                    it.copy(
+                                        gps =
+                                            it.gps.copy(
+                                                fixStatus = GpsFixStatus.FAILED,
+                                                elapsedSearchMs = elapsed,
+                                                failure = GpsFailureCode.TIMEOUT,
+                                            ),
+                                    )
+                                }
+                                releaseGpsCallbacks()
+                            }
+
+                            GpsSearchTick.IGNORED -> Unit
                         }
-                        delay(500L)
                     }
                 }
         }
 
-        @SuppressLint("MissingPermission")
-        fun stopGpsFix() {
-            gnssCallback?.let { locationManager.unregisterGnssStatusCallback(it) }
-            gnssCallback = null
+        fun cancelGpsFix() {
+            gpsSearchGate.cancel()
+            releaseGpsCallbacks()
+            _state.update {
+                if (it.gps.fixStatus == GpsFixStatus.SEARCHING) {
+                    it.copy(
+                        gps =
+                            it.gps.copy(
+                                fixStatus = GpsFixStatus.NOT_STARTED,
+                                elapsedSearchMs = 0L,
+                                failure = null,
+                            ),
+                    )
+                } else {
+                    it
+                }
+            }
+        }
+
+        fun stopGpsFix() = cancelGpsFix()
+
+        private fun clearProtectedGpsData() {
+            cancelGpsFix()
+            _state.update {
+                it.copy(
+                    gps =
+                        it.gps.copy(
+                            latitude = null,
+                            longitude = null,
+                            accuracy = null,
+                            altitude = null,
+                            speed = null,
+                        ),
+                )
+            }
+        }
+
+        private fun releaseGpsCallbacks() {
             gpsSearchJob?.cancel()
             gpsSearchJob = null
+            gnssCallbackOwner.clear()
+            locationListenerOwner.clear()
+        }
+
+        private fun unregisterGnssCallback(callback: GnssStatus.Callback) {
             try {
-                locationManager.removeUpdates {}
-            } catch (_: Exception) {
+                locationManager.unregisterGnssStatusCallback(callback)
+            } catch (_: IllegalArgumentException) {
+                // The callback was already removed by the platform.
+            }
+        }
+
+        private fun removeLocationListener(listener: LocationListener) {
+            try {
+                locationManager.removeUpdates(listener)
+            } catch (_: SecurityException) {
+                // Revoking location permission also stops delivery; local ownership is still cleared.
             }
         }
 
@@ -579,10 +749,7 @@ class ConnectivityTestViewModel
         private fun refreshMobileNetwork() {
             val hasTelephony = context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)
             if (!hasTelephony) {
-                _state.value =
-                    _state.value.copy(
-                        mobileNetwork = MobileNetworkState(isAvailable = false),
-                    )
+                _state.update { it.copy(mobileNetwork = MobileNetworkState(isAvailable = false)) }
                 return
             }
 
@@ -590,70 +757,88 @@ class ConnectivityTestViewModel
             val caps = network?.let { connectivityManager.getNetworkCapabilities(it) }
             val isCellConnected = caps?.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) == true
 
-            val operatorName = telephonyManager.networkOperatorName?.takeIf { it.isNotBlank() }
-            val networkOperator = telephonyManager.networkOperator?.takeIf { it.isNotBlank() }
-            val simOperatorName = telephonyManager.simOperatorName?.takeIf { it.isNotBlank() }
-            val isRoaming = telephonyManager.isNetworkRoaming
-
-            val phoneType =
-                when (telephonyManager.phoneType) {
-                    TelephonyManager.PHONE_TYPE_GSM -> "GSM"
-                    TelephonyManager.PHONE_TYPE_CDMA -> "CDMA"
-                    TelephonyManager.PHONE_TYPE_SIP -> "SIP"
-                    else -> "None"
-                }
-
-            val dataState =
-                when (telephonyManager.dataState) {
-                    TelephonyManager.DATA_CONNECTED -> "Connected"
-                    TelephonyManager.DATA_CONNECTING -> "Connecting"
-                    TelephonyManager.DATA_DISCONNECTED -> "Disconnected"
-                    TelephonyManager.DATA_SUSPENDED -> "Suspended"
-                    else -> "Unknown"
-                }
-
-            val operatorCodes =
-                networkOperator?.takeIf { operator ->
-                    operator.length in 5..6 && operator.all { it.isDigit() }
-                }
-            val fallbackMcc = operatorCodes?.take(3)
-            val fallbackMnc = operatorCodes?.drop(3)
             val hasPhonePermission = _state.value.hasPhonePermission
-            val networkType =
-                if (hasPhonePermission) {
-                    @Suppress("DEPRECATION")
-                    getNetworkTypeName(telephonyManager.dataNetworkType)
-                } else {
-                    null
-                }
-            val cellSnapshot =
-                if (hasPhonePermission) {
-                    getRegisteredCellSnapshot(fallbackMcc, fallbackMnc)
-                } else {
-                    null
-                }
+            val protectedState = if (hasPhonePermission) readProtectedMobileState() else null
 
-            _state.value =
-                _state.value.copy(
+            _state.update {
+                it.copy(
                     mobileNetwork =
                         MobileNetworkState(
                             isAvailable = true,
                             isConnected = isCellConnected,
-                            operatorName = operatorName,
-                            networkOperator = networkOperator,
-                            simOperatorName = simOperatorName,
-                            networkType = networkType,
-                            dataState = dataState,
-                            signalStrengthDbm = cellSnapshot?.signalDbm,
-                            signalLevel = cellSnapshot?.signalLevel,
-                            isRoaming = isRoaming,
-                            phoneType = phoneType,
-                            cellId = cellSnapshot?.cellId,
-                            mcc = cellSnapshot?.mcc ?: fallbackMcc,
-                            mnc = cellSnapshot?.mnc ?: fallbackMnc,
+                            operatorName = protectedState?.operatorName,
+                            simOperatorName = protectedState?.simOperatorName,
+                            networkType = protectedState?.networkType,
+                            dataState = protectedState?.dataState,
+                            signalStrengthDbm = protectedState?.cell?.signalDbm,
+                            signalLevel = protectedState?.cell?.signalLevel,
+                            isRoaming = protectedState?.isRoaming,
+                            phoneType = protectedState?.phoneType,
+                            cellId = protectedState?.cell?.cellId,
+                            mcc = protectedState?.cell?.mcc,
+                            mnc = protectedState?.cell?.mnc,
                         ),
                 )
+            }
         }
+
+        private data class ProtectedMobileState(
+            val operatorName: String?,
+            val simOperatorName: String?,
+            val networkType: String?,
+            val dataState: MobileDataStateCode,
+            val isRoaming: Boolean,
+            val phoneType: String,
+            val cell: CellNetworkSnapshot?,
+        )
+
+        @SuppressLint("MissingPermission")
+        private fun readProtectedMobileState(): ProtectedMobileState? =
+            try {
+                val networkOperator = telephonyManager.networkOperator?.takeIf { it.isNotBlank() }
+                val operatorCodes =
+                    networkOperator?.takeIf { operator ->
+                        operator.length in 5..6 && operator.all(Char::isDigit)
+                    }
+                val fallbackMcc = operatorCodes?.take(3)
+                val fallbackMnc = operatorCodes?.drop(3)
+                @Suppress("DEPRECATION")
+                val networkType = getNetworkTypeName(telephonyManager.dataNetworkType)
+                ProtectedMobileState(
+                    operatorName = telephonyManager.networkOperatorName?.takeIf(String::isNotBlank),
+                    simOperatorName = telephonyManager.simOperatorName?.takeIf(String::isNotBlank),
+                    networkType = networkType,
+                    dataState = mobileDataState(telephonyManager.dataState),
+                    isRoaming = telephonyManager.isNetworkRoaming,
+                    phoneType = phoneType(telephonyManager.phoneType),
+                    cell =
+                        if (_state.value.hasLocationPermission) {
+                            getRegisteredCellSnapshot(fallbackMcc, fallbackMnc)
+                        } else {
+                            null
+                        },
+                )
+            } catch (_: SecurityException) {
+                null
+            }
+
+        private fun mobileDataState(state: Int): MobileDataStateCode =
+            when (state) {
+                TelephonyManager.DATA_CONNECTED -> MobileDataStateCode.CONNECTED
+                TelephonyManager.DATA_CONNECTING -> MobileDataStateCode.CONNECTING
+                TelephonyManager.DATA_DISCONNECTED -> MobileDataStateCode.DISCONNECTED
+                TelephonyManager.DATA_SUSPENDED -> MobileDataStateCode.SUSPENDED
+                else -> MobileDataStateCode.UNKNOWN
+            }
+
+        private fun phoneType(type: Int): String =
+            when (type) {
+                TelephonyManager.PHONE_TYPE_GSM -> "GSM"
+                @Suppress("DEPRECATION")
+                TelephonyManager.PHONE_TYPE_CDMA -> "CDMA"
+                TelephonyManager.PHONE_TYPE_SIP -> "SIP"
+                else -> "None"
+            }
 
         @SuppressLint("MissingPermission")
         private fun getRegisteredCellSnapshot(
@@ -741,6 +926,7 @@ class ConnectivityTestViewModel
             return (currentCodes?.first ?: fallbackMcc) to (currentCodes?.second ?: fallbackMnc)
         }
 
+        @Suppress("DEPRECATION")
         private fun getNetworkTypeName(type: Int): String =
             when (type) {
                 TelephonyManager.NETWORK_TYPE_GPRS -> "GPRS"
@@ -762,9 +948,15 @@ class ConnectivityTestViewModel
                 else -> "Unknown"
             }
 
+        companion object {
+            private const val IPV4_ADDRESS_BYTES = 4
+            private const val GPS_SEARCH_TIMEOUT_MILLIS = 60_000L
+            private const val GPS_TICK_MILLIS = 500L
+            private const val GPS_MIN_UPDATE_MILLIS = 100L
+        }
+
         override fun onCleared() {
-            super.onCleared()
-            stopGpsFix()
+            cancelGpsFix()
             networkCallback?.let { connectivityManager.unregisterNetworkCallback(it) }
             bluetoothReceiver?.let {
                 try {
@@ -772,5 +964,6 @@ class ConnectivityTestViewModel
                 } catch (_: Exception) {
                 }
             }
+            super.onCleared()
         }
     }

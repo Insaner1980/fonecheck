@@ -553,6 +553,16 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** SSID- ja network metadata -rajoitukset vaihtelevat Android-versioittain.
 - **Decision required:** Kyllä, network speed ja NFC kohdassa 1.
 
+#### Implementation/status log — 2026-08-08
+
+- Hyväksytyt rajat on toteutettu: sovellus ei lisää `INTERNET`-lupaa tai network speed -testiä, ja NFC jää capability-, enabled- ja HCE-tiedoksi ilman väitettä fyysisen NFC-siirron toimivuudesta.
+- Lisätty tests-first GPS search gate, callback-owner ja Bluetooth access -politiikka. Ensimmäinen kohdistettu ajo oli odotettu RED vain puuttuvista gate/owner/access-symboleista; testit kattavat overlap-eston, timeout-rajan, cancelin, myöhäisen callbackin, idempotentin cleanupin sekä API 30/31 Bluetooth-luparajan ja hardware absencen.
+- GPS käyttää tallennettuja `LocationListener`- ja `GnssStatus.Callback`-instansseja. Fix, 60 sekunnin timeout, käyttäjän cancel, luvan menetys, composablen dispose ja ViewModelin clear poistavat täsmälleen rekisteröidyt callbackit; token-portti estää päällekkäisen haun ja vanhan callbackin tuloksen. API 30+:ssa callbackit ohjataan main executoriin ja vanhemmilla versioilla main looperin handleriin [Androidin LocationManager-sopimuksen](https://developer.android.com/reference/android/location/LocationManager) mukaisesti.
+- Bluetooth hardware absence, runtime-luvan puute ja enabled/disabled ovat erillisiä tiloja. Android 13+ -rekisteröinti käyttää Bluetoothin privileged framework -broadcastille vaadittua `RECEIVER_EXPORTED`-lippua, mutta receiver ei luota intent-payloadiin vaan lukee tilan uudelleen Android API:sta [Androidin broadcast-ohjeen](https://developer.android.com/develop/background-work/background-tasks/broadcasts) mukaisesti. Virheellinen BLE=`4.0+` controller version -väite on poistettu.
+- Wi-Fi käyttää aktiivisen verkon `LinkProperties`-osoitteita, DNS- ja gateway-tietoja; käyttämättömät BSSID/MAC/channel-width-kentät poistettiin ja link speed nimettiin neuvotelluksi Wi-Fi-linkkinopeudeksi. Mobile protected metadata luetaan vain phone-luvalla ja cell-metadata lisäksi fine-location-luvalla; tilat ovat lokalisoituja koodeja.
+- Canonical report tallentaa vain sanitisoidut capability/connection/fix-tulokset: ei SSID/BSSID:tä, IP:tä, tarkkaa sijaintia, cell ID:tä tai operaattoritunnistetta. NFC/Wi-Fi/Bluetooth/mobile ovat informational evidenceä; vain toteutunut GNSS-fix on automatic pass, ja timeout on low-confidence warning eikä varma laitevika.
+- `ConnectivityRuntimePolicyTest`, `PermissionPolicyTest`, privacy-mapping-testit, koko `:app:testDebugUnitTest`, Android-testien Kotlin-käännös ja `:app:assembleDebug` läpäisevät. Fyysiset Wi-Fi-, Bluetooth-, NFC- ja GNSS-kokeet odottavat yhdistettyä Android-laitetta; `adb devices -l` ei löytänyt laitetta. Käyttäjän keskeneräistä `PROJECT.md`-muutosta ei koskettu.
+
 ### 16. Correct Battery normalization and unavailable behavior
 
 - **Objective:** Poistaa negatiivinen Home-arvo ja perusteettomat capacity/health-väitteet.

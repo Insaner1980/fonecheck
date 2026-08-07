@@ -349,6 +349,8 @@ private fun evidenceLabelResId(checkId: String): Int? =
         "sensors.motion" -> R.string.run_all_check_motion_sensor
         "connectivity.wifi" -> R.string.conn_wifi_title
         "connectivity.bluetooth" -> R.string.conn_bluetooth_title
+        "connectivity.nfc" -> R.string.conn_nfc_title
+        "connectivity.nfc_hce" -> R.string.conn_nfc_hce
         "connectivity.gps" -> R.string.conn_gps_title
         "connectivity.mobile" -> R.string.conn_mobile_title
         "battery.health" -> R.string.batt_health_title
@@ -388,6 +390,8 @@ private fun evidenceValueLabel(
             when (unit?.value) {
                 "operations_per_second" ->
                     stringResource(R.string.perf_benchmark_cpu_rate_value, value.value.toString())
+                "milliseconds" ->
+                    stringResource(R.string.conn_gps_fix_duration_format, value.value / 1_000.0)
                 else -> value.value.toString()
             }
         is EvidenceValue.DecimalValue -> value.value.toPlainString()
@@ -440,6 +444,7 @@ private fun reasonLabel(reason: EvidenceReasonCode): String =
             EvidenceReasonCode.PERMISSION_DENIED -> R.string.run_all_permission_missing
             EvidenceReasonCode.NOT_RUN -> R.string.run_all_summary_not_tested
             EvidenceReasonCode.SKIPPED, EvidenceReasonCode.CANCELLED -> R.string.run_all_manual_skipped
+            EvidenceReasonCode.TIMEOUT -> R.string.conn_gps_failed
             EvidenceReasonCode.USER_CONFIRMED_FAILURE -> R.string.run_all_manual_failed
             EvidenceReasonCode.HARDWARE_UNAVAILABLE,
             EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED,

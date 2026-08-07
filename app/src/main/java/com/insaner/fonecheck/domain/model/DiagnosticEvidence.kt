@@ -52,6 +52,7 @@ value class EvidenceReasonCode(
         val NOT_RUN = EvidenceReasonCode("not_run")
         val SKIPPED = EvidenceReasonCode("skipped")
         val CANCELLED = EvidenceReasonCode("cancelled")
+        val TIMEOUT = EvidenceReasonCode("timeout")
         val ERROR = EvidenceReasonCode("error")
         val HARDWARE_UNAVAILABLE = EvidenceReasonCode("hardware_unavailable")
         val ANDROID_VERSION_UNSUPPORTED = EvidenceReasonCode("android_version_unsupported")

@@ -322,7 +322,7 @@
     <string name="conn_wifi_signal">Signaali</string>
     <string name="conn_wifi_signal_level">Signaalitaso</string>
     <string name="conn_wifi_frequency">Taajuus</string>
-    <string name="conn_wifi_link_speed">Linkin nopeus</string>
+    <string name="conn_wifi_link_speed">Neuvoteltu Wi-Fi-linkkinopeus</string>
     <string name="conn_wifi_standard">Wi-Fi-standardi</string>
     <string name="conn_wifi_ip">IP-osoite</string>
     <string name="conn_wifi_gateway">Yhdyskäytävä</string>
@@ -335,7 +335,6 @@
     <string name="conn_bt_status">Tila</string>
     <string name="conn_bt_name">Nimi</string>
     <string name="conn_bt_ble">Bluetooth LE</string>
-    <string name="conn_bt_version">Versio</string>
     <string name="conn_bt_bonded">Paritetut laitteet</string>
 
     <!-- NFC -->
@@ -343,6 +342,7 @@
     <string name="conn_nfc_not_supported">NFC-laitteistoa ei ole tässä laitteessa.</string>
     <string name="conn_nfc_status">Tila</string>
     <string name="conn_nfc_hce">Host Card Emulation</string>
+    <string name="conn_nfc_capability_only">Tämä näyttää vain NFC-tuen ja käyttötilan; se ei varmista fyysistä NFC-tiedonsiirtoa.</string>
 
     <!-- GPS -->
     <string name="conn_gps_title">GPS</string>
@@ -353,8 +353,11 @@
     <string name="conn_gps_searching">Etsitään…</string>
     <string name="conn_gps_fixed">Lukittu</string>
     <string name="conn_gps_failed">Aikakatkaisu</string>
+    <string name="conn_gps_start_failed">Käynnistys epäonnistui</string>
+    <string name="conn_gps_privacy_ephemeral">Tarkka sijainti näkyy vain tässä näkymässä eikä sitä tallenneta raporttiin.</string>
     <string name="conn_gps_elapsed">Kulunut aika</string>
     <string name="conn_gps_fix_time">Lukitusaika</string>
+    <string name="conn_gps_fix_duration_format">%1$.1f s</string>
     <string name="conn_gps_latitude">Leveysaste</string>
     <string name="conn_gps_longitude">Pituusaste</string>
     <string name="conn_gps_accuracy">Tarkkuus</string>
@@ -377,6 +380,10 @@
     <string name="conn_mobile_title">Mobiiliverkko</string>
     <string name="conn_mobile_not_supported">Puhelinlaitteistoa ei ole tässä laitteessa.</string>
     <string name="conn_mobile_status">Datayhteys</string>
+    <string name="conn_mobile_data_connected">Yhdistetty</string>
+    <string name="conn_mobile_data_connecting">Yhdistetään</string>
+    <string name="conn_mobile_data_disconnected">Ei yhdistetty</string>
+    <string name="conn_mobile_data_suspended">Keskeytetty</string>
     <string name="conn_mobile_operator">Operaattori</string>
     <string name="conn_mobile_sim_operator">SIM-operaattori</string>
     <string name="conn_mobile_phone_type">Puhelintyyppi</string>

@@ -26,7 +26,10 @@ import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestState
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestState
 import com.insaner.fonecheck.ui.screens.camera.CameraClassCode
 import com.insaner.fonecheck.ui.screens.camera.CameraTestState
+import com.insaner.fonecheck.ui.screens.connectivity.BluetoothAccessCode
 import com.insaner.fonecheck.ui.screens.connectivity.ConnectivityTestState
+import com.insaner.fonecheck.ui.screens.connectivity.GpsFailureCode
+import com.insaner.fonecheck.ui.screens.connectivity.GpsFixStatus
 import com.insaner.fonecheck.ui.screens.display.DisplayTestState
 import com.insaner.fonecheck.ui.screens.sensor.GuidedSensorStatus
 import com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge
@@ -560,36 +563,145 @@ object RunAllSnapshotMapper {
     ): List<DiagnosticEvidence> {
         val connectivity = snapshots.connectivity
         return listOf(
-            availability(
-                DiagnosticCategoryId.CONNECTIVITY,
-                "wifi",
-                connectivity.wifi.isAvailable,
-                connectivity.wifi.isConnected,
-                capturedAt,
+            capabilityStateEvidence(
+                id = "wifi",
+                available = connectivity.wifi.isAvailable,
+                enabled = connectivity.wifi.isConnected,
+                capturedAt = capturedAt,
             ),
-            availability(
-                DiagnosticCategoryId.CONNECTIVITY,
-                "bluetooth",
-                connectivity.bluetooth.isAvailable,
-                connectivity.bluetooth.isEnabled,
-                capturedAt,
+            bluetoothEvidence(connectivity, capturedAt),
+            capabilityStateEvidence(
+                id = "nfc",
+                available = connectivity.nfc.isAvailable,
+                enabled = connectivity.nfc.isEnabled,
+                capturedAt = capturedAt,
             ),
-            availability(
-                DiagnosticCategoryId.CONNECTIVITY,
-                "gps",
-                connectivity.gps.isAvailable,
-                connectivity.gps.isEnabled,
-                capturedAt,
-            ),
-            availability(
-                DiagnosticCategoryId.CONNECTIVITY,
-                "mobile",
-                connectivity.mobileNetwork.isAvailable,
-                connectivity.mobileNetwork.isConnected,
-                capturedAt,
+            if (connectivity.nfc.isAvailable) {
+                evidence(
+                    categoryId = DiagnosticCategoryId.CONNECTIVITY,
+                    id = "nfc_hce",
+                    status = DiagnosticStatus.INFO,
+                    value = EvidenceValue.BooleanValue(connectivity.nfc.supportsHostCardEmulation),
+                    capturedAt = capturedAt,
+                )
+            } else {
+                unavailable(DiagnosticCategoryId.CONNECTIVITY, "nfc_hce", capturedAt)
+            },
+            gpsEvidence(connectivity, capturedAt),
+            capabilityStateEvidence(
+                id = "mobile",
+                available = connectivity.mobileNetwork.isAvailable,
+                enabled = connectivity.mobileNetwork.isConnected,
+                capturedAt = capturedAt,
             ),
         )
     }
+
+    private fun bluetoothEvidence(
+        connectivity: ConnectivityTestState,
+        capturedAt: Instant,
+    ): DiagnosticEvidence =
+        when (connectivity.bluetooth.access) {
+            BluetoothAccessCode.HARDWARE_ABSENT ->
+                unavailable(DiagnosticCategoryId.CONNECTIVITY, "bluetooth", capturedAt)
+
+            BluetoothAccessCode.PERMISSION_DENIED ->
+                notTested(
+                    categoryId = DiagnosticCategoryId.CONNECTIVITY,
+                    id = "bluetooth",
+                    capturedAt = capturedAt,
+                    reason = EvidenceReasonCode.PERMISSION_DENIED,
+                )
+
+            BluetoothAccessCode.NOT_REQUIRED,
+            BluetoothAccessCode.GRANTED,
+            ->
+                evidence(
+                    categoryId = DiagnosticCategoryId.CONNECTIVITY,
+                    id = "bluetooth",
+                    status = DiagnosticStatus.INFO,
+                    value = connectivity.bluetooth.isEnabled?.let(EvidenceValue::BooleanValue),
+                    capturedAt = capturedAt,
+                )
+        }
+
+    private fun gpsEvidence(
+        connectivity: ConnectivityTestState,
+        capturedAt: Instant,
+    ): DiagnosticEvidence {
+        val gps = connectivity.gps
+        return when {
+            !gps.isAvailable -> unavailable(DiagnosticCategoryId.CONNECTIVITY, "gps", capturedAt)
+            !gps.isEnabled ->
+                evidence(
+                    categoryId = DiagnosticCategoryId.CONNECTIVITY,
+                    id = "gps",
+                    status = DiagnosticStatus.WARNING,
+                    reason = EvidenceReasonCode.DISABLED,
+                    value = EvidenceValue.BooleanValue(false),
+                    capturedAt = capturedAt,
+                )
+
+            gps.fixStatus == GpsFixStatus.FIXED ->
+                evidence(
+                    categoryId = DiagnosticCategoryId.CONNECTIVITY,
+                    id = "gps",
+                    status = DiagnosticStatus.PASS,
+                    source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                    value = gps.fixTimeMs?.let(EvidenceValue::LongValue),
+                    unit = EvidenceUnitCode("milliseconds"),
+                    capturedAt = capturedAt,
+                )
+
+            gps.fixStatus == GpsFixStatus.FAILED ->
+                if (gps.failure == GpsFailureCode.TIMEOUT) {
+                    evidence(
+                        categoryId = DiagnosticCategoryId.CONNECTIVITY,
+                        id = "gps",
+                        status = DiagnosticStatus.WARNING,
+                        confidence = Confidence.LOW,
+                        source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                        reason = EvidenceReasonCode.TIMEOUT,
+                        capturedAt = capturedAt,
+                    )
+                } else {
+                    notTested(
+                        categoryId = DiagnosticCategoryId.CONNECTIVITY,
+                        id = "gps",
+                        capturedAt = capturedAt,
+                        reason = EvidenceReasonCode.ERROR,
+                        source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                    )
+                }
+
+            else ->
+                notTested(
+                    categoryId = DiagnosticCategoryId.CONNECTIVITY,
+                    id = "gps",
+                    capturedAt = capturedAt,
+                    reason = EvidenceReasonCode.NOT_RUN,
+                    source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                )
+        }
+    }
+
+    private fun capabilityStateEvidence(
+        id: String,
+        available: Boolean,
+        enabled: Boolean,
+        capturedAt: Instant,
+    ): DiagnosticEvidence =
+        if (available) {
+            evidence(
+                categoryId = DiagnosticCategoryId.CONNECTIVITY,
+                id = id,
+                status = DiagnosticStatus.INFO,
+                value = EvidenceValue.BooleanValue(enabled),
+                capturedAt = capturedAt,
+            )
+        } else {
+            unavailable(DiagnosticCategoryId.CONNECTIVITY, id, capturedAt)
+        }
 
     private fun batteryEvidence(
         snapshots: DiagnosticSnapshots,
