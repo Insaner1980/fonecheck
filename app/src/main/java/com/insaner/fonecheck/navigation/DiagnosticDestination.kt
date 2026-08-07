@@ -78,6 +78,13 @@ private val implementedDestinations =
                 R.string.home_cat_battery,
                 R.drawable.category_battery,
             ),
+        DiagnosticCategoryId.THERMAL to
+            DiagnosticDestination(
+                DiagnosticCategoryId.THERMAL,
+                ThermalTest,
+                R.string.home_cat_thermal,
+                R.drawable.category_thermal,
+            ),
         DiagnosticCategoryId.VIBRATION to
             DiagnosticDestination(
                 DiagnosticCategoryId.VIBRATION,

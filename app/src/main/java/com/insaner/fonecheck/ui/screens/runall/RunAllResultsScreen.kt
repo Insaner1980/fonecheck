@@ -361,6 +361,10 @@ private fun evidenceLabelResId(checkId: String): Int? =
         "battery.current_interpretation" -> R.string.batt_current_interpretation
         "battery.current_profile" -> R.string.batt_mfr_profile
         "battery.cycle_count" -> R.string.batt_cycle_count
+        "thermal.status" -> R.string.thermal_status_title
+        "thermal.severity" -> R.string.thermal_severity_label
+        "thermal.headroom" -> R.string.thermal_headroom_title
+        "thermal.battery_temperature" -> R.string.thermal_battery_title
         "vibration.hardware" -> R.string.vibration_has_vibrator
         "vibration.motor" -> R.string.vibration_motor_title
         "buttons.volume" -> R.string.run_all_check_volume_buttons
@@ -404,6 +408,7 @@ private fun evidenceValueLabel(
             when (unit?.value) {
                 "celsius" -> stringResource(R.string.run_all_detail_temperature, value.value)
                 "milliamperes" -> stringResource(R.string.batt_value_milliamps, value.value)
+                "ratio" -> stringResource(R.string.thermal_headroom_value, value.value)
                 "mebibytes_per_second" ->
                     stringResource(R.string.perf_benchmark_memory_rate_value, value.value)
                 else -> value.value.toString()
@@ -432,6 +437,14 @@ private fun stableTextLabel(code: String): String =
             "oneplus" -> R.string.batt_mfr_oneplus
             "google_pixel" -> R.string.batt_mfr_pixel
             "generic" -> R.string.batt_mfr_generic
+            "none" -> R.string.perf_thermal_none
+            "normal" -> R.string.thermal_severity_normal
+            "light" -> R.string.perf_thermal_light
+            "moderate" -> R.string.perf_thermal_moderate
+            "severe" -> R.string.perf_thermal_severe
+            "critical" -> R.string.perf_thermal_critical
+            "emergency" -> R.string.perf_thermal_emergency
+            "shutdown" -> R.string.perf_thermal_shutdown
             "strong" -> R.string.biometric_strong
             "weak" -> R.string.biometric_weak
             "unavailable" -> R.string.biometric_not_available

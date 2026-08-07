@@ -20,6 +20,7 @@ import com.insaner.fonecheck.domain.model.PerformanceBenchmarkResult
 import com.insaner.fonecheck.domain.model.PerformanceInfo
 import com.insaner.fonecheck.domain.model.SimInventoryCode
 import com.insaner.fonecheck.domain.model.SimTelephonyInfo
+import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import com.insaner.fonecheck.ui.screens.audio.AudioTestState
 import com.insaner.fonecheck.ui.screens.battery.BatteryCurrentDirection
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestState
@@ -36,6 +37,8 @@ import com.insaner.fonecheck.ui.screens.display.DisplayTestState
 import com.insaner.fonecheck.ui.screens.sensor.GuidedSensorStatus
 import com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge
 import com.insaner.fonecheck.ui.screens.sensor.SensorTestState
+import com.insaner.fonecheck.ui.screens.thermal.ThermalSeverityCode
+import com.insaner.fonecheck.ui.screens.thermal.ThermalTestState
 import com.insaner.fonecheck.ui.screens.vibration.VibrationTestState
 import java.time.Instant
 
@@ -50,6 +53,7 @@ data class DiagnosticSnapshots(
     val sensors: SensorTestState,
     val connectivity: ConnectivityTestState,
     val battery: BatteryTestState,
+    val thermal: ThermalTestState,
     val vibration: VibrationTestState,
     val buttons: ButtonTestState,
     val biometrics: BiometricTestState,
@@ -73,8 +77,7 @@ object RunAllSnapshotMapper {
                 DiagnosticCategoryId.SENSORS to sensorEvidence(snapshots, manual, capturedAt),
                 DiagnosticCategoryId.CONNECTIVITY to connectivityEvidence(snapshots, capturedAt),
                 DiagnosticCategoryId.BATTERY to batteryEvidence(snapshots, capturedAt),
-                DiagnosticCategoryId.THERMAL to
-                    listOf(notTested(DiagnosticCategoryId.THERMAL, "snapshot", capturedAt)),
+                DiagnosticCategoryId.THERMAL to thermalEvidence(snapshots, capturedAt),
                 DiagnosticCategoryId.STORAGE to
                     listOf(notTested(DiagnosticCategoryId.STORAGE, "snapshot", capturedAt)),
                 DiagnosticCategoryId.VIBRATION to vibrationEvidence(snapshots, manual, capturedAt),
@@ -889,6 +892,116 @@ object RunAllSnapshotMapper {
                 )
             },
         )
+    }
+
+    private fun thermalEvidence(
+        snapshots: DiagnosticSnapshots,
+        capturedAt: Instant,
+    ): List<DiagnosticEvidence> {
+        val thermal = snapshots.thermal
+        val statusEvidence =
+            when {
+                !thermal.statusApiSupported ->
+                    evidence(
+                        categoryId = DiagnosticCategoryId.THERMAL,
+                        id = "status",
+                        status = DiagnosticStatus.NOT_AVAILABLE,
+                        confidence = Confidence.UNAVAILABLE,
+                        applicability = Applicability.NOT_APPLICABLE,
+                        reason = EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED,
+                        capturedAt = capturedAt,
+                    )
+
+                thermal.status == ThermalStatusCode.UNAVAILABLE ->
+                    unavailableReading(DiagnosticCategoryId.THERMAL, "status", capturedAt)
+
+                else -> {
+                    val diagnosticStatus =
+                        when (thermal.status) {
+                            ThermalStatusCode.NONE -> DiagnosticStatus.PASS
+                            ThermalStatusCode.LIGHT,
+                            ThermalStatusCode.MODERATE,
+                            -> DiagnosticStatus.WARNING
+
+                            ThermalStatusCode.SEVERE,
+                            ThermalStatusCode.CRITICAL,
+                            ThermalStatusCode.EMERGENCY,
+                            ThermalStatusCode.SHUTDOWN,
+                            -> DiagnosticStatus.FAIL
+
+                            ThermalStatusCode.UNAVAILABLE -> error("Unavailable status handled above")
+                        }
+                    evidence(
+                        categoryId = DiagnosticCategoryId.THERMAL,
+                        id = "status",
+                        status = diagnosticStatus,
+                        confidence = thermal.statusConfidence,
+                        reason =
+                            EvidenceReasonCode.DEGRADED.takeIf {
+                                diagnosticStatus != DiagnosticStatus.PASS
+                            },
+                        value = EvidenceValue.StableTextCodeValue(thermal.status.name.lowercase()),
+                        capturedAt = capturedAt,
+                    )
+                }
+            }
+        val severityEvidence =
+            if (thermal.severity == ThermalSeverityCode.UNAVAILABLE) {
+                unavailableReading(DiagnosticCategoryId.THERMAL, "severity", capturedAt)
+            } else {
+                evidence(
+                    categoryId = DiagnosticCategoryId.THERMAL,
+                    id = "severity",
+                    status = DiagnosticStatus.INFO,
+                    confidence = thermal.statusConfidence,
+                    source = EvidenceSource.DERIVED,
+                    value = EvidenceValue.StableTextCodeValue(thermal.severity.name.lowercase()),
+                    capturedAt = capturedAt,
+                )
+            }
+        val headroomEvidence =
+            when {
+                !thermal.headroomApiSupported ->
+                    evidence(
+                        categoryId = DiagnosticCategoryId.THERMAL,
+                        id = "headroom",
+                        status = DiagnosticStatus.NOT_AVAILABLE,
+                        confidence = Confidence.UNAVAILABLE,
+                        applicability = Applicability.NOT_APPLICABLE,
+                        reason = EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED,
+                        capturedAt = capturedAt,
+                    )
+
+                thermal.headroom == null ->
+                    unavailableReading(DiagnosticCategoryId.THERMAL, "headroom", capturedAt)
+
+                else ->
+                    evidence(
+                        categoryId = DiagnosticCategoryId.THERMAL,
+                        id = "headroom",
+                        status = DiagnosticStatus.INFO,
+                        confidence = thermal.headroomConfidence,
+                        source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                        value = EvidenceValue.DoubleValue(thermal.headroom.toString().toDouble()),
+                        unit = EvidenceUnitCode("ratio"),
+                        capturedAt = capturedAt,
+                    )
+            }
+        val batteryTemperatureEvidence =
+            thermal.batteryTemperatureCelsius?.let { temperature ->
+                evidence(
+                    categoryId = DiagnosticCategoryId.THERMAL,
+                    id = "battery_temperature",
+                    status = DiagnosticStatus.INFO,
+                    confidence = thermal.batteryTemperatureConfidence,
+                    source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                    value = EvidenceValue.DoubleValue(temperature.toDouble()),
+                    unit = EvidenceUnitCode("celsius"),
+                    capturedAt = capturedAt,
+                )
+            } ?: unavailableReading(DiagnosticCategoryId.THERMAL, "battery_temperature", capturedAt)
+
+        return listOf(statusEvidence, severityEvidence, headroomEvidence, batteryTemperatureEvidence)
     }
 
     private fun buttonEvidence(

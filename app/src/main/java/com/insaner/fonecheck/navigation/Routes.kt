@@ -30,6 +30,9 @@ object ConnectivityTest
 object BatteryTest
 
 @Serializable
+object ThermalTest
+
+@Serializable
 object DisplayTest
 
 @Serializable

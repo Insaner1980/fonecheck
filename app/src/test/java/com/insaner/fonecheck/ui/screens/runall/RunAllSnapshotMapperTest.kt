@@ -47,6 +47,8 @@ import com.insaner.fonecheck.ui.screens.sensor.GuidedSensorStatus
 import com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge
 import com.insaner.fonecheck.ui.screens.sensor.SensorTestState
 import com.insaner.fonecheck.ui.screens.sensor.SensorType
+import com.insaner.fonecheck.ui.screens.thermal.ThermalSeverityCode
+import com.insaner.fonecheck.ui.screens.thermal.ThermalTestState
 import com.insaner.fonecheck.ui.screens.vibration.VibrationTestState
 import java.time.Instant
 import org.junit.Assert.assertEquals
@@ -494,6 +496,87 @@ class RunAllSnapshotMapperTest {
         assertEquals(Confidence.HIGH, evidence.getValue("battery.cycle_count").confidence)
     }
 
+    @Test
+    fun unsupportedThermalApiIsDifferentFromANormalThermalObservation() {
+        val unsupported =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots = diagnosticSnapshotsWithSensitiveConnectivity(),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(),
+                    capturedAt = Instant.parse("2026-08-08T12:00:00Z"),
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+        assertEquals(DiagnosticStatus.NOT_AVAILABLE, unsupported.getValue("thermal.status").status)
+        assertEquals(
+            EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED,
+            unsupported.getValue("thermal.status").reason,
+        )
+
+        val normal =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots =
+                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                            thermal =
+                                ThermalTestState(
+                                    statusApiSupported = true,
+                                    status = ThermalStatusCode.NONE,
+                                    severity = ThermalSeverityCode.NORMAL,
+                                    statusConfidence = Confidence.HIGH,
+                                    batteryTemperatureCelsius = 32.0f,
+                                    batteryTemperatureConfidence = Confidence.HIGH,
+                                ),
+                        ),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(),
+                    capturedAt = Instant.parse("2026-08-08T12:00:00Z"),
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+
+        assertEquals(DiagnosticStatus.PASS, normal.getValue("thermal.status").status)
+        assertEquals(EvidenceValue.StableTextCodeValue("none"), normal.getValue("thermal.status").value)
+        assertEquals(
+            EvidenceValue.DoubleValue(32.0),
+            normal.getValue("thermal.battery_temperature").value,
+        )
+    }
+
+    @Test
+    fun thermalHeadroomIsInformationalAndSevereStatusIsARealFailure() {
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots =
+                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                            thermal =
+                                ThermalTestState(
+                                    statusApiSupported = true,
+                                    headroomApiSupported = true,
+                                    status = ThermalStatusCode.SEVERE,
+                                    severity = ThermalSeverityCode.SEVERE,
+                                    statusConfidence = Confidence.HIGH,
+                                    headroom = 1.1f,
+                                    headroomConfidence = Confidence.LOW,
+                                ),
+                        ),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(),
+                    capturedAt = Instant.parse("2026-08-08T12:00:00Z"),
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+
+        assertEquals(DiagnosticStatus.FAIL, evidence.getValue("thermal.status").status)
+        assertEquals(EvidenceReasonCode.DEGRADED, evidence.getValue("thermal.status").reason)
+        assertEquals(DiagnosticStatus.INFO, evidence.getValue("thermal.headroom").status)
+        assertEquals(Confidence.LOW, evidence.getValue("thermal.headroom").confidence)
+        assertEquals(EvidenceValue.DoubleValue(1.1), evidence.getValue("thermal.headroom").value)
+        assertEquals(
+            EvidenceValue.StableTextCodeValue("severe"),
+            evidence.getValue("thermal.severity").value,
+        )
+    }
+
     private fun diagnosticSnapshotsWithSensitiveConnectivity() =
         DiagnosticSnapshots(
             device = deviceInfo(),
@@ -529,6 +612,7 @@ class RunAllSnapshotMapperTest {
                         ),
                 ),
             battery = BatteryTestState(),
+            thermal = ThermalTestState(),
             vibration = VibrationTestState(),
             buttons = ButtonTestState(),
             biometrics = BiometricTestState(),

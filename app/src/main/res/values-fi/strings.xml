@@ -465,6 +465,30 @@
     <string name="batt_mfr_pixel_note1">Pixelin virta luetaan Androidin julkisesta akkurajapinnasta.</string>
     <string name="batt_mfr_pixel_current_note">Pixelin virta on hetkellinen ja matalan varmuuden lukema.</string>
 
+    <!-- Thermal Test Screen -->
+    <string name="thermal_status_title">Lämpötilanhallinnan tila</string>
+    <string name="thermal_status_label">Androidin tila</string>
+    <string name="thermal_severity_label">Vakavuus</string>
+    <string name="thermal_severity_normal">Normaali</string>
+    <string name="thermal_monitoring_label">Seuranta</string>
+    <string name="thermal_monitoring_live">Reaaliaikainen</string>
+    <string name="thermal_monitoring_paused">Keskeytetty</string>
+    <string name="thermal_status_note">Tämä on Androidin tämänhetkinen rajoitustila. Laitekohtainen lämpösuunnittelu vaikuttaa tilan ja headroom-arvion suhteeseen.</string>
+    <string name="thermal_status_unsupported">Reaaliaikainen lämpötilanhallinnan tila vaatii Android 10:n tai uudemman.</string>
+    <string name="thermal_status_read_failed">Android ei antanut tämänhetkistä lämpötilanhallinnan tilaa.</string>
+    <string name="thermal_listener_failed">Reaaliaikaista lämpötilanhallinnan seurantaa ei voitu käynnistää.</string>
+    <string name="thermal_headroom_title">Lämpötilanhallinnan headroom</string>
+    <string name="thermal_headroom_current">Tämänhetkinen arvio</string>
+    <string name="thermal_headroom_value">%1$.2f</string>
+    <string name="thermal_headroom_requires_api30">Vaatii Android 11+</string>
+    <string name="thermal_headroom_note">Arvo 1,0 on laitteen voimakkaan rajoituksen kynnys. Tämä yksikötön arvio ei ole lämpötila, eikä sitä välttämättä saada tuetullakaan Android-versiolla.</string>
+    <string name="thermal_battery_title">Akun lämpötila</string>
+    <string name="thermal_battery_temperature">Tämänhetkinen lukema</string>
+    <string name="thermal_battery_note">Luetaan Androidin akkuilmoituksesta. Tämä ei ole väite CPU:n, GPU:n, rungon tai jäähdytysjärjestelmän lämpötilasta.</string>
+    <string name="thermal_observation_title">Vain havainnointi</string>
+    <string name="thermal_observation_note">fonecheck ei tuota keinotekoista lämpökuormaa. Snapshot kuvaa vain näkymän tai Full Checkin aikana havaittua laitteen tilaa.</string>
+    <string name="thermal_refresh">Päivitä snapshot</string>
+
     <!-- Home Screen -->
     <string name="home_device_summary">Laitteen yhteenveto</string>
     <string name="home_run_all">Aja kaikki testit</string>
@@ -580,6 +604,7 @@
     <string name="home_cat_sensors">Anturit</string>
     <string name="home_cat_connectivity">Yhteydet</string>
     <string name="home_cat_battery">Akku</string>
+    <string name="home_cat_thermal">Lämpötila</string>
     <string name="home_cat_vibration">Värinä</string>
     <string name="home_cat_buttons">Painikkeet</string>
     <string name="home_cat_biometrics">Biometriikka</string>

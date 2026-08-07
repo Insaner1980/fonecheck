@@ -46,6 +46,8 @@ import com.insaner.fonecheck.ui.screens.performance.PerformanceInfoViewModel
 import com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge
 import com.insaner.fonecheck.ui.screens.sensor.SensorTestViewModel
 import com.insaner.fonecheck.ui.screens.simtelephony.SimTelephonyViewModel
+import com.insaner.fonecheck.ui.screens.thermal.ThermalMonitoringEffect
+import com.insaner.fonecheck.ui.screens.thermal.ThermalTestViewModel
 import com.insaner.fonecheck.ui.screens.vibration.VibrationTestViewModel
 import java.time.Instant
 import kotlinx.coroutines.delay
@@ -79,6 +81,7 @@ fun RunAllTestsScreen(
     sensorViewModel: SensorTestViewModel = hiltViewModel(),
     connectivityViewModel: ConnectivityTestViewModel = hiltViewModel(),
     batteryViewModel: BatteryTestViewModel = hiltViewModel(),
+    thermalViewModel: ThermalTestViewModel = hiltViewModel(),
     vibrationViewModel: VibrationTestViewModel = hiltViewModel(),
     buttonViewModel: ButtonTestViewModel = hiltViewModel(),
     biometricViewModel: BiometricTestViewModel = hiltViewModel(),
@@ -95,10 +98,12 @@ fun RunAllTestsScreen(
     val sensorState by sensorViewModel.state.collectAsStateWithLifecycle()
     val connectivityState by connectivityViewModel.state.collectAsStateWithLifecycle()
     val batteryState by batteryViewModel.state.collectAsStateWithLifecycle()
+    val thermalState by thermalViewModel.state.collectAsStateWithLifecycle()
     val vibrationState by vibrationViewModel.state.collectAsStateWithLifecycle()
     val buttonState by buttonViewModel.state.collectAsStateWithLifecycle()
     val biometricState by biometricViewModel.state.collectAsStateWithLifecycle()
     val simState by simViewModel.state.collectAsStateWithLifecycle()
+    ThermalMonitoringEffect(thermalViewModel)
     val previewView = remember { PreviewView(context) }
     val microphonePermission =
         rememberPermissionController(
@@ -452,6 +457,7 @@ fun RunAllTestsScreen(
                     sensors = sensorState,
                     connectivity = connectivityState,
                     battery = batteryState,
+                    thermal = thermalState,
                     vibration = vibrationState,
                     buttons = buttonState,
                     biometrics = biometricState,

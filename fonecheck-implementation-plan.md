@@ -599,6 +599,15 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Headroom-tuki ja näytteen pätevyys vaihtelevat laitteittain.
 - **Decision required:** Kyllä, observation-only kohdassa 1.
 
+#### Implementation/status log — 2026-08-08
+
+- Hyväksytty observation-only-raja on toteutettu: Thermal ei tee keinotekoista kuormaa, lue sysfs-tiedostoja eikä väitä mittaavansa CPU:n, GPU:n, rungon tai jäähdytysjärjestelmän lämpötilaa.
+- Lisätty kanoniseen kohtaan 10 oma Home-kohde, type-safe reitti, standalone-näkymä ja 512 × 512 läpinäkyvä `category_thermal.webp`-kuvitus. Näkymä käyttää yhteisiä `InfoCard`-, `InfoRow`- ja `TestScreenContent`-komponentteja sekä EN/FI-resursseja.
+- Android 10+:n `PowerManager`-thermal status luetaan aluksi ja päivitetään live-listenerilla. Sama tarkka listener poistetaan lifecycle-stopissa, composablen disposessa ja ViewModelin clearissä. Unsupported API, status-lukuvirhe, listener-virhe ja normaali `THERMAL_STATUS_NONE` ovat eri tiloja [PowerManager API:n](https://developer.android.com/reference/android/os/PowerManager) mukaisesti.
+- Android 11+:n yksikötön headroom luetaan 0 sekunnin ennusteena, NaN/infinite/negatiivinen arvo hylätään ja lukutiheys rajataan vähintään kymmeneen sekuntiin. UI kertoo eksplisiittisesti, että 1,0 on laitteen severe-throttling-kynnys eikä lämpötila. Akun lämpötila yhdistetään julkisesta battery-broadcastista erillisenä mittauksena.
+- Run All kerää saman lifecycle-sidotun state-snapshotin ja tallentaa status-, severity-, headroom- ja battery-temperature-evidencen locale-neutraaleina arvoina. `NONE` on normaali havainto, light/moderate varoitus, severe tai korkeampi failure, ja headroom jää informational/low-confidence-evidenceksi.
+- `ThermalRuntimePolicyTest`, `ThermalTestViewModelTest`, `DiagnosticDestinationTest`, Thermal-mapper-testit, koko `:app:testDebugUnitTest`, Android-testien Kotlin-käännös, `:app:lintDebug` ja `:app:assembleDebug` läpäisevät. Fyysinen API 29+/vanhempi laitekoe odottaa laitetta, sillä `adb devices -l` ei löytänyt yhdistettyä laitetta. Käyttäjän keskeneräistä `PROJECT.md`-muutosta ei koskettu.
+
 ### 18. Add Storage information and the safe app-private benchmark
 
 - **Objective:** Toteuttaa puuttuva Storage-kategoria ilman käyttäjätiedostojen riskiä.
