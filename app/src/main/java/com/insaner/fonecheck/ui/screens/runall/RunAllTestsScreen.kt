@@ -68,6 +68,7 @@ fun RunAllTestsScreen(
     onDone: () -> Unit,
     onOpenCategory: (Any) -> Unit,
     modifier: Modifier = Modifier,
+    onDisplayFullscreenChanged: (Boolean) -> Unit = {},
     sessionViewModel: RunAllTestsViewModel = hiltViewModel(),
     deviceViewModel: DeviceInfoViewModel = hiltViewModel(),
     performanceViewModel: PerformanceInfoViewModel = hiltViewModel(),
@@ -147,6 +148,12 @@ fun RunAllTestsScreen(
             phonePermission,
             bluetoothPermission,
         )
+
+    val isDisplayFullscreen = sessionState.stage == RunAllStage.DISPLAY
+    DisposableEffect(isDisplayFullscreen) {
+        onDisplayFullscreenChanged(isDisplayFullscreen)
+        onDispose { onDisplayFullscreenChanged(false) }
+    }
 
     val permissionLauncher =
         rememberLauncherForActivityResult(
@@ -270,7 +277,13 @@ fun RunAllTestsScreen(
                 }
             }
 
-            RunAllStage.DISPLAY,
+            RunAllStage.DISPLAY -> {
+                delay(DisplayTestViewModel.VISUAL_TEST_TIMEOUT_MS)
+                if (sessionViewModel.state.value.stage == RunAllStage.DISPLAY) {
+                    sessionViewModel.recordDisplay(null)
+                }
+            }
+
             RunAllStage.RESULTS,
             -> Unit
         }
@@ -365,7 +378,7 @@ fun RunAllTestsScreen(
             DisplayCheckStep(
                 colorIndex = sessionState.displayColorIndex,
                 onNextColor = {
-                    sessionViewModel.nextDisplayColor(displayTestColors.lastIndex)
+                    sessionViewModel.nextDisplayColor(displayTestPatterns.lastIndex)
                 },
                 onResult = sessionViewModel::recordDisplay,
             )

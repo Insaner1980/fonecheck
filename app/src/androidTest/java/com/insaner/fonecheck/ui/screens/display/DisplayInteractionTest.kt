@@ -3,7 +3,6 @@ package com.insaner.fonecheck.ui.screens.display
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
@@ -52,7 +51,7 @@ class DisplayInteractionTest {
             assertTrue(pointerCounts.any { it == 2 })
         }
 
-        composeRule.onNodeWithText("Exit test").performClick()
+        composeRule.onNodeWithTag(DISPLAY_EXIT_BUTTON_TAG).performClick()
         composeRule.runOnIdle { assertTrue(exited) }
     }
 }

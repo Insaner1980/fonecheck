@@ -2,17 +2,19 @@ package com.insaner.fonecheck.ui.screens.runall
 
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -41,20 +43,15 @@ import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.StatusBadge
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestState
 import com.insaner.fonecheck.ui.screens.camera.CameraTestState
+import com.insaner.fonecheck.ui.screens.display.DisplayPattern
+import com.insaner.fonecheck.ui.screens.display.displayPatternBackground
 import com.insaner.fonecheck.ui.screens.sensor.SensorTestState
 import com.insaner.fonecheck.ui.theme.Green400
 import com.insaner.fonecheck.ui.theme.Neutral400
 import com.insaner.fonecheck.ui.theme.Red400
 import com.insaner.fonecheck.ui.theme.Yellow400
 
-internal val displayTestColors =
-    listOf(
-        Color(0xFFD32F2F),
-        Color(0xFF2E7D32),
-        Color(0xFF1565C0),
-        Color.White,
-        Color.Black,
-    )
+internal val displayTestPatterns = DisplayPattern.entries
 
 private const val MANUAL_CHECK_COUNT = 7
 
@@ -148,18 +145,19 @@ fun DisplayCheckStep(
     onResult: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isLastColor = colorIndex == displayTestColors.lastIndex
+    val isLastColor = colorIndex == displayTestPatterns.lastIndex
     Box(
         modifier =
             modifier
                 .fillMaxSize()
-                .background(displayTestColors[colorIndex]),
+                .displayPatternBackground(displayTestPatterns[colorIndex]),
     ) {
         Surface(
             modifier =
                 Modifier
                     .align(Alignment.BottomCenter)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.safeDrawing),
             color = MaterialTheme.colorScheme.surface,
             shadowElevation = 12.dp,
         ) {

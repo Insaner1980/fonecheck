@@ -512,6 +512,33 @@
     <string name="display_start_test">Aloita testi</string>
     <string name="display_tap_to_cycle">Napauta vaihtaaksesi värejä, pitkä painallus poistuu</string>
     <string name="display_long_press_exit">Pitkä painallus poistuu</string>
+    <string name="display_visual_title">Pikseli- ja tasaisuustesti</string>
+    <string name="display_visual_description">Tarkista punainen, vihreä, sininen, valkoinen, musta ja harmaaliukuväri kuolleiden tai juuttuneiden pikseleiden, varjojen ja kuvanpidätyksen varalta.</string>
+    <string name="display_visual_question">Näyttivätkö kaikki kentät tasaisilta ja puhtailta?</string>
+    <string name="display_exit_test">Poistu testistä</string>
+    <string name="display_previous_pattern">Edellinen</string>
+    <string name="display_next_pattern">Seuraava</string>
+    <string name="display_looks_good">Näyttää hyvältä</string>
+    <string name="display_found_problem">Ongelma löytyi</string>
+    <string name="display_pattern_red">Punainen kenttä</string>
+    <string name="display_pattern_green">Vihreä kenttä</string>
+    <string name="display_pattern_blue">Sininen kenttä</string>
+    <string name="display_pattern_white">Valkoinen kenttä</string>
+    <string name="display_pattern_black">Musta kenttä</string>
+    <string name="display_pattern_gray_gradient">Harmaaliukuväri</string>
+    <string name="display_status_ready">Valmis</string>
+    <string name="display_status_passed">Läpäisty</string>
+    <string name="display_status_issue">Ongelma löytyi</string>
+    <string name="display_status_complete">Valmis</string>
+    <string name="display_touch_cells">Ruudukon kattavuus</string>
+    <string name="display_multi_touch_peak">Samanaikaisten kosketusten enimmäismäärä</string>
+    <string name="display_touch_progress">Ruudukko %1$d/%2$d · aktiivisia kosketuksia %3$d · enintään %4$d</string>
+    <string name="display_touch_grid_description">Kosketustestin ruudukko. Vedä koko alueen yli ja aseta useita sormia näytölle samanaikaisesti.</string>
+    <string name="display_touch_complete">Viimeistele testi</string>
+    <string name="display_resolution_value">%1$d × %2$d px (%3$s)</string>
+    <string name="display_resolution_source_window">sovellusikkuna</string>
+    <string name="display_resolution_source_mode">näyttötila</string>
+    <string name="display_resolution_source_physical">fyysinen mitta</string>
 
     <!-- Vibration Test Screen -->
     <string name="vibration_motor_title">Moottorin testi</string>

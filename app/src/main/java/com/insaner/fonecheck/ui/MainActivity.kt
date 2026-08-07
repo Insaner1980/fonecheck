@@ -17,10 +17,17 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -66,36 +73,59 @@ class MainActivity : FragmentActivity() {
                 val navController = rememberNavController()
                 val backStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = backStackEntry?.destination?.route
+                var isDisplayFullscreen by remember { mutableStateOf(false) }
                 val isHome =
                     currentRoute == null ||
                         currentRoute == Home::class.qualifiedName
 
+                DisposableEffect(isDisplayFullscreen) {
+                    val controller = WindowCompat.getInsetsController(window, window.decorView)
+                    if (isDisplayFullscreen) {
+                        controller.systemBarsBehavior =
+                            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                        controller.hide(WindowInsetsCompat.Type.systemBars())
+                    } else {
+                        controller.show(WindowInsetsCompat.Type.systemBars())
+                    }
+                    onDispose {
+                        if (isDisplayFullscreen) controller.show(WindowInsetsCompat.Type.systemBars())
+                    }
+                }
+
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     topBar = {
-                        TopAppBar(
-                            title = { Text(stringResource(R.string.app_name)) },
-                            navigationIcon = {
-                                if (!isHome) {
-                                    IconButton(onClick = { navController.popBackStack() }) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                            contentDescription = stringResource(R.string.navigation_back),
-                                        )
+                        if (!isDisplayFullscreen) {
+                            TopAppBar(
+                                title = { Text(stringResource(R.string.app_name)) },
+                                navigationIcon = {
+                                    if (!isHome) {
+                                        IconButton(onClick = { navController.popBackStack() }) {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                                contentDescription = stringResource(R.string.navigation_back),
+                                            )
+                                        }
                                     }
-                                }
-                            },
-                            colors =
-                                TopAppBarDefaults.topAppBarColors(
-                                    containerColor = MaterialTheme.colorScheme.surface,
-                                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                                ),
-                        )
+                                },
+                                colors =
+                                    TopAppBarDefaults.topAppBarColors(
+                                        containerColor = MaterialTheme.colorScheme.surface,
+                                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                                    ),
+                            )
+                        }
                     },
                 ) { innerPadding ->
                     FonecheckNavHost(
                         navController = navController,
-                        modifier = Modifier.padding(innerPadding),
+                        modifier =
+                            if (isDisplayFullscreen) {
+                                Modifier.fillMaxSize()
+                            } else {
+                                Modifier.padding(innerPadding)
+                            },
+                        onDisplayFullscreenChanged = { isDisplayFullscreen = it },
                     )
                 }
             }

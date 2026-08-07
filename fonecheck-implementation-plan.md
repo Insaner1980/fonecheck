@@ -462,6 +462,14 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** System bar -käyttäytyminen vaihtelee Android-versioittain; burn-in-kenttä ei saa itse jäädä pitkäksi aikaa näytölle.
 - **Decision required:** Kyllä, gradient-oletus kohdassa 1.
 
+#### Implementation/status log — 2026-08-08
+
+- Lisätty tests-first kuuden kentän vakaa järjestys (red, green, blue, white, black, gray gradient), drag-segmenttien grid-geometria sekä pointer ID:ihin sidottujen samanaikaisten kosketussijaintien reducer-testit. Ensimmäiset unit- ja Android-testikäännökset olivat odotettu RED vain puuttuvista uusista symboleista.
+- Standalone visual flow näyttää kaikki kuusi kenttää, edellinen/seuraava-kontrollit, eksplisiittisen hyväksytty/ongelma-tuloksen, Back-käsittelyn ja aina näkyvän lokalisoidun Exit-painikkeen. Tulos säilyy `VisualTestState.result`-manual-arvona. Kenttä sulkeutuu automaattisesti 120 sekunnin jälkeen.
+- Touch flow käyttää koko kontrolloitua Canvas-aluetta: pointer-eventit välittävät todelliset ID:t ja normalisoidut sijainnit, drag täyttää kaikki ylitetyt solut, aktiiviset pointerit piirretään ja peak count säilyy. Reset tyhjentää mittauksen ja Complete jäädyttää tuloksen.
+- MainActivity piilottaa testin aikana sovelluspalkin ja system barit sekä sallii transienttien barien palauttamisen pyyhkäisyllä. Standalone- ja Full Check -kontrollit käyttävät safe-drawing-insettejä; poistuttaessa barit palautetaan. Full Check käyttää samaa gradientin sisältävää pattern-sarjaa, säilyttää nykyisen eksplisiittisen manual pass/fail -evidencen ja ohittaa vaiheen 120 sekunnin turvarajalla.
+- Resolution-rivi nimeää arvon lähteeksi app window-, display mode- tai physical metrics -haaran. `DisplayInteractionTest`, koko `:app:testDebugUnitTest` ja Android-testien Kotlin-käännös läpäisevät. Compose pointer/drag -testi kääntyy; instrumentaatio sekä cutout-, gesture-nav-, landscape-, large-font- ja TalkBack-manuaalitarkistukset odottavat yhdistettyä laitetta.
+
 ### 12. Correct Audio permissions, routing, evidence, and resource ownership
 
 - **Objective:** Poistaa silent no-opit, harhaanjohtava dB-merkintä ja double-release-riskit.

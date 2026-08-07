@@ -514,6 +514,33 @@
     <string name="display_start_test">Start Test</string>
     <string name="display_tap_to_cycle">Tap to cycle colors, long-press to exit</string>
     <string name="display_long_press_exit">Long-press to exit</string>
+    <string name="display_visual_title">Pixel and uniformity test</string>
+    <string name="display_visual_description">Inspect red, green, blue, white, black and a gray gradient for dead or stuck pixels, shadows and image retention.</string>
+    <string name="display_visual_question">Did every field look even and clean?</string>
+    <string name="display_exit_test">Exit test</string>
+    <string name="display_previous_pattern">Previous</string>
+    <string name="display_next_pattern">Next</string>
+    <string name="display_looks_good">Looks good</string>
+    <string name="display_found_problem">Issue found</string>
+    <string name="display_pattern_red">Red field</string>
+    <string name="display_pattern_green">Green field</string>
+    <string name="display_pattern_blue">Blue field</string>
+    <string name="display_pattern_white">White field</string>
+    <string name="display_pattern_black">Black field</string>
+    <string name="display_pattern_gray_gradient">Gray gradient</string>
+    <string name="display_status_ready">Ready</string>
+    <string name="display_status_passed">Passed</string>
+    <string name="display_status_issue">Issue found</string>
+    <string name="display_status_complete">Complete</string>
+    <string name="display_touch_cells">Grid coverage</string>
+    <string name="display_multi_touch_peak">Maximum simultaneous touches</string>
+    <string name="display_touch_progress">Grid %1$d/%2$d · active pointers %3$d · maximum %4$d</string>
+    <string name="display_touch_grid_description">Touch-test grid. Drag across the whole area and place multiple fingers simultaneously.</string>
+    <string name="display_touch_complete">Complete test</string>
+    <string name="display_resolution_value">%1$d × %2$d px (%3$s)</string>
+    <string name="display_resolution_source_window">app window</string>
+    <string name="display_resolution_source_mode">display mode</string>
+    <string name="display_resolution_source_physical">physical metrics</string>
 
     <!-- Vibration Test Screen -->
     <string name="vibration_motor_title">Motor Test</string>

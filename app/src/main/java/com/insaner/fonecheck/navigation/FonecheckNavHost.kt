@@ -28,6 +28,7 @@ import com.insaner.fonecheck.ui.screens.vibration.VibrationTestScreen
 fun FonecheckNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
+    onDisplayFullscreenChanged: (Boolean) -> Unit = {},
 ) {
     NavHost(
         navController = navController,
@@ -65,7 +66,7 @@ fun FonecheckNavHost(
             BatteryTestScreen()
         }
         composable<DisplayTest> {
-            DisplayTestScreen()
+            DisplayTestScreen(onFullscreenChanged = onDisplayFullscreenChanged)
         }
         composable<VibrationTest> {
             VibrationTestScreen()
@@ -80,6 +81,7 @@ fun FonecheckNavHost(
             RunAllTestsScreen(
                 onDone = { navController.popBackStack() },
                 onOpenCategory = { route -> navController.navigate(route) },
+                onDisplayFullscreenChanged = onDisplayFullscreenChanged,
             )
         }
         composable<Settings> {
