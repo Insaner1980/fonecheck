@@ -77,6 +77,7 @@ class ReportDaoTest {
             reportKindCode = "full_check",
             categoryId = null,
             completedAtEpochMillis = completedAt,
+            reportSchemaVersion = 1,
             scoreVersion = 1,
             scoreValue = 90,
             scoreStateCode = "complete",

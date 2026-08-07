@@ -324,7 +324,11 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 #### Implementation/status log — 2026-08-07
 
 - Lisätty tests-first `ReportRepositoryTest`, joka määrittää insert/read-roundtripin kaikkine evidence-arvotyyppeineen, levy-backed kannan uudelleenavauksen, newest-first-summaryt ilman payload-dekoodausta, duplicate-ID-suojan, corrupt/unsupported-lukutilat, comparison-loadin sekä delete/delete-all-käytöksen.
-- Tuotantorepositorya ei ole vielä lisätty. Odotettu RED-käännös odottaa käyttäjän kohdistettua Android-testin Kotlin-käännöstä projektin Gradle-rajoituksen vuoksi.
+- Käyttäjän kohdistettu Android-testin Kotlin-käännös tuotti odotetun REDin. Gradle-daemonin loki vahvisti virheiden johtuvan vain tarkoituksella puuttuneista repository-symboleista ja niiden metodeista.
+- Lisätty `ReportRepository` ja Room-toteutus, joka kirjoittaa yhdestä domain-raportista sekä summary-kentät että versionoidun JSON-payloadin, lukee hallitut available/not-found/unavailable-tulokset, pitää summary-flow'n payloadista erillään ja tukee comparison-load-, delete- ja delete-all-operaatioita.
+- Payload-koodaus säilyttää kaikki typed evidence -arvot, `Instant`-tarkkuuden ja `BigDecimal`-esityksen. Lukumapping vertaa payloadista rekonstruoitua raporttia entity-summaryyn; korruptio ja tuleva skeemaversio palautuvat hallittuina tuloksina.
+- Database DI tarjoaa DAO:n ja singleton-repositoryn, joten `DI module completeness` -NEXT TOUCH on tämän persistence-rajapinnan osalta käsitelty. `PROJECT.md`-päivitys odottaa käyttäjän keskeneräisen tiedostomuutoksen valmistumista eikä sitä sekoitettu tähän tehtävään.
+- GREEN-käännös ja instrumentaatiotestit odottavat käyttäjän ajoa. Codex ei ajanut Gradlea.
 
 ### 6. Replace the Android-bound report builder with a pure report assembler
 

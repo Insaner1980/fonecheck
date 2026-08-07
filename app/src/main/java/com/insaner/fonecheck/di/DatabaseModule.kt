@@ -3,6 +3,9 @@ package com.insaner.fonecheck.di
 import android.content.Context
 import androidx.room.Room
 import com.insaner.fonecheck.data.local.FonecheckDatabase
+import com.insaner.fonecheck.data.local.ReportDao
+import com.insaner.fonecheck.data.repository.ReportRepository
+import com.insaner.fonecheck.data.repository.RoomReportRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,4 +27,11 @@ object DatabaseModule {
                 FonecheckDatabase::class.java,
                 "fonecheck.db",
             ).build()
+
+    @Provides
+    fun provideReportDao(database: FonecheckDatabase): ReportDao = database.reportDao()
+
+    @Provides
+    @Singleton
+    fun provideReportRepository(reportDao: ReportDao): ReportRepository = RoomReportRepository(reportDao)
 }

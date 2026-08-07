@@ -82,7 +82,13 @@ class ReportRepositoryTest {
         runBlocking {
             repository.insert(report(id = "older", completedAt = Instant.ofEpochMilli(2_000L)))
             database.reportDao().insert(storedEntity(id = "corrupt", completedAt = 2_500L, payloadJson = "{broken"))
-            repository.insert(report(id = "newer", completedAt = Instant.ofEpochMilli(3_000L), kind = ReportKind.CATEGORY_ONLY))
+            repository.insert(
+                report(
+                    id = "newer",
+                    completedAt = Instant.ofEpochMilli(3_000L),
+                    kind = ReportKind.CATEGORY_ONLY,
+                ),
+            )
 
             val summaries = repository.observeSummaries().first()
 

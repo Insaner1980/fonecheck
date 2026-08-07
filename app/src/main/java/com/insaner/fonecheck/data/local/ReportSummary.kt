@@ -5,6 +5,7 @@ data class ReportSummary(
     val reportKindCode: String,
     val categoryId: String?,
     val completedAtEpochMillis: Long,
+    val reportSchemaVersion: Int,
     val scoreVersion: Int,
     val scoreValue: Int?,
     val scoreStateCode: String,

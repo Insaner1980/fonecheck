@@ -14,7 +14,7 @@ interface ReportDao {
     @Query(
         """
         SELECT id, reportKindCode, categoryId, completedAtEpochMillis,
-            scoreVersion, scoreValue, scoreStateCode, coveragePercentage,
+            reportSchemaVersion, scoreVersion, scoreValue, scoreStateCode, coveragePercentage,
             warningCount, failureCount
         FROM reports
         ORDER BY completedAtEpochMillis DESC
