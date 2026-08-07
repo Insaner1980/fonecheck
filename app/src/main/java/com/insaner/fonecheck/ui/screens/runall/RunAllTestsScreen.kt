@@ -14,8 +14,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -34,6 +36,7 @@ import com.insaner.fonecheck.ui.permissions.PermissionController
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
 import com.insaner.fonecheck.ui.screens.audio.AudioTestViewModel
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestViewModel
+import com.insaner.fonecheck.ui.screens.biometrics.AuthResult
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestViewModel
 import com.insaner.fonecheck.ui.screens.biometrics.showBiometricPrompt
 import com.insaner.fonecheck.ui.screens.buttons.ButtonLifecycleEffect
@@ -110,6 +113,7 @@ fun RunAllTestsScreen(
     val buttonState by buttonViewModel.state.collectAsStateWithLifecycle()
     val biometricState by biometricViewModel.state.collectAsStateWithLifecycle()
     val simState by simViewModel.state.collectAsStateWithLifecycle()
+    var biometricPrompt by remember { mutableStateOf<BiometricPrompt?>(null) }
     ThermalMonitoringEffect(thermalViewModel)
     VibrationLifecycleEffect(vibrationViewModel)
     ButtonLifecycleEffect(buttonViewModel)
@@ -273,21 +277,36 @@ fun RunAllTestsScreen(
                     biometricState.capability.strongAvailable ||
                         biometricState.capability.weakAvailable
                 val activity = context as? FragmentActivity
-                if (!available || activity == null) {
-                    sessionViewModel.recordBiometrics(null)
-                } else {
-                    showBiometricPrompt(
-                        activity = activity,
-                        onSuccess = { sessionViewModel.recordBiometrics(true) },
-                        onFailed = {},
-                        onError = { errorCode, _ ->
-                            val wasCancelled =
-                                errorCode == BiometricPrompt.ERROR_NEGATIVE_BUTTON ||
-                                    errorCode == BiometricPrompt.ERROR_USER_CANCELED ||
-                                    errorCode == BiometricPrompt.ERROR_CANCELED
-                            sessionViewModel.recordBiometrics(if (wasCancelled) null else false)
-                        },
+                if (!available) {
+                    biometricViewModel.startAuthentication()
+                } else if (activity == null) {
+                    biometricViewModel.startAuthentication()
+                    biometricViewModel.onAuthError(
+                        BiometricPrompt.ERROR_VENDOR,
+                        "Biometric host activity unavailable",
                     )
+                } else {
+                    biometricViewModel.startAuthentication()
+                    runCatching {
+                        showBiometricPrompt(
+                            activity = activity,
+                            onSuccess = {
+                                biometricViewModel.onAuthSuccess()
+                                biometricPrompt = null
+                            },
+                            onFailed = biometricViewModel::onAuthFailed,
+                            onError = { errorCode, message ->
+                                biometricViewModel.onAuthError(errorCode, message)
+                                biometricPrompt = null
+                            },
+                        )
+                    }.onSuccess { biometricPrompt = it }
+                        .onFailure {
+                            biometricViewModel.onAuthError(
+                                BiometricPrompt.ERROR_VENDOR,
+                                it.message.orEmpty(),
+                            )
+                        }
                 }
             }
 
@@ -331,6 +350,14 @@ fun RunAllTestsScreen(
         }
     }
 
+    LaunchedEffect(sessionState.stage, biometricState.authResult) {
+        if (sessionState.stage != RunAllStage.BIOMETRICS || !biometricState.authResult.isTerminal) {
+            return@LaunchedEffect
+        }
+        val succeeded = biometricState.authResult == AuthResult.SUCCESS
+        sessionViewModel.recordBiometrics(if (succeeded) true else null)
+    }
+
     DisposableEffect(sessionState.stage) {
         onDispose {
             when (sessionState.stage) {
@@ -339,6 +366,11 @@ fun RunAllTestsScreen(
                 RunAllStage.SENSORS -> sensorViewModel.clearChallenge()
                 RunAllStage.VIBRATION -> vibrationViewModel.cancelVibration()
                 RunAllStage.BUTTONS -> buttonViewModel.stopTest()
+                RunAllStage.BIOMETRICS -> {
+                    biometricViewModel.cancelAuthentication()
+                    biometricPrompt?.cancelAuthentication()
+                    biometricPrompt = null
+                }
                 RunAllStage.AUTOMATIC -> storageViewModel.cancelBenchmark()
                 else -> Unit
             }
@@ -461,7 +493,11 @@ fun RunAllTestsScreen(
 
         RunAllStage.BIOMETRICS ->
             BiometricCheckStep(
-                onSkip = { sessionViewModel.recordBiometrics(null) },
+                state = biometricState,
+                onSkip = {
+                    biometricViewModel.cancelAuthentication()
+                    biometricPrompt?.cancelAuthentication()
+                },
             )
 
         RunAllStage.RESULTS -> {

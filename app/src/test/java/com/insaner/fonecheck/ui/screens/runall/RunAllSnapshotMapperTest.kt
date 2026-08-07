@@ -28,6 +28,9 @@ import com.insaner.fonecheck.ui.screens.battery.ChargingState
 import com.insaner.fonecheck.ui.screens.battery.HealthState
 import com.insaner.fonecheck.ui.screens.battery.ManufacturerProfile
 import com.insaner.fonecheck.ui.screens.battery.ManufacturerState
+import com.insaner.fonecheck.ui.screens.biometrics.AuthResult
+import com.insaner.fonecheck.ui.screens.biometrics.BiometricAvailability
+import com.insaner.fonecheck.ui.screens.biometrics.BiometricCapability
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestState
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestPhase
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestState
@@ -745,6 +748,66 @@ class RunAllSnapshotMapperTest {
 
         assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue("buttons.volume").status)
         assertEquals(EvidenceReasonCode.TIMEOUT, evidence.getValue("buttons.volume").reason)
+    }
+
+    @Test
+    fun biometricHardwareCapabilityAndSuccessfulPromptRemainSeparateEvidence() {
+        val biometrics =
+            BiometricTestState(
+                capability =
+                    BiometricCapability(
+                        fingerprintHardware = true,
+                        faceHardware = false,
+                        strongStatus = BiometricAvailability.NONE_ENROLLED,
+                        weakStatus = BiometricAvailability.AVAILABLE,
+                    ),
+                authResult = AuthResult.SUCCESS,
+            )
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots = diagnosticSnapshotsWithSensitiveConnectivity().copy(biometrics = biometrics),
+                    manual = ManualCheckResults(biometrics = true),
+                    permissions = RunAllPermissions(),
+                    capturedAt = Instant.parse("2026-08-08T12:00:00Z"),
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+
+        assertEquals(EvidenceValue.BooleanValue(true), evidence.getValue("biometrics.fingerprint_hardware").value)
+        assertEquals(EvidenceValue.BooleanValue(false), evidence.getValue("biometrics.face_hardware").value)
+        assertEquals(
+            EvidenceValue.StableTextCodeValue("none_enrolled"),
+            evidence.getValue("biometrics.strong_capability").value,
+        )
+        assertEquals(DiagnosticStatus.PASS, evidence.getValue("biometrics.authentication").status)
+        assertEquals(EvidenceSource.ANDROID_API, evidence.getValue("biometrics.authentication").source)
+    }
+
+    @Test
+    fun biometricLockoutDoesNotBecomeSensorFailure() {
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots =
+                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                            biometrics =
+                                BiometricTestState(
+                                    capability =
+                                        BiometricCapability(
+                                            fingerprintHardware = true,
+                                            weakStatus = BiometricAvailability.AVAILABLE,
+                                        ),
+                                    authResult = AuthResult.LOCKED_OUT,
+                                ),
+                        ),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(),
+                    capturedAt = Instant.parse("2026-08-08T12:00:00Z"),
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+
+        assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue("biometrics.authentication").status)
+        assertEquals(EvidenceReasonCode.BIOMETRIC_LOCKOUT, evidence.getValue("biometrics.authentication").reason)
     }
 
     private fun diagnosticSnapshotsWithSensitiveConnectivity() =

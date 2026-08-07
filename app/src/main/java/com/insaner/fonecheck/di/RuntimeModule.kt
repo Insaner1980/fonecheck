@@ -4,6 +4,8 @@ import android.content.Context
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.IdProvider
 import com.insaner.fonecheck.runtime.NanoTimeSource
+import com.insaner.fonecheck.ui.screens.biometrics.AndroidBiometricCapabilityProvider
+import com.insaner.fonecheck.ui.screens.biometrics.BiometricCapabilityProvider
 import com.insaner.fonecheck.ui.screens.buttons.DefaultVolumeButtonEventSource
 import com.insaner.fonecheck.ui.screens.buttons.VolumeButtonEventSource
 import com.insaner.fonecheck.ui.screens.storage.AndroidStorageBenchmarkStore
@@ -66,6 +68,11 @@ object RuntimeModule {
     @Provides
     @Singleton
     fun provideVolumeButtonEventSource(source: DefaultVolumeButtonEventSource): VolumeButtonEventSource = source
+
+    @Provides
+    fun provideBiometricCapabilityProvider(
+        provider: AndroidBiometricCapabilityProvider,
+    ): BiometricCapabilityProvider = provider
 
     @Provides
     @IoDispatcher

@@ -576,7 +576,7 @@
     <string name="run_all_buttons_title">Test the volume buttons</string>
     <string name="run_all_buttons_description">Press Volume Up and Volume Down once. Fonecheck listens for the two key events for 15 seconds.</string>
     <string name="run_all_biometrics_title">Verify the biometric sensor</string>
-    <string name="run_all_biometrics_description">Use the system prompt to verify fingerprint or face authentication.</string>
+    <string name="run_all_biometrics_description">Use the biometric-only system prompt. A PIN, pattern, or password is not accepted as a biometric result.</string>
     <string name="run_all_skip">Skip this check</string>
     <string name="run_all_results_title">Your phone report</string>
     <string name="run_all_results_description">Automatic and interactive checks are grouped by category below.</string>
@@ -784,14 +784,34 @@
 
     <!-- Biometric Test Screen -->
     <string name="biometric_capabilities_title">Capabilities</string>
+    <string name="biometric_capability_icon">BIO</string>
+    <string name="biometric_auth_icon">AUTH</string>
+    <string name="biometric_fingerprint_hardware">Fingerprint feature</string>
+    <string name="biometric_face_hardware">Face feature</string>
     <string name="biometric_strong">Strong (Class 3)</string>
     <string name="biometric_weak">Weak (Class 2)</string>
     <string name="biometric_device_credential">Device Credential</string>
+    <string name="biometric_credential_excluded">Device credential is shown as device context only. It is never accepted by this biometric test.</string>
     <string name="biometric_test_auth">Test Authentication</string>
     <string name="biometric_auth_success">Authentication Successful</string>
-    <string name="biometric_auth_failed">Authentication Failed</string>
     <string name="biometric_auth_error">Error: %1$s</string>
     <string name="biometric_not_available">Biometric authentication not available</string>
+    <string name="biometric_available">Available and enrolled</string>
+    <string name="biometric_no_hardware">No compatible hardware</string>
+    <string name="biometric_hardware_unavailable">Hardware unavailable</string>
+    <string name="biometric_none_enrolled">No biometrics enrolled</string>
+    <string name="biometric_security_update_required">Security update required</string>
+    <string name="biometric_unsupported">Unsupported on this Android version</string>
+    <string name="biometric_unknown">Availability unknown</string>
+    <string name="biometric_ready">Ready</string>
+    <string name="biometric_in_progress">System prompt active</string>
+    <string name="biometric_not_recognized">Not recognized</string>
+    <string name="biometric_cancelled">Cancelled</string>
+    <string name="biometric_locked_out">Temporarily locked out</string>
+    <string name="biometric_error">Authentication error</string>
+    <string name="biometric_retry">Try again</string>
+    <string name="biometric_nonterminal_guidance">Not recognized. Try again in the system prompt or cancel it to exit this check.</string>
+    <string name="biometric_success_disclaimer">A successful prompt confirms one enrolled biometric was accepted. It does not measure sensor quality or reveal enrolled templates.</string>
     <string name="biometric_prompt_title">fonecheck</string>
     <string name="biometric_prompt_subtitle">Verify biometric sensor</string>
     <string name="biometric_prompt_cancel">Cancel</string>

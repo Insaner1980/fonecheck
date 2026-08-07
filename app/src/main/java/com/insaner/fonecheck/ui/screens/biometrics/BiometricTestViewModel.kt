@@ -1,30 +1,33 @@
 package com.insaner.fonecheck.ui.screens.biometrics
 
-import android.app.Application
-import android.content.Context
-import androidx.biometric.BiometricManager
-import androidx.biometric.BiometricManager.Authenticators
-import androidx.lifecycle.AndroidViewModel
+import androidx.biometric.BiometricPrompt
+import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import javax.inject.Inject
-
-// ── State classes ────────────────────────────────────────────────────────────────
-
-data class BiometricCapability(
-    val strongAvailable: Boolean = false,
-    val weakAvailable: Boolean = false,
-    val deviceCredentialAvailable: Boolean = false,
-    val strongStatusMessage: String = "",
-    val weakStatusMessage: String = "",
-)
+import kotlinx.coroutines.flow.asStateFlow
 
 enum class AuthResult {
     NONE,
+    IN_PROGRESS,
+    NOT_RECOGNIZED,
     SUCCESS,
-    FAILED,
+    CANCELLED,
+    LOCKED_OUT,
+    NO_ENROLLMENT,
+    UNAVAILABLE,
     ERROR,
+    ;
+
+    val isTerminal: Boolean
+        get() =
+            this == SUCCESS ||
+                this == CANCELLED ||
+                this == LOCKED_OUT ||
+                this == NO_ENROLLMENT ||
+                this == UNAVAILABLE ||
+                this == ERROR
 }
 
 enum class BiometricSection {
@@ -36,26 +39,19 @@ data class BiometricTestState(
     val capability: BiometricCapability = BiometricCapability(),
     val authResult: AuthResult = AuthResult.NONE,
     val authErrorMessage: String? = null,
+    val promptActive: Boolean = false,
+    val failedAttempts: Int = 0,
     val expandedSection: BiometricSection? = null,
 )
-
-// ── ViewModel ────────────────────────────────────────────────────────────────────
 
 @HiltViewModel
 class BiometricTestViewModel
     @Inject
     constructor(
-        application: Application,
-    ) : AndroidViewModel(application) {
-        private val context: Context get() = getApplication()
-        private val biometricManager = BiometricManager.from(context)
-
-        private val _state = MutableStateFlow(BiometricTestState())
-        val state: StateFlow<BiometricTestState> = _state
-
-        init {
-            checkCapabilities()
-        }
+        capabilityProvider: BiometricCapabilityProvider,
+    ) : ViewModel() {
+        private val _state = MutableStateFlow(BiometricTestState(capability = capabilityProvider.read()))
+        val state: StateFlow<BiometricTestState> = _state.asStateFlow()
 
         fun toggleSection(section: BiometricSection) {
             val current = _state.value.expandedSection
@@ -65,59 +61,95 @@ class BiometricTestViewModel
                 )
         }
 
-        fun onAuthSuccess() {
+        fun startAuthentication() {
+            if (!canAuthenticate()) {
+                _state.value =
+                    _state.value.copy(
+                        authResult = unavailableResult(_state.value.capability.weakStatus),
+                        authErrorMessage = null,
+                        promptActive = false,
+                        failedAttempts = 0,
+                    )
+                return
+            }
             _state.value =
                 _state.value.copy(
-                    authResult = AuthResult.SUCCESS,
+                    authResult = AuthResult.IN_PROGRESS,
                     authErrorMessage = null,
+                    promptActive = true,
+                    failedAttempts = 0,
                 )
+        }
+
+        fun onAuthSuccess() {
+            complete(AuthResult.SUCCESS)
         }
 
         fun onAuthFailed() {
+            if (!_state.value.promptActive || _state.value.authResult.isTerminal) return
             _state.value =
                 _state.value.copy(
-                    authResult = AuthResult.FAILED,
+                    authResult = AuthResult.NOT_RECOGNIZED,
                     authErrorMessage = null,
+                    failedAttempts = _state.value.failedAttempts + 1,
                 )
         }
 
-        fun onAuthError(errorMessage: String) {
+        fun onAuthError(
+            errorCode: Int,
+            errorMessage: String,
+        ) {
+            if (!_state.value.promptActive || _state.value.authResult.isTerminal) return
+            complete(
+                result = biometricAuthResult(errorCode),
+                errorMessage = errorMessage,
+            )
+        }
+
+        fun cancelAuthentication() {
+            if (!_state.value.promptActive || _state.value.authResult.isTerminal) return
+            complete(AuthResult.CANCELLED)
+        }
+
+        fun canAuthenticate(): Boolean = _state.value.capability.weakAvailable
+
+        private fun complete(
+            result: AuthResult,
+            errorMessage: String? = null,
+        ) {
+            if (!_state.value.promptActive || _state.value.authResult.isTerminal) return
             _state.value =
                 _state.value.copy(
-                    authResult = AuthResult.ERROR,
-                    authErrorMessage = errorMessage,
+                    authResult = result,
+                    authErrorMessage = errorMessage.takeIf { result == AuthResult.ERROR },
+                    promptActive = false,
                 )
         }
 
-        fun canAuthenticate(): Boolean =
-            _state.value.capability.strongAvailable || _state.value.capability.weakAvailable
-
-        private fun checkCapabilities() {
-            val strongResult = biometricManager.canAuthenticate(Authenticators.BIOMETRIC_STRONG)
-            val weakResult = biometricManager.canAuthenticate(Authenticators.BIOMETRIC_WEAK)
-            val credentialResult = biometricManager.canAuthenticate(Authenticators.DEVICE_CREDENTIAL)
-
-            _state.value =
-                _state.value.copy(
-                    capability =
-                        BiometricCapability(
-                            strongAvailable = strongResult == BiometricManager.BIOMETRIC_SUCCESS,
-                            weakAvailable = weakResult == BiometricManager.BIOMETRIC_SUCCESS,
-                            deviceCredentialAvailable = credentialResult == BiometricManager.BIOMETRIC_SUCCESS,
-                            strongStatusMessage = statusMessage(strongResult),
-                            weakStatusMessage = statusMessage(weakResult),
-                        ),
-                )
-        }
-
-        private fun statusMessage(result: Int): String =
-            when (result) {
-                BiometricManager.BIOMETRIC_SUCCESS -> "Available"
-                BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> "No hardware"
-                BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> "Hardware unavailable"
-                BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> "Not enrolled"
-                BiometricManager.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED -> "Security update required"
-                BiometricManager.BIOMETRIC_STATUS_UNKNOWN -> "Unknown"
-                else -> "Unknown ($result)"
+        private fun unavailableResult(status: BiometricAvailability): AuthResult =
+            if (status == BiometricAvailability.NONE_ENROLLED) {
+                AuthResult.NO_ENROLLMENT
+            } else {
+                AuthResult.UNAVAILABLE
             }
+    }
+
+fun biometricAuthResult(errorCode: Int): AuthResult =
+    when (errorCode) {
+        BiometricPrompt.ERROR_NEGATIVE_BUTTON,
+        BiometricPrompt.ERROR_USER_CANCELED,
+        -> AuthResult.CANCELLED
+
+        BiometricPrompt.ERROR_LOCKOUT,
+        BiometricPrompt.ERROR_LOCKOUT_PERMANENT,
+        -> AuthResult.LOCKED_OUT
+
+        BiometricPrompt.ERROR_NO_BIOMETRICS -> AuthResult.NO_ENROLLMENT
+        BiometricPrompt.ERROR_HW_NOT_PRESENT,
+        BiometricPrompt.ERROR_HW_UNAVAILABLE,
+        BiometricPrompt.ERROR_CANCELED,
+        BiometricPrompt.ERROR_SECURITY_UPDATE_REQUIRED,
+        -> AuthResult.UNAVAILABLE
+
+        else -> AuthResult.ERROR
     }

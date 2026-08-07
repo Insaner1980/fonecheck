@@ -10,7 +10,7 @@ internal fun showBiometricPrompt(
     onSuccess: () -> Unit,
     onFailed: () -> Unit,
     onError: (errorCode: Int, message: String) -> Unit,
-) {
+): BiometricPrompt {
     val callback =
         object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
@@ -39,8 +39,10 @@ internal fun showBiometricPrompt(
             .Builder()
             .setTitle(activity.getString(R.string.biometric_prompt_title))
             .setSubtitle(activity.getString(R.string.biometric_prompt_subtitle))
+            .setAllowedAuthenticators(BiometricAuthenticatorPolicy.ALLOWED_AUTHENTICATORS)
             .setNegativeButtonText(activity.getString(R.string.biometric_prompt_cancel))
             .setConfirmationRequired(false)
             .build()
     prompt.authenticate(promptInfo)
+    return prompt
 }

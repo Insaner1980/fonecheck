@@ -58,6 +58,8 @@ value class EvidenceReasonCode(
         val HARDWARE_UNAVAILABLE = EvidenceReasonCode("hardware_unavailable")
         val ANDROID_VERSION_UNSUPPORTED = EvidenceReasonCode("android_version_unsupported")
         val PLATFORM_RESTRICTION = EvidenceReasonCode("platform_restriction")
+        val BIOMETRIC_LOCKOUT = EvidenceReasonCode("biometric_lockout")
+        val BIOMETRIC_NOT_ENROLLED = EvidenceReasonCode("biometric_not_enrolled")
         val DISABLED = EvidenceReasonCode("disabled")
         val USER_CONFIRMED_FAILURE = EvidenceReasonCode("user_confirmed_failure")
         val DEGRADED = EvidenceReasonCode("degraded")

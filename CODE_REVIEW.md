@@ -138,7 +138,7 @@ Each item is tagged with when to address it:
 - [x] `NOW` **Phase 0 status** — DONE: project skeleton, domain models, navigation shell, Home category grid, and automatic run-all session are implemented.
 - [x] `DECIDE` **Implementation order** — DECIDED: follow the approved master-plan order; do not prioritize the stale Phase 1 list ahead of it.
 - [ ] `NEXT TOUCH` **Phase 2 status** — Task 2.1 (Device info): DONE. Task 2.2 (Performance info): DONE. Task 2.3 (SIM & Telephony): DONE. All three info screens are implemented.
-- [ ] `NEXT TOUCH` **Phase 3 status** — Task 3.1 (Audio): DONE. Task 3.2 (Camera): DONE. Task 3.3 (Sensor): DONE. Task 3.4 (Connectivity): DONE. Task 3.5 (Battery): DONE. Task 3.6 (Biometrics): NOT STARTED.
+- [x] `NEXT TOUCH` **Phase 3 status** — Task 3.1 (Audio): DONE. Task 3.2 (Camera): DONE. Task 3.3 (Sensor): DONE. Task 3.4 (Connectivity): DONE. Task 3.5 (Battery): DONE. Task 3.6 (Biometrics): DONE.
 - [ ] `PRE-PHASE 4` **Phase 4 incomplete** — Basic in-memory scoring and category report are implemented. Production weighting, PDF generation, persistence, and history still need real database entities.
 - [ ] `PRE-RELEASE` **Phase 5 not started** — Pro system, storage/network speed tests, thermal monitoring, settings screen.
 - [x] `NOW` **Home screen navigation** — DONE: all 12 individual diagnostic destinations are reachable from the Home grid and the automatic run-all report.

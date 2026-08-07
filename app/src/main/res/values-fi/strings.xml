@@ -570,7 +570,7 @@
     <string name="run_all_buttons_title">Testaa äänenvoimakkuuspainikkeet</string>
     <string name="run_all_buttons_description">Paina kerran ääni ylös ja ääni alas. Fonecheck kuuntelee kahta painiketapahtumaa 15 sekunnin ajan.</string>
     <string name="run_all_biometrics_title">Varmista biometrinen anturi</string>
-    <string name="run_all_biometrics_description">Varmista sormenjälki- tai kasvojentunnistus järjestelmän kehotteessa.</string>
+    <string name="run_all_biometrics_description">Käytä vain biometriikan hyväksyvää järjestelmäkehotetta. PIN-koodia, kuviota tai salasanaa ei hyväksytä biometriseksi tulokseksi.</string>
     <string name="run_all_skip">Ohita tämä tarkistus</string>
     <string name="run_all_results_title">Puhelimesi raportti</string>
     <string name="run_all_results_description">Automaattiset ja vuorovaikutteiset tarkistukset on ryhmitelty alle kategorioittain.</string>
@@ -778,14 +778,34 @@
 
     <!-- Biometric Test Screen -->
     <string name="biometric_capabilities_title">Ominaisuudet</string>
+    <string name="biometric_capability_icon">BIO</string>
+    <string name="biometric_auth_icon">AUTH</string>
+    <string name="biometric_fingerprint_hardware">Sormenjälkiominaisuus</string>
+    <string name="biometric_face_hardware">Kasvotunnistusominaisuus</string>
     <string name="biometric_strong">Vahva (luokka 3)</string>
     <string name="biometric_weak">Heikko (luokka 2)</string>
     <string name="biometric_device_credential">Laitteen tunniste</string>
+    <string name="biometric_credential_excluded">Laitteen tunniste näytetään vain laitekontekstina. Sitä ei koskaan hyväksytä tämän biometrisen testin tulokseksi.</string>
     <string name="biometric_test_auth">Testaa tunnistautuminen</string>
     <string name="biometric_auth_success">Tunnistautuminen onnistui</string>
-    <string name="biometric_auth_failed">Tunnistautuminen epäonnistui</string>
     <string name="biometric_auth_error">Virhe: %1$s</string>
     <string name="biometric_not_available">Biometrinen tunnistautuminen ei saatavilla</string>
+    <string name="biometric_available">Käytettävissä ja rekisteröity</string>
+    <string name="biometric_no_hardware">Ei yhteensopivaa laitteistoa</string>
+    <string name="biometric_hardware_unavailable">Laitteisto ei ole käytettävissä</string>
+    <string name="biometric_none_enrolled">Biometriikkaa ei ole rekisteröity</string>
+    <string name="biometric_security_update_required">Tietoturvapäivitys vaaditaan</string>
+    <string name="biometric_unsupported">Android-versio ei tue toimintoa</string>
+    <string name="biometric_unknown">Saatavuus ei ole tiedossa</string>
+    <string name="biometric_ready">Valmis</string>
+    <string name="biometric_in_progress">Järjestelmäkehote on aktiivinen</string>
+    <string name="biometric_not_recognized">Ei tunnistettu</string>
+    <string name="biometric_cancelled">Peruutettu</string>
+    <string name="biometric_locked_out">Tilapäisesti lukittu</string>
+    <string name="biometric_error">Tunnistautumisvirhe</string>
+    <string name="biometric_retry">Yritä uudelleen</string>
+    <string name="biometric_nonterminal_guidance">Tunnistusta ei hyväksytty. Yritä uudelleen järjestelmäkehotteessa tai poistu tarkistuksesta peruuttamalla kehote.</string>
+    <string name="biometric_success_disclaimer">Onnistunut kehote vahvistaa, että yksi rekisteröity biometrinen tunniste hyväksyttiin. Se ei mittaa anturin laatua eikä paljasta rekisteröityjä malleja.</string>
     <string name="biometric_prompt_title">fonecheck</string>
     <string name="biometric_prompt_subtitle">Varmista biometrinen anturi</string>
     <string name="biometric_prompt_cancel">Peruuta</string>

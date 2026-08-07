@@ -41,6 +41,8 @@ import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.permission.PermissionState
 import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.StatusBadge
+import com.insaner.fonecheck.ui.screens.biometrics.AuthResult
+import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestState
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestPhase
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestState
 import com.insaner.fonecheck.ui.screens.camera.CameraTestState
@@ -393,6 +395,7 @@ fun ButtonCheckStep(
 
 @Composable
 fun BiometricCheckStep(
+    state: BiometricTestState,
     onSkip: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -402,7 +405,18 @@ fun BiometricCheckStep(
         title = stringResource(R.string.run_all_biometrics_title),
         description = stringResource(R.string.run_all_biometrics_description),
     ) {
-        CircularProgressIndicator()
+        if (state.promptActive) {
+            CircularProgressIndicator()
+        }
+        if (state.authResult == AuthResult.NOT_RECOGNIZED) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = stringResource(R.string.biometric_nonterminal_guidance),
+                color = Yellow400,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+            )
+        }
         Spacer(modifier = Modifier.height(24.dp))
         OutlinedButton(onClick = onSkip) {
             Text(stringResource(R.string.run_all_skip))

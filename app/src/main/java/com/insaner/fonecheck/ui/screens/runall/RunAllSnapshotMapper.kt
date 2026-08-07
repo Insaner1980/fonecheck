@@ -25,6 +25,8 @@ import com.insaner.fonecheck.ui.screens.audio.AudioTestState
 import com.insaner.fonecheck.ui.screens.battery.BatteryCurrentDirection
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestState
 import com.insaner.fonecheck.ui.screens.battery.ManufacturerProfile
+import com.insaner.fonecheck.ui.screens.biometrics.AuthResult
+import com.insaner.fonecheck.ui.screens.biometrics.BiometricAvailability
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestState
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestPhase
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestState
@@ -1334,6 +1336,22 @@ object RunAllSnapshotMapper {
                 else -> "unavailable"
             }
         return listOf(
+            evidence(
+                categoryId = DiagnosticCategoryId.BIOMETRICS,
+                id = "fingerprint_hardware",
+                status = DiagnosticStatus.INFO,
+                value = EvidenceValue.BooleanValue(capability.fingerprintHardware),
+                capturedAt = capturedAt,
+            ),
+            evidence(
+                categoryId = DiagnosticCategoryId.BIOMETRICS,
+                id = "face_hardware",
+                status = DiagnosticStatus.INFO,
+                value = EvidenceValue.BooleanValue(capability.faceHardware),
+                capturedAt = capturedAt,
+            ),
+            biometricCapabilityEvidence("strong_capability", capability.strongStatus, capturedAt),
+            biometricCapabilityEvidence("weak_capability", capability.weakStatus, capturedAt),
             if (available) {
                 evidence(
                     categoryId = DiagnosticCategoryId.BIOMETRICS,
@@ -1343,30 +1361,140 @@ object RunAllSnapshotMapper {
                     capturedAt = capturedAt,
                 )
             } else {
-                unavailable(
-                    DiagnosticCategoryId.BIOMETRICS,
-                    "capability",
-                    capturedAt,
-                    EvidenceValue.StableTextCodeValue(capabilityCode),
+                evidence(
+                    categoryId = DiagnosticCategoryId.BIOMETRICS,
+                    id = "capability",
+                    status = DiagnosticStatus.NOT_AVAILABLE,
+                    confidence =
+                        if (capability.weakStatus == BiometricAvailability.UNKNOWN) {
+                            Confidence.LOW
+                        } else {
+                            Confidence.HIGH
+                        },
+                    applicability =
+                        if (capability.weakStatus == BiometricAvailability.NO_HARDWARE) {
+                            Applicability.NOT_APPLICABLE
+                        } else {
+                            Applicability.APPLICABLE
+                        },
+                    reason =
+                        if (capability.weakStatus == BiometricAvailability.NONE_ENROLLED) {
+                            EvidenceReasonCode.BIOMETRIC_NOT_ENROLLED
+                        } else {
+                            EvidenceReasonCode.HARDWARE_UNAVAILABLE
+                        },
+                    value = EvidenceValue.StableTextCodeValue(capabilityCode),
+                    capturedAt = capturedAt,
                 )
             },
-            if (available) {
+            biometricAuthenticationEvidence(snapshots.biometrics, manual.biometrics, capturedAt),
+        )
+    }
+
+    private fun biometricCapabilityEvidence(
+        id: String,
+        status: BiometricAvailability,
+        capturedAt: Instant,
+    ): DiagnosticEvidence =
+        evidence(
+            categoryId = DiagnosticCategoryId.BIOMETRICS,
+            id = id,
+            status =
+                if (status == BiometricAvailability.AVAILABLE) {
+                    DiagnosticStatus.PASS
+                } else {
+                    DiagnosticStatus.NOT_AVAILABLE
+                },
+            confidence =
+                if (status == BiometricAvailability.UNKNOWN) Confidence.LOW else Confidence.HIGH,
+            applicability =
+                if (status == BiometricAvailability.NO_HARDWARE) {
+                    Applicability.NOT_APPLICABLE
+                } else {
+                    Applicability.APPLICABLE
+                },
+            reason =
+                when (status) {
+                    BiometricAvailability.AVAILABLE -> null
+                    BiometricAvailability.NONE_ENROLLED -> EvidenceReasonCode.BIOMETRIC_NOT_ENROLLED
+                    BiometricAvailability.NO_HARDWARE -> EvidenceReasonCode.HARDWARE_UNAVAILABLE
+                    else -> EvidenceReasonCode.ERROR
+                },
+            value = EvidenceValue.StableTextCodeValue(status.stableCode),
+            capturedAt = capturedAt,
+        )
+
+    private fun biometricAuthenticationEvidence(
+        state: BiometricTestState,
+        manualResult: Boolean?,
+        capturedAt: Instant,
+    ): DiagnosticEvidence =
+        when (state.authResult) {
+            AuthResult.SUCCESS ->
+                evidence(
+                    categoryId = DiagnosticCategoryId.BIOMETRICS,
+                    id = "authentication",
+                    status = DiagnosticStatus.PASS,
+                    source = EvidenceSource.ANDROID_API,
+                    value = EvidenceValue.BooleanValue(true),
+                    capturedAt = capturedAt,
+                )
+
+            AuthResult.CANCELLED ->
+                notTested(
+                    DiagnosticCategoryId.BIOMETRICS,
+                    "authentication",
+                    capturedAt,
+                    reason = EvidenceReasonCode.CANCELLED,
+                    source = EvidenceSource.ANDROID_API,
+                )
+
+            AuthResult.LOCKED_OUT ->
+                notTested(
+                    DiagnosticCategoryId.BIOMETRICS,
+                    "authentication",
+                    capturedAt,
+                    reason = EvidenceReasonCode.BIOMETRIC_LOCKOUT,
+                    source = EvidenceSource.ANDROID_API,
+                )
+
+            AuthResult.NO_ENROLLMENT ->
+                notTested(
+                    DiagnosticCategoryId.BIOMETRICS,
+                    "authentication",
+                    capturedAt,
+                    reason = EvidenceReasonCode.BIOMETRIC_NOT_ENROLLED,
+                    source = EvidenceSource.ANDROID_API,
+                )
+
+            AuthResult.UNAVAILABLE ->
+                unavailable(
+                    DiagnosticCategoryId.BIOMETRICS,
+                    "authentication",
+                    capturedAt,
+                    source = EvidenceSource.ANDROID_API,
+                )
+
+            AuthResult.ERROR ->
+                notTested(
+                    DiagnosticCategoryId.BIOMETRICS,
+                    "authentication",
+                    capturedAt,
+                    reason = EvidenceReasonCode.ERROR,
+                    source = EvidenceSource.ANDROID_API,
+                )
+
+            AuthResult.NONE,
+            AuthResult.IN_PROGRESS,
+            AuthResult.NOT_RECOGNIZED,
+            ->
                 manualEvidence(
                     DiagnosticCategoryId.BIOMETRICS,
                     "authentication",
-                    manual.biometrics,
+                    manualResult,
                     capturedAt,
                 )
-            } else {
-                unavailable(
-                    DiagnosticCategoryId.BIOMETRICS,
-                    "authentication",
-                    capturedAt,
-                    source = EvidenceSource.USER_CONFIRMATION,
-                )
-            },
-        )
-    }
+        }
 
     private fun manualEvidence(
         categoryId: DiagnosticCategoryId,

@@ -389,6 +389,10 @@ private fun evidenceLabelResId(checkId: String): Int? =
         "buttons.volume" -> R.string.run_all_check_volume_buttons
         "buttons.power" -> R.string.button_power
         "biometrics.capability" -> R.string.biometric_capabilities_title
+        "biometrics.fingerprint_hardware" -> R.string.biometric_fingerprint_hardware
+        "biometrics.face_hardware" -> R.string.biometric_face_hardware
+        "biometrics.strong_capability" -> R.string.biometric_strong
+        "biometrics.weak_capability" -> R.string.biometric_weak
         "biometrics.authentication" -> R.string.biometric_test_auth
         else -> null
     }
@@ -469,6 +473,12 @@ private fun stableTextLabel(code: String): String =
             "strong" -> R.string.biometric_strong
             "weak" -> R.string.biometric_weak
             "unavailable" -> R.string.biometric_not_available
+            "available" -> R.string.biometric_available
+            "no_hardware" -> R.string.biometric_no_hardware
+            "hardware_unavailable" -> R.string.biometric_hardware_unavailable
+            "none_enrolled" -> R.string.biometric_none_enrolled
+            "security_update_required" -> R.string.biometric_security_update_required
+            "unsupported" -> R.string.biometric_unsupported
             "known_artifact_detected" -> R.string.device_root_artifact_detected
             "no_known_artifact_detected" -> R.string.device_root_artifact_not_detected
             "no_telephony" -> R.string.sim_inventory_no_telephony
@@ -502,6 +512,8 @@ private fun reasonLabel(reason: EvidenceReasonCode): String =
             -> R.string.run_all_status_unavailable
 
             EvidenceReasonCode.PLATFORM_RESTRICTION -> R.string.button_power_unavailable
+            EvidenceReasonCode.BIOMETRIC_LOCKOUT -> R.string.biometric_locked_out
+            EvidenceReasonCode.BIOMETRIC_NOT_ENROLLED -> R.string.biometric_none_enrolled
 
             EvidenceReasonCode.DISABLED -> R.string.status_disabled
             EvidenceReasonCode.DEGRADED -> R.string.run_all_summary_warning
