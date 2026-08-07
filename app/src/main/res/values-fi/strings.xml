@@ -58,6 +58,37 @@
     <string name="perf_gpu_renderer">Renderöijä</string>
     <string name="perf_gpu_vendor">Valmistaja</string>
     <string name="perf_gpu_vulkan">Vulkan</string>
+    <string name="perf_gpu_vulkan_feature">Vulkan-ominaisuus ilmoitettu</string>
+    <string name="perf_cpu_frequency_value">%1$d MHz</string>
+    <string name="perf_info_error_title">Suorituskykytietoja ei ole saatavilla</string>
+    <string name="perf_info_error_description">fonecheck ei voinut päivittää laitteistotietoja. Viimeisin onnistunut tilannekuva pysyy näkyvissä.</string>
+    <string name="perf_refresh_info">Päivitä laitteistotiedot</string>
+    <string name="perf_benchmark_title">Rajattu suorituskykytarkistus</string>
+    <string name="perf_benchmark_description">Suorittaa lyhyen kiinteän CPU-työkuorman ja 64 MiB:n muistissa tehtävän luku- ja kirjoitustyökuorman. Tulokset ovat informatiivisia, vaihtelevat laitteen olosuhteiden mukaan ja ovat vertailukelpoisia vain saman sovellusversion sisällä.</string>
+    <string name="perf_benchmark_start">Aja suorituskykytarkistus</string>
+    <string name="perf_benchmark_run_again">Aja uudelleen</string>
+    <string name="perf_benchmark_cancel">Peruuta tarkistus</string>
+    <string name="perf_benchmark_cancelled">Suorituskykytarkistus peruutettiin.</string>
+    <string name="perf_benchmark_timeout">Suorituskykytarkistus pysäytettiin aikarajan täytyttyä.</string>
+    <string name="perf_benchmark_error">Suorituskykytarkistusta ei voitu suorittaa loppuun.</string>
+    <string name="perf_benchmark_cpu_rate">CPU-suoritusteho</string>
+    <string name="perf_benchmark_cpu_rate_value">%1$s operaatiota/s</string>
+    <string name="perf_benchmark_memory_rate">Muistin läpimeno</string>
+    <string name="perf_benchmark_memory_rate_value">%1$.1f MiB/s</string>
+    <string name="perf_benchmark_workload">Käsitelty muisti</string>
+    <string name="perf_benchmark_workload_value">%1$d MiB</string>
+    <string name="perf_benchmark_duration">Mitattu kesto</string>
+    <string name="perf_benchmark_duration_value">%1$d ms</string>
+    <string name="perf_benchmark_thermal_before">Lämpötilanhallinnan tila ennen</string>
+    <string name="perf_benchmark_thermal_after">Lämpötilanhallinnan tila jälkeen</string>
+    <string name="perf_benchmark_memory_unavailable">Muistin läpimenoa ei saatu, koska rajattua muistipuskuria ei voitu varata.</string>
+    <string name="perf_thermal_none">Ei rajoitusta</string>
+    <string name="perf_thermal_light">Kevyt</string>
+    <string name="perf_thermal_moderate">Kohtalainen</string>
+    <string name="perf_thermal_severe">Voimakas</string>
+    <string name="perf_thermal_critical">Kriittinen</string>
+    <string name="perf_thermal_emergency">Hätätila</string>
+    <string name="perf_thermal_shutdown">Sammutus</string>
 
     <!-- SIM & Telephony Screen -->
     <string name="sim_telephony_title">Puhelinverkko</string>

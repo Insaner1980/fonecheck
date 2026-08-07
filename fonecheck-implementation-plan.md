@@ -417,6 +417,15 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Thermal throttling, taustakuorma ja OEM scheduler tekevät vertailusta suuntaa-antavan.
 - **Decision required:** Kyllä, Performance-malli kohdassa 1.
 
+#### Implementation/status log — 2026-08-07
+
+- Lisätty tests-first rajatun workloadin, low-memory-polun, CPU-confidence-luokituksen ja EGL-session cleanupin testit. Ensimmäinen kohdistettu ajo oli odotettu RED vain puuttuvista benchmark/probe-symboleista; toteutuksen jälkeen testit ovat GREEN.
+- Performance hardware snapshot kerätään injektoidulla IO-dispatcherilla raakamuodossa: RAM tavuina, CPU-taajuudet nullable MHz -arvoina, GPU-arvot vakaalla `unavailable`-koodilla ja capture timestampilla. CPU-confidence on `HIGH` vain jos vähintään yksi taajuusarvo saadaan.
+- EGL-resurssit vapautetaan `finally`-polulla myös lukuvirheessä ja osittain epäonnistunut setup purkaa luodut resurssit. Vulkan-teksti kertoo täsmällisesti vain Androidin ilmoittaman feature flagin.
+- Käyttäjän käynnistämä benchmark tekee enintään kaksi miljoonaa kiinteää CPU-operaatiota sekä 4 MiB:n puskurilla yhteensä 64 MiB:n memory read/write -työn. Se toimii IO-dispatcherilla, tekee kooperatiiviset cancellation-checkpointit, rajoittuu ViewModelissa viiteen sekuntiin ja palauttaa OOM-tilanteessa CPU-tuloksen ilman memory-väitettä.
+- Standalone näyttää raw operations/s- ja MiB/s-tulokset, käsitellyn muistimäärän, keston, ennen/jälkeen thermal-statuskoodit ja selkeän olosuhde/version-rajoitteen ilman pass/fail- tai terveysrajoja. Full Check ajaa saman hyväksytyn rajatun benchmarkin automaattisessa vaiheessa ja tallentaa tulokset `INFO`/`LOW`-confidence-evidenceksi.
+- `PerformanceBenchmarkTest`, `PerformanceInfoProbeTest`, `PerformanceInfoViewModelTest`, `RunAllSnapshotMapperTest`, koko `:app:testDebugUnitTest` ja Android-testien Kotlin-käännös läpäisevät. Timeout-, cancellation-, low-memory-, confidence- ja cleanup-polut ovat automaattisesti katettuja; fyysinen toistettavuustarkistus odottaa yhdistettyä laitetta.
+
 ### 10. Complete SIM and telephony diagnostics
 
 - **Objective:** Erotella telephony hardware, SIM-tila, permission ja puuttuva tieto.

@@ -41,6 +41,7 @@ import com.insaner.fonecheck.ui.screens.camera.CameraTestViewModel
 import com.insaner.fonecheck.ui.screens.connectivity.ConnectivityTestViewModel
 import com.insaner.fonecheck.ui.screens.deviceinfo.DeviceInfoViewModel
 import com.insaner.fonecheck.ui.screens.display.DisplayTestViewModel
+import com.insaner.fonecheck.ui.screens.performance.BenchmarkPhase
 import com.insaner.fonecheck.ui.screens.performance.PerformanceInfoViewModel
 import com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge
 import com.insaner.fonecheck.ui.screens.sensor.SensorTestViewModel
@@ -60,6 +61,7 @@ private const val CAMERA_TEST_TIMEOUT_MS = 8_000L
 private const val BUTTON_POLL_INTERVAL_MS = 100L
 private const val SPEAKER_TEST_FREQUENCY_HZ = 1_000
 private const val DEVICE_INFO_TIMEOUT_MS = 3_000L
+private const val PERFORMANCE_TIMEOUT_MS = 7_000L
 
 @Composable
 fun RunAllTestsScreen(
@@ -85,6 +87,7 @@ fun RunAllTestsScreen(
     val scope = rememberCoroutineScope()
     val sessionState by sessionViewModel.state.collectAsStateWithLifecycle()
     val deviceState by deviceViewModel.state.collectAsStateWithLifecycle()
+    val performanceState by performanceViewModel.state.collectAsStateWithLifecycle()
     val displayState by displayViewModel.state.collectAsStateWithLifecycle()
     val audioState by audioViewModel.state.collectAsStateWithLifecycle()
     val cameraState by cameraViewModel.state.collectAsStateWithLifecycle()
@@ -165,6 +168,11 @@ fun RunAllTestsScreen(
             RunAllStage.AUTOMATIC -> {
                 withTimeoutOrNull(DEVICE_INFO_TIMEOUT_MS) {
                     deviceViewModel.state.first { !it.isLoading }
+                }
+                withTimeoutOrNull(PERFORMANCE_TIMEOUT_MS) {
+                    performanceViewModel.state.first { !it.isInfoLoading }
+                    performanceViewModel.startBenchmark()
+                    performanceViewModel.state.first { it.benchmarkPhase != BenchmarkPhase.RUNNING }
                 }
                 audioViewModel.updateHeadphoneState()
                 connectivityViewModel.onPermissionsGranted()
@@ -403,7 +411,8 @@ fun RunAllTestsScreen(
 
         RunAllStage.RESULTS -> {
             val deviceInfo = deviceState.info
-            if (deviceInfo == null) {
+            val performanceInfo = performanceState.info
+            if (deviceInfo == null || performanceInfo == null) {
                 AutomaticCheckScreen(
                     title = stringResource(R.string.run_all_results_title),
                     description = stringResource(R.string.run_all_results_description),
@@ -414,7 +423,8 @@ fun RunAllTestsScreen(
             val snapshots =
                 DiagnosticSnapshots(
                     device = deviceInfo,
-                    performance = performanceViewModel.performanceInfo,
+                    performance = performanceInfo,
+                    performanceBenchmark = performanceState.benchmarkResult,
                     sim = simState,
                     display = displayState,
                     audio = audioState,

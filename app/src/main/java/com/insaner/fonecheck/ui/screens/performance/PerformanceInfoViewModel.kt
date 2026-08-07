@@ -1,157 +1,123 @@
 package com.insaner.fonecheck.ui.screens.performance
 
-import android.app.ActivityManager
-import android.app.Application
-import android.content.Context
-import android.content.pm.FeatureInfo
-import android.opengl.EGL14
-import android.opengl.GLES20
-import android.text.format.Formatter
-import androidx.lifecycle.AndroidViewModel
-import com.insaner.fonecheck.domain.model.Confidence
-import com.insaner.fonecheck.domain.model.CpuCoreFrequency
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.insaner.fonecheck.di.IoDispatcher
+import com.insaner.fonecheck.domain.model.PerformanceBenchmarkResult
 import com.insaner.fonecheck.domain.model.PerformanceInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.io.File
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
+
+enum class BenchmarkPhase {
+    IDLE,
+    RUNNING,
+    COMPLETED,
+    CANCELLED,
+    ERROR,
+}
+
+data class PerformanceInfoState(
+    val info: PerformanceInfo? = null,
+    val isInfoLoading: Boolean = false,
+    val infoError: String? = null,
+    val benchmarkPhase: BenchmarkPhase = BenchmarkPhase.IDLE,
+    val benchmarkResult: PerformanceBenchmarkResult? = null,
+    val benchmarkError: String? = null,
+)
 
 @HiltViewModel
 class PerformanceInfoViewModel
     @Inject
     constructor(
-        application: Application,
-    ) : AndroidViewModel(application) {
-        val performanceInfo: PerformanceInfo = gatherPerformanceInfo(application)
+        private val performanceInfoProvider: PerformanceInfoProvider,
+        private val benchmarkRunner: PerformanceBenchmarkRunner,
+        @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    ) : ViewModel() {
+        private val _state = MutableStateFlow(PerformanceInfoState(isInfoLoading = true))
+        val state: StateFlow<PerformanceInfoState> = _state.asStateFlow()
+        private var infoJob: Job? = null
+        private var benchmarkJob: Job? = null
 
-        private fun gatherPerformanceInfo(application: Application): PerformanceInfo {
-            val cpuFrequencies = readCpuFrequencies()
-            val cpuConfidence = if (cpuFrequencies.isNotEmpty()) Confidence.HIGH else Confidence.LOW
-
-            val activityManager = application.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-            val memInfo = ActivityManager.MemoryInfo()
-            activityManager.getMemoryInfo(memInfo)
-
-            val glInfo = readGlInfo()
-            val vulkanSupported = checkVulkanSupport(application)
-
-            return PerformanceInfo(
-                cpuModel = readCpuModel(),
-                cpuArchitecture = System.getProperty("os.arch") ?: "Unknown",
-                cpuCores = Runtime.getRuntime().availableProcessors(),
-                cpuFrequencies = cpuFrequencies,
-                cpuConfidence = cpuConfidence,
-                totalRam = Formatter.formatFileSize(application, memInfo.totalMem),
-                availableRam = Formatter.formatFileSize(application, memInfo.availMem),
-                ramConfidence = Confidence.HIGH,
-                glEsVersion = glInfo.version,
-                glRenderer = glInfo.renderer,
-                glVendor = glInfo.vendor,
-                vulkanSupported = vulkanSupported,
-                gpuConfidence = if (glInfo.renderer != "Unknown") Confidence.HIGH else Confidence.LOW,
-            )
+        init {
+            refreshInfo()
         }
 
-        private fun readCpuModel(): String =
-            try {
-                File("/proc/cpuinfo").useLines { lines ->
-                    lines
-                        .firstOrNull { it.startsWith("Hardware") || it.startsWith("model name") }
-                        ?.substringAfter(":")
-                        ?.trim()
-                        ?: "Unknown"
+        fun refreshInfo() {
+            infoJob?.cancel()
+            _state.value = _state.value.copy(isInfoLoading = true, infoError = null)
+            infoJob =
+                viewModelScope.launch {
+                    try {
+                        val info = withContext(ioDispatcher) { performanceInfoProvider.capture() }
+                        _state.value = _state.value.copy(info = info, isInfoLoading = false)
+                    } catch (error: CancellationException) {
+                        throw error
+                    } catch (_: Exception) {
+                        _state.value = _state.value.copy(isInfoLoading = false, infoError = INFO_ERROR)
+                    }
                 }
-            } catch (_: Exception) {
-                "Unknown"
-            }
-
-        private fun readCpuFrequencies(): List<CpuCoreFrequency> {
-            val cores = Runtime.getRuntime().availableProcessors()
-            return (0 until cores).mapNotNull { i ->
-                try {
-                    val basePath = "/sys/devices/system/cpu/cpu$i/cpufreq"
-                    val curFreq = readFreqFile("$basePath/scaling_cur_freq")
-                    val minFreq = readFreqFile("$basePath/cpuinfo_min_freq")
-                    val maxFreq = readFreqFile("$basePath/cpuinfo_max_freq")
-                    CpuCoreFrequency(
-                        coreIndex = i,
-                        currentMhz = curFreq,
-                        minMhz = minFreq,
-                        maxMhz = maxFreq,
-                    )
-                } catch (_: Exception) {
-                    null
-                }
-            }
         }
 
-        private fun readFreqFile(path: String): String =
-            try {
-                val khz = File(path).readText().trim().toLong()
-                "${khz / 1000} MHz"
-            } catch (_: Exception) {
-                "N/A"
-            }
+        fun startBenchmark() {
+            if (_state.value.benchmarkPhase == BenchmarkPhase.RUNNING) return
+            _state.value =
+                _state.value.copy(
+                    benchmarkPhase = BenchmarkPhase.RUNNING,
+                    benchmarkResult = null,
+                    benchmarkError = null,
+                )
+            benchmarkJob =
+                viewModelScope.launch {
+                    try {
+                        val result =
+                            withTimeout(BENCHMARK_TIMEOUT_MS) {
+                                withContext(ioDispatcher) { benchmarkRunner.run() }
+                            }
+                        _state.value =
+                            _state.value.copy(
+                                benchmarkPhase = BenchmarkPhase.COMPLETED,
+                                benchmarkResult = result,
+                            )
+                    } catch (_: TimeoutCancellationException) {
+                        _state.value =
+                            _state.value.copy(
+                                benchmarkPhase = BenchmarkPhase.ERROR,
+                                benchmarkError = BENCHMARK_TIMEOUT,
+                            )
+                    } catch (_: CancellationException) {
+                        if (_state.value.benchmarkPhase == BenchmarkPhase.RUNNING) {
+                            _state.value = _state.value.copy(benchmarkPhase = BenchmarkPhase.CANCELLED)
+                        }
+                    } catch (_: Exception) {
+                        _state.value =
+                            _state.value.copy(
+                                benchmarkPhase = BenchmarkPhase.ERROR,
+                                benchmarkError = BENCHMARK_ERROR,
+                            )
+                    }
+                }
+        }
 
-        private data class GlInfo(
-            val version: String,
-            val renderer: String,
-            val vendor: String,
-        )
+        fun cancelBenchmark() {
+            if (_state.value.benchmarkPhase != BenchmarkPhase.RUNNING) return
+            _state.value = _state.value.copy(benchmarkPhase = BenchmarkPhase.CANCELLED)
+            benchmarkJob?.cancel()
+        }
 
-        private fun readGlInfo(): GlInfo =
-            try {
-                val display = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
-                val version = IntArray(2)
-                EGL14.eglInitialize(display, version, 0, version, 1)
-
-                val configAttribs =
-                    intArrayOf(
-                        EGL14.EGL_RENDERABLE_TYPE,
-                        EGL14.EGL_OPENGL_ES2_BIT,
-                        EGL14.EGL_SURFACE_TYPE,
-                        EGL14.EGL_PBUFFER_BIT,
-                        EGL14.EGL_NONE,
-                    )
-                val configs = arrayOfNulls<android.opengl.EGLConfig>(1)
-                val numConfigs = IntArray(1)
-                EGL14.eglChooseConfig(display, configAttribs, 0, configs, 0, 1, numConfigs, 0)
-
-                val surfaceAttribs =
-                    intArrayOf(
-                        EGL14.EGL_WIDTH,
-                        1,
-                        EGL14.EGL_HEIGHT,
-                        1,
-                        EGL14.EGL_NONE,
-                    )
-                val surface = EGL14.eglCreatePbufferSurface(display, configs[0], surfaceAttribs, 0)
-
-                val contextAttribs =
-                    intArrayOf(
-                        EGL14.EGL_CONTEXT_CLIENT_VERSION,
-                        2,
-                        EGL14.EGL_NONE,
-                    )
-                val context = EGL14.eglCreateContext(display, configs[0], EGL14.EGL_NO_CONTEXT, contextAttribs, 0)
-
-                EGL14.eglMakeCurrent(display, surface, surface, context)
-
-                val glVersion = GLES20.glGetString(GLES20.GL_VERSION) ?: "Unknown"
-                val glRenderer = GLES20.glGetString(GLES20.GL_RENDERER) ?: "Unknown"
-                val glVendor = GLES20.glGetString(GLES20.GL_VENDOR) ?: "Unknown"
-
-                EGL14.eglMakeCurrent(display, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT)
-                EGL14.eglDestroyContext(display, context)
-                EGL14.eglDestroySurface(display, surface)
-                EGL14.eglTerminate(display)
-
-                GlInfo(glVersion, glRenderer, glVendor)
-            } catch (_: Exception) {
-                GlInfo("Unknown", "Unknown", "Unknown")
-            }
-
-        private fun checkVulkanSupport(application: Application): Boolean {
-            val features: Array<FeatureInfo> = application.packageManager.systemAvailableFeatures
-            return features.any { it.name == "android.hardware.vulkan.level" }
+        private companion object {
+            const val BENCHMARK_TIMEOUT_MS = 5_000L
+            const val INFO_ERROR = "performance_info_failed"
+            const val BENCHMARK_TIMEOUT = "benchmark_timeout"
+            const val BENCHMARK_ERROR = "benchmark_failed"
         }
     }

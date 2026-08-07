@@ -60,6 +60,37 @@
     <string name="perf_gpu_renderer">Renderer</string>
     <string name="perf_gpu_vendor">Vendor</string>
     <string name="perf_gpu_vulkan">Vulkan</string>
+    <string name="perf_gpu_vulkan_feature">Vulkan feature declared</string>
+    <string name="perf_cpu_frequency_value">%1$d MHz</string>
+    <string name="perf_info_error_title">Performance information unavailable</string>
+    <string name="perf_info_error_description">fonecheck could not refresh the hardware information. The last successful snapshot remains visible.</string>
+    <string name="perf_refresh_info">Refresh hardware information</string>
+    <string name="perf_benchmark_title">Bounded performance check</string>
+    <string name="perf_benchmark_description">Runs a short fixed CPU workload and a 64 MiB in-memory read/write workload. Results are informational, vary with device conditions, and should only be compared within the same app version.</string>
+    <string name="perf_benchmark_start">Run performance check</string>
+    <string name="perf_benchmark_run_again">Run again</string>
+    <string name="perf_benchmark_cancel">Cancel check</string>
+    <string name="perf_benchmark_cancelled">Performance check cancelled.</string>
+    <string name="perf_benchmark_timeout">Performance check stopped after its time limit.</string>
+    <string name="perf_benchmark_error">Performance check could not be completed.</string>
+    <string name="perf_benchmark_cpu_rate">CPU throughput</string>
+    <string name="perf_benchmark_cpu_rate_value">%1$s operations/s</string>
+    <string name="perf_benchmark_memory_rate">Memory throughput</string>
+    <string name="perf_benchmark_memory_rate_value">%1$.1f MiB/s</string>
+    <string name="perf_benchmark_workload">Memory processed</string>
+    <string name="perf_benchmark_workload_value">%1$d MiB</string>
+    <string name="perf_benchmark_duration">Measured duration</string>
+    <string name="perf_benchmark_duration_value">%1$d ms</string>
+    <string name="perf_benchmark_thermal_before">Thermal state before</string>
+    <string name="perf_benchmark_thermal_after">Thermal state after</string>
+    <string name="perf_benchmark_memory_unavailable">Memory throughput was not available because the bounded buffer could not be allocated.</string>
+    <string name="perf_thermal_none">No throttling</string>
+    <string name="perf_thermal_light">Light</string>
+    <string name="perf_thermal_moderate">Moderate</string>
+    <string name="perf_thermal_severe">Severe</string>
+    <string name="perf_thermal_critical">Critical</string>
+    <string name="perf_thermal_emergency">Emergency</string>
+    <string name="perf_thermal_shutdown">Shutdown</string>
 
     <!-- SIM & Telephony Screen -->
     <string name="sim_telephony_title">Telephony</string>

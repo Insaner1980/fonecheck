@@ -15,6 +15,7 @@ import com.insaner.fonecheck.domain.model.EvidenceReasonCode
 import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.EvidenceUnitCode
 import com.insaner.fonecheck.domain.model.EvidenceValue
+import com.insaner.fonecheck.domain.model.PerformanceBenchmarkResult
 import com.insaner.fonecheck.domain.model.PerformanceInfo
 import com.insaner.fonecheck.domain.model.SimTelephonyInfo
 import com.insaner.fonecheck.ui.screens.audio.AudioTestState
@@ -31,6 +32,7 @@ import java.time.Instant
 data class DiagnosticSnapshots(
     val device: DeviceInfo,
     val performance: PerformanceInfo,
+    val performanceBenchmark: PerformanceBenchmarkResult? = null,
     val sim: SimTelephonyInfo,
     val display: DisplayTestState,
     val audio: AudioTestState,
@@ -119,8 +121,9 @@ object RunAllSnapshotMapper {
         capturedAt: Instant,
     ): List<DiagnosticEvidence> {
         val performance = snapshots.performance
-        val hasRamReading = performance.totalRam.isNotBlank()
-        val hasGpuReading = performance.glRenderer != "Unknown"
+        val benchmark = snapshots.performanceBenchmark
+        val hasRamReading = performance.totalRamBytes?.let { it > 0L } == true
+        val hasGpuReading = performance.glRenderer != PerformanceInfo.UNAVAILABLE
         return listOf(
             evidence(
                 categoryId = DiagnosticCategoryId.PERFORMANCE,
@@ -149,6 +152,40 @@ object RunAllSnapshotMapper {
                 reason = EvidenceReasonCode.DEGRADED.takeIf { !hasGpuReading },
                 value = EvidenceValue.BooleanValue(hasGpuReading),
                 capturedAt = capturedAt,
+            ),
+            benchmark?.let {
+                evidence(
+                    categoryId = DiagnosticCategoryId.PERFORMANCE,
+                    id = "cpu_benchmark",
+                    status = DiagnosticStatus.INFO,
+                    confidence = Confidence.LOW,
+                    source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                    value = EvidenceValue.LongValue(it.cpuOperationsPerSecond),
+                    unit = EvidenceUnitCode("operations_per_second"),
+                    capturedAt = it.capturedAt,
+                )
+            } ?: notTested(
+                categoryId = DiagnosticCategoryId.PERFORMANCE,
+                id = "cpu_benchmark",
+                capturedAt = capturedAt,
+                reason = EvidenceReasonCode.ERROR,
+            ),
+            benchmark?.memoryMebibytesPerSecond?.let { throughput ->
+                evidence(
+                    categoryId = DiagnosticCategoryId.PERFORMANCE,
+                    id = "memory_benchmark",
+                    status = DiagnosticStatus.INFO,
+                    confidence = Confidence.LOW,
+                    source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                    value = EvidenceValue.DoubleValue(throughput),
+                    unit = EvidenceUnitCode("mebibytes_per_second"),
+                    capturedAt = benchmark.capturedAt,
+                )
+            } ?: notTested(
+                categoryId = DiagnosticCategoryId.PERFORMANCE,
+                id = "memory_benchmark",
+                capturedAt = benchmark?.capturedAt ?: capturedAt,
+                reason = EvidenceReasonCode.ERROR,
             ),
         )
     }

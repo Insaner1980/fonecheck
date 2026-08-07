@@ -7,3 +7,7 @@ fun interface EpochMillisClock {
 fun interface IdProvider {
     fun newId(): String
 }
+
+fun interface NanoTimeSource {
+    fun nanoTime(): Long
+}

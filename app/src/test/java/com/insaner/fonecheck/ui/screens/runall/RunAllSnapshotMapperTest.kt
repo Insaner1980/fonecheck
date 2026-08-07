@@ -12,8 +12,10 @@ import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
 import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.EvidenceValue
+import com.insaner.fonecheck.domain.model.PerformanceBenchmarkResult
 import com.insaner.fonecheck.domain.model.PerformanceInfo
 import com.insaner.fonecheck.domain.model.SimTelephonyInfo
+import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import com.insaner.fonecheck.ui.screens.audio.AudioTestState
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestState
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestState
@@ -151,6 +153,48 @@ class RunAllSnapshotMapperTest {
         assertEquals(EvidenceValue.StableTextCodeValue("known_artifact_detected"), evidence.value)
     }
 
+    @Test
+    fun performanceBenchmarkProducesInformationalRawEvidence() {
+        val benchmarkCapturedAt = Instant.parse("2026-08-07T12:00:10Z")
+        val snapshots = diagnosticSnapshotsWithSensitiveConnectivity()
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots =
+                        snapshots.copy(
+                            performanceBenchmark =
+                                PerformanceBenchmarkResult(
+                                    cpuOperationsPerSecond = 2_000L,
+                                    memoryMebibytesPerSecond = 640.5,
+                                    memoryBytesProcessed = 64L * 1_048_576,
+                                    durationMillis = 600L,
+                                    thermalBefore = ThermalStatusCode.NONE,
+                                    thermalAfter = ThermalStatusCode.LIGHT,
+                                    capturedAt = benchmarkCapturedAt,
+                                ),
+                        ),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(),
+                    capturedAt = Instant.parse("2026-08-07T12:00:30Z"),
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+
+        with(evidence.getValue("performance.cpu_benchmark")) {
+            assertEquals(DiagnosticStatus.INFO, status)
+            assertEquals(Confidence.LOW, confidence)
+            assertEquals(EvidenceSource.AUTOMATIC_MEASUREMENT, source)
+            assertEquals(EvidenceValue.LongValue(2_000L), value)
+            assertEquals("operations_per_second", unit?.value)
+            assertEquals(benchmarkCapturedAt, capturedAt)
+        }
+        with(evidence.getValue("performance.memory_benchmark")) {
+            assertEquals(DiagnosticStatus.INFO, status)
+            assertEquals(EvidenceValue.DoubleValue(640.5), value)
+            assertEquals("mebibytes_per_second", unit?.value)
+            assertEquals(benchmarkCapturedAt, capturedAt)
+        }
+    }
+
     private fun diagnosticSnapshotsWithSensitiveConnectivity() =
         DiagnosticSnapshots(
             device = deviceInfo(),
@@ -225,13 +269,14 @@ class RunAllSnapshotMapperTest {
             cpuCores = 8,
             cpuFrequencies = emptyList(),
             cpuConfidence = Confidence.HIGH,
-            totalRam = "8 GB",
-            availableRam = "4 GB",
+            totalRamBytes = 8L * 1_073_741_824,
+            availableRamBytes = 4L * 1_073_741_824,
             ramConfidence = Confidence.HIGH,
             glEsVersion = "3.2",
             glRenderer = "gpu",
             glVendor = "vendor",
-            vulkanSupported = true,
+            vulkanFeatureDeclared = true,
             gpuConfidence = Confidence.HIGH,
+            capturedAt = Instant.parse("2026-08-07T12:00:00Z"),
         )
 }

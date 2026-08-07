@@ -321,6 +321,8 @@ private fun evidenceLabelResId(checkId: String): Int? =
         "performance.cpu" -> R.string.perf_cpu_title
         "performance.ram" -> R.string.perf_ram_title
         "performance.gpu" -> R.string.perf_gpu_title
+        "performance.cpu_benchmark" -> R.string.perf_benchmark_cpu_rate
+        "performance.memory_benchmark" -> R.string.perf_benchmark_memory_rate
         "sim.inventory" -> R.string.sim_telephony_title
         "sim.network" -> R.string.conn_mobile_network_type
         "display.info" -> R.string.display_info_title
@@ -369,13 +371,19 @@ private fun evidenceValueLabel(
                 else -> value.value.toString()
             }
 
-        is EvidenceValue.LongValue -> value.value.toString()
+        is EvidenceValue.LongValue ->
+            when (unit?.value) {
+                "operations_per_second" ->
+                    stringResource(R.string.perf_benchmark_cpu_rate_value, value.value.toString())
+                else -> value.value.toString()
+            }
         is EvidenceValue.DecimalValue -> value.value.toPlainString()
         is EvidenceValue.DoubleValue ->
-            if (unit?.value == "celsius") {
-                stringResource(R.string.run_all_detail_temperature, value.value)
-            } else {
-                value.value.toString()
+            when (unit?.value) {
+                "celsius" -> stringResource(R.string.run_all_detail_temperature, value.value)
+                "mebibytes_per_second" ->
+                    stringResource(R.string.perf_benchmark_memory_rate_value, value.value)
+                else -> value.value.toString()
             }
 
         is EvidenceValue.RawTextValue -> value.value
