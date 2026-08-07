@@ -479,4 +479,21 @@
     <string name="biometric_prompt_title">fonecheck</string>
     <string name="biometric_prompt_subtitle">Verify biometric sensor</string>
     <string name="biometric_prompt_cancel">Cancel</string>
+
+    <!-- Permissions -->
+    <string name="permission_status_not_requested">Permission not requested</string>
+    <string name="permission_status_granted">Permission granted</string>
+    <string name="permission_status_denied">Permission denied</string>
+    <string name="permission_status_settings_recovery">Permission must be enabled in Settings</string>
+    <string name="permission_status_not_required">Permission not required</string>
+    <string name="permission_status_hardware_absent">Hardware not available</string>
+    <string name="permission_status_partial">Permission partially granted</string>
+    <string name="permission_action_allow">Allow permission</string>
+    <string name="permission_action_retry">Try again</string>
+    <string name="permission_action_open_settings">Open app settings</string>
+    <string name="permission_rationale_microphone">Microphone access is used only while you run the microphone diagnostic.</string>
+    <string name="permission_rationale_camera">Camera access is used only for the camera preview, capture, and flash diagnostics.</string>
+    <string name="permission_rationale_location">Location access is required by Android to read nearby Wi-Fi and GPS diagnostic data.</string>
+    <string name="permission_rationale_phone">Phone access is used to read SIM and mobile-network diagnostic data.</string>
+    <string name="permission_rationale_bluetooth">Nearby devices access is used to read Bluetooth diagnostic data on Android 12 and newer.</string>
 </resources>

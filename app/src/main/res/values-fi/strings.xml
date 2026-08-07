@@ -477,4 +477,21 @@
     <string name="biometric_prompt_title">fonecheck</string>
     <string name="biometric_prompt_subtitle">Varmista biometrinen anturi</string>
     <string name="biometric_prompt_cancel">Peruuta</string>
+
+    <!-- Käyttöoikeudet -->
+    <string name="permission_status_not_requested">Käyttöoikeutta ei ole pyydetty</string>
+    <string name="permission_status_granted">Käyttöoikeus myönnetty</string>
+    <string name="permission_status_denied">Käyttöoikeus evätty</string>
+    <string name="permission_status_settings_recovery">Käyttöoikeus on sallittava asetuksissa</string>
+    <string name="permission_status_not_required">Käyttöoikeutta ei tarvita</string>
+    <string name="permission_status_hardware_absent">Laitteistoa ei ole saatavilla</string>
+    <string name="permission_status_partial">Käyttöoikeus myönnetty osittain</string>
+    <string name="permission_action_allow">Salli käyttöoikeus</string>
+    <string name="permission_action_retry">Yritä uudelleen</string>
+    <string name="permission_action_open_settings">Avaa sovelluksen asetukset</string>
+    <string name="permission_rationale_microphone">Mikrofonia käytetään vain mikrofonidiagnostiikan suorittamisen aikana.</string>
+    <string name="permission_rationale_camera">Kameraa käytetään vain kameran esikatselu-, kuvaus- ja salamadiagnostiikkaan.</string>
+    <string name="permission_rationale_location">Android vaatii sijainnin käyttöoikeuden lähellä olevien Wi-Fi- ja GPS-diagnostiikkatietojen lukemiseen.</string>
+    <string name="permission_rationale_phone">Puhelimen käyttöoikeutta käytetään SIM- ja mobiiliverkon diagnostiikkatietojen lukemiseen.</string>
+    <string name="permission_rationale_bluetooth">Lähellä olevien laitteiden käyttöoikeutta käytetään Bluetooth-diagnostiikkatietojen lukemiseen Android 12:ssa ja sitä uudemmissa.</string>
 </resources>
