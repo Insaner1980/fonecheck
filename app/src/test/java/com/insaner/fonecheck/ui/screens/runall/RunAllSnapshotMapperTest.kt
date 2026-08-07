@@ -12,9 +12,13 @@ import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
 import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.EvidenceValue
+import com.insaner.fonecheck.domain.model.NetworkGenerationCode
 import com.insaner.fonecheck.domain.model.PerformanceBenchmarkResult
 import com.insaner.fonecheck.domain.model.PerformanceInfo
+import com.insaner.fonecheck.domain.model.PhoneTypeCode
+import com.insaner.fonecheck.domain.model.SimInventoryCode
 import com.insaner.fonecheck.domain.model.SimTelephonyInfo
+import com.insaner.fonecheck.domain.model.TelephonyHardwareCode
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import com.insaner.fonecheck.ui.screens.audio.AudioTestState
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestState
@@ -154,6 +158,48 @@ class RunAllSnapshotMapperTest {
     }
 
     @Test
+    fun simInventoryUsesStableCodesAndDeniedPermissionOnlyReducesCoverage() {
+        val capturedAt = Instant.parse("2026-08-07T12:00:30Z")
+        val deniedEvidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots =
+                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                            sim = simInfo(SimInventoryCode.INACTIVE_SIM),
+                        ),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(phone = false),
+                    capturedAt = capturedAt,
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+
+        assertEquals(DiagnosticStatus.INFO, deniedEvidence.getValue("sim.inventory").status)
+        assertEquals(
+            EvidenceValue.StableTextCodeValue("inactive_sim"),
+            deniedEvidence.getValue("sim.inventory").value,
+        )
+        assertEquals(DiagnosticStatus.NOT_TESTED, deniedEvidence.getValue("sim.network").status)
+        assertEquals(EvidenceReasonCode.PERMISSION_DENIED, deniedEvidence.getValue("sim.network").reason)
+        assertFalse(deniedEvidence.values.any { it.status == DiagnosticStatus.FAIL })
+
+        val noHardware =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots =
+                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                            sim = simInfo(SimInventoryCode.NO_TELEPHONY),
+                        ),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(phone = false),
+                    capturedAt = capturedAt,
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+        assertEquals(DiagnosticStatus.NOT_AVAILABLE, noHardware.getValue("sim.inventory").status)
+        assertEquals(Applicability.NOT_APPLICABLE, noHardware.getValue("sim.inventory").applicability)
+        assertEquals(DiagnosticStatus.NOT_AVAILABLE, noHardware.getValue("sim.network").status)
+    }
+
+    @Test
     fun performanceBenchmarkProducesInformationalRawEvidence() {
         val benchmarkCapturedAt = Instant.parse("2026-08-07T12:00:10Z")
         val snapshots = diagnosticSnapshotsWithSensitiveConnectivity()
@@ -200,13 +246,7 @@ class RunAllSnapshotMapperTest {
             device = deviceInfo(),
             performance = performanceInfo(),
             sim =
-                SimTelephonyInfo(
-                    simSlots = emptyList(),
-                    isDualSim = false,
-                    phoneType = "none",
-                    phoneCount = 0,
-                    dataNetworkType = "unknown",
-                ),
+                simInfo(SimInventoryCode.NO_SIM),
             display = DisplayTestState(),
             audio = AudioTestState(),
             camera = CameraTestState(),
@@ -240,6 +280,22 @@ class RunAllSnapshotMapperTest {
             vibration = VibrationTestState(),
             buttons = ButtonTestState(),
             biometrics = BiometricTestState(),
+        )
+
+    private fun simInfo(inventory: SimInventoryCode) =
+        SimTelephonyInfo(
+            hardware =
+                if (inventory == SimInventoryCode.NO_TELEPHONY) {
+                    TelephonyHardwareCode.NO_HARDWARE
+                } else {
+                    TelephonyHardwareCode.AVAILABLE
+                },
+            inventory = inventory,
+            simSlots = emptyList(),
+            phoneType = PhoneTypeCode.NONE,
+            phoneCount = 0,
+            dataNetworkType = NetworkGenerationCode.UNKNOWN,
+            phoneStatePermissionGranted = false,
         )
 
     private fun deviceInfo(rootArtifactDetected: Boolean = false) =

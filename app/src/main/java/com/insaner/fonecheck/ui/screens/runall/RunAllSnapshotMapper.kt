@@ -15,8 +15,10 @@ import com.insaner.fonecheck.domain.model.EvidenceReasonCode
 import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.EvidenceUnitCode
 import com.insaner.fonecheck.domain.model.EvidenceValue
+import com.insaner.fonecheck.domain.model.NetworkGenerationCode
 import com.insaner.fonecheck.domain.model.PerformanceBenchmarkResult
 import com.insaner.fonecheck.domain.model.PerformanceInfo
+import com.insaner.fonecheck.domain.model.SimInventoryCode
 import com.insaner.fonecheck.domain.model.SimTelephonyInfo
 import com.insaner.fonecheck.ui.screens.audio.AudioTestState
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestState
@@ -195,38 +197,82 @@ object RunAllSnapshotMapper {
         permissions: RunAllPermissions,
         capturedAt: Instant,
     ): List<DiagnosticEvidence> {
-        val slotCount = snapshots.sim.simSlots.size
+        val info = snapshots.sim
         val inventory =
-            if (slotCount == 0) {
-                unavailable(DiagnosticCategoryId.SIM, "inventory", capturedAt, EvidenceValue.IntValue(0))
-            } else {
-                evidence(
-                    categoryId = DiagnosticCategoryId.SIM,
-                    id = "inventory",
-                    status = DiagnosticStatus.PASS,
-                    value = EvidenceValue.IntValue(slotCount),
-                    unit = EvidenceUnitCode("count"),
-                    capturedAt = capturedAt,
-                )
+            when (info.inventory) {
+                SimInventoryCode.NO_TELEPHONY ->
+                    unavailable(
+                        categoryId = DiagnosticCategoryId.SIM,
+                        id = "inventory",
+                        capturedAt = capturedAt,
+                        value = EvidenceValue.StableTextCodeValue("no_telephony"),
+                    )
+
+                SimInventoryCode.UNKNOWN ->
+                    evidence(
+                        categoryId = DiagnosticCategoryId.SIM,
+                        id = "inventory",
+                        status = DiagnosticStatus.WARNING,
+                        confidence = Confidence.LOW,
+                        reason = EvidenceReasonCode.DEGRADED,
+                        value = EvidenceValue.StableTextCodeValue("unknown"),
+                        capturedAt = capturedAt,
+                    )
+
+                else ->
+                    evidence(
+                        categoryId = DiagnosticCategoryId.SIM,
+                        id = "inventory",
+                        status = DiagnosticStatus.INFO,
+                        value = EvidenceValue.StableTextCodeValue(info.inventory.stableCode),
+                        capturedAt = capturedAt,
+                    )
             }
         val network =
-            if (permissions.phone) {
-                evidence(
-                    categoryId = DiagnosticCategoryId.SIM,
-                    id = "network",
-                    status = DiagnosticStatus.INFO,
-                    capturedAt = capturedAt,
-                )
-            } else {
-                notTested(
-                    categoryId = DiagnosticCategoryId.SIM,
-                    id = "network",
-                    capturedAt = capturedAt,
-                    reason = EvidenceReasonCode.PERMISSION_DENIED,
-                )
+            when {
+                info.inventory == SimInventoryCode.NO_TELEPHONY ->
+                    unavailable(DiagnosticCategoryId.SIM, "network", capturedAt)
+
+                !permissions.phone || !info.phoneStatePermissionGranted ->
+                    notTested(
+                        categoryId = DiagnosticCategoryId.SIM,
+                        id = "network",
+                        capturedAt = capturedAt,
+                        reason = EvidenceReasonCode.PERMISSION_DENIED,
+                    )
+
+                else ->
+                    evidence(
+                        categoryId = DiagnosticCategoryId.SIM,
+                        id = "network",
+                        status = DiagnosticStatus.INFO,
+                        value = EvidenceValue.StableTextCodeValue(info.dataNetworkType.stableCode),
+                        capturedAt = capturedAt,
+                    )
             }
         return listOf(inventory, network)
     }
+
+    private val SimInventoryCode.stableCode: String
+        get() =
+            when (this) {
+                SimInventoryCode.NO_TELEPHONY -> "no_telephony"
+                SimInventoryCode.NO_SIM -> "no_sim"
+                SimInventoryCode.INACTIVE_SIM -> "inactive_sim"
+                SimInventoryCode.SINGLE_SIM -> "single_sim"
+                SimInventoryCode.MULTIPLE_SIM -> "multiple_sim"
+                SimInventoryCode.UNKNOWN -> "unknown"
+            }
+
+    private val NetworkGenerationCode.stableCode: String
+        get() =
+            when (this) {
+                NetworkGenerationCode.SECOND_GENERATION -> "second_generation"
+                NetworkGenerationCode.THIRD_GENERATION -> "third_generation"
+                NetworkGenerationCode.FOURTH_GENERATION -> "fourth_generation"
+                NetworkGenerationCode.FIFTH_GENERATION -> "fifth_generation"
+                NetworkGenerationCode.UNKNOWN -> "unknown"
+            }
 
     private fun displayEvidence(
         snapshots: DiagnosticSnapshots,

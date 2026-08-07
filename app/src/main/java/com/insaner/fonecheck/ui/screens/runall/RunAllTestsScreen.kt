@@ -97,7 +97,7 @@ fun RunAllTestsScreen(
     val vibrationState by vibrationViewModel.state.collectAsStateWithLifecycle()
     val buttonState by buttonViewModel.state.collectAsStateWithLifecycle()
     val biometricState by biometricViewModel.state.collectAsStateWithLifecycle()
-    val simState by simViewModel.simTelephonyInfo.collectAsStateWithLifecycle()
+    val simState by simViewModel.state.collectAsStateWithLifecycle()
     val previewView = remember { PreviewView(context) }
     val microphonePermission =
         rememberPermissionController(
@@ -168,6 +168,9 @@ fun RunAllTestsScreen(
             RunAllStage.AUTOMATIC -> {
                 withTimeoutOrNull(DEVICE_INFO_TIMEOUT_MS) {
                     deviceViewModel.state.first { !it.isLoading }
+                }
+                withTimeoutOrNull(DEVICE_INFO_TIMEOUT_MS) {
+                    simViewModel.state.first { !it.isLoading }
                 }
                 withTimeoutOrNull(PERFORMANCE_TIMEOUT_MS) {
                     performanceViewModel.state.first { !it.isInfoLoading }
@@ -412,7 +415,8 @@ fun RunAllTestsScreen(
         RunAllStage.RESULTS -> {
             val deviceInfo = deviceState.info
             val performanceInfo = performanceState.info
-            if (deviceInfo == null || performanceInfo == null) {
+            val simInfo = simState.info
+            if (deviceInfo == null || performanceInfo == null || simInfo == null) {
                 AutomaticCheckScreen(
                     title = stringResource(R.string.run_all_results_title),
                     description = stringResource(R.string.run_all_results_description),
@@ -425,7 +429,7 @@ fun RunAllTestsScreen(
                     device = deviceInfo,
                     performance = performanceInfo,
                     performanceBenchmark = performanceState.benchmarkResult,
-                    sim = simState,
+                    sim = simInfo,
                     display = displayState,
                     audio = audioState,
                     camera = cameraState,

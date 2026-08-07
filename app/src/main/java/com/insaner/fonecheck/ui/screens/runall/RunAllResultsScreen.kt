@@ -405,6 +405,16 @@ private fun stableTextLabel(code: String): String =
             "unavailable" -> R.string.biometric_not_available
             "known_artifact_detected" -> R.string.device_root_artifact_detected
             "no_known_artifact_detected" -> R.string.device_root_artifact_not_detected
+            "no_telephony" -> R.string.sim_inventory_no_telephony
+            "no_sim" -> R.string.sim_inventory_no_sim
+            "inactive_sim" -> R.string.sim_inventory_inactive
+            "single_sim" -> R.string.sim_inventory_single
+            "multiple_sim" -> R.string.sim_inventory_multiple
+            "second_generation" -> R.string.sim_network_2g
+            "third_generation" -> R.string.sim_network_3g
+            "fourth_generation" -> R.string.sim_network_4g
+            "fifth_generation" -> R.string.sim_network_5g
+            "unknown" -> R.string.sim_value_unknown
             else -> R.string.batt_health_unknown
         },
     )

@@ -440,6 +440,14 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** OEM/eSIM-data voi olla rajoitettua tai permission-riippuvaista.
 - **Decision required:** Ei.
 
+#### Implementation/status log — 2026-08-07
+
+- Lisätty tests-first vakaat telephony hardware-, inventory-, slot state-, activity-, form factor-, phone type- ja network generation -koodit. Probe-testit erottelevat no-telephony-, no-SIM-, inactive-, single-, multiple- ja unknown-tilat sekä API 28 eSIM- ja API 30 modem count -haarat.
+- Android-provider kerää SIM-tiedot injektoidun provider-rajapinnan kautta ViewModelin IO-dispatcherilla. `activeModemCount`/legacy `phoneCount` ja `isEmbedded` on suojattu alustaversioilla; `SecurityException`- ja OEM runtime -virheet palautuvat rajattuna tai unknown-datana.
+- Standalone käyttää Task 7:n yhteistä Phone-permission-polkua, näyttää ilman lupaa edelleen hardware-, slot- ja SIM-state-tiedot sekä lokalisoidun limited-mode-ilmoituksen. Operaattori-, maa-, eSIM- ja network-tiedot luetaan vain luvalla; virhetila säilyttää viimeisen onnistuneen snapshotin ja tarjoaa refreshin.
+- Report mapping käyttää vain vakaita inventory/network-koodeja. Subscription ID:tä käytetään providerissa vain hetkellisesti slot-kohtaisen managerin luomiseen; subscription- tai cell ID:tä, operaattoria tai maatietoa ei tallenneta evidenceen. Denial tuottaa `NOT_TESTED/PERMISSION_DENIED`-network-evidencen eikä hardware-failia.
+- `SimTelephonyProbeTest`, `SimTelephonyViewModelTest`, `RunAllSnapshotMapperTest`, koko `:app:testDebugUnitTest` ja Android-testien Kotlin-käännös läpäisevät. Fyysistä single/dual-SIM-tarkistusta ei voitu ajaa, koska `adb devices -l` ei löytänyt yhdistettyä laitetta.
+
 ### 11. Replace Display tests with controlled fullscreen, drag, and multi-touch flows
 
 - **Objective:** Tehdä fyysiset näyttö- ja kosketustestit oikeasti käyttökelpoisiksi.

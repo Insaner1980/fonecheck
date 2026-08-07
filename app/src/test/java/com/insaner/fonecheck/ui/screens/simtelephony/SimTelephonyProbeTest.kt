@@ -120,6 +120,15 @@ class SimTelephonyProbeTest {
         assertEquals(1, modernCalls)
         assertEquals(1, legacyCalls)
 
+        assertEquals(
+            3,
+            SimTelephonyProbe.modemCount(
+                sdkInt = 30,
+                activeModemCount = { error("OEM failure") },
+                legacyPhoneCount = { 3 },
+            ),
+        )
+
         var embeddedRead = false
         assertEquals(
             SimFormFactorCode.UNKNOWN,
@@ -137,6 +146,10 @@ class SimTelephonyProbeTest {
             },
         )
         assertTrue(embeddedRead)
+        assertEquals(
+            SimFormFactorCode.UNKNOWN,
+            SimTelephonyProbe.formFactor(sdkInt = 28) { error("OEM failure") },
+        )
     }
 
     private fun slot(
