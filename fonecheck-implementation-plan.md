@@ -350,6 +350,7 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - Käyttäjän kohdistettu unit-testiajo tuotti odotetun REDin. Gradle-daemonin loki vahvisti virheiden johtuvan vain tarkoituksella puuttuneista snapshot/assembler-symboleista ja niiden seurannaisviittauksista.
 - Lisätty Androidista riippumattomat versionoitu snapshot-malli, assembly request ja `ReportAssembler`. Assembler validoi snapshotit, järjestää Full Checkin `DiagnosticCatalog`in mukaan, muodostaa aggregate-statukset ja delegoi score/coverage-laskennan muuttamattomalle `ScoreCalculator`ille.
 - Käyttäjä ilmoitti kohdistetun assembler-unit-testin ja debug-unit-testien Kotlin-käännöksen onnistuneen. Pure assembler on GREEN; Codex ei ajanut Gradlea.
+- Lisätty tests-first Run All -integraatiotestit catalog-järjestetylle, privacy-safe snapshot-mappaukselle sekä ensimmäisen canonical raportin deterministiselle jäädytykselle. Käyttäjän kohdistettu unit-testiajo tuotti odotetun REDin; daemon-loki vahvisti syyksi vain tarkoituksella puuttuneen mapperin ja ViewModel-rajapinnan seurannaisvirheineen.
 
 ### 7. Implement a unified permission-state and standalone permission flow
 

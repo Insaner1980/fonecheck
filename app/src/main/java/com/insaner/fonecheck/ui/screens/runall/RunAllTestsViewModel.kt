@@ -2,12 +2,20 @@ package com.insaner.fonecheck.ui.screens.runall
 
 import androidx.lifecycle.ViewModel
 import com.insaner.fonecheck.domain.model.CategoryTestResult
+import com.insaner.fonecheck.domain.model.DiagnosticCategorySnapshot
+import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DeviceInfo
+import com.insaner.fonecheck.domain.model.ReportAppContext
+import com.insaner.fonecheck.domain.model.ReportAssembler
+import com.insaner.fonecheck.domain.model.ReportAssemblyRequest
+import com.insaner.fonecheck.domain.model.ReportDeviceContext
+import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.TestSession
 import com.insaner.fonecheck.domain.model.TestStatus
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.IdProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Instant
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
@@ -49,6 +57,7 @@ data class RunAllTestsState(
     val manualChecks: ManualCheckResults = ManualCheckResults(),
     val displayColorIndex: Int = 0,
     val session: TestSession? = null,
+    val report: DiagnosticReport? = null,
 )
 
 @HiltViewModel
@@ -60,6 +69,7 @@ class RunAllTestsViewModel
     ) : ViewModel() {
         private val _state = MutableStateFlow(RunAllTestsState())
         val state: StateFlow<RunAllTestsState> = _state
+        private val reportStartedAt = Instant.ofEpochMilli(clock.currentTimeMillis())
 
         fun onPermissionsResolved(permissions: RunAllPermissions) {
             _state.value =
@@ -125,6 +135,28 @@ class RunAllTestsViewModel
                             overallScore = calculateOverallScore(categories),
                         ),
                 )
+        }
+
+        fun completeReport(
+            device: ReportDeviceContext,
+            app: ReportAppContext,
+            snapshots: List<DiagnosticCategorySnapshot>,
+        ) {
+            if (_state.value.report != null) return
+
+            val report =
+                ReportAssembler.assemble(
+                    ReportAssemblyRequest(
+                        stableId = idProvider.newId(),
+                        kind = ReportKind.FULL_CHECK,
+                        startedAt = reportStartedAt,
+                        completedAt = Instant.ofEpochMilli(clock.currentTimeMillis()),
+                        device = device,
+                        app = app,
+                        snapshots = snapshots,
+                    ),
+                )
+            _state.value = _state.value.copy(report = report)
         }
 
         private fun recordManualCheck(
