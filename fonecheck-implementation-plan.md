@@ -295,6 +295,12 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - Production-v1-päätöksen mukaisesti placeholderille ei ole migrationia tai destructive fallbackia. Vanha kehitysasennus on tyhjennettävä tai poistettava ennen uuden kannan avaamista.
 - Kaikki kahdeksan `PRE-PHASE 4` -kohtaa arvioitiin: placeholder ja schema export korjattiin tässä; domain-/DeviceInfo-huomiot ovat nykykäytön ja Task 2:n perusteella stale/resolved; ViewModelien error/event-huomiot eivät blokkaa skeemaa; persistence/Phase 4 -roadmap jatkuu Taskeissa 5–7 eikä sitä merkitty valmiiksi. `PROJECT.md`:ää ei muokattu käyttäjän commitoimattoman uudelleenkirjoituksen vuoksi.
 
+#### Verification repair log — 2026-08-07
+
+- Käyttäjän ensimmäinen `:app:kspDebugKotlin`-ajo generoi Room-lähteet ja production-v1-skeeman mutta kaatui skeeman viennissä `AbstractMethodError`-virheeseen. Kotlinin virheloki osoitti, että Room 2.8.4:n `FieldBundle`-serializer ei saanut buildin lataamalta `GeneratedSerializer`-rajapinnalta tarvitsemaansa oletustoteutusta.
+- KSP-processor-classpath käytti Room 2.8.4:n vaatimaa `kotlinx-serialization` 1.8.1:tä, mutta sovelluksen compile-classpath pakotti version 1.7.3. Bytecode-tarkistus vahvisti, että puuttuva oletustoteutus on lisätty versioon 1.8.1.
+- Sovelluksen serialization-runtime nostettiin pienimmällä yhteensopivalla muutoksella versioon 1.8.1. Gradlea ei ajettu; käyttäjän uusinta-ajo tarvitaan korjauksen ja generoidun skeeman vahvistamiseksi.
+
 ### 5. Implement immutable report persistence and mappings
 
 - **Objective:** Tarjota yksi tuotantokelpoinen raporttien tallennusrajapinta.
