@@ -234,6 +234,12 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - Staattisesti tarkistettu lähdekoodin viittaukset ja tehtävädiffi. Gradle-acceptance on nimenomaisesti kesken, kunnes käyttäjä ajaa `./gradlew :app:testDebugUnitTest --tests "com.insaner.fonecheck.domain.model.ScoreCalculatorTest"`.
 - `PROJECT.md`-päivitys on pending integration käyttäjän omien commitoimattomien muutosten kanssa; tiedostoa ei muokattu tässä tehtävässä.
 
+#### Verification repair log — 2026-08-07
+
+- Käyttäjän ajama rajattu JUnit-komento pysähtyi ennen testejä `:app:kspDebugUnitTestKotlin`-vaiheen dependency verificationiin, koska Task 2:n JUnit 4.13.2- ja transitiviset Hamcrest 1.3 -artefaktit puuttuivat metadatasta.
+- Lisätty artifact-level ignored-key- ja SHA-256-pinnit viidelle todistetusti Maven Central -julkaisua vastaavalle artefaktille. Globaaleja avainluottamuksia, signature verification- tai keyserver-asetuksia ei muutettu.
+- Uudelleenajo jää käyttäjälle; tässä korjauksessa tehtiin vain XML- ja diff-whitespace-tarkistukset.
+
 ### 3. Establish deterministic runtime seams and the test foundation
 
 - **Objective:** Mahdollistaa laite-API-koodin, ajastusten ja lifecycle-polkujen todistettava testaaminen.
