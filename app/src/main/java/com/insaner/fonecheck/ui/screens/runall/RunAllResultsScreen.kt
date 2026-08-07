@@ -337,6 +337,15 @@ private fun evidenceLabelResId(checkId: String): Int? =
         "camera.logical_count" -> R.string.camera_logical_count_label
         "camera.capture_dimensions" -> R.string.camera_max_resolution
         "sensors.inventory" -> R.string.sensor_count
+        "sensors.accelerometer" -> R.string.sensor_type_accelerometer
+        "sensors.gyroscope" -> R.string.sensor_type_gyroscope
+        "sensors.gravity" -> R.string.sensor_type_gravity
+        "sensors.proximity" -> R.string.sensor_type_proximity
+        "sensors.light" -> R.string.sensor_type_light
+        "sensors.magnetometer" -> R.string.sensor_type_magnetometer
+        "sensors.barometer" -> R.string.sensor_type_barometer
+        "sensors.step" -> R.string.sensor_type_step
+        "sensors.orientation" -> R.string.sensor_orientation
         "sensors.motion" -> R.string.run_all_check_motion_sensor
         "connectivity.wifi" -> R.string.conn_wifi_title
         "connectivity.bluetooth" -> R.string.conn_bluetooth_title
@@ -371,6 +380,7 @@ private fun evidenceValueLabel(
         is EvidenceValue.IntValue ->
             when (unit?.value) {
                 "percent" -> "${value.value}%"
+                "samples" -> pluralStringResource(R.plurals.sensor_samples, value.value, value.value)
                 else -> value.value.toString()
             }
 
@@ -418,6 +428,7 @@ private fun stableTextLabel(code: String): String =
             "fourth_generation" -> R.string.sim_network_4g
             "fifth_generation" -> R.string.sim_network_5g
             "unknown" -> R.string.sim_value_unknown
+            "observed" -> R.string.sensor_orientation_observed
             else -> R.string.batt_health_unknown
         },
     )
@@ -427,6 +438,7 @@ private fun reasonLabel(reason: EvidenceReasonCode): String =
     stringResource(
         when (reason) {
             EvidenceReasonCode.PERMISSION_DENIED -> R.string.run_all_permission_missing
+            EvidenceReasonCode.NOT_RUN -> R.string.run_all_summary_not_tested
             EvidenceReasonCode.SKIPPED, EvidenceReasonCode.CANCELLED -> R.string.run_all_manual_skipped
             EvidenceReasonCode.USER_CONFIRMED_FAILURE -> R.string.run_all_manual_failed
             EvidenceReasonCode.HARDWARE_UNAVAILABLE,

@@ -27,10 +27,10 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.ui.components.DetailInfoRow
 import com.insaner.fonecheck.ui.components.TestScreenContent
@@ -52,39 +53,39 @@ import com.insaner.fonecheck.ui.theme.Neutral700
 import com.insaner.fonecheck.ui.theme.Neutral800
 import com.insaner.fonecheck.ui.theme.Neutral850
 import com.insaner.fonecheck.ui.theme.Red400
+import com.insaner.fonecheck.ui.theme.Yellow400
 
 @Composable
-@Suppress("ViewModelForwarding", "ktlint:compose:vm-forwarding-check")
 fun SensorTestScreen(
     modifier: Modifier = Modifier,
     viewModel: SensorTestViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
-    DisposableEffect(Unit) {
-        onDispose { }
+    DisposableEffect(viewModel) {
+        onDispose(viewModel::stopAllTests)
     }
 
     TestScreenContent(modifier = modifier) {
-        // Summary card
-        item {
-            SensorSummaryCard(state)
-        }
+        item { SensorSummaryCard(state) }
 
-        // Active challenge overlay
+        state.error?.let { item { SensorErrorCard() } }
+
         if (state.challenge.challenge != null) {
-            item {
-                ChallengeCard(state.challenge)
-            }
+            item { ChallengeCard(state.challenge) }
         }
 
-        // Sensor list
-        items(state.sensors, key = { "${it.type}_${it.name}" }) { sensorInfo ->
-            SensorItemCard(
-                sensorInfo = sensorInfo,
-                isExpanded = state.expandedSensor == sensorInfo.type,
-                liveData = state.liveData[sensorInfo.type],
-                viewModel = viewModel,
+        items(state.guidedTests, key = { it.code }) { test ->
+            val info = viewModel.sensorInfoFor(test)
+            GuidedSensorCard(
+                test = test,
+                sensorInfo = info,
+                isExpanded = state.expandedSensor == test.code,
+                liveData = test.sensorType?.let(state.liveData::get),
+                challenges = viewModel.availableChallenges(test.code),
+                onToggle = { viewModel.toggleSensorExpanded(test.code) },
+                onChallenge = { viewModel.startChallenge(it, test.code) },
+                onSkip = { viewModel.skipGuidedTest(test.code) },
             )
         }
     }
@@ -94,67 +95,61 @@ fun SensorTestScreen(
 private fun SensorSummaryCard(state: SensorTestState) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = stringResource(R.string.sensor_summary_title),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(bottom = 8.dp),
             )
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = stringResource(R.string.sensor_description),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 12.dp),
             )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = stringResource(R.string.sensor_count),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = "${state.sensorCount}",
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = JetBrainsMono,
-                            fontWeight = FontWeight.Bold,
-                        ),
-                    color = if (state.sensorCount > 0) Green400 else Red400,
-                )
-            }
+            Spacer(modifier = Modifier.height(12.dp))
+            DetailInfoRow(stringResource(R.string.sensor_count), state.sensorCount.toString())
+            DetailInfoRow(
+                stringResource(R.string.sensor_guided_completed),
+                stringResource(
+                    R.string.sensor_guided_progress,
+                    state.guidedTests.count { it.status == GuidedSensorStatus.PASSED },
+                    state.guidedTests.count { it.status != GuidedSensorStatus.NOT_AVAILABLE },
+                ),
+            )
         }
     }
 }
 
 @Composable
+private fun SensorErrorCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Red400.copy(alpha = 0.12f)),
+    ) {
+        Text(
+            text = stringResource(R.string.sensor_listener_error),
+            modifier = Modifier.padding(16.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Red400,
+        )
+    }
+}
+
+@Composable
 private fun ChallengeCard(challenge: ChallengeState) {
-    val progressAnim by animateFloatAsState(
-        targetValue = challenge.progress,
-        label = "challengeProgress",
-    )
-    val borderColor by animateColorAsState(
-        targetValue = if (challenge.completed) Green400 else Blue400,
-        label = "challengeBorder",
-    )
+    val progress by animateFloatAsState(challenge.progress, label = "sensorChallengeProgress")
+    val color by
+        animateColorAsState(
+            if (challenge.completed) Green400 else Blue400,
+            label = "sensorChallengeColor",
+        )
 
     Card(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .border(2.dp, borderColor, RoundedCornerShape(12.dp)),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = if (challenge.completed) Green400.copy(alpha = 0.1f) else Blue400.copy(alpha = 0.1f),
-            ),
+        modifier = Modifier.fillMaxWidth().border(2.dp, color, RoundedCornerShape(12.dp)),
+        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.1f)),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -165,137 +160,118 @@ private fun ChallengeCard(challenge: ChallengeState) {
                     if (challenge.completed) {
                         stringResource(R.string.sensor_challenge_passed)
                     } else {
-                        getChallengePrompt(challenge.challenge!!)
+                        challenge.challenge?.prompt() ?: ""
                     },
                 style = MaterialTheme.typography.titleMedium,
-                color = if (challenge.completed) Green400 else Blue400,
+                color = color,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
             )
             Spacer(modifier = Modifier.height(12.dp))
             LinearProgressIndicator(
-                progress = { progressAnim },
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(4.dp)),
-                color = if (challenge.completed) Green400 else Blue400,
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
+                color = color,
                 trackColor = Neutral700,
             )
-            if (!challenge.completed) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "${(challenge.progress * 100).toInt()}%",
-                    style =
-                        MaterialTheme.typography.labelMedium.copy(
-                            fontFamily = JetBrainsMono,
-                        ),
-                    color = Blue400,
-                )
-            }
         }
     }
 }
 
 @Composable
-private fun getChallengePrompt(challenge: InteractiveChallenge): String =
-    when (challenge) {
-        InteractiveChallenge.SHAKE -> stringResource(R.string.sensor_challenge_shake)
-        InteractiveChallenge.TILT_LEFT -> stringResource(R.string.sensor_challenge_tilt_left)
-        InteractiveChallenge.TILT_RIGHT -> stringResource(R.string.sensor_challenge_tilt_right)
-        InteractiveChallenge.FACE_DOWN -> stringResource(R.string.sensor_challenge_face_down)
-        InteractiveChallenge.FACE_UP -> stringResource(R.string.sensor_challenge_face_up)
-        InteractiveChallenge.ROTATE -> stringResource(R.string.sensor_challenge_rotate)
-    }
-
-@Composable
-@Suppress("ViewModelForwarding", "ktlint:compose:vm-forwarding-check")
-private fun SensorItemCard(
-    sensorInfo: SensorInfo,
+private fun GuidedSensorCard(
+    test: GuidedSensorTestState,
+    sensorInfo: SensorInfo?,
     isExpanded: Boolean,
     liveData: SensorLiveData?,
-    viewModel: SensorTestViewModel,
+    challenges: List<InteractiveChallenge>,
+    onToggle: () -> Unit,
+    onChallenge: (InteractiveChallenge) -> Unit,
+    onSkip: () -> Unit,
 ) {
     Card(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .animateContentSize()
-                .clickable { viewModel.toggleSensorExpanded(sensorInfo.type) },
+        modifier = Modifier.fillMaxWidth().animateContentSize().clickable(onClick = onToggle),
         colors =
             CardDefaults.cardColors(
                 containerColor = if (isExpanded) Neutral800 else MaterialTheme.colorScheme.surfaceVariant,
             ),
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            // Header row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                // Sensor icon badge
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier =
                         Modifier
-                            .size(40.dp)
+                            .size(48.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(if (isExpanded) Blue400.copy(alpha = 0.2f) else Neutral700),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = viewModel.getSensorIcon(sensorInfo.type),
-                        style =
-                            MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = JetBrainsMono,
-                                fontWeight = FontWeight.Bold,
-                            ),
+                        text = test.code.iconCode(),
+                        style = MaterialTheme.typography.labelSmall.copy(fontFamily = JetBrainsMono),
                         color = if (isExpanded) Blue400 else Neutral500,
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = viewModel.getSensorTypeName(sensorInfo.type),
+                        text = test.code.displayName(),
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        text = sensorInfo.vendor,
+                        text = test.status.displayName(),
                         style = MaterialTheme.typography.bodySmall,
-                        color = Neutral500,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        color = test.status.color(),
                     )
                 }
             }
 
-            // Expanded content
             AnimatedVisibility(
                 visible = isExpanded,
                 enter = expandVertically(),
                 exit = shrinkVertically(),
             ) {
                 Column(modifier = Modifier.padding(top = 12.dp)) {
-                    // Live values
-                    liveData?.let { data ->
-                        if (data.values.isNotEmpty()) {
-                            LiveValuesSection(sensorInfo.type, data, viewModel)
+                    if (sensorInfo == null) {
+                        Text(
+                            text = stringResource(R.string.sensor_not_available_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Neutral500,
+                        )
+                    } else {
+                        Text(
+                            text = test.code.guidance(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        liveData?.let {
                             Spacer(modifier = Modifier.height(12.dp))
+                            LiveValuesSection(test.code, it)
                         }
-                    }
-
-                    // Interactive challenges
-                    val challenges = viewModel.getAvailableChallenges(sensorInfo.type)
-                    if (challenges.isNotEmpty()) {
-                        ChallengesSection(challenges, viewModel)
+                        if (test.status == GuidedSensorStatus.SAMPLING) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            LinearProgressIndicator(
+                                progress = {
+                                    (test.sampleCount.toFloat() / GuidedSensorSampler.REQUIRED_SAMPLE_COUNT)
+                                        .coerceIn(0f, 1f)
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                        if (challenges.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            ChallengesSection(challenges, onChallenge)
+                        }
+                        if (test.status == GuidedSensorStatus.SAMPLING) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            OutlinedButton(onClick = onSkip, modifier = Modifier.fillMaxWidth()) {
+                                Text(stringResource(R.string.sensor_skip_test))
+                            }
+                        }
                         Spacer(modifier = Modifier.height(12.dp))
+                        SensorInfoSection(sensorInfo)
                     }
-
-                    // Sensor info report
-                    SensorInfoSection(sensorInfo)
                 }
             }
         }
@@ -304,152 +280,93 @@ private fun SensorItemCard(
 
 @Composable
 private fun LiveValuesSection(
-    sensorType: Int,
+    code: GuidedSensorCode,
     data: SensorLiveData,
-    viewModel: SensorTestViewModel,
 ) {
-    val labels = viewModel.getSensorValueLabels(sensorType)
-
+    val labels = code.valueLabels()
+    val unit = code.unit()
     Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .background(Neutral850, RoundedCornerShape(8.dp))
-                .padding(12.dp),
+        modifier = Modifier.fillMaxWidth().background(Neutral850, RoundedCornerShape(8.dp)).padding(12.dp),
     ) {
         Text(
             text = stringResource(R.string.sensor_live_values),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 8.dp),
         )
-        val valueCount = minOf(data.values.size, labels.size)
-        for (i in 0 until valueCount) {
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = labels[i],
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = formatSensorValue(data.values[i]),
-                    style =
-                        MaterialTheme.typography.bodySmall.copy(
-                            fontFamily = JetBrainsMono,
-                            fontWeight = FontWeight.Medium,
-                        ),
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
+        Spacer(modifier = Modifier.height(8.dp))
+        data.values.take(labels.size).forEachIndexed { index, value ->
+            DetailInfoRow(
+                labels[index],
+                stringResource(R.string.sensor_value_with_unit, formatSensorValue(value), unit),
+            )
         }
+        DetailInfoRow(stringResource(R.string.sensor_accuracy), data.accuracy.displayName())
     }
 }
 
 @Composable
-@Suppress("ViewModelForwarding", "ktlint:compose:vm-forwarding-check")
 private fun ChallengesSection(
     challenges: List<InteractiveChallenge>,
-    viewModel: SensorTestViewModel,
+    onChallenge: (InteractiveChallenge) -> Unit,
 ) {
     Column {
         Text(
             text = stringResource(R.string.sensor_challenges_title),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 8.dp),
         )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            ChallengeButtons(challenges.take(3), viewModel)
-        }
-        if (challenges.size > 3) {
-            Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+        challenges.chunked(3).forEachIndexed { index, rowChallenges ->
+            if (index > 0) Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                ChallengeButtons(challenges.drop(3), viewModel)
-                // Fill remaining space if odd number
-                if (challenges.drop(3).size < 3) {
-                    repeat(3 - challenges.drop(3).size) {
-                        Spacer(modifier = Modifier.weight(1f))
+                rowChallenges.forEach { challenge ->
+                    Button(
+                        onClick = { onChallenge(challenge) },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Neutral700),
+                    ) {
+                        Text(challenge.buttonLabel(), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
+                repeat(3 - rowChallenges.size) { Spacer(modifier = Modifier.weight(1f)) }
             }
         }
     }
 }
 
 @Composable
-private fun androidx.compose.foundation.layout.RowScope.ChallengeButtons(
-    challenges: List<InteractiveChallenge>,
-    viewModel: SensorTestViewModel,
-) {
-    challenges.forEach { challenge ->
-        Button(
-            onClick = { viewModel.startChallenge(challenge) },
-            modifier = Modifier.weight(1f),
-            colors =
-                ButtonDefaults.buttonColors(
-                    containerColor = Neutral700,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                ),
-            shape = RoundedCornerShape(8.dp),
-            contentPadding = ButtonDefaults.ContentPadding,
-        ) {
-            Text(
-                text = getChallengeButtonLabel(challenge),
-                style = MaterialTheme.typography.labelSmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
-}
-
-@Composable
-private fun getChallengeButtonLabel(challenge: InteractiveChallenge): String =
-    when (challenge) {
-        InteractiveChallenge.SHAKE -> stringResource(R.string.sensor_btn_shake)
-        InteractiveChallenge.TILT_LEFT -> stringResource(R.string.sensor_btn_tilt_left)
-        InteractiveChallenge.TILT_RIGHT -> stringResource(R.string.sensor_btn_tilt_right)
-        InteractiveChallenge.FACE_DOWN -> stringResource(R.string.sensor_btn_face_down)
-        InteractiveChallenge.FACE_UP -> stringResource(R.string.sensor_btn_face_up)
-        InteractiveChallenge.ROTATE -> stringResource(R.string.sensor_btn_rotate)
-    }
-
-@Composable
 private fun SensorInfoSection(sensorInfo: SensorInfo) {
     Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .background(Neutral850, RoundedCornerShape(8.dp))
-                .padding(12.dp),
+        modifier = Modifier.fillMaxWidth().background(Neutral850, RoundedCornerShape(8.dp)).padding(12.dp),
     ) {
         Text(
             text = stringResource(R.string.sensor_info_title),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 8.dp),
         )
+        Spacer(modifier = Modifier.height(8.dp))
         DetailInfoRow(stringResource(R.string.sensor_name), sensorInfo.name)
         DetailInfoRow(stringResource(R.string.sensor_vendor), sensorInfo.vendor)
-        DetailInfoRow(stringResource(R.string.sensor_version), "v${sensorInfo.version}")
+        DetailInfoRow(
+            stringResource(R.string.sensor_version),
+            stringResource(R.string.sensor_version_format, sensorInfo.version),
+        )
         DetailInfoRow(stringResource(R.string.sensor_resolution), formatSensorValue(sensorInfo.resolution))
         DetailInfoRow(stringResource(R.string.sensor_max_range), formatSensorValue(sensorInfo.maxRange))
-        DetailInfoRow(stringResource(R.string.sensor_power), "%.2f mA".format(sensorInfo.power))
+        DetailInfoRow(
+            stringResource(R.string.sensor_power),
+            stringResource(R.string.sensor_power_format, sensorInfo.power),
+        )
         DetailInfoRow(
             stringResource(R.string.sensor_min_delay),
-            if (sensorInfo.minDelay > 0) "${sensorInfo.minDelay} μs" else stringResource(R.string.sensor_on_change),
+            if (sensorInfo.minDelay > 0) {
+                stringResource(R.string.sensor_delay_format, sensorInfo.minDelay)
+            } else {
+                stringResource(R.string.sensor_on_change)
+            },
         )
         DetailInfoRow(
             stringResource(R.string.sensor_wake_up),
@@ -458,6 +375,134 @@ private fun SensorInfoSection(sensorInfo: SensorInfo) {
         )
     }
 }
+
+@Composable
+private fun GuidedSensorCode.displayName(): String =
+    stringResource(
+        when (this) {
+            GuidedSensorCode.ACCELEROMETER -> R.string.sensor_type_accelerometer
+            GuidedSensorCode.GYROSCOPE -> R.string.sensor_type_gyroscope
+            GuidedSensorCode.GRAVITY -> R.string.sensor_type_gravity
+            GuidedSensorCode.PROXIMITY -> R.string.sensor_type_proximity
+            GuidedSensorCode.LIGHT -> R.string.sensor_type_light
+            GuidedSensorCode.MAGNETOMETER -> R.string.sensor_type_magnetometer
+            GuidedSensorCode.BAROMETER -> R.string.sensor_type_barometer
+            GuidedSensorCode.STEP -> R.string.sensor_type_step
+        },
+    )
+
+private fun GuidedSensorCode.iconCode(): String =
+    when (this) {
+        GuidedSensorCode.ACCELEROMETER, GuidedSensorCode.GRAVITY -> "ACC"
+        GuidedSensorCode.GYROSCOPE -> "GYR"
+        GuidedSensorCode.PROXIMITY -> "PRX"
+        GuidedSensorCode.LIGHT -> "LUX"
+        GuidedSensorCode.MAGNETOMETER -> "MAG"
+        GuidedSensorCode.BAROMETER -> "BAR"
+        GuidedSensorCode.STEP -> "STP"
+    }
+
+@Composable
+private fun GuidedSensorCode.guidance(): String =
+    stringResource(
+        when (this) {
+            GuidedSensorCode.ACCELEROMETER -> R.string.sensor_guidance_accelerometer
+            GuidedSensorCode.GYROSCOPE -> R.string.sensor_guidance_gyroscope
+            GuidedSensorCode.GRAVITY -> R.string.sensor_guidance_gravity
+            GuidedSensorCode.PROXIMITY -> R.string.sensor_guidance_proximity
+            GuidedSensorCode.LIGHT -> R.string.sensor_guidance_light
+            GuidedSensorCode.MAGNETOMETER -> R.string.sensor_guidance_magnetometer
+            GuidedSensorCode.BAROMETER -> R.string.sensor_guidance_barometer
+            GuidedSensorCode.STEP -> R.string.sensor_guidance_step
+        },
+    )
+
+@Composable
+private fun GuidedSensorCode.valueLabels(): List<String> =
+    when (this) {
+        GuidedSensorCode.ACCELEROMETER,
+        GuidedSensorCode.GYROSCOPE,
+        GuidedSensorCode.GRAVITY,
+        GuidedSensorCode.MAGNETOMETER,
+        -> listOf(
+            stringResource(R.string.sensor_axis_x),
+            stringResource(R.string.sensor_axis_y),
+            stringResource(R.string.sensor_axis_z),
+        )
+        else -> listOf(stringResource(R.string.sensor_value))
+    }
+
+@Composable
+private fun GuidedSensorCode.unit(): String =
+    stringResource(
+        when (this) {
+            GuidedSensorCode.ACCELEROMETER, GuidedSensorCode.GRAVITY -> R.string.sensor_unit_acceleration
+            GuidedSensorCode.GYROSCOPE -> R.string.sensor_unit_angular_velocity
+            GuidedSensorCode.PROXIMITY -> R.string.sensor_unit_distance
+            GuidedSensorCode.LIGHT -> R.string.sensor_unit_illuminance
+            GuidedSensorCode.MAGNETOMETER -> R.string.sensor_unit_magnetic_field
+            GuidedSensorCode.BAROMETER -> R.string.sensor_unit_pressure
+            GuidedSensorCode.STEP -> R.string.sensor_unit_steps
+        },
+    )
+
+@Composable
+private fun GuidedSensorStatus.displayName(): String =
+    stringResource(
+        when (this) {
+            GuidedSensorStatus.NOT_AVAILABLE -> R.string.status_not_available
+            GuidedSensorStatus.NOT_TESTED -> R.string.status_not_tested
+            GuidedSensorStatus.SAMPLING -> R.string.sensor_status_sampling
+            GuidedSensorStatus.PASSED -> R.string.status_pass
+            GuidedSensorStatus.SKIPPED -> R.string.sensor_status_skipped
+        },
+    )
+
+@Composable
+private fun SensorAccuracyCode.displayName(): String =
+    stringResource(
+        when (this) {
+            SensorAccuracyCode.UNRELIABLE -> R.string.sensor_accuracy_unreliable
+            SensorAccuracyCode.LOW -> R.string.sensor_accuracy_low
+            SensorAccuracyCode.MEDIUM -> R.string.sensor_accuracy_medium
+            SensorAccuracyCode.HIGH -> R.string.sensor_accuracy_high
+            SensorAccuracyCode.UNKNOWN -> R.string.sensor_accuracy_unknown
+        },
+    )
+
+@Composable
+private fun InteractiveChallenge.prompt(): String =
+    stringResource(
+        when (this) {
+            InteractiveChallenge.SHAKE -> R.string.sensor_challenge_shake
+            InteractiveChallenge.TILT_LEFT -> R.string.sensor_challenge_tilt_left
+            InteractiveChallenge.TILT_RIGHT -> R.string.sensor_challenge_tilt_right
+            InteractiveChallenge.FACE_DOWN -> R.string.sensor_challenge_face_down
+            InteractiveChallenge.FACE_UP -> R.string.sensor_challenge_face_up
+            InteractiveChallenge.ROTATE -> R.string.sensor_challenge_rotate
+        },
+    )
+
+@Composable
+private fun InteractiveChallenge.buttonLabel(): String =
+    stringResource(
+        when (this) {
+            InteractiveChallenge.SHAKE -> R.string.sensor_btn_shake
+            InteractiveChallenge.TILT_LEFT -> R.string.sensor_btn_tilt_left
+            InteractiveChallenge.TILT_RIGHT -> R.string.sensor_btn_tilt_right
+            InteractiveChallenge.FACE_DOWN -> R.string.sensor_btn_face_down
+            InteractiveChallenge.FACE_UP -> R.string.sensor_btn_face_up
+            InteractiveChallenge.ROTATE -> R.string.sensor_btn_rotate
+        },
+    )
+
+private fun GuidedSensorStatus.color() =
+    when (this) {
+        GuidedSensorStatus.PASSED -> Green400
+        GuidedSensorStatus.SAMPLING -> Blue400
+        GuidedSensorStatus.NOT_TESTED, GuidedSensorStatus.SKIPPED -> Yellow400
+        GuidedSensorStatus.NOT_AVAILABLE -> Neutral500
+    }
 
 private fun formatSensorValue(value: Float): String =
     when {

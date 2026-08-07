@@ -8,12 +8,14 @@ import android.hardware.SensorManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
-import kotlin.math.sqrt
 
 data class SensorInfo(
     val type: Int,
@@ -29,7 +31,7 @@ data class SensorInfo(
 
 data class SensorLiveData(
     val values: FloatArray = floatArrayOf(),
-    val accuracy: Int = SensorManager.SENSOR_STATUS_NO_CONTACT,
+    val accuracy: SensorAccuracyCode = SensorAccuracyCode.UNKNOWN,
     val timestamp: Long = 0L,
 ) {
     override fun equals(other: Any?): Boolean {
@@ -40,7 +42,7 @@ data class SensorLiveData(
 
     override fun hashCode(): Int {
         var result = values.contentHashCode()
-        result = 31 * result + accuracy
+        result = 31 * result + accuracy.hashCode()
         result = 31 * result + timestamp.hashCode()
         return result
     }
@@ -57,17 +59,22 @@ enum class InteractiveChallenge {
 
 data class ChallengeState(
     val challenge: InteractiveChallenge? = null,
+    val sensorCode: GuidedSensorCode? = null,
     val completed: Boolean = false,
     val progress: Float = 0f,
+    val sampleCount: Int = 0,
 )
 
 data class SensorTestState(
     val sensors: List<SensorInfo> = emptyList(),
+    val guidedTests: List<GuidedSensorTestState> = GuidedSensorCatalog.create(emptySet()),
     val activeSensorType: Int? = null,
     val liveData: Map<Int, SensorLiveData> = emptyMap(),
-    val expandedSensor: Int? = null,
+    val expandedSensor: GuidedSensorCode? = null,
     val challenge: ChallengeState = ChallengeState(),
+    val completedChallenges: Set<InteractiveChallenge> = emptySet(),
     val sensorCount: Int = 0,
+    val error: String? = null,
 )
 
 @HiltViewModel
@@ -77,15 +84,17 @@ class SensorTestViewModel
         application: Application,
     ) : AndroidViewModel(application) {
         private val sensorManager = application.getSystemService(SensorManager::class.java)
+        private val listenerOwner =
+            SensorListenerOwner<Int, SensorEventListener> { listener ->
+                sensorManager.unregisterListener(listener)
+            }
 
         private val _state = MutableStateFlow(SensorTestState())
-        val state: StateFlow<SensorTestState> = _state
+        val state: StateFlow<SensorTestState> = _state.asStateFlow()
 
-        private val activeListeners = mutableMapOf<Int, SensorEventListener>()
-
-        // Shake detection state
-        private var lastShakeTime = 0L
-        private var shakeCount = 0
+        private var sampler: GuidedSensorSampler? = null
+        private var challengeRuntime = SensorChallengeRuntime()
+        private var challengeClearJob: Job? = null
 
         init {
             discoverSensors()
@@ -107,298 +116,135 @@ class SensorTestViewModel
                             minDelay = sensor.minDelay,
                             isWakeUp = sensor.isWakeUpSensor,
                         )
-                    }.sortedBy { getSensorCategoryOrder(it.type) }
+                    }.sortedBy { sensorCategoryOrder(it.type) }
 
-            _state.value =
-                _state.value.copy(
+            _state.update {
+                it.copy(
                     sensors = infos,
+                    guidedTests = GuidedSensorCatalog.create(infos.mapTo(mutableSetOf()) { info -> info.type }),
                     sensorCount = infos.size,
                 )
+            }
         }
 
-        private fun getSensorCategoryOrder(type: Int): Int =
-            when (type) {
-                Sensor.TYPE_ACCELEROMETER, Sensor.TYPE_LINEAR_ACCELERATION,
-                Sensor.TYPE_GRAVITY,
-                -> 0
-                Sensor.TYPE_GYROSCOPE, Sensor.TYPE_GYROSCOPE_UNCALIBRATED -> 1
-                Sensor.TYPE_MAGNETIC_FIELD, Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED -> 2
-                Sensor.TYPE_LIGHT -> 3
-                Sensor.TYPE_PROXIMITY -> 4
-                Sensor.TYPE_PRESSURE -> 5
-                Sensor.TYPE_AMBIENT_TEMPERATURE, Sensor.TYPE_RELATIVE_HUMIDITY -> 6
-                Sensor.TYPE_ROTATION_VECTOR, Sensor.TYPE_GAME_ROTATION_VECTOR,
-                Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR,
-                -> 7
-                Sensor.TYPE_STEP_COUNTER, Sensor.TYPE_STEP_DETECTOR -> 8
-                Sensor.TYPE_SIGNIFICANT_MOTION -> 9
-                else -> 10
-            }
-
-        fun toggleSensorExpanded(sensorType: Int) {
-            val current = _state.value.expandedSensor
-            if (current == sensorType) {
-                stopListening(sensorType)
-                _state.value = _state.value.copy(expandedSensor = null)
+        fun toggleSensorExpanded(code: GuidedSensorCode) {
+            if (_state.value.expandedSensor == code) {
+                cancelActiveTest()
+                _state.update { it.copy(expandedSensor = null) }
             } else {
-                if (current != null) stopListening(current)
-                startListening(sensorType)
-                _state.value = _state.value.copy(expandedSensor = sensorType)
+                startGuidedTest(code)
             }
         }
 
-        private fun startListening(sensorType: Int) {
-            val sensor = sensorManager.getDefaultSensor(sensorType) ?: return
-
-            val listener =
-                object : SensorEventListener {
-                    override fun onSensorChanged(event: SensorEvent) {
-                        val data =
-                            SensorLiveData(
-                                values = event.values.copyOf(),
-                                accuracy = event.accuracy,
-                                timestamp = event.timestamp,
-                            )
-                        val newMap = _state.value.liveData.toMutableMap()
-                        newMap[sensorType] = data
-                        _state.value = _state.value.copy(liveData = newMap)
-
-                        // Check challenge progress
-                        checkChallengeProgress(sensorType, event.values)
-                    }
-
-                    override fun onAccuracyChanged(
-                        sensor: Sensor,
-                        accuracy: Int,
-                    ) {
-                        // Accuracy changes are reflected in the next sensor event.
-                    }
-                }
-
-            sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI)
-            activeListeners[sensorType] = listener
-        }
-
-        private fun stopListening(sensorType: Int) {
-            activeListeners.remove(sensorType)?.let {
-                sensorManager.unregisterListener(it)
+        fun startGuidedTest(code: GuidedSensorCode) {
+            clearActiveOperation()
+            val test = _state.value.guidedTests.first { it.code == code }
+            val sensorType = test.sensorType
+            if (sensorType == null) {
+                _state.update { it.copy(expandedSensor = code) }
+                return
             }
-        }
 
-        fun startChallenge(challenge: InteractiveChallenge) {
-            _state.value =
-                _state.value.copy(
-                    challenge = ChallengeState(challenge = challenge, completed = false, progress = 0f),
+            sampler = GuidedSensorSampler(code, sensorType)
+            updateGuidedTest(code) {
+                it.copy(
+                    status = GuidedSensorStatus.SAMPLING,
+                    sampleCount = 0,
+                    accuracy = SensorAccuracyCode.UNKNOWN,
                 )
-            shakeCount = 0
+            }
+            _state.update { it.copy(expandedSensor = code, error = null) }
+            if (!startListening(sensorType)) {
+                sampler = null
+                updateGuidedTest(code) { it.copy(status = GuidedSensorStatus.NOT_TESTED) }
+                _state.update { it.copy(activeSensorType = null, error = "listener_registration_failed") }
+            }
+        }
 
-            // Ensure accelerometer is listening for challenges that need it
-            val sensorType =
-                when (challenge) {
-                    InteractiveChallenge.SHAKE, InteractiveChallenge.FACE_DOWN,
-                    InteractiveChallenge.FACE_UP,
-                    -> Sensor.TYPE_ACCELEROMETER
-                    InteractiveChallenge.TILT_LEFT, InteractiveChallenge.TILT_RIGHT -> Sensor.TYPE_ACCELEROMETER
-                    InteractiveChallenge.ROTATE -> Sensor.TYPE_GYROSCOPE
+        fun skipGuidedTest(code: GuidedSensorCode) {
+            if (_state.value.expandedSensor == code) clearActiveOperation()
+            updateGuidedTest(code) { test ->
+                if (test.status == GuidedSensorStatus.NOT_AVAILABLE) {
+                    test
+                } else {
+                    test.copy(status = GuidedSensorStatus.SKIPPED)
                 }
+            }
+        }
 
-            if (!activeListeners.containsKey(sensorType)) {
-                startListening(sensorType)
+        fun startChallenge(
+            challenge: InteractiveChallenge,
+            sensorCode: GuidedSensorCode = challenge.defaultSensorCode(),
+        ) {
+            clearActiveOperation()
+            val test = _state.value.guidedTests.first { it.code == sensorCode }
+            val sensorType = test.sensorType
+            if (sensorType == null) {
+                _state.update {
+                    it.copy(
+                        challenge = ChallengeState(challenge = challenge, sensorCode = sensorCode),
+                        expandedSensor = sensorCode,
+                    )
+                }
+                return
+            }
+
+            challengeRuntime = SensorChallengeRuntime()
+            _state.update {
+                it.copy(
+                    challenge = ChallengeState(challenge = challenge, sensorCode = sensorCode),
+                    expandedSensor = sensorCode,
+                    error = null,
+                )
+            }
+            if (!startListening(sensorType)) {
+                _state.update { it.copy(error = "listener_registration_failed") }
             }
         }
 
         fun clearChallenge() {
-            _state.value = _state.value.copy(challenge = ChallengeState())
+            challengeClearJob?.cancel()
+            challengeClearJob = null
+            stopListening()
+            challengeRuntime = SensorChallengeRuntime()
+            _state.update { it.copy(challenge = ChallengeState()) }
         }
 
-        private fun checkChallengeProgress(
-            sensorType: Int,
-            values: FloatArray,
-        ) {
-            val challenge = _state.value.challenge
-            if (challenge.challenge == null || challenge.completed) return
+        fun skipChallenge() {
+            val sensorCode = _state.value.challenge.sensorCode
+            clearChallenge()
+            sensorCode?.let(::skipGuidedTest)
+        }
 
-            when (challenge.challenge) {
-                InteractiveChallenge.SHAKE -> {
-                    if (sensorType == Sensor.TYPE_ACCELEROMETER) {
-                        val magnitude =
-                            sqrt(
-                                values[0] * values[0] + values[1] * values[1] + values[2] * values[2],
-                            )
-                        if (magnitude > 20f) {
-                            val now = System.currentTimeMillis()
-                            if (now - lastShakeTime > 200) {
-                                shakeCount++
-                                lastShakeTime = now
-                                val progress = (shakeCount / 5f).coerceAtMost(1f)
-                                updateChallengeProgress(challenge, progress)
+        fun stopAllTests() {
+            challengeClearJob?.cancel()
+            challengeClearJob = null
+            sampler = null
+            challengeRuntime = SensorChallengeRuntime()
+            listenerOwner.clear()
+            _state.update {
+                it.copy(
+                    activeSensorType = null,
+                    expandedSensor = null,
+                    challenge = ChallengeState(),
+                    guidedTests =
+                        it.guidedTests.map { test ->
+                            if (test.status == GuidedSensorStatus.SAMPLING) {
+                                test.copy(status = GuidedSensorStatus.NOT_TESTED)
+                            } else {
+                                test
                             }
-                        }
-                    }
-                }
-                InteractiveChallenge.TILT_LEFT -> {
-                    if (sensorType == Sensor.TYPE_ACCELEROMETER && values.size >= 2) {
-                        val roll = values[0] // positive = tilt left
-                        val progress = (roll / 7f).coerceIn(0f, 1f)
-                        updateChallengeProgress(challenge, progress)
-                    }
-                }
-                InteractiveChallenge.TILT_RIGHT -> {
-                    if (sensorType == Sensor.TYPE_ACCELEROMETER && values.size >= 2) {
-                        val roll = -values[0] // negative = tilt right
-                        val progress = (roll / 7f).coerceIn(0f, 1f)
-                        updateChallengeProgress(challenge, progress)
-                    }
-                }
-                InteractiveChallenge.FACE_DOWN -> {
-                    if (sensorType == Sensor.TYPE_ACCELEROMETER && values.size >= 3) {
-                        val z = values[2]
-                        val progress = ((-z) / 9f).coerceIn(0f, 1f) // z < 0 => face down
-                        updateChallengeProgress(challenge, progress, completionThreshold = 0.95f)
-                    }
-                }
-                InteractiveChallenge.FACE_UP -> {
-                    if (sensorType == Sensor.TYPE_ACCELEROMETER && values.size >= 3) {
-                        val z = values[2]
-                        val progress = (z / 9f).coerceIn(0f, 1f) // z > 0 => face up
-                        updateChallengeProgress(challenge, progress, completionThreshold = 0.95f)
-                    }
-                }
-                InteractiveChallenge.ROTATE -> {
-                    if (sensorType == Sensor.TYPE_GYROSCOPE && values.size >= 3) {
-                        val angularSpeed =
-                            sqrt(
-                                values[0] * values[0] + values[1] * values[1] + values[2] * values[2],
-                            )
-                        val progress = (angularSpeed / 5f).coerceIn(0f, 1f)
-                        if (progress >= 0.8f) {
-                            _state.value =
-                                _state.value.copy(
-                                    challenge = challenge.copy(progress = 1f, completed = true),
-                                )
-                        } else {
-                            _state.value =
-                                _state.value.copy(
-                                    challenge = challenge.copy(progress = progress),
-                                )
-                        }
-                    }
-                }
-            }
-
-            // Auto-clear completed challenge after a delay
-            if (_state.value.challenge.completed) {
-                viewModelScope.launch {
-                    delay(2000)
-                    if (_state.value.challenge.completed) {
-                        _state.value = _state.value.copy(challenge = ChallengeState())
-                    }
-                }
-            }
-        }
-
-        private fun updateChallengeProgress(
-            challenge: ChallengeState,
-            progress: Float,
-            completionThreshold: Float = 1f,
-        ) {
-            _state.value =
-                _state.value.copy(
-                    challenge =
-                        challenge.copy(
-                            progress = progress,
-                            completed = progress >= completionThreshold,
-                        ),
+                        },
                 )
+            }
         }
 
-        fun getSensorValueLabels(sensorType: Int): List<String> =
-            when (sensorType) {
-                Sensor.TYPE_ACCELEROMETER, Sensor.TYPE_LINEAR_ACCELERATION,
-                Sensor.TYPE_GRAVITY,
-                -> listOf("X (m/s²)", "Y (m/s²)", "Z (m/s²)")
-                Sensor.TYPE_GYROSCOPE, Sensor.TYPE_GYROSCOPE_UNCALIBRATED ->
-                    listOf(
-                        "X (rad/s)",
-                        "Y (rad/s)",
-                        "Z (rad/s)",
-                    )
-                Sensor.TYPE_MAGNETIC_FIELD, Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED ->
-                    listOf(
-                        "X (μT)",
-                        "Y (μT)",
-                        "Z (μT)",
-                    )
-                Sensor.TYPE_LIGHT -> listOf("Illuminance (lx)")
-                Sensor.TYPE_PROXIMITY -> listOf("Distance (cm)")
-                Sensor.TYPE_PRESSURE -> listOf("Pressure (hPa)")
-                Sensor.TYPE_AMBIENT_TEMPERATURE -> listOf("Temperature (°C)")
-                Sensor.TYPE_RELATIVE_HUMIDITY -> listOf("Humidity (%)")
-                Sensor.TYPE_ROTATION_VECTOR, Sensor.TYPE_GAME_ROTATION_VECTOR,
-                Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR,
-                -> listOf("X", "Y", "Z", "cos(θ/2)")
-                Sensor.TYPE_STEP_COUNTER -> listOf("Steps")
-                Sensor.TYPE_STEP_DETECTOR -> listOf("Step")
-                Sensor.TYPE_SIGNIFICANT_MOTION -> listOf("Motion")
-                Sensor.TYPE_HEART_RATE -> listOf("BPM")
-                else -> List(6) { "Value ${it + 1}" }
-            }
+        fun sensorInfoFor(test: GuidedSensorTestState): SensorInfo? =
+            test.sensorType?.let { type -> _state.value.sensors.firstOrNull { it.type == type } }
 
-        fun getSensorTypeName(type: Int): String =
-            when (type) {
-                Sensor.TYPE_ACCELEROMETER -> "Accelerometer"
-                Sensor.TYPE_MAGNETIC_FIELD -> "Magnetometer"
-                Sensor.TYPE_GYROSCOPE -> "Gyroscope"
-                Sensor.TYPE_LIGHT -> "Light"
-                Sensor.TYPE_PROXIMITY -> "Proximity"
-                Sensor.TYPE_PRESSURE -> "Barometer"
-                Sensor.TYPE_AMBIENT_TEMPERATURE -> "Temperature"
-                Sensor.TYPE_GRAVITY -> "Gravity"
-                Sensor.TYPE_LINEAR_ACCELERATION -> "Linear Acceleration"
-                Sensor.TYPE_ROTATION_VECTOR -> "Rotation Vector"
-                Sensor.TYPE_RELATIVE_HUMIDITY -> "Humidity"
-                Sensor.TYPE_GAME_ROTATION_VECTOR -> "Game Rotation"
-                Sensor.TYPE_GYROSCOPE_UNCALIBRATED -> "Gyroscope (Uncalib.)"
-                Sensor.TYPE_SIGNIFICANT_MOTION -> "Significant Motion"
-                Sensor.TYPE_STEP_DETECTOR -> "Step Detector"
-                Sensor.TYPE_STEP_COUNTER -> "Step Counter"
-                Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR -> "Geomagnetic Rotation"
-                Sensor.TYPE_HEART_RATE -> "Heart Rate"
-                Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED -> "Magnetometer (Uncalib.)"
-                Sensor.TYPE_STATIONARY_DETECT -> "Stationary Detect"
-                Sensor.TYPE_MOTION_DETECT -> "Motion Detect"
-                Sensor.TYPE_HEART_BEAT -> "Heart Beat"
-                Sensor.TYPE_LOW_LATENCY_OFFBODY_DETECT -> "Off-Body Detect"
-                Sensor.TYPE_ACCELEROMETER_UNCALIBRATED -> "Accelerometer (Uncalib.)"
-                Sensor.TYPE_HINGE_ANGLE -> "Hinge Angle"
-                else -> "Sensor (type $type)"
-            }
-
-        fun getSensorIcon(type: Int): String =
-            when (type) {
-                Sensor.TYPE_ACCELEROMETER, Sensor.TYPE_LINEAR_ACCELERATION,
-                Sensor.TYPE_GRAVITY, Sensor.TYPE_ACCELEROMETER_UNCALIBRATED,
-                -> "ACC"
-                Sensor.TYPE_GYROSCOPE, Sensor.TYPE_GYROSCOPE_UNCALIBRATED -> "GYR"
-                Sensor.TYPE_MAGNETIC_FIELD, Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED -> "MAG"
-                Sensor.TYPE_LIGHT -> "LUX"
-                Sensor.TYPE_PROXIMITY -> "PRX"
-                Sensor.TYPE_PRESSURE -> "BAR"
-                Sensor.TYPE_AMBIENT_TEMPERATURE -> "TMP"
-                Sensor.TYPE_RELATIVE_HUMIDITY -> "HUM"
-                Sensor.TYPE_ROTATION_VECTOR, Sensor.TYPE_GAME_ROTATION_VECTOR,
-                Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR,
-                -> "ROT"
-                Sensor.TYPE_STEP_COUNTER, Sensor.TYPE_STEP_DETECTOR -> "STP"
-                Sensor.TYPE_SIGNIFICANT_MOTION, Sensor.TYPE_MOTION_DETECT -> "MOT"
-                Sensor.TYPE_HEART_RATE, Sensor.TYPE_HEART_BEAT -> "HRT"
-                Sensor.TYPE_HINGE_ANGLE -> "HNG"
-                else -> "SNS"
-            }
-
-        fun getAvailableChallenges(sensorType: Int): List<InteractiveChallenge> =
-            when (sensorType) {
-                Sensor.TYPE_ACCELEROMETER, Sensor.TYPE_LINEAR_ACCELERATION ->
+        fun availableChallenges(code: GuidedSensorCode): List<InteractiveChallenge> =
+            when (code) {
+                GuidedSensorCode.ACCELEROMETER ->
                     listOf(
                         InteractiveChallenge.SHAKE,
                         InteractiveChallenge.TILT_LEFT,
@@ -406,23 +252,190 @@ class SensorTestViewModel
                         InteractiveChallenge.FACE_DOWN,
                         InteractiveChallenge.FACE_UP,
                     )
-                Sensor.TYPE_GRAVITY ->
-                    listOf(
-                        InteractiveChallenge.FACE_DOWN,
-                        InteractiveChallenge.FACE_UP,
-                    )
-                Sensor.TYPE_GYROSCOPE, Sensor.TYPE_GYROSCOPE_UNCALIBRATED ->
-                    listOf(
-                        InteractiveChallenge.ROTATE,
-                    )
+
+                GuidedSensorCode.GRAVITY -> listOf(InteractiveChallenge.FACE_DOWN, InteractiveChallenge.FACE_UP)
+                GuidedSensorCode.GYROSCOPE -> listOf(InteractiveChallenge.ROTATE)
                 else -> emptyList()
             }
 
-        override fun onCleared() {
-            super.onCleared()
-            activeListeners.forEach { (_, listener) ->
-                sensorManager.unregisterListener(listener)
+        private fun startListening(sensorType: Int): Boolean {
+            val sensor = sensorManager.getDefaultSensor(sensorType) ?: return false
+            val listener =
+                object : SensorEventListener {
+                    override fun onSensorChanged(event: SensorEvent) {
+                        handleSensorEvent(event)
+                    }
+
+                    override fun onAccuracyChanged(
+                        sensor: Sensor,
+                        accuracy: Int,
+                    ) = Unit
+                }
+            val registered = sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI)
+            if (registered) {
+                listenerOwner.replace(sensorType, listener)
+                _state.update { it.copy(activeSensorType = sensorType) }
             }
-            activeListeners.clear()
+            return registered
         }
+
+        @Synchronized
+        private fun handleSensorEvent(event: SensorEvent) {
+            val values = event.values.copyOf()
+            val accuracy = SensorAccuracyCode.fromAndroid(event.accuracy)
+            _state.update { current ->
+                current.copy(
+                    liveData =
+                        current.liveData +
+                            (event.sensor.type to SensorLiveData(values, accuracy, event.timestamp)),
+                )
+            }
+
+            val activeChallenge = _state.value.challenge
+            if (activeChallenge.challenge != null) {
+                updateChallenge(activeChallenge, values, accuracy)
+                return
+            }
+
+            val activeCode = _state.value.expandedSensor ?: return
+            val result = sampler?.accept(values) ?: return
+            updateGuidedTest(activeCode) {
+                it.copy(
+                    sampleCount = result.sampleCount,
+                    accuracy = accuracy,
+                    status = if (result.passed) GuidedSensorStatus.PASSED else GuidedSensorStatus.SAMPLING,
+                )
+            }
+            if (result.passed) stopListening()
+        }
+
+        private fun updateChallenge(
+            challenge: ChallengeState,
+            values: FloatArray,
+            accuracy: SensorAccuracyCode,
+        ) {
+            val evaluation =
+                SensorChallengeEvaluator.evaluate(
+                    challenge = requireNotNull(challenge.challenge),
+                    values = values,
+                    nowMillis = System.currentTimeMillis(),
+                    runtime = challengeRuntime,
+                )
+            challengeRuntime = evaluation.runtime
+            val sampleCount = challenge.sampleCount + 1
+            _state.update { current ->
+                current.copy(
+                    challenge =
+                        challenge.copy(
+                            progress = evaluation.progress,
+                            completed = evaluation.completed,
+                            sampleCount = sampleCount,
+                        ),
+                    completedChallenges =
+                        if (evaluation.completed) {
+                            current.completedChallenges + requireNotNull(challenge.challenge)
+                        } else {
+                            current.completedChallenges
+                        },
+                )
+            }
+
+            if (evaluation.completed) {
+                challenge.sensorCode?.let { code ->
+                    updateGuidedTest(code) { test ->
+                        test.copy(
+                            status = GuidedSensorStatus.PASSED,
+                            sampleCount = sampleCount,
+                            accuracy = accuracy,
+                        )
+                    }
+                }
+                stopListening()
+                challengeClearJob?.cancel()
+                challengeClearJob =
+                    viewModelScope.launch {
+                        delay(CHALLENGE_RESULT_DURATION_MILLIS)
+                        if (_state.value.challenge.completed) clearChallenge()
+                    }
+            }
+        }
+
+        private fun cancelActiveTest() {
+            val activeCode = _state.value.expandedSensor
+            clearActiveOperation()
+            activeCode?.let { code ->
+                updateGuidedTest(code) { test ->
+                    if (test.status == GuidedSensorStatus.SAMPLING) {
+                        test.copy(status = GuidedSensorStatus.NOT_TESTED)
+                    } else {
+                        test
+                    }
+                }
+            }
+        }
+
+        private fun clearActiveOperation() {
+            val activeCode = _state.value.expandedSensor
+            challengeClearJob?.cancel()
+            challengeClearJob = null
+            sampler = null
+            challengeRuntime = SensorChallengeRuntime()
+            stopListening()
+            _state.update { current ->
+                current.copy(
+                    challenge = ChallengeState(),
+                    guidedTests =
+                        current.guidedTests.map { test ->
+                            if (test.code == activeCode && test.status == GuidedSensorStatus.SAMPLING) {
+                                test.copy(status = GuidedSensorStatus.NOT_TESTED)
+                            } else {
+                                test
+                            }
+                        },
+                )
+            }
+        }
+
+        private fun stopListening() {
+            listenerOwner.clear()
+            _state.update { it.copy(activeSensorType = null) }
+        }
+
+        private fun updateGuidedTest(
+            code: GuidedSensorCode,
+            transform: (GuidedSensorTestState) -> GuidedSensorTestState,
+        ) {
+            _state.update { current ->
+                current.copy(
+                    guidedTests = current.guidedTests.map { if (it.code == code) transform(it) else it },
+                )
+            }
+        }
+
+        private fun sensorCategoryOrder(type: Int): Int =
+            when (type) {
+                Sensor.TYPE_ACCELEROMETER, Sensor.TYPE_LINEAR_ACCELERATION, Sensor.TYPE_GRAVITY -> 0
+                Sensor.TYPE_GYROSCOPE, Sensor.TYPE_GYROSCOPE_UNCALIBRATED -> 1
+                Sensor.TYPE_MAGNETIC_FIELD, Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED -> 2
+                Sensor.TYPE_LIGHT -> 3
+                Sensor.TYPE_PROXIMITY -> 4
+                Sensor.TYPE_PRESSURE -> 5
+                Sensor.TYPE_STEP_COUNTER, Sensor.TYPE_STEP_DETECTOR -> 6
+                else -> 7
+            }
+
+        override fun onCleared() {
+            stopAllTests()
+            super.onCleared()
+        }
+
+        companion object {
+            private const val CHALLENGE_RESULT_DURATION_MILLIS = 2_000L
+        }
+    }
+
+private fun InteractiveChallenge.defaultSensorCode(): GuidedSensorCode =
+    when (this) {
+        InteractiveChallenge.ROTATE -> GuidedSensorCode.GYROSCOPE
+        else -> GuidedSensorCode.ACCELEROMETER
     }

@@ -28,6 +28,8 @@ import com.insaner.fonecheck.ui.screens.camera.CameraClassCode
 import com.insaner.fonecheck.ui.screens.camera.CameraTestState
 import com.insaner.fonecheck.ui.screens.connectivity.ConnectivityTestState
 import com.insaner.fonecheck.ui.screens.display.DisplayTestState
+import com.insaner.fonecheck.ui.screens.sensor.GuidedSensorStatus
+import com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge
 import com.insaner.fonecheck.ui.screens.sensor.SensorTestState
 import com.insaner.fonecheck.ui.screens.vibration.VibrationTestState
 import java.time.Instant
@@ -413,27 +415,144 @@ object RunAllSnapshotMapper {
         snapshots: DiagnosticSnapshots,
         manual: ManualCheckResults,
         capturedAt: Instant,
-    ): List<DiagnosticEvidence> =
-        listOf(
-            if (snapshots.sensors.sensorCount > 0) {
+    ): List<DiagnosticEvidence> {
+        val sensorState = snapshots.sensors
+        val orientationChallenges =
+            setOf(
+                InteractiveChallenge.TILT_LEFT,
+                InteractiveChallenge.TILT_RIGHT,
+                InteractiveChallenge.FACE_DOWN,
+                InteractiveChallenge.FACE_UP,
+            )
+        return buildList {
+            add(
+                if (sensorState.sensorCount > 0) {
+                    evidence(
+                        categoryId = DiagnosticCategoryId.SENSORS,
+                        id = "inventory",
+                        status = DiagnosticStatus.INFO,
+                        value = EvidenceValue.IntValue(sensorState.sensorCount),
+                        unit = EvidenceUnitCode("count"),
+                        capturedAt = capturedAt,
+                    )
+                } else {
+                    unavailable(
+                        DiagnosticCategoryId.SENSORS,
+                        "inventory",
+                        capturedAt,
+                        EvidenceValue.IntValue(0),
+                    )
+                },
+            )
+            sensorState.guidedTests.forEach { test ->
+                add(
+                    when (test.status) {
+                        GuidedSensorStatus.PASSED ->
+                            evidence(
+                                categoryId = DiagnosticCategoryId.SENSORS,
+                                id = test.code.stableCode,
+                                status = DiagnosticStatus.PASS,
+                                source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                                value = EvidenceValue.IntValue(test.sampleCount),
+                                unit = EvidenceUnitCode("samples"),
+                                capturedAt = capturedAt,
+                            )
+
+                        GuidedSensorStatus.NOT_AVAILABLE ->
+                            unavailable(
+                                categoryId = DiagnosticCategoryId.SENSORS,
+                                id = test.code.stableCode,
+                                capturedAt = capturedAt,
+                            )
+
+                        GuidedSensorStatus.NOT_TESTED ->
+                            notTested(
+                                categoryId = DiagnosticCategoryId.SENSORS,
+                                id = test.code.stableCode,
+                                capturedAt = capturedAt,
+                                reason = EvidenceReasonCode.NOT_RUN,
+                                source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                            )
+
+                        GuidedSensorStatus.SAMPLING ->
+                            notTested(
+                                categoryId = DiagnosticCategoryId.SENSORS,
+                                id = test.code.stableCode,
+                                capturedAt = capturedAt,
+                                reason = EvidenceReasonCode.CANCELLED,
+                                source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                            )
+
+                        GuidedSensorStatus.SKIPPED ->
+                            notTested(
+                                categoryId = DiagnosticCategoryId.SENSORS,
+                                id = test.code.stableCode,
+                                capturedAt = capturedAt,
+                                reason = EvidenceReasonCode.SKIPPED,
+                                source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                            )
+                    },
+                )
+            }
+            add(
+                if (sensorState.completedChallenges.any(orientationChallenges::contains)) {
+                    evidence(
+                        categoryId = DiagnosticCategoryId.SENSORS,
+                        id = "orientation",
+                        status = DiagnosticStatus.INFO,
+                        confidence = Confidence.LOW,
+                        source = EvidenceSource.DERIVED,
+                        value = EvidenceValue.StableTextCodeValue("observed"),
+                        capturedAt = capturedAt,
+                    )
+                } else {
+                    notTested(
+                        categoryId = DiagnosticCategoryId.SENSORS,
+                        id = "orientation",
+                        capturedAt = capturedAt,
+                        source = EvidenceSource.DERIVED,
+                    )
+                },
+            )
+            add(automaticSensorEvidence("motion", manual.sensors, capturedAt))
+        }
+    }
+
+    private fun automaticSensorEvidence(
+        id: String,
+        value: Boolean?,
+        capturedAt: Instant,
+    ): DiagnosticEvidence =
+        when (value) {
+            true ->
                 evidence(
                     categoryId = DiagnosticCategoryId.SENSORS,
-                    id = "inventory",
+                    id = id,
                     status = DiagnosticStatus.PASS,
-                    value = EvidenceValue.IntValue(snapshots.sensors.sensorCount),
-                    unit = EvidenceUnitCode("count"),
+                    source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                    value = EvidenceValue.BooleanValue(true),
                     capturedAt = capturedAt,
                 )
-            } else {
-                unavailable(
-                    DiagnosticCategoryId.SENSORS,
-                    "inventory",
-                    capturedAt,
-                    EvidenceValue.IntValue(0),
+
+            false ->
+                evidence(
+                    categoryId = DiagnosticCategoryId.SENSORS,
+                    id = id,
+                    status = DiagnosticStatus.FAIL,
+                    source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                    reason = EvidenceReasonCode.DEGRADED,
+                    value = EvidenceValue.BooleanValue(false),
+                    capturedAt = capturedAt,
                 )
-            },
-            manualEvidence(DiagnosticCategoryId.SENSORS, "motion", manual.sensors, capturedAt),
-        )
+
+            null ->
+                notTested(
+                    categoryId = DiagnosticCategoryId.SENSORS,
+                    id = id,
+                    capturedAt = capturedAt,
+                    source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                )
+        }
 
     private fun connectivityEvidence(
         snapshots: DiagnosticSnapshots,

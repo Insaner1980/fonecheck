@@ -530,6 +530,15 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Sensorien nimet, update rate ja accuracy vaihtelevat OEM:ittäin.
 - **Decision required:** Ei.
 
+#### Implementation/status log — 2026-08-08
+
+- Lisätty tests-first kahdeksan vakaan sensorikoodin katalogi sekä no-sensor-, step-prioriteetti-, näytteistys-, muutosraja-, challenge-threshold-, accuracy- ja idempotentti listener-owner -testit. Ensimmäinen kohdistettu ajo oli odotettu RED vain puuttuvista sensoripolitiikan symboleista.
+- Standalone-näkymä näyttää accelerometer-, gyroscope-, gravity-, proximity-, light-, magnetometer-, barometer- ja step-testit myös silloin, kun laitteisto puuttuu. Saatavilla oleva testi käynnistää rajatun näytteistyksen, näyttää lokalisoidut yksiköt ja accuracy-tilan sekä erottaa `NotAvailable`-, `NotTested`-, sampling-, skipped- ja pass-tilat.
+- Liike-, valo-, proximity-, magnetometer- ja step-testit vaativat mitatun arvomuutoksen; barometri vaatii viisi kelvollista painehavaintoa. Challenge-laskenta on erotettu ViewModelista nimetyillä raja-arvoilla, ja valmis challenge säilyttää mitatun näytemäärän sekä accuracy-koodin.
+- Yksi synkronoitu listener-owner omistaa aktiivisen rekisteröinnin. Completion, clear, skip, kortin sulkeminen, Full Check -vaiheen vaihto, composablen dispose ja ViewModelin `onCleared()` poistavat listenerin idempotentisti ilman map-iteraation aikaista muokkausta.
+- Canonical report nimeää kaikki kahdeksan ohjattua sensoritestiä ja säilyttää niiden todelliset pass/not-tested/not-available-tulokset. Asentovaste on erillinen low-confidence `DERIVED`-evidence eikä suora laitteistopass; Full Checkin motion-tulos on automatic measurement eikä user confirmation.
+- `SensorRuntimePolicyTest`, koko `:app:testDebugUnitTest` ja Android-testien Kotlin-käännös läpäisevät. Fyysiset motion-, proximity- ja light-kokeet odottavat yhdistettyä Android-laitetta; `adb devices -l` ei löytänyt laitetta. Käyttäjän keskeneräistä `PROJECT.md`-muutosta ei koskettu.
+
 ### 15. Correct Connectivity permissions, callbacks, claims, and privacy
 
 - **Objective:** Vakauttaa Wi-Fi-, Bluetooth-, NFC-, GNSS- ja mobile-evidence.

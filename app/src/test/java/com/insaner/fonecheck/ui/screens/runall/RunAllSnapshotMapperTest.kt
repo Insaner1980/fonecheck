@@ -30,7 +30,12 @@ import com.insaner.fonecheck.ui.screens.connectivity.GpsState
 import com.insaner.fonecheck.ui.screens.connectivity.MobileNetworkState
 import com.insaner.fonecheck.ui.screens.connectivity.WifiState
 import com.insaner.fonecheck.ui.screens.display.DisplayTestState
+import com.insaner.fonecheck.ui.screens.sensor.GuidedSensorCatalog
+import com.insaner.fonecheck.ui.screens.sensor.GuidedSensorCode
+import com.insaner.fonecheck.ui.screens.sensor.GuidedSensorStatus
+import com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge
 import com.insaner.fonecheck.ui.screens.sensor.SensorTestState
+import com.insaner.fonecheck.ui.screens.sensor.SensorType
 import com.insaner.fonecheck.ui.screens.vibration.VibrationTestState
 import java.time.Instant
 import org.junit.Assert.assertEquals
@@ -259,6 +264,53 @@ class RunAllSnapshotMapperTest {
             assertEquals("mebibytes_per_second", unit?.value)
             assertEquals(benchmarkCapturedAt, capturedAt)
         }
+    }
+
+    @Test
+    fun sensorEvidenceNamesEveryGuidedSensorAndOnlyPassesCompletedTests() {
+        val guidedTests =
+            GuidedSensorCatalog
+                .create(setOf(SensorType.ACCELEROMETER, SensorType.LIGHT))
+                .map { test ->
+                    when (test.code) {
+                        GuidedSensorCode.ACCELEROMETER ->
+                            test.copy(status = GuidedSensorStatus.PASSED, sampleCount = 6)
+                        GuidedSensorCode.LIGHT -> test.copy(status = GuidedSensorStatus.SKIPPED)
+                        else -> test
+                    }
+                }
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots =
+                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                            sensors =
+                                SensorTestState(
+                                    guidedTests = guidedTests,
+                                    completedChallenges = setOf(InteractiveChallenge.TILT_LEFT),
+                                    sensorCount = 2,
+                                ),
+                        ),
+                    manual = ManualCheckResults(sensors = true),
+                    permissions = RunAllPermissions(),
+                    capturedAt = Instant.parse("2026-08-08T12:00:00Z"),
+                ).single { it.categoryId == DiagnosticCategoryId.SENSORS }
+                .evidence
+                .associateBy { it.checkId.value }
+
+        assertTrue(GuidedSensorCode.entries.all { "sensors.${it.stableCode}" in evidence })
+        with(evidence.getValue("sensors.accelerometer")) {
+            assertEquals(DiagnosticStatus.PASS, status)
+            assertEquals(EvidenceSource.AUTOMATIC_MEASUREMENT, source)
+            assertEquals(EvidenceValue.IntValue(6), value)
+            assertEquals("samples", unit?.value)
+        }
+        assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue("sensors.light").status)
+        assertEquals(EvidenceReasonCode.SKIPPED, evidence.getValue("sensors.light").reason)
+        assertEquals(DiagnosticStatus.NOT_AVAILABLE, evidence.getValue("sensors.gyroscope").status)
+        assertEquals(EvidenceSource.DERIVED, evidence.getValue("sensors.orientation").source)
+        assertEquals(DiagnosticStatus.INFO, evidence.getValue("sensors.orientation").status)
+        assertEquals(EvidenceSource.AUTOMATIC_MEASUREMENT, evidence.getValue("sensors.motion").source)
     }
 
     private fun diagnosticSnapshotsWithSensitiveConnectivity() =

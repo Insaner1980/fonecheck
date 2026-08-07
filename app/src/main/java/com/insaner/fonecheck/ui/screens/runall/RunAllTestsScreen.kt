@@ -405,7 +405,10 @@ fun RunAllTestsScreen(
         RunAllStage.SENSORS ->
             SensorCheckStep(
                 state = sensorState,
-                onSkip = { sessionViewModel.recordSensors(null) },
+                onSkip = {
+                    sensorViewModel.skipChallenge()
+                    sessionViewModel.recordSensors(null)
+                },
             )
 
         RunAllStage.VIBRATION ->

@@ -30,6 +30,7 @@ enum class EvidenceSource {
     AUTOMATIC_MEASUREMENT,
     ANDROID_API,
     USER_CONFIRMATION,
+    DERIVED,
     ESTIMATE,
 }
 
@@ -48,6 +49,7 @@ value class EvidenceReasonCode(
 
     companion object {
         val PERMISSION_DENIED = EvidenceReasonCode("permission_denied")
+        val NOT_RUN = EvidenceReasonCode("not_run")
         val SKIPPED = EvidenceReasonCode("skipped")
         val CANCELLED = EvidenceReasonCode("cancelled")
         val ERROR = EvidenceReasonCode("error")
