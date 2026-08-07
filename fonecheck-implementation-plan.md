@@ -328,7 +328,7 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - Lisätty `ReportRepository` ja Room-toteutus, joka kirjoittaa yhdestä domain-raportista sekä summary-kentät että versionoidun JSON-payloadin, lukee hallitut available/not-found/unavailable-tulokset, pitää summary-flow'n payloadista erillään ja tukee comparison-load-, delete- ja delete-all-operaatioita.
 - Payload-koodaus säilyttää kaikki typed evidence -arvot, `Instant`-tarkkuuden ja `BigDecimal`-esityksen. Lukumapping vertaa payloadista rekonstruoitua raporttia entity-summaryyn; korruptio ja tuleva skeemaversio palautuvat hallittuina tuloksina.
 - Database DI tarjoaa DAO:n ja singleton-repositoryn, joten `DI module completeness` -NEXT TOUCH on tämän persistence-rajapinnan osalta käsitelty. `PROJECT.md`-päivitys odottaa käyttäjän keskeneräisen tiedostomuutoksen valmistumista eikä sitä sekoitettu tähän tehtävään.
-- GREEN-käännös ja instrumentaatiotestit odottavat käyttäjän ajoa. Codex ei ajanut Gradlea.
+- Käyttäjä ilmoitti commitin `af0ff26` jälkeen Android-testien Kotlin-käännöksen sekä kohdistetun `ReportRepositoryTest`-instrumentaatioajon onnistuneen. Task 5:n acceptance on täytetty; Codex ei ajanut Gradlea.
 
 ### 6. Replace the Android-bound report builder with a pure report assembler
 
