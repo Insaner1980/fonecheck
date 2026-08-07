@@ -85,6 +85,13 @@ private val implementedDestinations =
                 R.string.home_cat_thermal,
                 R.drawable.category_thermal,
             ),
+        DiagnosticCategoryId.STORAGE to
+            DiagnosticDestination(
+                DiagnosticCategoryId.STORAGE,
+                StorageTest,
+                R.string.home_cat_storage,
+                R.drawable.category_storage,
+            ),
         DiagnosticCategoryId.VIBRATION to
             DiagnosticDestination(
                 DiagnosticCategoryId.VIBRATION,

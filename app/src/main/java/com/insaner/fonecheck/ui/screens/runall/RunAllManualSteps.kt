@@ -110,6 +110,8 @@ fun AutomaticCheckScreen(
     title: String,
     description: String,
     modifier: Modifier = Modifier,
+    actionLabel: String? = null,
+    onAction: () -> Unit = {},
 ) {
     Column(
         modifier =
@@ -135,6 +137,14 @@ fun AutomaticCheckScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+        actionLabel?.let { label ->
+            OutlinedButton(
+                onClick = onAction,
+                modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+            ) {
+                Text(label)
+            }
+        }
     }
 }
 

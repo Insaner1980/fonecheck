@@ -4,6 +4,12 @@ import android.content.Context
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.IdProvider
 import com.insaner.fonecheck.runtime.NanoTimeSource
+import com.insaner.fonecheck.ui.screens.storage.AndroidStorageBenchmarkStore
+import com.insaner.fonecheck.ui.screens.storage.AndroidStorageInfoProvider
+import com.insaner.fonecheck.ui.screens.storage.DefaultStorageBenchmarkRunner
+import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkRunner
+import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkStore
+import com.insaner.fonecheck.ui.screens.storage.StorageInfoProvider
 import com.insaner.fonecheck.ui.screens.thermal.AndroidThermalPlatform
 import com.insaner.fonecheck.ui.screens.thermal.ThermalPlatform
 import dagger.Module
@@ -39,6 +45,15 @@ object RuntimeModule {
     fun provideThermalPlatform(
         @ApplicationContext context: Context,
     ): ThermalPlatform = AndroidThermalPlatform(context)
+
+    @Provides
+    fun provideStorageInfoProvider(provider: AndroidStorageInfoProvider): StorageInfoProvider = provider
+
+    @Provides
+    fun provideStorageBenchmarkStore(store: AndroidStorageBenchmarkStore): StorageBenchmarkStore = store
+
+    @Provides
+    fun provideStorageBenchmarkRunner(runner: DefaultStorageBenchmarkRunner): StorageBenchmarkRunner = runner
 
     @Provides
     @IoDispatcher

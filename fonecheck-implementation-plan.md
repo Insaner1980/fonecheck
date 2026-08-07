@@ -622,6 +622,15 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** OS cache, thermal state ja muu I/O vaikuttavat tulokseen.
 - **Decision required:** Kyllä, workload/default Full Check inclusion kohdassa 1.
 
+#### Implementation/status log — 2026-08-08
+
+- Hyväksytty Storage-sopimus on toteutettu omana kanonisena Home-kohteena, type-safe reittinä, standalone-näkymänä ja Run All -snapshotina. Uusi 512 × 512 läpinäkyvä `category_storage.webp` noudattaa nykyistä violetti–aqua–coral-kuvitustyyliä.
+- Sisäisen app-private-tallennustilan total/used/available/usage ja käytettävyys luetaan `StatFs`illa. Sovelluksen käytettävissä olevista jaetuista taltioista näytetään mount-tila, primary/removable-luokitus sekä saatavilla olevat koko- ja vapaan tilan tiedot. Kaikki hitaat lukupolut ajetaan IO-dispatcherilla [StatFs API:n](https://developer.android.com/reference/android/os/StatFs.html) ja julkisten [Environment API:en](https://developer.android.com/reference/android/os/Environment) kautta.
+- Käyttäjän hyväksymä benchmark kirjoittaa ja lukee peräkkäisesti yhden 64 MiB:n tiedoston vain fonecheckin yksityisessä cache-hakemistossa 64 KiB:n puskurilla. Ennen ajoa vaaditaan tiedoston lisäksi 16 MiB:n turvavara; liian pieni tila tuottaa `NOT_TESTED/insufficient_space`-evidencen eikä storage-failure-väitettä.
+- Benchmark ajetaan worker-säikeellä, tukee cancel/skip-polkuja ja yrittää poistaa tarkan temp-tiedoston success-, I/O-error-, checksum/data-size mismatch-, timeout- ja cancellation-polussa. Tulos sisältää raw sequential write/read MiB/s -arvot, tietomäärän, vapaan tilan ennen ajoa, app-cache-sijainnin ja cleanup-evidencen. UI kertoo OS cache-, thermal- ja taustakuormarajoitteet eikä väitä mittaavansa flash wearia tai fyysistä storage healthia.
+- Full Check kertoo preflightissa 64 MiB:n väliaikaistiedostosta, suorittaa benchmarkin oletuksena ja tarjoaa sen aikana skip-toiminnon. Raporttiin tallennetaan locale-neutraalit tiedot ja informational/low-confidence throughput ilman yleistä hyväksytty/hylätty-rajaa.
+- Fake-store-testit kattavat free-space precheckin, kirjoituksen ja luvun datamäärän, CRC32-tarkistuksen, nopeuslaskennan, I/O-poikkeuksen, datavirheen, cancellationin sekä delete-success/failure-polut. Storage ViewModel-, mapper- ja catalog-testit, koko `:app:testDebugUnitTest`, Android-testien Kotlin-käännös, `:app:lintDebug` ja `:app:assembleDebug` läpäisevät. Fyysiset low-space/normal-space-kokeet odottavat laitetta, sillä `adb devices -l` ei löytänyt yhdistettyä laitetta. Käyttäjän keskeneräisiä `PROJECT.md`- ja `verification-metadata.xml`-muutoksia ei muokattu.
+
 ### 19. Harden Vibration execution and confirmation
 
 - **Objective:** Estää päällekkäiset värinät ja erottaa API support fyysisestä vahvistuksesta.

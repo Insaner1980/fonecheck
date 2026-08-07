@@ -1,5 +1,6 @@
 package com.insaner.fonecheck.ui.screens.runall
 
+import android.text.format.Formatter
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -28,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -365,6 +367,20 @@ private fun evidenceLabelResId(checkId: String): Int? =
         "thermal.severity" -> R.string.thermal_severity_label
         "thermal.headroom" -> R.string.thermal_headroom_title
         "thermal.battery_temperature" -> R.string.thermal_battery_title
+        "storage.total" -> R.string.storage_total
+        "storage.used" -> R.string.storage_used
+        "storage.available" -> R.string.storage_available
+        "storage.usage" -> R.string.storage_usage
+        "storage.internal_access" -> R.string.storage_internal_access
+        "storage.volume_count" -> R.string.storage_volumes_title
+        "storage.mounted_volume_count" -> R.string.storage_mounted_state
+        "storage.removable_volume_count" -> R.string.storage_removable
+        "storage.sequential_write" -> R.string.storage_benchmark_write_rate
+        "storage.sequential_read" -> R.string.storage_benchmark_read_rate
+        "storage.benchmark_data_size" -> R.string.storage_benchmark_data_size
+        "storage.benchmark_available_before" -> R.string.storage_benchmark_available_before
+        "storage.benchmark_location" -> R.string.storage_benchmark_location
+        "storage.benchmark_cleanup" -> R.string.storage_benchmark_cleanup
         "vibration.hardware" -> R.string.vibration_has_vibrator
         "vibration.motor" -> R.string.vibration_motor_title
         "buttons.volume" -> R.string.run_all_check_volume_buttons
@@ -401,6 +417,7 @@ private fun evidenceValueLabel(
                     stringResource(R.string.perf_benchmark_cpu_rate_value, value.value.toString())
                 "milliseconds" ->
                     stringResource(R.string.conn_gps_fix_duration_format, value.value / 1_000.0)
+                "bytes" -> Formatter.formatFileSize(LocalContext.current, value.value)
                 else -> value.value.toString()
             }
         is EvidenceValue.DecimalValue -> value.value.toPlainString()
@@ -409,8 +426,9 @@ private fun evidenceValueLabel(
                 "celsius" -> stringResource(R.string.run_all_detail_temperature, value.value)
                 "milliamperes" -> stringResource(R.string.batt_value_milliamps, value.value)
                 "ratio" -> stringResource(R.string.thermal_headroom_value, value.value)
+                "percent" -> stringResource(R.string.storage_percent_value, value.value.toString())
                 "mebibytes_per_second" ->
-                    stringResource(R.string.perf_benchmark_memory_rate_value, value.value)
+                    stringResource(R.string.storage_rate_value, value.value)
                 else -> value.value.toString()
             }
 
@@ -461,6 +479,7 @@ private fun stableTextLabel(code: String): String =
             "fifth_generation" -> R.string.sim_network_5g
             "unknown" -> R.string.sim_value_unknown
             "observed" -> R.string.sensor_orientation_observed
+            "app_cache" -> R.string.storage_app_cache
             else -> R.string.batt_health_unknown
         },
     )
@@ -473,6 +492,7 @@ private fun reasonLabel(reason: EvidenceReasonCode): String =
             EvidenceReasonCode.NOT_RUN -> R.string.run_all_summary_not_tested
             EvidenceReasonCode.SKIPPED, EvidenceReasonCode.CANCELLED -> R.string.run_all_manual_skipped
             EvidenceReasonCode.TIMEOUT -> R.string.conn_gps_failed
+            EvidenceReasonCode.INSUFFICIENT_SPACE -> R.string.storage_benchmark_insufficient_space
             EvidenceReasonCode.USER_CONFIRMED_FAILURE -> R.string.run_all_manual_failed
             EvidenceReasonCode.HARDWARE_UNAVAILABLE,
             EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED,

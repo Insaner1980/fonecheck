@@ -22,6 +22,7 @@ import com.insaner.fonecheck.ui.screens.performance.PerformanceInfoScreen
 import com.insaner.fonecheck.ui.screens.runall.RunAllTestsScreen
 import com.insaner.fonecheck.ui.screens.sensor.SensorTestScreen
 import com.insaner.fonecheck.ui.screens.simtelephony.SimTelephonyScreen
+import com.insaner.fonecheck.ui.screens.storage.StorageTestScreen
 import com.insaner.fonecheck.ui.screens.thermal.ThermalTestScreen
 import com.insaner.fonecheck.ui.screens.vibration.VibrationTestScreen
 
@@ -68,6 +69,9 @@ fun FonecheckNavHost(
         }
         composable<ThermalTest> {
             ThermalTestScreen()
+        }
+        composable<StorageTest> {
+            StorageTestScreen()
         }
         composable<DisplayTest> {
             DisplayTestScreen(onFullscreenChanged = onDisplayFullscreenChanged)

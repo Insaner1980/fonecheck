@@ -7,10 +7,9 @@ import org.junit.Test
 
 class DiagnosticDestinationTest {
     @Test
-    fun implementedDestinationsFollowCanonicalOrderAndIncludeThermal() {
-        val expected = DiagnosticCatalog.categories.filterNot { it == DiagnosticCategoryId.STORAGE }
-
-        assertEquals(expected, diagnosticDestinations.map { it.category })
+    fun implementedDestinationsFollowCanonicalOrderAndIncludeThermalAndStorage() {
+        assertEquals(DiagnosticCatalog.categories, diagnosticDestinations.map { it.category })
         assertEquals(ThermalTest, diagnosticDestinations.single { it.category == DiagnosticCategoryId.THERMAL }.route)
+        assertEquals(StorageTest, diagnosticDestinations.single { it.category == DiagnosticCategoryId.STORAGE }.route)
     }
 }

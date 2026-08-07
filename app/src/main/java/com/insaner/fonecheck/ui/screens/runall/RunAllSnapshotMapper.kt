@@ -37,6 +37,9 @@ import com.insaner.fonecheck.ui.screens.display.DisplayTestState
 import com.insaner.fonecheck.ui.screens.sensor.GuidedSensorStatus
 import com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge
 import com.insaner.fonecheck.ui.screens.sensor.SensorTestState
+import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkErrorCode
+import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkPhase
+import com.insaner.fonecheck.ui.screens.storage.StorageTestState
 import com.insaner.fonecheck.ui.screens.thermal.ThermalSeverityCode
 import com.insaner.fonecheck.ui.screens.thermal.ThermalTestState
 import com.insaner.fonecheck.ui.screens.vibration.VibrationTestState
@@ -54,6 +57,7 @@ data class DiagnosticSnapshots(
     val connectivity: ConnectivityTestState,
     val battery: BatteryTestState,
     val thermal: ThermalTestState,
+    val storage: StorageTestState,
     val vibration: VibrationTestState,
     val buttons: ButtonTestState,
     val biometrics: BiometricTestState,
@@ -78,8 +82,7 @@ object RunAllSnapshotMapper {
                 DiagnosticCategoryId.CONNECTIVITY to connectivityEvidence(snapshots, capturedAt),
                 DiagnosticCategoryId.BATTERY to batteryEvidence(snapshots, capturedAt),
                 DiagnosticCategoryId.THERMAL to thermalEvidence(snapshots, capturedAt),
-                DiagnosticCategoryId.STORAGE to
-                    listOf(notTested(DiagnosticCategoryId.STORAGE, "snapshot", capturedAt)),
+                DiagnosticCategoryId.STORAGE to storageEvidence(snapshots, capturedAt),
                 DiagnosticCategoryId.VIBRATION to vibrationEvidence(snapshots, manual, capturedAt),
                 DiagnosticCategoryId.BUTTONS to buttonEvidence(manual, capturedAt),
                 DiagnosticCategoryId.BIOMETRICS to biometricEvidence(snapshots, manual, capturedAt),
@@ -1003,6 +1006,207 @@ object RunAllSnapshotMapper {
 
         return listOf(statusEvidence, severityEvidence, headroomEvidence, batteryTemperatureEvidence)
     }
+
+    private fun storageEvidence(
+        snapshots: DiagnosticSnapshots,
+        capturedAt: Instant,
+    ): List<DiagnosticEvidence> {
+        val state = snapshots.storage
+        val infoEvidence =
+            state.info?.let { info ->
+                val infoCapturedAt = info.capturedAt
+                listOf(
+                    storageLongEvidence("total", info.totalBytes, "bytes", infoCapturedAt),
+                    storageLongEvidence("used", info.usedBytes, "bytes", infoCapturedAt),
+                    storageLongEvidence("available", info.availableBytes, "bytes", infoCapturedAt),
+                    info.usagePercent?.let { usage ->
+                        evidence(
+                            categoryId = DiagnosticCategoryId.STORAGE,
+                            id = "usage",
+                            status = DiagnosticStatus.INFO,
+                            source = EvidenceSource.DERIVED,
+                            value = EvidenceValue.DoubleValue(usage),
+                            unit = EvidenceUnitCode("percent"),
+                            capturedAt = infoCapturedAt,
+                        )
+                    } ?: unavailableReading(DiagnosticCategoryId.STORAGE, "usage", infoCapturedAt),
+                    evidence(
+                        categoryId = DiagnosticCategoryId.STORAGE,
+                        id = "internal_access",
+                        status = DiagnosticStatus.INFO,
+                        value = EvidenceValue.BooleanValue(info.internalStorageAccessible),
+                        capturedAt = infoCapturedAt,
+                    ),
+                    storageCountEvidence("volume_count", info.appAccessibleVolumes.size, infoCapturedAt),
+                    storageCountEvidence(
+                        "mounted_volume_count",
+                        info.appAccessibleVolumes.count { it.isMounted },
+                        infoCapturedAt,
+                    ),
+                    storageCountEvidence(
+                        "removable_volume_count",
+                        info.appAccessibleVolumes.count { it.isRemovable },
+                        infoCapturedAt,
+                    ),
+                )
+            } ?: listOf(
+                storageUnavailable("total", capturedAt),
+                storageUnavailable("used", capturedAt),
+                storageUnavailable("available", capturedAt),
+                storageUnavailable("usage", capturedAt),
+                storageUnavailable("internal_access", capturedAt),
+                storageUnavailable("volume_count", capturedAt),
+                storageUnavailable("mounted_volume_count", capturedAt),
+                storageUnavailable("removable_volume_count", capturedAt),
+            )
+
+        return infoEvidence + storageBenchmarkEvidence(state, capturedAt)
+    }
+
+    private fun storageBenchmarkEvidence(
+        state: StorageTestState,
+        capturedAt: Instant,
+    ): List<DiagnosticEvidence> {
+        val result = state.benchmarkResult
+        val ratesAreUsable =
+            result?.writeMebibytesPerSecond != null &&
+                result.readMebibytesPerSecond != null &&
+                (result.error == null || result.error == StorageBenchmarkErrorCode.CLEANUP_FAILED)
+        val rateEvidence =
+            if (ratesAreUsable) {
+                listOf(
+                    storageRateEvidence("sequential_write", requireNotNull(result.writeMebibytesPerSecond), result.capturedAt),
+                    storageRateEvidence("sequential_read", requireNotNull(result.readMebibytesPerSecond), result.capturedAt),
+                )
+            } else {
+                val reason = storageBenchmarkReason(state)
+                listOf(
+                    notTested(
+                        categoryId = DiagnosticCategoryId.STORAGE,
+                        id = "sequential_write",
+                        capturedAt = capturedAt,
+                        reason = reason,
+                        source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                    ),
+                    notTested(
+                        categoryId = DiagnosticCategoryId.STORAGE,
+                        id = "sequential_read",
+                        capturedAt = capturedAt,
+                        reason = reason,
+                        source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                    ),
+                )
+            }
+        val conditions =
+            result?.let {
+                listOf(
+                    storageLongEvidence("benchmark_data_size", it.dataSizeBytes, "bytes", it.capturedAt),
+                    storageLongEvidence("benchmark_available_before", it.availableBeforeBytes, "bytes", it.capturedAt),
+                    evidence(
+                        categoryId = DiagnosticCategoryId.STORAGE,
+                        id = "benchmark_location",
+                        status = DiagnosticStatus.INFO,
+                        source = EvidenceSource.DERIVED,
+                        value = EvidenceValue.StableTextCodeValue("app_cache"),
+                        capturedAt = it.capturedAt,
+                    ),
+                ) +
+                    if (it.bytesWritten > 0L) {
+                        listOf(
+                            evidence(
+                                categoryId = DiagnosticCategoryId.STORAGE,
+                                id = "benchmark_cleanup",
+                                status =
+                                    if (it.cleanupSucceeded) {
+                                        DiagnosticStatus.INFO
+                                    } else {
+                                        DiagnosticStatus.WARNING
+                                    },
+                                source = EvidenceSource.DERIVED,
+                                reason =
+                                    if (it.cleanupSucceeded) {
+                                        null
+                                    } else {
+                                        EvidenceReasonCode.DEGRADED
+                                    },
+                                value = EvidenceValue.BooleanValue(it.cleanupSucceeded),
+                                capturedAt = it.capturedAt,
+                            ),
+                        )
+                    } else {
+                        emptyList()
+                    }
+            }.orEmpty()
+        return rateEvidence + conditions
+    }
+
+    private fun storageBenchmarkReason(state: StorageTestState): EvidenceReasonCode =
+        when {
+            state.benchmarkError == StorageBenchmarkErrorCode.INSUFFICIENT_SPACE ->
+                EvidenceReasonCode.INSUFFICIENT_SPACE
+            state.benchmarkPhase == StorageBenchmarkPhase.SKIPPED -> EvidenceReasonCode.SKIPPED
+            state.benchmarkPhase == StorageBenchmarkPhase.CANCELLED -> EvidenceReasonCode.CANCELLED
+            state.benchmarkPhase == StorageBenchmarkPhase.ERROR -> EvidenceReasonCode.ERROR
+            else -> EvidenceReasonCode.NOT_RUN
+        }
+
+    private fun storageRateEvidence(
+        id: String,
+        value: Double,
+        capturedAt: Instant,
+    ): DiagnosticEvidence =
+        evidence(
+            categoryId = DiagnosticCategoryId.STORAGE,
+            id = id,
+            status = DiagnosticStatus.INFO,
+            confidence = Confidence.LOW,
+            source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+            value = EvidenceValue.DoubleValue(value),
+            unit = EvidenceUnitCode("mebibytes_per_second"),
+            capturedAt = capturedAt,
+        )
+
+    private fun storageLongEvidence(
+        id: String,
+        value: Long,
+        unit: String,
+        capturedAt: Instant,
+    ): DiagnosticEvidence =
+        evidence(
+            categoryId = DiagnosticCategoryId.STORAGE,
+            id = id,
+            status = DiagnosticStatus.INFO,
+            value = EvidenceValue.LongValue(value),
+            unit = EvidenceUnitCode(unit),
+            capturedAt = capturedAt,
+        )
+
+    private fun storageCountEvidence(
+        id: String,
+        value: Int,
+        capturedAt: Instant,
+    ): DiagnosticEvidence =
+        evidence(
+            categoryId = DiagnosticCategoryId.STORAGE,
+            id = id,
+            status = DiagnosticStatus.INFO,
+            value = EvidenceValue.IntValue(value),
+            unit = EvidenceUnitCode("count"),
+            capturedAt = capturedAt,
+        )
+
+    private fun storageUnavailable(
+        id: String,
+        capturedAt: Instant,
+    ): DiagnosticEvidence =
+        evidence(
+            categoryId = DiagnosticCategoryId.STORAGE,
+            id = id,
+            status = DiagnosticStatus.NOT_AVAILABLE,
+            confidence = Confidence.UNAVAILABLE,
+            reason = EvidenceReasonCode.ERROR,
+            capturedAt = capturedAt,
+        )
 
     private fun buttonEvidence(
         manual: ManualCheckResults,

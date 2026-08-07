@@ -47,6 +47,12 @@ import com.insaner.fonecheck.ui.screens.sensor.GuidedSensorStatus
 import com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge
 import com.insaner.fonecheck.ui.screens.sensor.SensorTestState
 import com.insaner.fonecheck.ui.screens.sensor.SensorType
+import com.insaner.fonecheck.ui.screens.storage.AppStorageVolumeInfo
+import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkErrorCode
+import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkPhase
+import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkResult
+import com.insaner.fonecheck.ui.screens.storage.StorageInfo
+import com.insaner.fonecheck.ui.screens.storage.StorageTestState
 import com.insaner.fonecheck.ui.screens.thermal.ThermalSeverityCode
 import com.insaner.fonecheck.ui.screens.thermal.ThermalTestState
 import com.insaner.fonecheck.ui.screens.vibration.VibrationTestState
@@ -577,6 +583,87 @@ class RunAllSnapshotMapperTest {
         )
     }
 
+    @Test
+    fun storageSnapshotContainsInformationRawRatesAndTestConditions() {
+        val capturedAt = Instant.parse("2026-08-08T12:00:00Z")
+        val storageState =
+            StorageTestState(
+                info =
+                    StorageInfo(
+                        totalBytes = 256L * MEBIBYTE,
+                        usedBytes = 192L * MEBIBYTE,
+                        availableBytes = 64L * MEBIBYTE,
+                        usagePercent = 75.0,
+                        internalStorageAccessible = true,
+                        appAccessibleVolumes =
+                            listOf(
+                                AppStorageVolumeInfo(
+                                    isPrimary = true,
+                                    isRemovable = false,
+                                    stateCode = "mounted",
+                                    isMounted = true,
+                                    totalBytes = 256L * MEBIBYTE,
+                                    availableBytes = 64L * MEBIBYTE,
+                                ),
+                            ),
+                        capturedAt = capturedAt,
+                    ),
+                isInfoLoading = false,
+                benchmarkPhase = StorageBenchmarkPhase.COMPLETED,
+                benchmarkResult = storageBenchmarkResult(capturedAt),
+            )
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots = diagnosticSnapshotsWithSensitiveConnectivity().copy(storage = storageState),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(),
+                    capturedAt = capturedAt,
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+
+        assertEquals(EvidenceValue.LongValue(256L * MEBIBYTE), evidence.getValue("storage.total").value)
+        assertEquals(EvidenceValue.DoubleValue(75.0), evidence.getValue("storage.usage").value)
+        assertEquals(DiagnosticStatus.INFO, evidence.getValue("storage.sequential_write").status)
+        assertEquals(Confidence.LOW, evidence.getValue("storage.sequential_write").confidence)
+        assertEquals(EvidenceValue.DoubleValue(120.0), evidence.getValue("storage.sequential_write").value)
+        assertEquals(EvidenceValue.DoubleValue(240.0), evidence.getValue("storage.sequential_read").value)
+        assertEquals(EvidenceValue.BooleanValue(true), evidence.getValue("storage.benchmark_cleanup").value)
+        assertEquals(
+            EvidenceValue.StableTextCodeValue("app_cache"),
+            evidence.getValue("storage.benchmark_location").value,
+        )
+    }
+
+    @Test
+    fun insufficientStorageSpaceProducesNotTestedEvidenceInsteadOfFailure() {
+        val capturedAt = Instant.parse("2026-08-08T12:00:00Z")
+        val state =
+            StorageTestState(
+                isInfoLoading = false,
+                benchmarkPhase = StorageBenchmarkPhase.NOT_RUN,
+                benchmarkResult =
+                    storageBenchmarkResult(
+                        capturedAt = capturedAt,
+                        error = StorageBenchmarkErrorCode.INSUFFICIENT_SPACE,
+                    ),
+                benchmarkError = StorageBenchmarkErrorCode.INSUFFICIENT_SPACE,
+            )
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots = diagnosticSnapshotsWithSensitiveConnectivity().copy(storage = state),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(),
+                    capturedAt = capturedAt,
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+
+        assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue("storage.sequential_write").status)
+        assertEquals(EvidenceReasonCode.INSUFFICIENT_SPACE, evidence.getValue("storage.sequential_write").reason)
+        assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue("storage.sequential_read").status)
+    }
+
     private fun diagnosticSnapshotsWithSensitiveConnectivity() =
         DiagnosticSnapshots(
             device = deviceInfo(),
@@ -613,10 +700,34 @@ class RunAllSnapshotMapperTest {
                 ),
             battery = BatteryTestState(),
             thermal = ThermalTestState(),
+            storage = StorageTestState(),
             vibration = VibrationTestState(),
             buttons = ButtonTestState(),
             biometrics = BiometricTestState(),
         )
+
+    private fun storageBenchmarkResult(
+        capturedAt: Instant,
+        error: StorageBenchmarkErrorCode? = null,
+    ) =
+        StorageBenchmarkResult(
+            writeMebibytesPerSecond = 120.0.takeIf { error == null },
+            readMebibytesPerSecond = 240.0.takeIf { error == null },
+            bytesWritten = if (error == null) 64L * MEBIBYTE else 0L,
+            bytesRead = if (error == null) 64L * MEBIBYTE else 0L,
+            checksumCrc32 = if (error == null) 42L else 0L,
+            durationMillis = 1_000L,
+            dataSizeBytes = 64L * MEBIBYTE,
+            bufferSizeBytes = 64 * 1_024,
+            availableBeforeBytes = 128L * MEBIBYTE,
+            cleanupSucceeded = true,
+            capturedAt = capturedAt,
+            error = error,
+        )
+
+    private companion object {
+        const val MEBIBYTE = 1_048_576
+    }
 
     private fun simInfo(inventory: SimInventoryCode) =
         SimTelephonyInfo(

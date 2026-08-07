@@ -46,6 +46,8 @@ import com.insaner.fonecheck.ui.screens.performance.PerformanceInfoViewModel
 import com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge
 import com.insaner.fonecheck.ui.screens.sensor.SensorTestViewModel
 import com.insaner.fonecheck.ui.screens.simtelephony.SimTelephonyViewModel
+import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkPhase
+import com.insaner.fonecheck.ui.screens.storage.StorageTestViewModel
 import com.insaner.fonecheck.ui.screens.thermal.ThermalMonitoringEffect
 import com.insaner.fonecheck.ui.screens.thermal.ThermalTestViewModel
 import com.insaner.fonecheck.ui.screens.vibration.VibrationTestViewModel
@@ -64,6 +66,7 @@ private const val BUTTON_POLL_INTERVAL_MS = 100L
 private const val SPEAKER_TEST_FREQUENCY_HZ = 1_000
 private const val DEVICE_INFO_TIMEOUT_MS = 3_000L
 private const val PERFORMANCE_TIMEOUT_MS = 7_000L
+private const val STORAGE_TIMEOUT_MS = 45_000L
 
 @Composable
 fun RunAllTestsScreen(
@@ -82,6 +85,7 @@ fun RunAllTestsScreen(
     connectivityViewModel: ConnectivityTestViewModel = hiltViewModel(),
     batteryViewModel: BatteryTestViewModel = hiltViewModel(),
     thermalViewModel: ThermalTestViewModel = hiltViewModel(),
+    storageViewModel: StorageTestViewModel = hiltViewModel(),
     vibrationViewModel: VibrationTestViewModel = hiltViewModel(),
     buttonViewModel: ButtonTestViewModel = hiltViewModel(),
     biometricViewModel: BiometricTestViewModel = hiltViewModel(),
@@ -99,6 +103,7 @@ fun RunAllTestsScreen(
     val connectivityState by connectivityViewModel.state.collectAsStateWithLifecycle()
     val batteryState by batteryViewModel.state.collectAsStateWithLifecycle()
     val thermalState by thermalViewModel.state.collectAsStateWithLifecycle()
+    val storageState by storageViewModel.state.collectAsStateWithLifecycle()
     val vibrationState by vibrationViewModel.state.collectAsStateWithLifecycle()
     val buttonState by buttonViewModel.state.collectAsStateWithLifecycle()
     val biometricState by biometricViewModel.state.collectAsStateWithLifecycle()
@@ -189,6 +194,15 @@ fun RunAllTestsScreen(
                     performanceViewModel.startBenchmark()
                     performanceViewModel.state.first { it.benchmarkPhase != BenchmarkPhase.RUNNING }
                 }
+                val storageCompleted =
+                    withTimeoutOrNull(STORAGE_TIMEOUT_MS) {
+                        storageViewModel.state.first { !it.isInfoLoading }
+                        storageViewModel.startBenchmark()
+                        storageViewModel.state.first {
+                            it.benchmarkPhase != StorageBenchmarkPhase.RUNNING
+                        }
+                    } != null
+                if (!storageCompleted) storageViewModel.cancelBenchmark()
                 audioViewModel.updateHeadphoneState()
                 connectivityViewModel.onPermissionsGranted()
                 if (sessionState.permissions.microphone) {
@@ -322,6 +336,7 @@ fun RunAllTestsScreen(
                 RunAllStage.AUDIO -> audioViewModel.stopTone()
                 RunAllStage.CAMERA -> cameraViewModel.stopPreview()
                 RunAllStage.SENSORS -> sensorViewModel.clearChallenge()
+                RunAllStage.AUTOMATIC -> storageViewModel.cancelBenchmark()
                 else -> Unit
             }
         }
@@ -376,6 +391,10 @@ fun RunAllTestsScreen(
             AutomaticCheckScreen(
                 title = stringResource(R.string.run_all_automatic_title),
                 description = stringResource(R.string.run_all_automatic_description),
+                actionLabel =
+                    stringResource(R.string.storage_benchmark_skip)
+                        .takeIf { storageState.benchmarkPhase == StorageBenchmarkPhase.RUNNING },
+                onAction = storageViewModel::skipBenchmark,
                 modifier = modifier,
             )
 
@@ -458,6 +477,7 @@ fun RunAllTestsScreen(
                     connectivity = connectivityState,
                     battery = batteryState,
                     thermal = thermalState,
+                    storage = storageState,
                     vibration = vibrationState,
                     buttons = buttonState,
                     biometrics = biometricState,

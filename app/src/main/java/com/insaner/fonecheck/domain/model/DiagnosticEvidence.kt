@@ -53,6 +53,7 @@ value class EvidenceReasonCode(
         val SKIPPED = EvidenceReasonCode("skipped")
         val CANCELLED = EvidenceReasonCode("cancelled")
         val TIMEOUT = EvidenceReasonCode("timeout")
+        val INSUFFICIENT_SPACE = EvidenceReasonCode("insufficient_space")
         val ERROR = EvidenceReasonCode("error")
         val HARDWARE_UNAVAILABLE = EvidenceReasonCode("hardware_unavailable")
         val ANDROID_VERSION_UNSUPPORTED = EvidenceReasonCode("android_version_unsupported")
