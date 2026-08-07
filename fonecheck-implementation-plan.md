@@ -263,6 +263,12 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - Audio/Camera `NEXT TOUCH` -kohdat arvioitiin: mekaaninen dispatcher-korvaus ei muuta resurssien vapautusta, lataustiloja, preview-elinkaarta tai virhepolkuja, joten niiden erillisiä korjauksia ei laajennettu tähän tehtävään.
 - `PROJECT.md`-integraatio on siirretty myöhemmäksi, koska käyttäjä omistaa tiedostossa suuren commitoimattoman uudelleenkirjoituksen; tiedostoa ei muokattu tässä tehtävässä.
 
+#### Verification repair log — 2026-08-07
+
+- Käyttäjän molemmat rajatut Task 3 -komennot pysähtyivät ennen testejä `:app:checkDebugAarMetadata`-vaiheessa, koska Compose BOMin valitseman `androidx.compose.ui:ui-test-manifest:1.10.5`-komponentin AAR- ja Gradle module metadata -checksumit puuttuivat tiukasta dependency verification -metadatasta.
+- Välimuistin molemmat artefaktit vastaavat tavutasolla Google Mavenista erikseen ladattuja julkaisuja, ja SHA-256-arvot vastaavat Googlen julkaisemia `.sha256`-tiedostoja. Lisätty vain kaksi komponenttikohtaista SHA-256-pinniä; globaalia avainluottamusta tai verification-asetuksia ei muutettu.
+- Käyttäjän uusinta-ajo tarvitaan, jotta riippuvuusresoluutio voi edetä seuraavaan vaiheeseen. Tässä korjauksessa ei ajettu Gradlea.
+
 ### 4. Replace the placeholder database with the production report schema
 
 - **Objective:** Määrittää ensimmäisen julkisen version todellinen Room-skeema.
