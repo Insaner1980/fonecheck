@@ -19,7 +19,7 @@ Each item is tagged with when to address it:
 
 ## 1. Architecture & Patterns
 
-- [ ] `DECIDE` **Repository pattern not used** — ViewModels inject `@ApplicationContext` directly and read system APIs inline. Is this acceptable, or should hardware access go through repository/manager classes as TASKS.md originally planned (e.g. `DisplayTestManager`, `VibrationTestManager`)? *Decide before Phase 1 — new screens will copy whichever pattern exists.*
+- [x] `DECIDE` **Hardware access boundaries** — DECIDED: add narrow category-specific hardware probe seams only where deterministic testing requires them; do not add a general repository or manager layer.
 - [ ] `PRE-RELEASE` **ConnectivityTestViewModel is 649 lines** (`ui/screens/connectivity/ConnectivityTestViewModel.kt`) — covers WiFi, Bluetooth, NFC, GPS, and mobile network. Should it be split into focused ViewModels per connectivity domain?
 - [ ] `PRE-RELEASE` **AudioTestViewModel is 403 lines** (`ui/screens/audio/AudioTestViewModel.kt`) — handles tone generation, recording, playback, and earpiece routing. Consider splitting speaker vs microphone concerns.
 - [ ] `PRE-RELEASE` **SensorTestViewModel is 393 lines** (`ui/screens/sensor/SensorTestViewModel.kt`) — manages all sensor types + interactive challenges in one class. Evaluate extracting challenge logic.
@@ -27,7 +27,7 @@ Each item is tagged with when to address it:
 - [ ] `PRE-PHASE 4` **DeviceInfo domain model** (`domain/model/DeviceInfo.kt`) — defined but DeviceInfoViewModel constructs its own state instead of using it. Align or remove?
 - [ ] `PRE-PHASE 4` **Database layer is placeholder** — `FonecheckDatabase` contains only `PlaceholderEntity`. No DAOs, no real entities. Acceptable for current phase, but confirm Phase 4 readiness plan.
 - [ ] `NEXT TOUCH` **DI module completeness** — Verify all `@Module` classes in `di/` provide everything needed. No repository bindings exist since repositories aren't implemented.
-- [ ] `DECIDE` **No use case layer** — `domain/usecase/` directory exists (per CLAUDE.md structure) but is empty. ViewModels contain all business logic directly. Decide if this is intentional. *If skipping use cases, remove the empty directory to avoid confusion.*
+- [x] `DECIDE` **No use case layer** — DECIDED: no general use-case layer. Keep business logic in the smallest existing layer until a concrete cross-screen need justifies a narrow addition.
 - [ ] `PRE-RELEASE` **Single-activity architecture** — `MainActivity.kt` hosts the NavHost. Confirm no Activity leaks or lifecycle edge cases with permission dialogs.
 
 ---
@@ -136,7 +136,7 @@ Each item is tagged with when to address it:
 ## 10. Feature Completeness
 
 - [x] `NOW` **Phase 0 status** — DONE: project skeleton, domain models, navigation shell, Home category grid, and automatic run-all session are implemented.
-- [ ] `DECIDE` **Phase 1 not started** — Display tests (1.1), Vibration tests (1.2), Physical button tests (1.3) have no implementation. These are listed as the simplest hardware tests — prioritize?
+- [x] `DECIDE` **Implementation order** — DECIDED: follow the approved master-plan order; do not prioritize the stale Phase 1 list ahead of it.
 - [ ] `NEXT TOUCH` **Phase 2 status** — Task 2.1 (Device info): DONE. Task 2.2 (Performance info): DONE. Task 2.3 (SIM & Telephony): DONE. All three info screens are implemented.
 - [ ] `NEXT TOUCH` **Phase 3 status** — Task 3.1 (Audio): DONE. Task 3.2 (Camera): DONE. Task 3.3 (Sensor): DONE. Task 3.4 (Connectivity): DONE. Task 3.5 (Battery): DONE. Task 3.6 (Biometrics): NOT STARTED.
 - [ ] `PRE-PHASE 4` **Phase 4 incomplete** — Basic in-memory scoring and category report are implemented. Production weighting, PDF generation, persistence, and history still need real database entities.
@@ -173,11 +173,11 @@ Each item is tagged with when to address it:
 | Tag | Count | Done | Remaining | Action |
 |-----|-------|------|-----------|--------|
 | `NOW` | 13 | 11 | 2 | Remaining immediate consistency work |
-| `DECIDE` | 3 | 0 | 3 | Architectural decisions — settle before Phase 1 |
+| `DECIDE` | 3 | 3 | 0 | Resolved by the approved master plan |
 | `NEXT TOUCH` | 35 | 0 | 35 | Fix when editing that file anyway |
 | `PRE-PHASE 4` | 8 | 0 | 8 | Must be done before scoring/reports |
 | `PRE-RELEASE` | 32 | 0 | 32 | Production quality gates |
-| **Total** | **91** | **8** | **83** | |
+| **Total** | **91** | **11** | **80** | |
 
 ### Recommended order
 

@@ -226,6 +226,14 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Liian geneerinen evidence-malli tai näyttötekstin vuotaminen domainiin.
 - **Decision required:** Ei kohdan 1 jälkeen.
 
+#### Implementation/status log — 2026-08-07
+
+- Toteutettu: `DiagnosticCategoryId`/`DiagnosticCatalog`, locale-neutral evidence- ja report-sopimukset sekä puhdas `ScoreCalculator` version 1 semantiikalla.
+- `diagnosticDestinations` johdetaan catalogista ja suodattaa toteutumattomat Thermal- ja Storage-kategoriat; nykyvirran `SYSTEM`-viittaukset vaihdettiin mekaanisesti `DEVICE`-arvoon.
+- Lisätty JUnit 4.13.2 -testit score-, coverage-, validation- ja version-yhteensopivuussopimukselle.
+- Staattisesti tarkistettu lähdekoodin viittaukset ja tehtävädiffi. Gradle-acceptance on nimenomaisesti kesken, kunnes käyttäjä ajaa `./gradlew :app:testDebugUnitTest --tests "com.insaner.fonecheck.domain.model.ScoreCalculatorTest"`.
+- `PROJECT.md`-päivitys on pending integration käyttäjän omien commitoimattomien muutosten kanssa; tiedostoa ei muokattu tässä tehtävässä.
+
 ### 3. Establish deterministic runtime seams and the test foundation
 
 - **Objective:** Mahdollistaa laite-API-koodin, ajastusten ja lifecycle-polkujen todistettava testaaminen.

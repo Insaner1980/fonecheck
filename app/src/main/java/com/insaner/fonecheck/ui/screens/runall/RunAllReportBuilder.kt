@@ -46,7 +46,7 @@ object RunAllReportBuilder {
     ): List<CategoryTestResult> =
         diagnosticDestinations.map { destination ->
             when (destination.category) {
-                TestCategory.SYSTEM -> systemResults(context, snapshots.device)
+                TestCategory.DEVICE -> systemResults(context, snapshots.device)
                 TestCategory.PERFORMANCE -> performanceResults(context, snapshots.performance)
                 TestCategory.SIM -> simResults(context, snapshots.sim, permissions.phone)
                 TestCategory.DISPLAY -> displayResults(context, snapshots.display, manual.display)
@@ -93,12 +93,12 @@ object RunAllReportBuilder {
             }
         return category(
             context = context,
-            category = TestCategory.SYSTEM,
+            category = TestCategory.DEVICE,
             results =
                 listOf(
                     result(
                         context,
-                        TestCategory.SYSTEM,
+                        TestCategory.DEVICE,
                         "identity",
                         R.string.device_info_title,
                         TestStatus.Pass,
@@ -106,7 +106,7 @@ object RunAllReportBuilder {
                     ),
                     result(
                         context,
-                        TestCategory.SYSTEM,
+                        TestCategory.DEVICE,
                         "security",
                         R.string.run_all_check_security,
                         securityStatus,
