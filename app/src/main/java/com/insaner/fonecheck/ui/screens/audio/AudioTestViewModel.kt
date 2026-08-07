@@ -24,7 +24,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.PI
-import kotlin.math.log10
 import kotlin.math.sin
 
 enum class AudioTestType {
@@ -36,12 +35,19 @@ enum class AudioTestType {
     VOLUME_BUTTONS,
 }
 
+enum class AudioManualCheck {
+    SPEAKER,
+    STEREO,
+    EARPIECE,
+    PLAYBACK,
+}
+
 data class AudioTestState(
     val isPlaying: Boolean = false,
     val isRecording: Boolean = false,
     val currentFrequency: Int = 440,
     val stereoChannel: StereoChannel = StereoChannel.BOTH,
-    val decibelLevel: Float = 0f,
+    val relativeInputLevel: Float = 0f,
     val hasRecordedAudio: Boolean = false,
     val isPlayingRecording: Boolean = false,
     val headphonePlugged: Boolean = false,
@@ -53,6 +59,7 @@ data class AudioTestState(
     val volumeDownPressed: Boolean = false,
     val volumeUpCount: Int = 0,
     val volumeDownCount: Int = 0,
+    val manualResults: Map<AudioManualCheck, Boolean> = emptyMap(),
 )
 
 enum class StereoChannel { LEFT, RIGHT, BOTH }
@@ -72,10 +79,12 @@ class AudioTestViewModel
         private var toneJob: Job? = null
         private var recordJob: Job? = null
         private var playbackJob: Job? = null
-        private var decibelJob: Job? = null
-        private var audioTrack: AudioTrack? = null
-        private var audioRecord: AudioRecord? = null
         private var recordedData: ShortArray? = null
+        private val toneOwner = AudioResourceOwner<AudioTrack>(::stopAndRelease)
+        private val playbackOwner = AudioResourceOwner<AudioTrack>(::stopAndRelease)
+        private val recordOwner = AudioResourceOwner<AudioRecord>(::stopAndRelease)
+        private val routeController = AndroidAudioRouteController(audioManager)
+        private val routeOwner = AudioResourceOwner<AudioRouteSession>(AudioRouteSession::close)
 
         private val sampleRate = 44100
 
@@ -107,92 +116,105 @@ class AudioTestViewModel
             streamType: Int = AudioManager.STREAM_MUSIC,
         ) {
             stopTone()
+            stopPlayback()
+            val route = if (streamType == AudioManager.STREAM_VOICE_CALL) AudioOutputRoute.EARPIECE else AudioOutputRoute.MEDIA
+            val routeSession = openRoute(route) ?: return
             _state.value = _state.value.copy(isPlaying = true, currentFrequency = frequencyHz)
 
             toneJob =
                 viewModelScope.launch(ioDispatcher) {
-                    val usageType =
-                        when (streamType) {
-                            AudioManager.STREAM_VOICE_CALL -> AudioAttributes.USAGE_VOICE_COMMUNICATION
-                            else -> AudioAttributes.USAGE_MEDIA
+                    var track: AudioTrack? = null
+                    try {
+                        val created =
+                            createAudioTrack(
+                                channelMask = AudioFormat.CHANNEL_OUT_MONO,
+                                usage =
+                                    if (streamType == AudioManager.STREAM_VOICE_CALL) {
+                                        AudioAttributes.USAGE_VOICE_COMMUNICATION
+                                    } else {
+                                        AudioAttributes.USAGE_MEDIA
+                                    },
+                                contentType =
+                                    if (streamType == AudioManager.STREAM_VOICE_CALL) {
+                                        AudioAttributes.CONTENT_TYPE_SPEECH
+                                    } else {
+                                        AudioAttributes.CONTENT_TYPE_MUSIC
+                                    },
+                            )
+                        track = created.first
+                        toneOwner.replace(created.first)
+                        created.first.play()
+                        val bufferSize = created.second
+                        val buffer = ShortArray(bufferSize / 2)
+                        var phase = 0.0
+                        val phaseIncrement = 2.0 * PI * frequencyHz / sampleRate
+                        while (isActive) {
+                            for (i in buffer.indices) {
+                                buffer[i] = (sin(phase) * Short.MAX_VALUE).toInt().toShort()
+                                phase += phaseIncrement
+                            }
+                            created.first.write(buffer, 0, buffer.size)
                         }
-                    val contentType =
-                        when (streamType) {
-                            AudioManager.STREAM_VOICE_CALL -> AudioAttributes.CONTENT_TYPE_SPEECH
-                            else -> AudioAttributes.CONTENT_TYPE_MUSIC
-                        }
-                    val (track, bufferSize) =
-                        createAudioTrack(
-                            channelMask = AudioFormat.CHANNEL_OUT_MONO,
-                            usage = usageType,
-                            contentType = contentType,
-                        )
-
-                    audioTrack = track
-                    track.play()
-
-                    val buffer = ShortArray(bufferSize / 2)
-                    var phase = 0.0
-                    val phaseIncrement = 2.0 * PI * frequencyHz / sampleRate
-
-                    while (isActive) {
-                        for (i in buffer.indices) {
-                            buffer[i] = (sin(phase) * Short.MAX_VALUE).toInt().toShort()
-                            phase += phaseIncrement
-                        }
-                        track.write(buffer, 0, buffer.size)
+                    } finally {
+                        track?.let(toneOwner::release)
+                        routeOwner.release(routeSession)
+                        _state.value = _state.value.copy(isPlaying = false)
                     }
-                    track.stop()
-                    track.release()
                 }
         }
 
         fun playStereoTone(channel: StereoChannel) {
             stopTone()
+            stopPlayback()
+            val routeSession = openRoute(AudioOutputRoute.MEDIA) ?: return
             _state.value = _state.value.copy(isPlaying = true, stereoChannel = channel)
             val frequencyHz = 440
 
             toneJob =
                 viewModelScope.launch(ioDispatcher) {
-                    val (track, bufferSize) =
-                        createAudioTrack(
-                            channelMask = AudioFormat.CHANNEL_OUT_STEREO,
-                            usage = AudioAttributes.USAGE_MEDIA,
-                            contentType = AudioAttributes.CONTENT_TYPE_MUSIC,
-                        )
-
-                    audioTrack = track
-                    track.play()
-
-                    val buffer = ShortArray(bufferSize / 2)
-                    var phase = 0.0
-                    val phaseIncrement = 2.0 * PI * frequencyHz / sampleRate
-
-                    while (isActive) {
-                        var i = 0
-                        while (i < buffer.size - 1) {
-                            val sample = (sin(phase) * Short.MAX_VALUE).toInt().toShort()
-                            when (channel) {
-                                StereoChannel.LEFT -> {
-                                    buffer[i] = sample // Left
-                                    buffer[i + 1] = 0 // Right silent
+                    var track: AudioTrack? = null
+                    try {
+                        val created =
+                            createAudioTrack(
+                                channelMask = AudioFormat.CHANNEL_OUT_STEREO,
+                                usage = AudioAttributes.USAGE_MEDIA,
+                                contentType = AudioAttributes.CONTENT_TYPE_MUSIC,
+                            )
+                        track = created.first
+                        toneOwner.replace(created.first)
+                        created.first.play()
+                        val bufferSize = created.second
+                        val buffer = ShortArray(bufferSize / 2)
+                        var phase = 0.0
+                        val phaseIncrement = 2.0 * PI * frequencyHz / sampleRate
+                        while (isActive) {
+                            var i = 0
+                            while (i < buffer.size - 1) {
+                                val sample = (sin(phase) * Short.MAX_VALUE).toInt().toShort()
+                                when (channel) {
+                                    StereoChannel.LEFT -> {
+                                        buffer[i] = sample
+                                        buffer[i + 1] = 0
+                                    }
+                                    StereoChannel.RIGHT -> {
+                                        buffer[i] = 0
+                                        buffer[i + 1] = sample
+                                    }
+                                    StereoChannel.BOTH -> {
+                                        buffer[i] = sample
+                                        buffer[i + 1] = sample
+                                    }
                                 }
-                                StereoChannel.RIGHT -> {
-                                    buffer[i] = 0 // Left silent
-                                    buffer[i + 1] = sample // Right
-                                }
-                                StereoChannel.BOTH -> {
-                                    buffer[i] = sample
-                                    buffer[i + 1] = sample
-                                }
+                                phase += phaseIncrement
+                                i += 2
                             }
-                            phase += phaseIncrement
-                            i += 2
+                            created.first.write(buffer, 0, buffer.size)
                         }
-                        track.write(buffer, 0, buffer.size)
+                    } finally {
+                        track?.let(toneOwner::release)
+                        routeOwner.release(routeSession)
+                        _state.value = _state.value.copy(isPlaying = false)
                     }
-                    track.stop()
-                    track.release()
                 }
         }
 
@@ -203,28 +225,21 @@ class AudioTestViewModel
         fun stopTone() {
             toneJob?.cancel()
             toneJob = null
-            audioTrack?.let {
-                try {
-                    it.stop()
-                    it.release()
-                } catch (_: Exception) {
-                }
-            }
-            audioTrack = null
+            toneOwner.release()
+            routeOwner.release()
             _state.value = _state.value.copy(isPlaying = false)
         }
 
         @Suppress("MissingPermission")
         fun startRecording(maxDurationMs: Long = DEFAULT_RECORDING_DURATION_MS) {
-            stopRecording()
-            if (
+            val permissionGranted =
                 ContextCompat.checkSelfPermission(
                     getApplication(),
                     Manifest.permission.RECORD_AUDIO,
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                return
-            }
+                ) == PackageManager.PERMISSION_GRANTED
+            val hasMicrophone = getApplication<Application>().packageManager.hasSystemFeature(PackageManager.FEATURE_MICROPHONE)
+            if (!AudioRecordingPolicy.canStart(hasMicrophone, permissionGranted, _state.value.isRecording)) return
+            stopRecording()
             val bufferSize =
                 AudioRecord.getMinBufferSize(
                     sampleRate,
@@ -247,8 +262,8 @@ class AudioTestViewModel
                 return
             }
 
-            audioRecord = record
-            _state.value = _state.value.copy(isRecording = true, decibelLevel = 0f)
+            recordOwner.replace(record)
+            _state.value = _state.value.copy(isRecording = true, relativeInputLevel = 0f)
 
             val maxRecordSamples =
                 (
@@ -259,74 +274,66 @@ class AudioTestViewModel
 
             recordJob =
                 viewModelScope.launch(ioDispatcher) {
-                    record.startRecording()
-                    val buffer = ShortArray(bufferSize / 2)
-
-                    while (isActive && totalSamples < maxRecordSamples) {
-                        val read = record.read(buffer, 0, buffer.size)
-                        if (read > 0) {
-                            val copyCount = minOf(read, maxRecordSamples - totalSamples)
-                            buffer.copyInto(allSamples, totalSamples, 0, copyCount)
-                            totalSamples += copyCount
-
-                            // Calculate dB level
-                            var sum = 0.0
-                            for (i in 0 until read) {
-                                sum += buffer[i].toDouble() * buffer[i].toDouble()
+                    try {
+                        record.startRecording()
+                        val buffer = ShortArray(bufferSize / 2)
+                        while (isActive && totalSamples < maxRecordSamples) {
+                            val read = record.read(buffer, 0, buffer.size)
+                            if (read > 0) {
+                                val copyCount = minOf(read, maxRecordSamples - totalSamples)
+                                buffer.copyInto(allSamples, totalSamples, 0, copyCount)
+                                totalSamples += copyCount
+                                _state.value =
+                                    _state.value.copy(
+                                        relativeInputLevel = RelativeInputLevel.fromPcm16(buffer, read),
+                                    )
                             }
-                            val rms = kotlin.math.sqrt(sum / read)
-                            val db = if (rms > 0) (20 * log10(rms / Short.MAX_VALUE) + 90).toFloat() else 0f
-                            _state.value = _state.value.copy(decibelLevel = db.coerceIn(0f, 90f))
                         }
+                    } finally {
+                        recordOwner.release(record)
+                        recordedData = allSamples.copyOf(totalSamples)
+                        _state.value =
+                            _state.value.copy(
+                                isRecording = false,
+                                hasRecordedAudio = totalSamples > 0,
+                            )
                     }
-
-                    record.stop()
-                    record.release()
-                    recordedData = allSamples.copyOf(totalSamples)
-                    _state.value =
-                        _state.value.copy(
-                            isRecording = false,
-                            hasRecordedAudio = totalSamples > 0,
-                        )
                 }
         }
 
         fun stopRecording() {
             recordJob?.cancel()
             recordJob = null
-            audioRecord?.let {
-                try {
-                    it.stop()
-                    it.release()
-                } catch (_: Exception) {
-                }
-            }
-            audioRecord = null
-            decibelJob?.cancel()
-            decibelJob = null
+            recordOwner.release()
             _state.value = _state.value.copy(isRecording = false)
         }
 
         fun playRecording() {
             val data = recordedData ?: return
+            stopTone()
             stopPlayback()
+            val routeSession = openRoute(AudioOutputRoute.MEDIA) ?: return
             _state.value = _state.value.copy(isPlayingRecording = true)
 
             playbackJob =
                 viewModelScope.launch(ioDispatcher) {
-                    val track =
-                        createAudioTrack(
-                            channelMask = AudioFormat.CHANNEL_OUT_MONO,
-                            usage = AudioAttributes.USAGE_MEDIA,
-                            contentType = AudioAttributes.CONTENT_TYPE_MUSIC,
-                        ).first
-
-                    track.play()
-                    track.write(data, 0, data.size)
-                    track.stop()
-                    track.release()
-
-                    _state.value = _state.value.copy(isPlayingRecording = false)
+                    var track: AudioTrack? = null
+                    try {
+                        val created =
+                            createAudioTrack(
+                                channelMask = AudioFormat.CHANNEL_OUT_MONO,
+                                usage = AudioAttributes.USAGE_MEDIA,
+                                contentType = AudioAttributes.CONTENT_TYPE_MUSIC,
+                            ).first
+                        track = created
+                        playbackOwner.replace(created)
+                        created.play()
+                        created.write(data, 0, data.size)
+                    } finally {
+                        track?.let(playbackOwner::release)
+                        routeOwner.release(routeSession)
+                        _state.value = _state.value.copy(isPlayingRecording = false)
+                    }
                 }
         }
 
@@ -366,7 +373,16 @@ class AudioTestViewModel
         fun stopPlayback() {
             playbackJob?.cancel()
             playbackJob = null
+            playbackOwner.release()
+            routeOwner.release()
             _state.value = _state.value.copy(isPlayingRecording = false)
+        }
+
+        fun recordManualResult(
+            check: AudioManualCheck,
+            passed: Boolean,
+        ) {
+            _state.value = _state.value.copy(manualResults = _state.value.manualResults + (check to passed))
         }
 
         fun updateVolumeState() {
@@ -419,6 +435,25 @@ class AudioTestViewModel
             stopTone()
             stopRecording()
             stopPlayback()
+            recordedData = null
+        }
+
+        private fun stopAndRelease(track: AudioTrack) {
+            runCatching { track.stop() }
+            runCatching { track.release() }
+        }
+
+        private fun stopAndRelease(record: AudioRecord) {
+            runCatching { record.stop() }
+            runCatching { record.release() }
+        }
+
+        private fun openRoute(route: AudioOutputRoute): AudioRouteSession? {
+            routeOwner.release()
+            val session = AudioRouteSession(routeController)
+            if (!session.open(route)) return null
+            routeOwner.replace(session)
+            return session
         }
 
         companion object {

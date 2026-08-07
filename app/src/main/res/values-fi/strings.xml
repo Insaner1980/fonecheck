@@ -155,8 +155,14 @@
     <string name="audio_record">Nauhoita</string>
     <string name="audio_stop_recording">Lopeta nauhoitus</string>
     <string name="audio_playback">Toista</string>
-    <string name="audio_level">Taso</string>
-    <string name="audio_db_value">%.1f dB</string>
+    <string name="audio_level">Suhteellinen tulotaso</string>
+    <string name="audio_relative_level_value">%.0f%%</string>
+    <string name="audio_relative_level_disclaimer">Vain suhteellinen PCM-amplitudi, ei kalibroitu äänenpaine- tai äänekkyysmittaus. Tallenne säilyy vain muistissa ja poistetaan testin sulkeutuessa.</string>
+    <string name="audio_manual_confirmation">Vahvista kuulemasi. Laitetunnistus ei yksin todista kuuluvaa ääntä.</string>
+    <string name="audio_manual_problem">Kuulin ongelman</string>
+    <string name="audio_manual_pass">Kuulosti oikealta</string>
+    <string name="audio_manual_passed">Manuaalinen tulos: läpäisty</string>
+    <string name="audio_manual_issue_saved">Manuaalinen tulos: ongelma tallennettu</string>
     <string name="audio_left">Vasen</string>
     <string name="audio_right">Oikea</string>
     <string name="audio_both">Molemmat</string>

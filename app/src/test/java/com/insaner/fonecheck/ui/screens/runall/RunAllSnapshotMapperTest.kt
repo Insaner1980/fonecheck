@@ -200,6 +200,26 @@ class RunAllSnapshotMapperTest {
     }
 
     @Test
+    fun capturedMicrophoneSamplesRemainInformationalUntilUserConfirmsPlayback() {
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots =
+                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                            audio = AudioTestState(hasRecordedAudio = true),
+                        ),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(microphone = true),
+                    capturedAt = Instant.parse("2026-08-08T12:00:00Z"),
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+                .getValue("audio.microphone")
+
+        assertEquals(DiagnosticStatus.INFO, evidence.status)
+        assertEquals(EvidenceValue.BooleanValue(true), evidence.value)
+    }
+
+    @Test
     fun performanceBenchmarkProducesInformationalRawEvidence() {
         val benchmarkCapturedAt = Instant.parse("2026-08-07T12:00:10Z")
         val snapshots = diagnosticSnapshotsWithSensitiveConnectivity()

@@ -169,6 +169,10 @@ private fun SpeakerTestCard(
         if (state.isPlaying) {
             StopToneButton(viewModel::stopTone)
         }
+        AudioManualResultButtons(
+            result = state.manualResults[AudioManualCheck.SPEAKER],
+            onResult = { viewModel.recordManualResult(AudioManualCheck.SPEAKER, it) },
+        )
     }
 }
 
@@ -234,6 +238,10 @@ private fun StereoTestCard(
         if (state.isPlaying) {
             StopToneButton(viewModel::stopTone)
         }
+        AudioManualResultButtons(
+            result = state.manualResults[AudioManualCheck.STEREO],
+            onResult = { viewModel.recordManualResult(AudioManualCheck.STEREO, it) },
+        )
     }
 }
 
@@ -263,6 +271,10 @@ private fun EarpieceTestCard(
                 },
             )
         }
+        AudioManualResultButtons(
+            result = state.manualResults[AudioManualCheck.EARPIECE],
+            onResult = { viewModel.recordManualResult(AudioManualCheck.EARPIECE, it) },
+        )
     }
 }
 
@@ -284,11 +296,17 @@ private fun MicrophoneTestCard(
             modifier = Modifier.padding(bottom = 12.dp),
         )
 
-        // dB meter
+        Text(
+            text = stringResource(R.string.audio_relative_level_disclaimer),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
+
         if (state.isRecording) {
-            val animatedDb by animateFloatAsState(
-                targetValue = state.decibelLevel / 90f,
-                label = "db",
+            val animatedLevel by animateFloatAsState(
+                targetValue = state.relativeInputLevel,
+                label = "relative_input_level",
             )
             Column(modifier = Modifier.padding(bottom = 12.dp)) {
                 Row(
@@ -302,7 +320,7 @@ private fun MicrophoneTestCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
-                        text = stringResource(R.string.audio_db_value, state.decibelLevel),
+                        text = stringResource(R.string.audio_relative_level_value, state.relativeInputLevel * 100f),
                         style =
                             MaterialTheme.typography.bodySmall.copy(
                                 fontFamily = JetBrainsMono,
@@ -310,15 +328,15 @@ private fun MicrophoneTestCard(
                             ),
                         color =
                             when {
-                                state.decibelLevel > 70 -> Red400
-                                state.decibelLevel > 40 -> Yellow400
+                                state.relativeInputLevel > 0.75f -> Red400
+                                state.relativeInputLevel > 0.4f -> Yellow400
                                 else -> Green400
                             },
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 LinearProgressIndicator(
-                    progress = { animatedDb },
+                    progress = { animatedLevel },
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -326,8 +344,8 @@ private fun MicrophoneTestCard(
                             .clip(RoundedCornerShape(4.dp)),
                     color =
                         when {
-                            state.decibelLevel > 70 -> Red400
-                            state.decibelLevel > 40 -> Yellow400
+                            state.relativeInputLevel > 0.75f -> Red400
+                            state.relativeInputLevel > 0.4f -> Yellow400
                             else -> Green400
                         },
                     trackColor = Neutral700,
@@ -397,6 +415,53 @@ private fun MicrophoneTestCard(
                         },
                 )
             }
+        }
+        if (state.hasRecordedAudio) {
+            AudioManualResultButtons(
+                result = state.manualResults[AudioManualCheck.PLAYBACK],
+                onResult = { viewModel.recordManualResult(AudioManualCheck.PLAYBACK, it) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun AudioManualResultButtons(
+    result: Boolean?,
+    onResult: (Boolean) -> Unit,
+) {
+    Column(
+        modifier = Modifier.padding(top = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.audio_manual_confirmation),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            OutlinedButton(
+                onClick = { onResult(false) },
+                modifier = Modifier.weight(1f),
+            ) {
+                Text(stringResource(R.string.audio_manual_problem))
+            }
+            Button(
+                onClick = { onResult(true) },
+                modifier = Modifier.weight(1f),
+            ) {
+                Text(stringResource(R.string.audio_manual_pass))
+            }
+        }
+        result?.let {
+            Text(
+                text = stringResource(if (it) R.string.audio_manual_passed else R.string.audio_manual_issue_saved),
+                style = MaterialTheme.typography.labelMedium,
+                color = if (it) Green400 else Red400,
+            )
         }
     }
 }

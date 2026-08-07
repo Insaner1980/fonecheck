@@ -157,8 +157,14 @@
     <string name="audio_record">Record</string>
     <string name="audio_stop_recording">Stop Recording</string>
     <string name="audio_playback">Play Back</string>
-    <string name="audio_level">Level</string>
-    <string name="audio_db_value">%.1f dB</string>
+    <string name="audio_level">Relative input level</string>
+    <string name="audio_relative_level_value">%.0f%%</string>
+    <string name="audio_relative_level_disclaimer">Relative PCM amplitude only, not a calibrated sound-pressure or loudness measurement. Recorded audio stays in memory and is discarded when the test closes.</string>
+    <string name="audio_manual_confirmation">Confirm what you heard. Device detection alone cannot verify audible output.</string>
+    <string name="audio_manual_problem">Problem heard</string>
+    <string name="audio_manual_pass">Sounded correct</string>
+    <string name="audio_manual_passed">Manual result: passed</string>
+    <string name="audio_manual_issue_saved">Manual result: issue saved</string>
     <string name="audio_left">Left</string>
     <string name="audio_right">Right</string>
     <string name="audio_both">Both</string>

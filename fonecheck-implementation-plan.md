@@ -484,6 +484,15 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Reititys vaihtelee OEM:n ja kytkettyjen laitteiden mukaan.
 - **Decision required:** Kyllä, Full Check audio -laajuus kohdassa 1.
 
+#### Implementation/status log — 2026-08-08
+
+- Lisätty tests-first idempotentti `AudioResourceOwner`, audio route -session, recording-policy ja relative PCM input level -laskenta. Ensimmäinen kohdistettu ajo oli odotettu RED vain puuttuvista sopimussymboleista; repeated replace/stop, cancellation-close, permission denial sekä mute/max-amplitudi ovat unit-katettuja.
+- Tone-, stereo-, earpiece-, recording- ja playback-polut käyttävät erillisiä yhden omistajan resursseja. Stop/cancellation, workerin `finally` ja `onCleared` voivat kaikki yrittää sulkea resurssin, mutta vain owner vapauttaa sen kerran. Myös AudioTrack-creation-virhe palauttaa focus/route-tilan.
+- Output pyytää transientin audio focusin. Media käyttää mediareittiä; earpiece käyttää communication modea ja API 31+:ssa built-in-earpiece communication devicea, jonka jälkeen aiempi mode/reitti palautetaan. Uuden output-testin käynnistys pysäyttää edellisen tone/playback-session.
+- Mikrofonin lupa- ja hardware-policy estää silent no-opin ja duplicate startin. Input UI näyttää vain suhteellisen 0–100 % PCM-amplitudin ja eksplisiittisen ei-kalibroidun rajoitteen; PCM säilyy vain muistissa toistettavuutta varten ja tyhjennetään ViewModelin sulkeutuessa.
+- Speaker-, stereo-, earpiece- ja recording playback -kuuntelut vaativat standalone-UI:ssa eksplisiittisen onnistui/ongelma-vahvistuksen. Full Checkin microphone sample -evidence on `INFO`, ei automaattinen PASS; kuultu speaker-tulos säilyy user-confirmation-evidencenä.
+- `AudioRuntimePolicyTest`, `RunAllSnapshotMapperTest`, koko `:app:testDebugUnitTest` ja Android-testien Kotlin-käännös läpäisevät. Wired-, Bluetooth- ja earpiece-laitekokeita ei voitu ajaa, koska yhdistettyä Android-laitetta ei ole.
+
 ### 13. Complete Camera enumeration, permissions, and lifecycle safety
 
 - **Objective:** Testata kaikki julkisesti käyttäjän saavutettavat kamerat ilman kuvahistorian tallennusta.

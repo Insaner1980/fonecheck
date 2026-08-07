@@ -311,14 +311,22 @@ object RunAllSnapshotMapper {
                 )
             } else {
                 val recorded = snapshots.audio.hasRecordedAudio
-                evidence(
-                    categoryId = DiagnosticCategoryId.AUDIO,
-                    id = "microphone",
-                    status = if (recorded) DiagnosticStatus.PASS else DiagnosticStatus.FAIL,
-                    reason = EvidenceReasonCode.ERROR.takeIf { !recorded },
-                    value = EvidenceValue.BooleanValue(recorded),
-                    capturedAt = capturedAt,
-                )
+                if (recorded) {
+                    evidence(
+                        categoryId = DiagnosticCategoryId.AUDIO,
+                        id = "microphone",
+                        status = DiagnosticStatus.INFO,
+                        value = EvidenceValue.BooleanValue(true),
+                        capturedAt = capturedAt,
+                    )
+                } else {
+                    notTested(
+                        categoryId = DiagnosticCategoryId.AUDIO,
+                        id = "microphone",
+                        capturedAt = capturedAt,
+                        reason = EvidenceReasonCode.ERROR,
+                    )
+                }
             }
         return listOf(
             manualEvidence(DiagnosticCategoryId.AUDIO, "speaker", manual.speaker, capturedAt),
