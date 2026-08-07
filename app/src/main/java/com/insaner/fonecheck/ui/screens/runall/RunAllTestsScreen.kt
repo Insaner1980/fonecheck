@@ -26,6 +26,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.model.DeviceInfo
 import com.insaner.fonecheck.domain.model.ReportAppContext
 import com.insaner.fonecheck.domain.model.ReportDeviceContext
 import com.insaner.fonecheck.domain.permission.PermissionKind
@@ -47,6 +48,7 @@ import com.insaner.fonecheck.ui.screens.simtelephony.SimTelephonyViewModel
 import com.insaner.fonecheck.ui.screens.vibration.VibrationTestViewModel
 import java.time.Instant
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -57,6 +59,7 @@ private const val SPEAKER_TONE_DURATION_MS = 1_500L
 private const val CAMERA_TEST_TIMEOUT_MS = 8_000L
 private const val BUTTON_POLL_INTERVAL_MS = 100L
 private const val SPEAKER_TEST_FREQUENCY_HZ = 1_000
+private const val DEVICE_INFO_TIMEOUT_MS = 3_000L
 
 @Composable
 fun RunAllTestsScreen(
@@ -81,6 +84,7 @@ fun RunAllTestsScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     val sessionState by sessionViewModel.state.collectAsStateWithLifecycle()
+    val deviceState by deviceViewModel.state.collectAsStateWithLifecycle()
     val displayState by displayViewModel.state.collectAsStateWithLifecycle()
     val audioState by audioViewModel.state.collectAsStateWithLifecycle()
     val cameraState by cameraViewModel.state.collectAsStateWithLifecycle()
@@ -159,6 +163,9 @@ fun RunAllTestsScreen(
             RunAllStage.PERMISSIONS -> Unit
 
             RunAllStage.AUTOMATIC -> {
+                withTimeoutOrNull(DEVICE_INFO_TIMEOUT_MS) {
+                    deviceViewModel.state.first { !it.isLoading }
+                }
                 audioViewModel.updateHeadphoneState()
                 connectivityViewModel.onPermissionsGranted()
                 if (sessionState.permissions.microphone) {
@@ -395,9 +402,18 @@ fun RunAllTestsScreen(
             )
 
         RunAllStage.RESULTS -> {
+            val deviceInfo = deviceState.info
+            if (deviceInfo == null) {
+                AutomaticCheckScreen(
+                    title = stringResource(R.string.run_all_results_title),
+                    description = stringResource(R.string.run_all_results_description),
+                    modifier = modifier,
+                )
+                return
+            }
             val snapshots =
                 DiagnosticSnapshots(
-                    device = deviceViewModel.deviceInfo,
+                    device = deviceInfo,
                     performance = performanceViewModel.performanceInfo,
                     sim = simState,
                     display = displayState,
@@ -426,8 +442,8 @@ fun RunAllTestsScreen(
                     )
                 }
             val deviceContext =
-                remember(deviceViewModel.deviceInfo) {
-                    with(deviceViewModel.deviceInfo) {
+                remember(deviceInfo) {
+                    with(deviceInfo) {
                         ReportDeviceContext(
                             manufacturer = manufacturer,
                             model = model,
@@ -435,7 +451,7 @@ fun RunAllTestsScreen(
                             product = product,
                             androidRelease = androidVersion,
                             apiLevel = apiLevel,
-                            securityPatch = securityPatch,
+                            securityPatch = securityPatch.takeUnless { it == DeviceInfo.UNAVAILABLE },
                         )
                     }
                 }

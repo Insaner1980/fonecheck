@@ -127,8 +127,28 @@ class RunAllSnapshotMapperTest {
         assertEquals(DiagnosticStatus.INFO, evidence.status)
         assertEquals(Confidence.LOW, evidence.confidence)
         assertEquals(EvidenceSource.ESTIMATE, evidence.source)
-        assertEquals(EvidenceValue.BooleanValue(false), evidence.value)
+        assertEquals(EvidenceValue.StableTextCodeValue("no_known_artifact_detected"), evidence.value)
         assertEquals(Instant.parse("2026-08-07T12:00:00Z"), evidence.capturedAt)
+    }
+
+    @Test
+    fun detectedRootArtifactProducesLowConfidenceWarning() {
+        val snapshots = diagnosticSnapshotsWithSensitiveConnectivity()
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots = snapshots.copy(device = deviceInfo(rootArtifactDetected = true)),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(),
+                    capturedAt = Instant.parse("2026-08-07T12:00:30Z"),
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+                .getValue("device.security")
+
+        assertEquals(DiagnosticStatus.WARNING, evidence.status)
+        assertEquals(Confidence.LOW, evidence.confidence)
+        assertEquals(EvidenceReasonCode.DEGRADED, evidence.reason)
+        assertEquals(EvidenceValue.StableTextCodeValue("known_artifact_detected"), evidence.value)
     }
 
     private fun diagnosticSnapshotsWithSensitiveConnectivity() =
@@ -178,7 +198,7 @@ class RunAllSnapshotMapperTest {
             biometrics = BiometricTestState(),
         )
 
-    private fun deviceInfo() =
+    private fun deviceInfo(rootArtifactDetected: Boolean = false) =
         DeviceInfo(
             model = "model",
             manufacturer = "manufacturer",
@@ -192,7 +212,7 @@ class RunAllSnapshotMapperTest {
             basebandVersion = "baseband",
             bootloaderVersion = "bootloader",
             widevineLevel = "L1",
-            rootArtifactDetected = false,
+            rootArtifactDetected = rootArtifactDetected,
             developerOptionsEnabled = false,
             usbDebuggingEnabled = false,
             capturedAt = Instant.parse("2026-08-07T12:00:00Z"),

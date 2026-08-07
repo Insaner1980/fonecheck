@@ -20,6 +20,15 @@
     <string name="label_bootloader">Käynnistyslatain</string>
     <string name="label_widevine">Widevine-taso</string>
     <string name="label_root_detected">Root havaittu</string>
+    <string name="label_root_artifact">Tunnettu root-jälki</string>
+    <string name="device_root_artifact_detected">Havaittu</string>
+    <string name="device_root_artifact_not_detected">Ei havaittu</string>
+    <string name="device_root_heuristic_disclaimer">Tämä rajattu tarkistus etsii vain lyhyttä luetteloa tunnetuista tiedostoista. Havaitsematta jääminen ei todista, että laite olisi vaarantumaton.</string>
+    <string name="device_value_unavailable">Ei saatavilla</string>
+    <string name="device_captured_at">Kerätty</string>
+    <string name="device_refresh">Päivitä laitetiedot</string>
+    <string name="device_capture_error_title">Laitetietoja ei ole saatavilla</string>
+    <string name="device_capture_error_description">fonecheck ei voinut päivittää laitteen tilannekuvaa. Viimeisin onnistunut tilannekuva pysyy näkyvissä.</string>
     <string name="label_developer_options">Kehittäjäasetukset</string>
     <string name="label_usb_debugging">USB-virheenkorjaus</string>
 

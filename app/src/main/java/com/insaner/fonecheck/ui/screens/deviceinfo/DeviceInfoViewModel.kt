@@ -1,76 +1,62 @@
 package com.insaner.fonecheck.ui.screens.deviceinfo
 
-import android.app.Application
-import android.media.MediaDrm
-import android.os.Build
-import android.provider.Settings
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.insaner.fonecheck.di.IoDispatcher
 import com.insaner.fonecheck.domain.model.DeviceInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.io.File
-import java.util.UUID
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+data class DeviceInfoState(
+    val info: DeviceInfo? = null,
+    val isLoading: Boolean = false,
+    val error: String? = null,
+)
 
 @HiltViewModel
 class DeviceInfoViewModel
     @Inject
     constructor(
-        application: Application,
-    ) : AndroidViewModel(application) {
-        val deviceInfo: DeviceInfo = gatherDeviceInfo(application)
+        private val deviceInfoProvider: DeviceInfoProvider,
+        @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    ) : ViewModel() {
+        private val _state = MutableStateFlow(DeviceInfoState(isLoading = true))
+        val state: StateFlow<DeviceInfoState> = _state.asStateFlow()
+        private var refreshJob: Job? = null
 
-        private fun gatherDeviceInfo(application: Application): DeviceInfo {
-            val contentResolver = application.contentResolver
-            return DeviceInfo(
-                model = Build.MODEL,
-                manufacturer = Build.MANUFACTURER,
-                brand = Build.BRAND,
-                product = Build.PRODUCT,
-                androidVersion = Build.VERSION.RELEASE,
-                apiLevel = Build.VERSION.SDK_INT,
-                securityPatch = Build.VERSION.SECURITY_PATCH,
-                buildNumber = Build.DISPLAY,
-                kernelVersion = System.getProperty("os.version") ?: "Unknown",
-                basebandVersion = Build.getRadioVersion() ?: "Unknown",
-                bootloaderVersion = Build.BOOTLOADER,
-                widevineLevel = getWidevineLevel(),
-                isRooted = checkRootStatus(),
-                developerOptionsEnabled =
-                    Settings.Global.getInt(
-                        contentResolver,
-                        Settings.Global.DEVELOPMENT_SETTINGS_ENABLED,
-                        0,
-                    ) != 0,
-                usbDebuggingEnabled =
-                    Settings.Global.getInt(
-                        contentResolver,
-                        Settings.Global.ADB_ENABLED,
-                        0,
-                    ) != 0,
-            )
+        init {
+            refresh()
         }
 
-        private fun getWidevineLevel(): String =
-            try {
-                val widevineUuid = UUID(-0x121074568629b532L, -0x5c37d8232ae2de13L)
-                val drm = MediaDrm(widevineUuid)
-                val level = drm.getPropertyString("securityLevel")
-                drm.close()
-                level
-            } catch (_: Exception) {
-                "Not supported"
-            }
+        fun refresh() {
+            refreshJob?.cancel()
+            _state.value = _state.value.copy(isLoading = true, error = null)
+            refreshJob =
+                viewModelScope.launch {
+                    try {
+                        val info = withContext(ioDispatcher) { deviceInfoProvider.capture() }
+                        _state.value = DeviceInfoState(info = info)
+                    } catch (error: CancellationException) {
+                        throw error
+                    } catch (_: Exception) {
+                        _state.value =
+                            _state.value.copy(
+                                isLoading = false,
+                                error = CAPTURE_ERROR,
+                            )
+                    }
+                }
+        }
 
-        private fun checkRootStatus(): Boolean {
-            val suPaths =
-                listOf(
-                    "/system/app/Superuser.apk",
-                    "/system/xbin/su",
-                    "/system/bin/su",
-                    "/sbin/su",
-                    "/data/local/xbin/su",
-                    "/data/local/bin/su",
-                )
-            return suPaths.any { File(it).exists() }
+        private companion object {
+            const val CAPTURE_ERROR = "device_capture_failed"
         }
     }

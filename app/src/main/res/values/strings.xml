@@ -22,6 +22,15 @@
     <string name="label_bootloader">Bootloader</string>
     <string name="label_widevine">Widevine Level</string>
     <string name="label_root_detected">Root Detected</string>
+    <string name="label_root_artifact">Known root artifact</string>
+    <string name="device_root_artifact_detected">Detected</string>
+    <string name="device_root_artifact_not_detected">Not detected</string>
+    <string name="device_root_heuristic_disclaimer">This limited check only looks for a short list of known files. No detection does not prove that the device is uncompromised.</string>
+    <string name="device_value_unavailable">Not available</string>
+    <string name="device_captured_at">Captured</string>
+    <string name="device_refresh">Refresh device information</string>
+    <string name="device_capture_error_title">Device information unavailable</string>
+    <string name="device_capture_error_description">fonecheck could not refresh the device snapshot. The last successful snapshot remains visible.</string>
     <string name="label_developer_options">Developer Options</string>
     <string name="label_usb_debugging">USB Debugging</string>
 

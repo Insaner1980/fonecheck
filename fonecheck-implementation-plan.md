@@ -394,6 +394,15 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** OEM-kohtaiset puuttuvat tai muotoilemattomat Build-arvot.
 - **Decision required:** Ei.
 
+#### Implementation/status log — 2026-08-07
+
+- Lisätty tests-first normalisointi-, security patch-, rajattu root-artifact-heuristiikka- ja DRM cleanup -testit. Kohdistettu RED johtui vain tarkoituksella puuttuneista probe-symboleista; toteutuksen jälkeen testit ovat GREEN.
+- Device-keruu on siirretty injektoidulle IO-dispatcherille ja julkaisee aikaleimatun, päivitettävän `DeviceInfoState`-snapshotin. Onnistunut snapshot säilyy näkyvissä myös myöhemmän refresh-virheen aikana.
+- Build-, patch-, kernel-, baseband-, bootloader- ja Widevine-arvot normalisoidaan locale-neutraaliksi raakadataksi; null-, blank-, `unknown`- ja virhepolut käyttävät vakaata `unavailable`-arvoa, jonka standalone-UI lokaloi vasta näyttörajalla. Widevine-istunto suljetaan myös lukupoikkeuksessa ja API 26–27 käyttää yhteensopivaa release-polkuansa.
+- Standalone näyttää snapshotin keräysajan, refresh/error-polun sekä root-tarkistuksen rajallisuutta koskevan eksplisiittisen disclaimerin. Havaitsematta jäämistä ei esitetä todisteena kompromissittomuudesta.
+- Full Check odottaa Device-keruun valmistumista, käyttää samaa snapshotia ja sen capture-aikaa sekä tallentaa vain raportin tulkintaan tarvittavan device contextin. Root-evidence on `LOW`-confidence-estimaatti: ei havaintoa on `INFO`, tunnettu artifact on `WARNING`.
+- `DeviceInfoProbeTest`, `DeviceInfoViewModelTest`, `RunAllSnapshotMapperTest`, koko `:app:testDebugUnitTest` ja Android-testien Kotlin-käännös läpäisevät. Fyysistä smoke-testiä ei voitu ajaa, koska `adb devices -l` ei löytänyt yhdistettyä laitetta.
+
 ### 9. Complete Performance information and bounded benchmarks
 
 - **Objective:** Sovittaa kategorian nimi ja evidence yhteen.

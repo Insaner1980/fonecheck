@@ -52,7 +52,7 @@ object RunAllSnapshotMapper {
     ): List<DiagnosticCategorySnapshot> {
         val evidenceByCategory =
             mapOf(
-                DiagnosticCategoryId.DEVICE to deviceEvidence(snapshots, capturedAt),
+                DiagnosticCategoryId.DEVICE to deviceEvidence(snapshots),
                 DiagnosticCategoryId.PERFORMANCE to performanceEvidence(snapshots, capturedAt),
                 DiagnosticCategoryId.SIM to simEvidence(snapshots, permissions, capturedAt),
                 DiagnosticCategoryId.DISPLAY to displayEvidence(snapshots, manual, capturedAt),
@@ -79,28 +79,37 @@ object RunAllSnapshotMapper {
         }
     }
 
-    private fun deviceEvidence(
-        snapshots: DiagnosticSnapshots,
-        capturedAt: Instant,
-    ): List<DiagnosticEvidence> {
+    private fun deviceEvidence(snapshots: DiagnosticSnapshots): List<DiagnosticEvidence> {
         val device = snapshots.device
-        val securityDegraded =
-            device.isRooted || device.developerOptionsEnabled || device.usbDebuggingEnabled
         return listOf(
             evidence(
                 categoryId = DiagnosticCategoryId.DEVICE,
                 id = "identity",
                 status = DiagnosticStatus.INFO,
                 value = EvidenceValue.IntValue(device.apiLevel),
-                capturedAt = capturedAt,
+                capturedAt = device.capturedAt,
             ),
             evidence(
                 categoryId = DiagnosticCategoryId.DEVICE,
                 id = "security",
-                status = if (securityDegraded) DiagnosticStatus.WARNING else DiagnosticStatus.PASS,
-                reason = EvidenceReasonCode.DEGRADED.takeIf { securityDegraded },
-                value = EvidenceValue.BooleanValue(!securityDegraded),
-                capturedAt = capturedAt,
+                status =
+                    if (device.rootArtifactDetected) {
+                        DiagnosticStatus.WARNING
+                    } else {
+                        DiagnosticStatus.INFO
+                    },
+                confidence = Confidence.LOW,
+                source = EvidenceSource.ESTIMATE,
+                reason = EvidenceReasonCode.DEGRADED.takeIf { device.rootArtifactDetected },
+                value =
+                    EvidenceValue.StableTextCodeValue(
+                        if (device.rootArtifactDetected) {
+                            "known_artifact_detected"
+                        } else {
+                            "no_known_artifact_detected"
+                        },
+                    ),
+                capturedAt = device.capturedAt,
             ),
         )
     }

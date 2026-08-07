@@ -317,7 +317,7 @@ private fun evidenceLabel(checkId: String): String =
 private fun evidenceLabelResId(checkId: String): Int? =
     when (checkId) {
         "device.identity" -> R.string.device_info_title
-        "device.security" -> R.string.run_all_check_security
+        "device.security" -> R.string.label_root_artifact
         "performance.cpu" -> R.string.perf_cpu_title
         "performance.ram" -> R.string.perf_ram_title
         "performance.gpu" -> R.string.perf_gpu_title
@@ -395,6 +395,8 @@ private fun stableTextLabel(code: String): String =
             "strong" -> R.string.biometric_strong
             "weak" -> R.string.biometric_weak
             "unavailable" -> R.string.biometric_not_available
+            "known_artifact_detected" -> R.string.device_root_artifact_detected
+            "no_known_artifact_detected" -> R.string.device_root_artifact_not_detected
             else -> R.string.batt_health_unknown
         },
     )

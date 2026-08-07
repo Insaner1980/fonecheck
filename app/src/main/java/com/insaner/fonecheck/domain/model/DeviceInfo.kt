@@ -1,5 +1,7 @@
 package com.insaner.fonecheck.domain.model
 
+import java.time.Instant
+
 data class DeviceInfo(
     val model: String,
     val manufacturer: String,
@@ -13,9 +15,10 @@ data class DeviceInfo(
     val basebandVersion: String,
     val bootloaderVersion: String,
     val widevineLevel: String,
-    val isRooted: Boolean,
+    val rootArtifactDetected: Boolean,
     val developerOptionsEnabled: Boolean,
     val usbDebuggingEnabled: Boolean,
+    val capturedAt: Instant,
 ) {
     companion object {
         const val UNAVAILABLE = "unavailable"
