@@ -501,6 +501,8 @@ private fun reasonLabel(reason: EvidenceReasonCode): String =
             EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED,
             -> R.string.run_all_status_unavailable
 
+            EvidenceReasonCode.PLATFORM_RESTRICTION -> R.string.button_power_unavailable
+
             EvidenceReasonCode.DISABLED -> R.string.status_disabled
             EvidenceReasonCode.DEGRADED -> R.string.run_all_summary_warning
             EvidenceReasonCode.ERROR -> R.string.run_all_summary_fail

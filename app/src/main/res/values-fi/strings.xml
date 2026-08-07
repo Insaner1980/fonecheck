@@ -568,7 +568,7 @@
     <string name="run_all_felt_vibration">Tunsin värinän</string>
     <string name="run_all_no_vibration">Värinää ei tunnu</string>
     <string name="run_all_buttons_title">Testaa äänenvoimakkuuspainikkeet</string>
-    <string name="run_all_buttons_description">Paina kerran ääni ylös ja ääni alas. Testi jatkuu automaattisesti, kun molemmat havaitaan.</string>
+    <string name="run_all_buttons_description">Paina kerran ääni ylös ja ääni alas. Fonecheck kuuntelee kahta painiketapahtumaa 15 sekunnin ajan.</string>
     <string name="run_all_biometrics_title">Varmista biometrinen anturi</string>
     <string name="run_all_biometrics_description">Varmista sormenjälki- tai kasvojentunnistus järjestelmän kehotteessa.</string>
     <string name="run_all_skip">Ohita tämä tarkistus</string>
@@ -657,7 +657,7 @@
     <string name="home_cat_thermal">Lämpötila</string>
     <string name="home_cat_storage">Tallennustila</string>
     <string name="home_cat_vibration">Värinä</string>
-    <string name="home_cat_buttons">Painikkeet</string>
+    <string name="home_cat_buttons">Äänenvoimakkuuspainikkeet</string>
     <string name="home_cat_biometrics">Biometriikka</string>
 
     <!-- Display Test Screen -->
@@ -754,16 +754,27 @@
     <string name="vibration_primitive_low_tick">Matala tikitys</string>
 
     <!-- Button Test Screen -->
-    <string name="button_test_title">Painikkeet</string>
+    <string name="button_test_title">Äänenvoimakkuuspainikkeet</string>
+    <string name="button_test_icon">BTN</string>
     <string name="button_volume_up">Ääni ylös</string>
     <string name="button_volume_down">Ääni alas</string>
     <string name="button_power">Virtapainike</string>
     <string name="button_press_now">Paina nyt!</string>
     <string name="button_detected">Havaittu</string>
     <string name="button_not_detected">Ei havaittu</string>
-    <string name="button_power_note">Virtapainiketta ei voi testata suoraan. Näytön päällä/pois-tunnistusta käytetään korvikkeena.</string>
+    <string name="button_power_note">Android-sovellus ei voi testata virtapainiketta luotettavasti, joten se ei sisälly tähän testiin.</string>
+    <string name="button_power_unavailable">Ei sovellusten käytettävissä</string>
     <string name="button_start_test">Aloita testi</string>
+    <string name="button_stop">Pysäytä</string>
+    <string name="button_skip">Ohita</string>
+    <string name="button_retry">Yritä uudelleen</string>
     <string name="button_reset">Nollaa</string>
+    <string name="button_status_ready">Valmis</string>
+    <string name="button_status_progress">%1$d / 2 havaittu</string>
+    <string name="button_status_complete">Valmis</string>
+    <string name="button_status_timed_out">Aika päättyi</string>
+    <string name="button_status_skipped">Ohitettu</string>
+    <string name="button_timeout_hint">Tästä ei päätellä vikaa. Yritä uudelleen tai ohita testi.</string>
 
     <!-- Biometric Test Screen -->
     <string name="biometric_capabilities_title">Ominaisuudet</string>

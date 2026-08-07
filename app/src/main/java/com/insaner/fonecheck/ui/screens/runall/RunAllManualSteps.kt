@@ -41,6 +41,7 @@ import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.permission.PermissionState
 import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.StatusBadge
+import com.insaner.fonecheck.ui.screens.buttons.ButtonTestPhase
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestState
 import com.insaner.fonecheck.ui.screens.camera.CameraTestState
 import com.insaner.fonecheck.ui.screens.display.DisplayPattern
@@ -345,6 +346,7 @@ fun VibrationCheckStep(
 @Composable
 fun ButtonCheckStep(
     state: ButtonTestState,
+    onRetry: () -> Unit,
     onSkip: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -368,6 +370,21 @@ fun ButtonCheckStep(
             )
         }
         Spacer(modifier = Modifier.height(24.dp))
+        if (state.phase == ButtonTestPhase.TIMED_OUT) {
+            Text(
+                text = stringResource(R.string.button_timeout_hint),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+        if (state.phase != ButtonTestPhase.RUNNING) {
+            Button(onClick = onRetry) {
+                Text(stringResource(R.string.button_retry))
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
         OutlinedButton(onClick = onSkip) {
             Text(stringResource(R.string.run_all_skip))
         }

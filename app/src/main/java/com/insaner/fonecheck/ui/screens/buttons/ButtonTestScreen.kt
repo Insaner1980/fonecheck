@@ -13,13 +13,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.ui.components.DetailInfoRow
 import com.insaner.fonecheck.ui.components.SectionBox
@@ -29,93 +28,88 @@ import com.insaner.fonecheck.ui.theme.Blue400
 import com.insaner.fonecheck.ui.theme.Green400
 import com.insaner.fonecheck.ui.theme.Neutral500
 import com.insaner.fonecheck.ui.theme.Yellow400
-import kotlinx.coroutines.delay
 
 @Composable
-@Suppress("ViewModelForwarding", "ktlint:compose:vm-forwarding-check")
 fun ButtonTestScreen(
     modifier: Modifier = Modifier,
     viewModel: ButtonTestViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.state.collectAsState()
-
-    // Poll volume changes while testing
-    LaunchedEffect(state.isTesting) {
-        while (state.isTesting) {
-            viewModel.checkVolumeChange()
-            delay(100)
-        }
-    }
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    ButtonLifecycleEffect(viewModel)
 
     TestScreenContent(modifier = modifier) {
         item {
-            val detected =
-                listOfNotNull(
-                    if (state.volumeUpDetected) "Up" else null,
-                    if (state.volumeDownDetected) "Down" else null,
-                )
             TestSectionCard(
-                icon = "BTN",
+                icon = stringResource(R.string.button_test_icon),
                 title = stringResource(R.string.button_test_title),
-                statusText =
-                    when {
-                        !state.isTesting -> "Ready"
-                        detected.isEmpty() -> stringResource(R.string.button_press_now)
-                        else -> detected.joinToString(", ")
-                    },
+                statusText = buttonStatusLabel(state),
                 statusColor =
-                    when {
-                        state.volumeUpDetected && state.volumeDownDetected -> Green400
-                        detected.isNotEmpty() -> Yellow400
-                        state.isTesting -> Blue400
-                        else -> Neutral500
+                    when (state.phase) {
+                        ButtonTestPhase.COMPLETED -> Green400
+                        ButtonTestPhase.TIMED_OUT -> Yellow400
+                        ButtonTestPhase.RUNNING -> Blue400
+                        ButtonTestPhase.IDLE,
+                        ButtonTestPhase.SKIPPED,
+                        -> Neutral500
                     },
                 isExpanded = true,
                 onClick = {},
             ) {
-                ButtonTestDetails(state, viewModel)
+                ButtonTestDetails(
+                    state = state,
+                    onStart = viewModel::startTest,
+                    onStop = viewModel::stopTest,
+                    onRetry = viewModel::retry,
+                    onSkip = viewModel::skip,
+                    onReset = viewModel::reset,
+                )
             }
         }
     }
 }
 
 @Composable
+private fun buttonStatusLabel(state: ButtonTestState): String =
+    when (state.phase) {
+        ButtonTestPhase.IDLE -> stringResource(R.string.button_status_ready)
+        ButtonTestPhase.RUNNING ->
+            stringResource(
+                R.string.button_status_progress,
+                listOf(state.volumeUpDetected, state.volumeDownDetected).count { it },
+            )
+        ButtonTestPhase.COMPLETED -> stringResource(R.string.button_status_complete)
+        ButtonTestPhase.TIMED_OUT -> stringResource(R.string.button_status_timed_out)
+        ButtonTestPhase.SKIPPED -> stringResource(R.string.button_status_skipped)
+    }
+
+@Composable
 private fun ButtonTestDetails(
     state: ButtonTestState,
-    viewModel: ButtonTestViewModel,
+    onStart: () -> Unit,
+    onStop: () -> Unit,
+    onRetry: () -> Unit,
+    onSkip: () -> Unit,
+    onReset: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        // Volume Up
         SectionBox {
             DetailInfoRow(
                 stringResource(R.string.button_volume_up),
-                if (state.volumeUpDetected) {
-                    stringResource(R.string.button_detected)
-                } else {
-                    stringResource(R.string.button_not_detected)
-                },
+                buttonDetectionLabel(state.volumeUpDetected),
                 valueColor = if (state.volumeUpDetected) Green400 else Neutral500,
             )
         }
-
-        // Volume Down
         SectionBox {
             DetailInfoRow(
                 stringResource(R.string.button_volume_down),
-                if (state.volumeDownDetected) {
-                    stringResource(R.string.button_detected)
-                } else {
-                    stringResource(R.string.button_not_detected)
-                },
+                buttonDetectionLabel(state.volumeDownDetected),
                 valueColor = if (state.volumeDownDetected) Green400 else Neutral500,
             )
         }
-
-        // Power button note
         SectionBox {
             DetailInfoRow(
                 stringResource(R.string.button_power),
-                "\u2014",
+                stringResource(R.string.run_all_status_unavailable),
                 valueColor = Neutral500,
             )
             Spacer(modifier = Modifier.height(4.dp))
@@ -126,23 +120,62 @@ private fun ButtonTestDetails(
             )
         }
 
-        // Action buttons
+        if (state.phase == ButtonTestPhase.TIMED_OUT) {
+            Text(
+                text = stringResource(R.string.button_timeout_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            if (!state.isTesting) {
-                Button(
-                    onClick = { viewModel.startTest() },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = Blue400),
-                    shape = RoundedCornerShape(8.dp),
-                ) {
-                    Text(stringResource(R.string.button_start_test))
+            when (state.phase) {
+                ButtonTestPhase.IDLE,
+                ButtonTestPhase.COMPLETED,
+                ButtonTestPhase.SKIPPED,
+                ->
+                    Button(
+                        onClick = onStart,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Blue400),
+                        shape = RoundedCornerShape(8.dp),
+                    ) {
+                        Text(stringResource(R.string.button_start_test))
+                    }
+
+                ButtonTestPhase.RUNNING -> {
+                    OutlinedButton(
+                        onClick = onStop,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp),
+                    ) {
+                        Text(stringResource(R.string.button_stop))
+                    }
+                    OutlinedButton(
+                        onClick = onSkip,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp),
+                    ) {
+                        Text(stringResource(R.string.button_skip))
+                    }
                 }
-            } else {
+
+                ButtonTestPhase.TIMED_OUT ->
+                    Button(
+                        onClick = onRetry,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Blue400),
+                        shape = RoundedCornerShape(8.dp),
+                    ) {
+                        Text(stringResource(R.string.button_retry))
+                    }
+            }
+            if (state.phase != ButtonTestPhase.RUNNING) {
                 OutlinedButton(
-                    onClick = { viewModel.reset() },
+                    onClick = onReset,
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(8.dp),
                 ) {
@@ -152,3 +185,7 @@ private fun ButtonTestDetails(
         }
     }
 }
+
+@Composable
+private fun buttonDetectionLabel(detected: Boolean): String =
+    stringResource(if (detected) R.string.button_detected else R.string.button_not_detected)

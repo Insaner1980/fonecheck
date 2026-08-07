@@ -57,6 +57,7 @@ value class EvidenceReasonCode(
         val ERROR = EvidenceReasonCode("error")
         val HARDWARE_UNAVAILABLE = EvidenceReasonCode("hardware_unavailable")
         val ANDROID_VERSION_UNSUPPORTED = EvidenceReasonCode("android_version_unsupported")
+        val PLATFORM_RESTRICTION = EvidenceReasonCode("platform_restriction")
         val DISABLED = EvidenceReasonCode("disabled")
         val USER_CONFIRMED_FAILURE = EvidenceReasonCode("user_confirmed_failure")
         val DEGRADED = EvidenceReasonCode("degraded")

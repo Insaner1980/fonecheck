@@ -574,7 +574,7 @@
     <string name="run_all_felt_vibration">I felt it</string>
     <string name="run_all_no_vibration">No vibration</string>
     <string name="run_all_buttons_title">Test the volume buttons</string>
-    <string name="run_all_buttons_description">Press Volume Up and Volume Down once. The test continues automatically after both are detected.</string>
+    <string name="run_all_buttons_description">Press Volume Up and Volume Down once. Fonecheck listens for the two key events for 15 seconds.</string>
     <string name="run_all_biometrics_title">Verify the biometric sensor</string>
     <string name="run_all_biometrics_description">Use the system prompt to verify fingerprint or face authentication.</string>
     <string name="run_all_skip">Skip this check</string>
@@ -663,7 +663,7 @@
     <string name="home_cat_thermal">Thermal</string>
     <string name="home_cat_storage">Storage</string>
     <string name="home_cat_vibration">Vibration</string>
-    <string name="home_cat_buttons">Buttons</string>
+    <string name="home_cat_buttons">Volume buttons</string>
     <string name="home_cat_biometrics">Biometrics</string>
 
     <!-- Display Test Screen -->
@@ -760,16 +760,27 @@
     <string name="vibration_primitive_low_tick">Low tick</string>
 
     <!-- Button Test Screen -->
-    <string name="button_test_title">Buttons</string>
+    <string name="button_test_title">Volume buttons</string>
+    <string name="button_test_icon">BTN</string>
     <string name="button_volume_up">Volume Up</string>
     <string name="button_volume_down">Volume Down</string>
     <string name="button_power">Power Button</string>
     <string name="button_press_now">Press now!</string>
     <string name="button_detected">Detected</string>
     <string name="button_not_detected">Not Detected</string>
-    <string name="button_power_note">Power button cannot be directly tested. Screen on/off detection used as proxy.</string>
+    <string name="button_power_note">Android apps cannot reliably test the power button, so it is not included in this test.</string>
+    <string name="button_power_unavailable">Unavailable to apps</string>
     <string name="button_start_test">Start Test</string>
+    <string name="button_stop">Stop</string>
+    <string name="button_skip">Skip</string>
+    <string name="button_retry">Try again</string>
     <string name="button_reset">Reset</string>
+    <string name="button_status_ready">Ready</string>
+    <string name="button_status_progress">%1$d of 2 detected</string>
+    <string name="button_status_complete">Complete</string>
+    <string name="button_status_timed_out">Timed out</string>
+    <string name="button_status_skipped">Skipped</string>
+    <string name="button_timeout_hint">No failure is inferred. Try again or skip this test.</string>
 
     <!-- Biometric Test Screen -->
     <string name="biometric_capabilities_title">Capabilities</string>

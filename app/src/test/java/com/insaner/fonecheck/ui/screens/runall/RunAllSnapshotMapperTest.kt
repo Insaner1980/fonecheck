@@ -29,6 +29,7 @@ import com.insaner.fonecheck.ui.screens.battery.HealthState
 import com.insaner.fonecheck.ui.screens.battery.ManufacturerProfile
 import com.insaner.fonecheck.ui.screens.battery.ManufacturerState
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestState
+import com.insaner.fonecheck.ui.screens.buttons.ButtonTestPhase
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestState
 import com.insaner.fonecheck.ui.screens.camera.CameraTestState
 import com.insaner.fonecheck.ui.screens.connectivity.BluetoothAccessCode
@@ -698,6 +699,52 @@ class RunAllSnapshotMapperTest {
         assertEquals(EvidenceValue.IntValue(1), evidence.getValue("vibration.primitives").value)
         assertEquals(EvidenceSource.USER_CONFIRMATION, evidence.getValue("vibration.motor").source)
         assertEquals(EvidenceValue.BooleanValue(true), evidence.getValue("vibration.motor").value)
+    }
+
+    @Test
+    fun buttonKeyEventsAndPowerButtonBoundaryRemainSeparateEvidence() {
+        val capturedAt = Instant.parse("2026-08-08T12:00:00Z")
+        val buttons =
+            ButtonTestState(
+                volumeUpDetected = true,
+                volumeDownDetected = true,
+                phase = ButtonTestPhase.COMPLETED,
+            )
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots = diagnosticSnapshotsWithSensitiveConnectivity().copy(buttons = buttons),
+                    manual = ManualCheckResults(buttons = true),
+                    permissions = RunAllPermissions(),
+                    capturedAt = capturedAt,
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+
+        assertEquals(DiagnosticStatus.PASS, evidence.getValue("buttons.volume").status)
+        assertEquals(EvidenceSource.AUTOMATIC_MEASUREMENT, evidence.getValue("buttons.volume").source)
+        assertEquals(EvidenceValue.BooleanValue(true), evidence.getValue("buttons.volume").value)
+        assertEquals(DiagnosticStatus.NOT_AVAILABLE, evidence.getValue("buttons.power").status)
+        assertEquals(Applicability.NOT_APPLICABLE, evidence.getValue("buttons.power").applicability)
+        assertEquals(EvidenceReasonCode.PLATFORM_RESTRICTION, evidence.getValue("buttons.power").reason)
+    }
+
+    @Test
+    fun buttonTimeoutIsNotReportedAsPhysicalFailure() {
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots =
+                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                            buttons = ButtonTestState(phase = ButtonTestPhase.TIMED_OUT),
+                        ),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(),
+                    capturedAt = Instant.parse("2026-08-08T12:00:00Z"),
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+
+        assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue("buttons.volume").status)
+        assertEquals(EvidenceReasonCode.TIMEOUT, evidence.getValue("buttons.volume").reason)
     }
 
     private fun diagnosticSnapshotsWithSensitiveConnectivity() =

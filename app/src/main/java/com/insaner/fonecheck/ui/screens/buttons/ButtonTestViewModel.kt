@@ -1,70 +1,109 @@
 package com.insaner.fonecheck.ui.screens.buttons
 
-import android.app.Application
-import android.content.Context
-import android.media.AudioManager
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import javax.inject.Inject
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
-// ── State classes ────────────────────────────────────────────────────────────────
+enum class ButtonTestPhase {
+    IDLE,
+    RUNNING,
+    COMPLETED,
+    TIMED_OUT,
+    SKIPPED,
+}
 
 data class ButtonTestState(
     val volumeUpDetected: Boolean = false,
     val volumeDownDetected: Boolean = false,
-    val isTesting: Boolean = false,
-    val lastVolume: Int = -1,
-)
-
-// ── ViewModel ────────────────────────────────────────────────────────────────────
+    val phase: ButtonTestPhase = ButtonTestPhase.IDLE,
+) {
+    val isTesting: Boolean get() = phase == ButtonTestPhase.RUNNING
+}
 
 @HiltViewModel
 class ButtonTestViewModel
     @Inject
     constructor(
-        application: Application,
-    ) : AndroidViewModel(application) {
-        private val context: Context get() = getApplication()
-        private val audioManager = context.getSystemService(AudioManager::class.java)
-
+        private val eventSource: VolumeButtonEventSource,
+    ) : ViewModel() {
         private val _state = MutableStateFlow(ButtonTestState())
-        val state: StateFlow<ButtonTestState> = _state
+        val state: StateFlow<ButtonTestState> = _state.asStateFlow()
+
+        private var testJob: Job? = null
 
         fun startTest() {
-            val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-            _state.value =
-                ButtonTestState(
-                    isTesting = true,
-                    lastVolume = currentVolume,
-                )
+            testJob?.cancel()
+            _state.value = ButtonTestState(phase = ButtonTestPhase.RUNNING)
+            testJob =
+                viewModelScope.launch {
+                    val completed =
+                        withTimeoutOrNull(TEST_TIMEOUT_MILLIS) {
+                            eventSource.events.first { direction ->
+                                recordDirection(direction)
+                                _state.value.run { volumeUpDetected && volumeDownDetected }
+                            }
+                        } != null
+                    if (_state.value.phase == ButtonTestPhase.RUNNING) {
+                        _state.value =
+                            _state.value.copy(
+                                phase =
+                                    if (completed) {
+                                        ButtonTestPhase.COMPLETED
+                                    } else {
+                                        ButtonTestPhase.TIMED_OUT
+                                    },
+                            )
+                    }
+                    testJob = null
+                }
         }
 
-        fun checkVolumeChange() {
-            if (!_state.value.isTesting) return
+        fun retry() {
+            startTest()
+        }
 
-            val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-            val lastVolume = _state.value.lastVolume
-
-            if (currentVolume != lastVolume) {
-                if (currentVolume > lastVolume) {
-                    _state.value =
-                        _state.value.copy(
-                            volumeUpDetected = true,
-                            lastVolume = currentVolume,
-                        )
-                } else {
-                    _state.value =
-                        _state.value.copy(
-                            volumeDownDetected = true,
-                            lastVolume = currentVolume,
-                        )
-                }
+        fun stopTest() {
+            testJob?.cancel()
+            testJob = null
+            if (_state.value.phase == ButtonTestPhase.RUNNING) {
+                _state.value = _state.value.copy(phase = ButtonTestPhase.IDLE)
             }
         }
 
+        fun skip() {
+            testJob?.cancel()
+            testJob = null
+            _state.value = _state.value.copy(phase = ButtonTestPhase.SKIPPED)
+        }
+
         fun reset() {
+            testJob?.cancel()
+            testJob = null
             _state.value = ButtonTestState()
+        }
+
+        override fun onCleared() {
+            stopTest()
+            super.onCleared()
+        }
+
+        private fun recordDirection(direction: VolumeButtonDirection) {
+            _state.value =
+                when (direction) {
+                    VolumeButtonDirection.UP -> _state.value.copy(volumeUpDetected = true)
+                    VolumeButtonDirection.DOWN -> _state.value.copy(volumeDownDetected = true)
+                }
+        }
+
+        companion object {
+            const val TEST_TIMEOUT_MILLIS = 15_000L
         }
     }

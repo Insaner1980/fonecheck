@@ -3,6 +3,7 @@ package com.insaner.fonecheck.ui
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
+import android.view.KeyEvent
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,11 +35,29 @@ import androidx.navigation.compose.rememberNavController
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.navigation.FonecheckNavHost
 import com.insaner.fonecheck.navigation.Home
+import com.insaner.fonecheck.ui.screens.buttons.VolumeButtonEventSource
+import com.insaner.fonecheck.ui.screens.buttons.VolumeButtonKeyMapper
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
+    @Inject
+    lateinit var volumeButtonEventSource: VolumeButtonEventSource
+
+    override fun onKeyDown(
+        keyCode: Int,
+        event: KeyEvent,
+    ): Boolean {
+        VolumeButtonKeyMapper.directionFor(
+            keyCode = keyCode,
+            action = KeyEvent.ACTION_DOWN,
+            repeatCount = event.repeatCount,
+        )?.let(volumeButtonEventSource::record)
+        return super.onKeyDown(keyCode, event)
+    }
+
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashStartedAt = SystemClock.uptimeMillis()

@@ -36,6 +36,8 @@ import com.insaner.fonecheck.ui.screens.audio.AudioTestViewModel
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestViewModel
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestViewModel
 import com.insaner.fonecheck.ui.screens.biometrics.showBiometricPrompt
+import com.insaner.fonecheck.ui.screens.buttons.ButtonLifecycleEffect
+import com.insaner.fonecheck.ui.screens.buttons.ButtonTestPhase
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestViewModel
 import com.insaner.fonecheck.ui.screens.camera.CameraTestViewModel
 import com.insaner.fonecheck.ui.screens.connectivity.ConnectivityTestViewModel
@@ -55,7 +57,6 @@ import com.insaner.fonecheck.ui.screens.vibration.VibrationTestViewModel
 import java.time.Instant
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -63,7 +64,7 @@ private const val AUTOMATIC_MICROPHONE_DURATION_MS = 1_500L
 private const val AUTOMATIC_MICROPHONE_TIMEOUT_MS = 3_000L
 private const val SPEAKER_TONE_DURATION_MS = 1_500L
 private const val CAMERA_TEST_TIMEOUT_MS = 8_000L
-private const val BUTTON_POLL_INTERVAL_MS = 100L
+private const val AUTOMATIC_STATE_POLL_INTERVAL_MS = 100L
 private const val SPEAKER_TEST_FREQUENCY_HZ = 1_000
 private const val DEVICE_INFO_TIMEOUT_MS = 3_000L
 private const val PERFORMANCE_TIMEOUT_MS = 7_000L
@@ -111,6 +112,7 @@ fun RunAllTestsScreen(
     val simState by simViewModel.state.collectAsStateWithLifecycle()
     ThermalMonitoringEffect(thermalViewModel)
     VibrationLifecycleEffect(vibrationViewModel)
+    ButtonLifecycleEffect(buttonViewModel)
     val previewView = remember { PreviewView(context) }
     val microphonePermission =
         rememberPermissionController(
@@ -211,7 +213,7 @@ fun RunAllTestsScreen(
                     audioViewModel.startRecording(AUTOMATIC_MICROPHONE_DURATION_MS)
                     withTimeoutOrNull(AUTOMATIC_MICROPHONE_TIMEOUT_MS) {
                         while (audioViewModel.state.value.isRecording) {
-                            delay(BUTTON_POLL_INTERVAL_MS)
+                            delay(AUTOMATIC_STATE_POLL_INTERVAL_MS)
                         }
                     }
                     audioViewModel.stopRecording()
@@ -264,15 +266,6 @@ fun RunAllTestsScreen(
             RunAllStage.BUTTONS -> {
                 buttonViewModel.reset()
                 buttonViewModel.startTest()
-                while (isActive) {
-                    buttonViewModel.checkVolumeChange()
-                    val current = buttonViewModel.state.value
-                    if (current.volumeUpDetected && current.volumeDownDetected) {
-                        sessionViewModel.recordButtons(true)
-                        break
-                    }
-                    delay(BUTTON_POLL_INTERVAL_MS)
-                }
             }
 
             RunAllStage.BIOMETRICS -> {
@@ -332,6 +325,12 @@ fun RunAllTestsScreen(
         }
     }
 
+    LaunchedEffect(sessionState.stage, buttonState.phase) {
+        if (sessionState.stage == RunAllStage.BUTTONS && buttonState.phase == ButtonTestPhase.COMPLETED) {
+            sessionViewModel.recordButtons(true)
+        }
+    }
+
     DisposableEffect(sessionState.stage) {
         onDispose {
             when (sessionState.stage) {
@@ -339,6 +338,7 @@ fun RunAllTestsScreen(
                 RunAllStage.CAMERA -> cameraViewModel.stopPreview()
                 RunAllStage.SENSORS -> sensorViewModel.clearChallenge()
                 RunAllStage.VIBRATION -> vibrationViewModel.cancelVibration()
+                RunAllStage.BUTTONS -> buttonViewModel.stopTest()
                 RunAllStage.AUTOMATIC -> storageViewModel.cancelBenchmark()
                 else -> Unit
             }
@@ -452,7 +452,11 @@ fun RunAllTestsScreen(
         RunAllStage.BUTTONS ->
             ButtonCheckStep(
                 state = buttonState,
-                onSkip = { sessionViewModel.recordButtons(null) },
+                onRetry = buttonViewModel::retry,
+                onSkip = {
+                    buttonViewModel.skip()
+                    sessionViewModel.recordButtons(null)
+                },
             )
 
         RunAllStage.BIOMETRICS ->

@@ -667,6 +667,14 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Android ei tarjoa kaikkien järjestelmäpainikkeiden sieppausta sovellukselle.
 - **Decision required:** Ei.
 
+#### Implementation/status log — 2026-08-08
+
+- Rajaton musiikkistreamin 100 ms pollaus on poistettu. `MainActivity.onKeyDown` välittää vain ensimmäiset `KEYCODE_VOLUME_UP`- ja `KEYCODE_VOLUME_DOWN`-painallukset singleton-`VolumeButtonEventSource`lle ja jatkaa tapahtuman normaaliin järjestelmäkäsittelyyn. Ratkaisu perustuu Androidin julkisiin [Activity](https://developer.android.com/reference/android/app/Activity.html)- ja [KeyEvent](https://developer.android.com/reference/android/view/KeyEvent.html)-rajapintoihin.
+- Testi kuuntelee suoria painiketapahtumia enintään 15 sekuntia, joten lähtötilan minimi- tai maksimiäänenvoimakkuus ei estä kumpaakaan suuntaa eikä ohjelmallinen tai ulkoinen äänenvoimakkuusmuutos kelpaa fyysiseksi evidenceksi. Timeout ei ole laitevika, vaan `NotTested`/`timeout`; standalone- ja Run All -näkymät tarjoavat retry/skip-polut ja standalone lisäksi stop/reset-polut.
+- Kuuntelujob pysäytetään idempotentisti uudelleenkäynnistyksessä, stopissa, skipissä, resetissä, lifecycle `ON_STOP`issa/disposessa, Run All -vaiheen vaihtuessa ja ViewModelin `onCleared()`-polussa. Run All siirtyy eteenpäin vain, kun molemmat suunnat on havaittu; timeout päättää aktiivisen kuuntelun eikä jätä taustapollausta.
+- Virtapainiketta ei väitetä testatuksi eikä näytön tilaa käytetä proxy-evidencenä. Raportissa sen tila on eksplisiittisesti `NotAvailable` / `NotApplicable` syyllä `platform_restriction`; äänenvoimakkuuspainikkeiden onnistuminen on erillistä automaattisesti havaittua evidenceä.
+- Unit-testit kattavat completionin äänenvoimakkuustasosta riippumatta, timeoutin ilman key eventtiä, retryn, stop/reset/skip/onCleared-cleanupin, key-event-suodatuksen sekä raporttimäppäyksen. Koko `:app:testDebugUnitTest`, Android-testien Kotlin-käännös, `:app:lintDebug` ja `:app:assembleDebug` läpäisevät. `ktlintCheck` ei käynnisty 10 puuttuvan dependency-verification-tietueen vuoksi; käyttäjän keskeneräistä `verification-metadata.xml`-muutosta ei muokattu. Fyysinen äänenvoimakkuuspainikekoe odottaa laitetta, sillä `adb devices -l` ei löytänyt yhdistettyä laitetta. Käyttäjän keskeneräistä `PROJECT.md`-muutosta ei muokattu.
+
 ### 21. Complete Biometrics capability and prompt outcomes
 
 - **Objective:** Erotella hardware presence, enrollment, authenticator class ja onnistunut prompt.

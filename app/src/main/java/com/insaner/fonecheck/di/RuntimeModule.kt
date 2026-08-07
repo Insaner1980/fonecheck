@@ -4,6 +4,8 @@ import android.content.Context
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.IdProvider
 import com.insaner.fonecheck.runtime.NanoTimeSource
+import com.insaner.fonecheck.ui.screens.buttons.DefaultVolumeButtonEventSource
+import com.insaner.fonecheck.ui.screens.buttons.VolumeButtonEventSource
 import com.insaner.fonecheck.ui.screens.storage.AndroidStorageBenchmarkStore
 import com.insaner.fonecheck.ui.screens.storage.AndroidStorageInfoProvider
 import com.insaner.fonecheck.ui.screens.storage.DefaultStorageBenchmarkRunner
@@ -23,6 +25,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import java.util.UUID
 import javax.inject.Qualifier
+import javax.inject.Singleton
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
@@ -59,6 +62,10 @@ object RuntimeModule {
 
     @Provides
     fun provideVibrationPlatform(platform: AndroidVibrationPlatform): VibrationPlatform = platform
+
+    @Provides
+    @Singleton
+    fun provideVolumeButtonEventSource(source: DefaultVolumeButtonEventSource): VolumeButtonEventSource = source
 
     @Provides
     @IoDispatcher

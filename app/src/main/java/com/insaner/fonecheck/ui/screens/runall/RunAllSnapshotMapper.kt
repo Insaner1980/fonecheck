@@ -26,6 +26,7 @@ import com.insaner.fonecheck.ui.screens.battery.BatteryCurrentDirection
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestState
 import com.insaner.fonecheck.ui.screens.battery.ManufacturerProfile
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestState
+import com.insaner.fonecheck.ui.screens.buttons.ButtonTestPhase
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestState
 import com.insaner.fonecheck.ui.screens.camera.CameraClassCode
 import com.insaner.fonecheck.ui.screens.camera.CameraTestState
@@ -84,7 +85,7 @@ object RunAllSnapshotMapper {
                 DiagnosticCategoryId.THERMAL to thermalEvidence(snapshots, capturedAt),
                 DiagnosticCategoryId.STORAGE to storageEvidence(snapshots, capturedAt),
                 DiagnosticCategoryId.VIBRATION to vibrationEvidence(snapshots, manual, capturedAt),
-                DiagnosticCategoryId.BUTTONS to buttonEvidence(manual, capturedAt),
+                DiagnosticCategoryId.BUTTONS to buttonEvidence(snapshots.buttons, manual, capturedAt),
                 DiagnosticCategoryId.BIOMETRICS to biometricEvidence(snapshots, manual, capturedAt),
             )
 
@@ -1265,20 +1266,59 @@ object RunAllSnapshotMapper {
         )
 
     private fun buttonEvidence(
+        state: ButtonTestState,
         manual: ManualCheckResults,
         capturedAt: Instant,
-    ): List<DiagnosticEvidence> =
-        listOf(
-            manualEvidence(DiagnosticCategoryId.BUTTONS, "volume", manual.buttons, capturedAt),
+    ): List<DiagnosticEvidence> {
+        val volumeEvidence =
+            when {
+                state.phase == ButtonTestPhase.COMPLETED || manual.buttons == true ->
+                    evidence(
+                        categoryId = DiagnosticCategoryId.BUTTONS,
+                        id = "volume",
+                        status = DiagnosticStatus.PASS,
+                        source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                        value = EvidenceValue.BooleanValue(true),
+                        capturedAt = capturedAt,
+                    )
+
+                state.phase == ButtonTestPhase.TIMED_OUT ->
+                    notTested(
+                        categoryId = DiagnosticCategoryId.BUTTONS,
+                        id = "volume",
+                        capturedAt = capturedAt,
+                        reason = EvidenceReasonCode.TIMEOUT,
+                        source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                    )
+
+                else ->
+                    notTested(
+                        categoryId = DiagnosticCategoryId.BUTTONS,
+                        id = "volume",
+                        capturedAt = capturedAt,
+                        reason =
+                            if (state.phase == ButtonTestPhase.SKIPPED) {
+                                EvidenceReasonCode.SKIPPED
+                            } else {
+                                EvidenceReasonCode.NOT_RUN
+                            },
+                        source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                    )
+            }
+        return listOf(
+            volumeEvidence,
             evidence(
                 categoryId = DiagnosticCategoryId.BUTTONS,
                 id = "power",
-                status = DiagnosticStatus.INFO,
-                confidence = Confidence.LOW,
-                source = EvidenceSource.ESTIMATE,
+                status = DiagnosticStatus.NOT_AVAILABLE,
+                confidence = Confidence.UNAVAILABLE,
+                source = EvidenceSource.ANDROID_API,
+                applicability = Applicability.NOT_APPLICABLE,
+                reason = EvidenceReasonCode.PLATFORM_RESTRICTION,
                 capturedAt = capturedAt,
             ),
         )
+    }
 
     private fun biometricEvidence(
         snapshots: DiagnosticSnapshots,
