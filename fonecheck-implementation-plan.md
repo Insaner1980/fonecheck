@@ -302,6 +302,7 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - Sovelluksen serialization-runtime nostettiin pienimmällä yhteensopivalla muutoksella versioon 1.8.1. Gradlea ei ajettu; käyttäjän uusinta-ajo tarvitaan korjauksen ja generoidun skeeman vahvistamiseksi.
 - Uusinta-ajo osoitti saman poikkeuksen, vaikka sekä sovelluksen että Room-processorien ratkaistut classpathit olivat jo versiossa 1.8.1. Kotlin-daemonin todellinen komentorivi paljasti jäljelle jääneen lähteen: käytössä ollut KSP1 compiler plugin injektoi oman serialization 1.6.3:n samaan prosessiin.
 - Projektissa jo olevan KSP 2.1.0-1.0.29 -pluginin eristetty KSP2-toteutus otettiin käyttöön `ksp.useKSP2=true`-propertyllä. Tämä on yhden asetuksen korjaus eikä muuta dependency-versioita; käyttäjän uusi `:app:kspDebugKotlin`-ajo tarvitaan edelleen GREEN-vahvistukseksi.
+- Ensimmäinen KSP2-ajo pysähtyi ennen prosessointia tiukkaan dependency verificationiin, koska KSP2:n `symbol-processing-aa-embeddable:2.1.0-1.0.29`-JARin ja POMin checksumit puuttuivat. Molemmat välimuistikopiot vastaavat tavutasolla erillisiä Maven Central -latauksia ja julkaisijan SHA-256-tiedostoja; metadataan lisättiin vain nämä kaksi artefaktikohtaista pinniä.
 
 ### 5. Implement immutable report persistence and mappings
 
