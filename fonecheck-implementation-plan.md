@@ -371,6 +371,10 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** “Permanently denied” ei ole kaikissa Android-versioissa yksiselitteisesti pääteltävissä; UI:n tulee puhua settings recovery -tarpeesta.
 - **Decision required:** Ei.
 
+#### Implementation/status log — 2026-08-07
+
+- Lisätty tests-first versionkohtaiset permission-policy-testit Bluetoothin API 31 -rajalle, hardware absencelle, granted/denied/settings-recovery-poluille ja approximate-locationin partial grantille. Codexin kohdistettu unit-testiajo tuotti odotetun REDin vain tarkoituksella puuttuvista policy-symboleista.
+
 ### 8. Correct and harden Device diagnostics
 
 - **Objective:** Tuottaa totuudenmukainen, ei-blokkaava device snapshot.
