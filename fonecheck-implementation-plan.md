@@ -321,6 +321,11 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Entity-summaryn ja payloadin erkaantuminen; osittainen tallennus.
 - **Decision required:** Ei.
 
+#### Implementation/status log — 2026-08-07
+
+- Lisätty tests-first `ReportRepositoryTest`, joka määrittää insert/read-roundtripin kaikkine evidence-arvotyyppeineen, levy-backed kannan uudelleenavauksen, newest-first-summaryt ilman payload-dekoodausta, duplicate-ID-suojan, corrupt/unsupported-lukutilat, comparison-loadin sekä delete/delete-all-käytöksen.
+- Tuotantorepositorya ei ole vielä lisätty. Odotettu RED-käännös odottaa käyttäjän kohdistettua Android-testin Kotlin-käännöstä projektin Gradle-rajoituksen vuoksi.
+
 ### 6. Replace the Android-bound report builder with a pure report assembler
 
 - **Objective:** Rakentaa sama canonical report standalone- ja Full Check -evidencestä.
