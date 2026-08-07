@@ -300,6 +300,8 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - Käyttäjän ensimmäinen `:app:kspDebugKotlin`-ajo generoi Room-lähteet ja production-v1-skeeman mutta kaatui skeeman viennissä `AbstractMethodError`-virheeseen. Kotlinin virheloki osoitti, että Room 2.8.4:n `FieldBundle`-serializer ei saanut buildin lataamalta `GeneratedSerializer`-rajapinnalta tarvitsemaansa oletustoteutusta.
 - KSP-processor-classpath käytti Room 2.8.4:n vaatimaa `kotlinx-serialization` 1.8.1:tä, mutta sovelluksen compile-classpath pakotti version 1.7.3. Bytecode-tarkistus vahvisti, että puuttuva oletustoteutus on lisätty versioon 1.8.1.
 - Sovelluksen serialization-runtime nostettiin pienimmällä yhteensopivalla muutoksella versioon 1.8.1. Gradlea ei ajettu; käyttäjän uusinta-ajo tarvitaan korjauksen ja generoidun skeeman vahvistamiseksi.
+- Uusinta-ajo osoitti saman poikkeuksen, vaikka sekä sovelluksen että Room-processorien ratkaistut classpathit olivat jo versiossa 1.8.1. Kotlin-daemonin todellinen komentorivi paljasti jäljelle jääneen lähteen: käytössä ollut KSP1 compiler plugin injektoi oman serialization 1.6.3:n samaan prosessiin.
+- Projektissa jo olevan KSP 2.1.0-1.0.29 -pluginin eristetty KSP2-toteutus otettiin käyttöön `ksp.useKSP2=true`-propertyllä. Tämä on yhden asetuksen korjaus eikä muuta dependency-versioita; käyttäjän uusi `:app:kspDebugKotlin`-ajo tarvitaan edelleen GREEN-vahvistukseksi.
 
 ### 5. Implement immutable report persistence and mappings
 
