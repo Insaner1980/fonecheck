@@ -16,4 +16,8 @@ data class DeviceInfo(
     val isRooted: Boolean,
     val developerOptionsEnabled: Boolean,
     val usbDebuggingEnabled: Boolean,
-)
+) {
+    companion object {
+        const val UNAVAILABLE = "unavailable"
+    }
+}
