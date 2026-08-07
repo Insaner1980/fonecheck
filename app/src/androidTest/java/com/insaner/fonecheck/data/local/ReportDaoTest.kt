@@ -3,6 +3,7 @@ package com.insaner.fonecheck.data.local
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import java.util.concurrent.Executor
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -15,13 +16,18 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ReportDaoTest {
     private lateinit var database: FonecheckDatabase
+    private val executedQueries = mutableListOf<String>()
 
     @Before
     fun setUp() {
+        executedQueries.clear()
         database =
             Room.inMemoryDatabaseBuilder(
                 InstrumentationRegistry.getInstrumentation().targetContext,
                 FonecheckDatabase::class.java,
+            ).setQueryCallback(
+                { sqlQuery, _ -> executedQueries += sqlQuery },
+                Executor { command -> command.run() },
             ).build()
     }
 
@@ -55,7 +61,11 @@ class ReportDaoTest {
                 ),
                 summaries,
             )
-            assertFalse(ReportSummary::class.java.declaredFields.any { it.name == "payloadJson" })
+            val summarySelect =
+                executedQueries.single {
+                    it.contains("ORDER BY completedAtEpochMillis DESC", ignoreCase = true)
+                }
+            assertFalse(summarySelect.contains("payloadJson", ignoreCase = true))
         }
 
     private fun summary(
