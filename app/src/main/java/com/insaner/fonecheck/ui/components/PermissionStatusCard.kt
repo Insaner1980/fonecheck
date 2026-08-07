@@ -58,13 +58,13 @@ fun PermissionStatusCard(
                     text = stringResource(R.string.permission_action_allow),
                     onClick = onRequest,
                 )
-                PermissionState.DENIED,
-                PermissionState.PARTIAL,
-                -> PermissionButton(
+                PermissionState.DENIED -> PermissionButton(
                     text = stringResource(R.string.permission_action_retry),
                     onClick = onRequest,
                 )
-                PermissionState.SETTINGS_RECOVERY -> PermissionButton(
+                PermissionState.SETTINGS_RECOVERY,
+                PermissionState.PARTIAL,
+                -> PermissionButton(
                     text = stringResource(R.string.permission_action_open_settings),
                     onClick = onOpenSettings,
                 )

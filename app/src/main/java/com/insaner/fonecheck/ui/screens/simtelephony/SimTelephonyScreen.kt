@@ -1,5 +1,8 @@
 package com.insaner.fonecheck.ui.screens.simtelephony
 
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -7,17 +10,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.SimSlotInfo
+import com.insaner.fonecheck.domain.permission.PermissionKind
+import com.insaner.fonecheck.domain.permission.PermissionState
 import com.insaner.fonecheck.ui.components.InfoCard
 import com.insaner.fonecheck.ui.components.InfoRow
+import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.StatusRow
+import com.insaner.fonecheck.ui.permissions.rememberPermissionController
 
 @Composable
 fun SimTelephonyScreen(
@@ -25,6 +35,31 @@ fun SimTelephonyScreen(
     viewModel: SimTelephonyViewModel = hiltViewModel(),
 ) {
     val info by viewModel.simTelephonyInfo.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val hasTelephony =
+        remember(context) {
+            context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)
+        }
+    val phonePermission =
+        rememberPermissionController(
+            kind = PermissionKind.PHONE,
+            hardwareAvailable = hasTelephony,
+        )
+    val phonePermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+            phonePermission.refresh()
+            viewModel.refresh()
+        }
+    val requestPhonePermission = {
+        phonePermission.onRequestLaunched()
+        phonePermissionLauncher.launch(phonePermission.permissions.toTypedArray())
+    }
+
+    LaunchedEffect(phonePermission.state) {
+        if (phonePermission.state == PermissionState.GRANTED) {
+            viewModel.refresh()
+        }
+    }
 
     Column(
         modifier =
@@ -34,6 +69,13 @@ fun SimTelephonyScreen(
                 .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        PermissionStatusCard(
+            state = phonePermission.state,
+            rationale = stringResource(R.string.permission_rationale_phone),
+            onRequest = requestPhonePermission,
+            onOpenSettings = phonePermission::openSettings,
+        )
+
         // Telephony Overview Card
         InfoCard(title = stringResource(R.string.sim_telephony_title)) {
             InfoRow(stringResource(R.string.label_phone_type), info.phoneType)

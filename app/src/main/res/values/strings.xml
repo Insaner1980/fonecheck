@@ -306,6 +306,7 @@
     <string name="home_run_all">Run All Tests</string>
     <string name="run_all_preparing_title">Preparing the full test</string>
     <string name="run_all_preparing_description">fonecheck requests only the permissions needed for automatic hardware checks.</string>
+    <string name="run_all_permissions_continue">Continue with available access</string>
     <string name="run_all_automatic_title">Testing your phone</string>
     <string name="run_all_automatic_description">Reading device, performance, SIM, microphone, connectivity, battery and hardware capabilities automatically.</string>
     <string name="run_all_interactive_progress">Quick check %1$d of %2$d</string>

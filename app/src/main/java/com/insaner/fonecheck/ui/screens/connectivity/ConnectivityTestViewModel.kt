@@ -383,7 +383,7 @@ class ConnectivityTestViewModel
                     bluetooth =
                         BluetoothState(
                             isAvailable = true,
-                            isEnabled = adapter.isEnabled,
+                            isEnabled = hasPermission && adapter.isEnabled,
                             name = name,
                             bleSupported = hasBle,
                             bondedDeviceCount = bondedCount,

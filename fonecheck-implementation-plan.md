@@ -374,6 +374,11 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 #### Implementation/status log — 2026-08-07
 
 - Lisätty tests-first versionkohtaiset permission-policy-testit Bluetoothin API 31 -rajalle, hardware absencelle, granted/denied/settings-recovery-poluille ja approximate-locationin partial grantille. Codexin kohdistettu unit-testiajo tuotti odotetun REDin vain tarkoituksella puuttuvista policy-symboleista.
+- `PermissionPolicyTest` ja koko `:app:testDebugUnitTest` läpäisevät. Jaettu controller säilyttää pyyntöhistorian, päivittää tilan lifecycle-resumessa ja jättää Activity Result -launcherit aktiivisten Compose-ruutujen omistukseen.
+- Lisätty jaettu lokalisoitu permission status/rationale/recovery -kortti sekä grant-, denial-, settings recovery-, revoke/not-requested- ja partial-polkujen Compose-testit. Android-testien Kotlin-käännös läpäisee; instrumentaatioajo ei käynnisty, koska ympäristössä ei ole yhdistettyä laitetta.
+- Audio, Camera, SIM ja Connectivity käyttävät yhteistä tilamallia, pysäyttävät suojatut aktiiviset operaatiot luvan puuttuessa ja virkistävät tiedot Settingsistä palattaessa. Bluetoothin API 31 -suojattu tila, nimi ja bonded-laitteet luetaan vain `BLUETOOTH_CONNECT`-luvalla; vanhemmilla versioilla tila on `NOT_REQUIRED`.
+- Full Check näyttää jokaisen tarvittavan luvan perustelun ja käyttäjän käynnistämän pyyntö-/settings-polun ennen jatkamista. Se ei enää avaa lupadialogia automaattisesti, ja käyttäjä voi jatkaa rajatulla kattavuudella ilman että denial tulkitaan testin epäonnistumiseksi.
+- `ktlintCheck` estyy ennen linttausta ktlint-artifactien puuttuviin dependency-verification-tietueisiin. Käyttäjän keskeneräistä `verification-metadata.xml`-muutosta ei muokattu.
 
 ### 8. Correct and harden Device diagnostics
 

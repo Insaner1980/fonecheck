@@ -18,16 +18,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.ReportAppContext
 import com.insaner.fonecheck.domain.model.ReportDeviceContext
+import com.insaner.fonecheck.domain.permission.PermissionKind
+import com.insaner.fonecheck.ui.permissions.PermissionController
+import com.insaner.fonecheck.ui.permissions.rememberPermissionController
 import com.insaner.fonecheck.ui.screens.audio.AudioTestViewModel
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestViewModel
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestViewModel
@@ -89,29 +92,71 @@ fun RunAllTestsScreen(
     val biometricState by biometricViewModel.state.collectAsStateWithLifecycle()
     val simState by simViewModel.simTelephonyInfo.collectAsStateWithLifecycle()
     val previewView = remember { PreviewView(context) }
+    val microphonePermission =
+        rememberPermissionController(
+            kind = PermissionKind.MICROPHONE,
+            hardwareAvailable =
+                remember(context) {
+                    context.packageManager.hasSystemFeature(PackageManager.FEATURE_MICROPHONE)
+                },
+        )
+    val cameraPermission =
+        rememberPermissionController(
+            kind = PermissionKind.CAMERA,
+            hardwareAvailable =
+                remember(context) {
+                    context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)
+                },
+        )
+    val locationPermission =
+        rememberPermissionController(
+            kind = PermissionKind.LOCATION,
+            hardwareAvailable =
+                remember(context) {
+                    context.packageManager.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS)
+                },
+        )
+    val phonePermission =
+        rememberPermissionController(
+            kind = PermissionKind.PHONE,
+            hardwareAvailable =
+                remember(context) {
+                    context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)
+                },
+        )
+    val bluetoothPermission =
+        rememberPermissionController(
+            kind = PermissionKind.BLUETOOTH,
+            hardwareAvailable =
+                remember(context) {
+                    context.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH)
+                },
+        )
+    val permissionControllers =
+        listOf(
+            microphonePermission,
+            cameraPermission,
+            locationPermission,
+            phonePermission,
+            bluetoothPermission,
+        )
 
     val permissionLauncher =
         rememberLauncherForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions(),
         ) {
+            permissionControllers.forEach(PermissionController::refresh)
             connectivityViewModel.onPermissionsGranted()
             simViewModel.refresh()
-            sessionViewModel.onPermissionsResolved(currentPermissions(context))
         }
+    fun requestPermission(controller: PermissionController) {
+        controller.onRequestLaunched()
+        permissionLauncher.launch(controller.permissions.toTypedArray())
+    }
 
     LaunchedEffect(sessionState.stage) {
         when (sessionState.stage) {
-            RunAllStage.PERMISSIONS -> {
-                val missingPermissions =
-                    requestedPermissions()
-                        .filterNot { permissionGranted(context, it) }
-                        .toTypedArray()
-                if (missingPermissions.isEmpty()) {
-                    sessionViewModel.onPermissionsResolved(currentPermissions(context))
-                } else {
-                    permissionLauncher.launch(missingPermissions)
-                }
-            }
+            RunAllStage.PERMISSIONS -> Unit
 
             RunAllStage.AUTOMATIC -> {
                 audioViewModel.updateHeadphoneState()
@@ -248,9 +293,46 @@ fun RunAllTestsScreen(
 
     when (sessionState.stage) {
         RunAllStage.PERMISSIONS ->
-            AutomaticCheckScreen(
-                title = stringResource(R.string.run_all_preparing_title),
-                description = stringResource(R.string.run_all_preparing_description),
+            PermissionPreflightScreen(
+                prompts =
+                    listOf(
+                        PermissionPrompt(
+                            state = microphonePermission.state,
+                            rationale = stringResource(R.string.permission_rationale_microphone),
+                            onRequest = { requestPermission(microphonePermission) },
+                            onOpenSettings = microphonePermission::openSettings,
+                        ),
+                        PermissionPrompt(
+                            state = cameraPermission.state,
+                            rationale = stringResource(R.string.permission_rationale_camera),
+                            onRequest = { requestPermission(cameraPermission) },
+                            onOpenSettings = cameraPermission::openSettings,
+                        ),
+                        PermissionPrompt(
+                            state = locationPermission.state,
+                            rationale = stringResource(R.string.permission_rationale_location),
+                            onRequest = { requestPermission(locationPermission) },
+                            onOpenSettings = locationPermission::openSettings,
+                        ),
+                        PermissionPrompt(
+                            state = phonePermission.state,
+                            rationale = stringResource(R.string.permission_rationale_phone),
+                            onRequest = { requestPermission(phonePermission) },
+                            onOpenSettings = phonePermission::openSettings,
+                        ),
+                        PermissionPrompt(
+                            state = bluetoothPermission.state,
+                            rationale = stringResource(R.string.permission_rationale_bluetooth),
+                            onRequest = { requestPermission(bluetoothPermission) },
+                            onOpenSettings = bluetoothPermission::openSettings,
+                        ),
+                    ),
+                onContinue = {
+                    permissionControllers.forEach(PermissionController::refresh)
+                    connectivityViewModel.onPermissionsGranted()
+                    simViewModel.refresh()
+                    sessionViewModel.onPermissionsResolved(currentPermissions(context))
+                },
                 modifier = modifier,
             )
 
@@ -387,17 +469,6 @@ fun RunAllTestsScreen(
 private fun playSpeakerTone(viewModel: AudioTestViewModel) {
     viewModel.playTone(SPEAKER_TEST_FREQUENCY_HZ)
 }
-
-private fun requestedPermissions(): List<String> =
-    buildList {
-        add(Manifest.permission.RECORD_AUDIO)
-        add(Manifest.permission.CAMERA)
-        add(Manifest.permission.ACCESS_FINE_LOCATION)
-        add(Manifest.permission.READ_PHONE_STATE)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            add(Manifest.permission.BLUETOOTH_CONNECT)
-        }
-    }
 
 private fun currentPermissions(context: Context): RunAllPermissions =
     RunAllPermissions(

@@ -304,6 +304,7 @@
     <string name="home_run_all">Aja kaikki testit</string>
     <string name="run_all_preparing_title">Valmistellaan koko testi</string>
     <string name="run_all_preparing_description">fonecheck pyytää vain automaattisiin laitteistotarkistuksiin tarvittavat oikeudet.</string>
+    <string name="run_all_permissions_continue">Jatka käytettävissä olevilla oikeuksilla</string>
     <string name="run_all_automatic_title">Puhelinta testataan</string>
     <string name="run_all_automatic_description">Laitteen, suorituskyvyn, SIM-kortin, mikrofonin, yhteyksien, akun ja laitteiston ominaisuudet luetaan automaattisesti.</string>
     <string name="run_all_interactive_progress">Pikatarkistus %1$d/%2$d</string>

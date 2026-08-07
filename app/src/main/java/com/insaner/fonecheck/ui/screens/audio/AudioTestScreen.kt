@@ -1,6 +1,9 @@
 package com.insaner.fonecheck.ui.screens.audio
 
+import android.content.pm.PackageManager
 import android.view.KeyEvent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -30,18 +33,24 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.permission.PermissionKind
+import com.insaner.fonecheck.domain.permission.PermissionState
 import com.insaner.fonecheck.ui.components.InfoRow
+import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.StatusBadge
+import com.insaner.fonecheck.ui.permissions.rememberPermissionController
 import com.insaner.fonecheck.ui.theme.Blue400
 import com.insaner.fonecheck.ui.theme.Green400
 import com.insaner.fonecheck.ui.theme.JetBrainsMono
@@ -59,6 +68,30 @@ fun AudioTestScreen(
     viewModel: AudioTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
+    val hasMicrophone =
+        remember(context) {
+            context.packageManager.hasSystemFeature(PackageManager.FEATURE_MICROPHONE)
+        }
+    val microphonePermission =
+        rememberPermissionController(
+            kind = PermissionKind.MICROPHONE,
+            hardwareAvailable = hasMicrophone,
+        )
+    val microphonePermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+            microphonePermission.refresh()
+        }
+    val requestMicrophonePermission = {
+        microphonePermission.onRequestLaunched()
+        microphonePermissionLauncher.launch(microphonePermission.permissions.toTypedArray())
+    }
+
+    LaunchedEffect(microphonePermission.state) {
+        if (microphonePermission.state != PermissionState.GRANTED) {
+            viewModel.stopRecording()
+        }
+    }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -96,7 +129,13 @@ fun AudioTestScreen(
         SpeakerTestCard(state, viewModel)
         StereoTestCard(state, viewModel)
         EarpieceTestCard(state, viewModel)
-        MicrophoneTestCard(state, viewModel)
+        MicrophoneTestCard(
+            state = state,
+            viewModel = viewModel,
+            permissionState = microphonePermission.state,
+            onRequestPermission = requestMicrophonePermission,
+            onOpenSettings = microphonePermission::openSettings,
+        )
         HeadphoneJackCard(state, viewModel)
         VolumeButtonCard(state, viewModel)
     }
@@ -231,9 +270,19 @@ private fun EarpieceTestCard(
 private fun MicrophoneTestCard(
     state: AudioTestState,
     viewModel: AudioTestViewModel,
+    permissionState: PermissionState,
+    onRequestPermission: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     AudioCard(title = stringResource(R.string.audio_microphone_title)) {
         AudioDescription(stringResource(R.string.audio_microphone_description))
+        PermissionStatusCard(
+            state = permissionState,
+            rationale = stringResource(R.string.permission_rationale_microphone),
+            onRequest = onRequestPermission,
+            onOpenSettings = onOpenSettings,
+            modifier = Modifier.padding(bottom = 12.dp),
+        )
 
         // dB meter
         if (state.isRecording) {
@@ -300,6 +349,7 @@ private fun MicrophoneTestCard(
                     }
                 },
                 modifier = Modifier.weight(1f),
+                enabled = permissionState == PermissionState.GRANTED,
                 colors =
                     ButtonDefaults.buttonColors(
                         containerColor = if (state.isRecording) Red400 else Blue400,

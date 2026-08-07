@@ -3,8 +3,8 @@ package com.insaner.fonecheck.ui.components
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.insaner.fonecheck.R
@@ -56,11 +56,11 @@ class PermissionStatusCardTest {
     }
 
     @Test
-    fun partialPermissionShowsPartialStateAndRetryAction() {
+    fun partialPermissionShowsPartialStateAndSettingsRecovery() {
         render(PermissionState.PARTIAL)
 
         composeRule.onNodeWithText(context.getString(R.string.permission_status_partial)).assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.permission_action_retry)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.permission_action_open_settings)).assertIsDisplayed()
     }
 
     private fun render(state: PermissionState) {

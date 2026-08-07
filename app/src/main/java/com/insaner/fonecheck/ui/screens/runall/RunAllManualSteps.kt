@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -34,6 +36,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.permission.PermissionState
+import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.StatusBadge
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestState
 import com.insaner.fonecheck.ui.screens.camera.CameraTestState
@@ -53,6 +57,56 @@ internal val displayTestColors =
     )
 
 private const val MANUAL_CHECK_COUNT = 7
+
+data class PermissionPrompt(
+    val state: PermissionState,
+    val rationale: String,
+    val onRequest: () -> Unit,
+    val onOpenSettings: () -> Unit,
+)
+
+@Composable
+fun PermissionPreflightScreen(
+    prompts: List<PermissionPrompt>,
+    onContinue: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.run_all_preparing_title),
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = stringResource(R.string.run_all_preparing_description),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        prompts.forEach { prompt ->
+            PermissionStatusCard(
+                state = prompt.state,
+                rationale = prompt.rationale,
+                onRequest = prompt.onRequest,
+                onOpenSettings = prompt.onOpenSettings,
+            )
+        }
+        Button(
+            onClick = onContinue,
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium,
+        ) {
+            Text(stringResource(R.string.run_all_permissions_continue))
+        }
+    }
+}
 
 @Composable
 fun AutomaticCheckScreen(

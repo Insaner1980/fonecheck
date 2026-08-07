@@ -1,6 +1,5 @@
 package com.insaner.fonecheck.ui.screens.connectivity
 
-import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -28,10 +28,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.permission.PermissionKind
+import com.insaner.fonecheck.domain.permission.PermissionState
 import com.insaner.fonecheck.ui.components.DetailInfoRow
+import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.SectionBox
 import com.insaner.fonecheck.ui.components.TestScreenContent
 import com.insaner.fonecheck.ui.components.TestSectionCard
+import com.insaner.fonecheck.ui.permissions.rememberPermissionController
 import com.insaner.fonecheck.ui.theme.Blue400
 import com.insaner.fonecheck.ui.theme.Green400
 import com.insaner.fonecheck.ui.theme.JetBrainsMono
@@ -47,11 +51,53 @@ fun ConnectivityTestScreen(
     viewModel: ConnectivityTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-
-    val permissionLauncher =
+    val bluetoothPermission =
+        rememberPermissionController(
+            kind = PermissionKind.BLUETOOTH,
+            hardwareAvailable = state.bluetooth.isAvailable,
+        )
+    val locationPermission =
+        rememberPermissionController(
+            kind = PermissionKind.LOCATION,
+            hardwareAvailable = state.gps.isAvailable,
+        )
+    val phonePermission =
+        rememberPermissionController(
+            kind = PermissionKind.PHONE,
+            hardwareAvailable = state.mobileNetwork.isAvailable,
+        )
+    val bluetoothPermissionLauncher =
         rememberLauncherForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions(),
-        ) { viewModel.onPermissionsGranted() }
+        ) {
+            bluetoothPermission.refresh()
+            viewModel.onPermissionsGranted()
+        }
+    val locationPermissionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions(),
+        ) {
+            locationPermission.refresh()
+            viewModel.onPermissionsGranted()
+        }
+    val phonePermissionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions(),
+        ) {
+            phonePermission.refresh()
+            viewModel.onPermissionsGranted()
+        }
+
+    LaunchedEffect(
+        bluetoothPermission.state,
+        locationPermission.state,
+        phonePermission.state,
+    ) {
+        if (locationPermission.state != PermissionState.GRANTED) {
+            viewModel.stopGpsFix()
+        }
+        viewModel.onPermissionsGranted()
+    }
 
     TestScreenContent(modifier = modifier) {
         // WiFi
@@ -88,6 +134,9 @@ fun ConnectivityTestScreen(
                 statusText =
                     when {
                         !state.bluetooth.isAvailable -> stringResource(R.string.conn_not_available)
+                        bluetoothPermission.state != PermissionState.GRANTED &&
+                            bluetoothPermission.state != PermissionState.NOT_REQUIRED ->
+                            stringResource(R.string.run_all_permission_missing)
                         state.bluetooth.isEnabled -> stringResource(R.string.status_enabled)
                         else -> stringResource(R.string.status_disabled)
                     },
@@ -100,7 +149,15 @@ fun ConnectivityTestScreen(
                 isExpanded = state.expandedSection == ConnectivitySection.BLUETOOTH,
                 onClick = { viewModel.toggleSection(ConnectivitySection.BLUETOOTH) },
             ) {
-                BluetoothDetails(state.bluetooth)
+                BluetoothDetails(
+                    bluetooth = state.bluetooth,
+                    permissionState = bluetoothPermission.state,
+                    onRequestPermission = {
+                        bluetoothPermission.onRequestLaunched()
+                        bluetoothPermissionLauncher.launch(bluetoothPermission.permissions.toTypedArray())
+                    },
+                    onOpenSettings = bluetoothPermission::openSettings,
+                )
             }
         }
 
@@ -164,7 +221,16 @@ fun ConnectivityTestScreen(
                 isExpanded = state.expandedSection == ConnectivitySection.GPS,
                 onClick = { viewModel.toggleSection(ConnectivitySection.GPS) },
             ) {
-                GpsDetails(state.gps, state.hasLocationPermission, viewModel, permissionLauncher)
+                GpsDetails(
+                    gps = state.gps,
+                    permissionState = locationPermission.state,
+                    viewModel = viewModel,
+                    onRequestPermission = {
+                        locationPermission.onRequestLaunched()
+                        locationPermissionLauncher.launch(locationPermission.permissions.toTypedArray())
+                    },
+                    onOpenSettings = locationPermission::openSettings,
+                )
             }
         }
 
@@ -188,7 +254,15 @@ fun ConnectivityTestScreen(
                 isExpanded = state.expandedSection == ConnectivitySection.MOBILE_NETWORK,
                 onClick = { viewModel.toggleSection(ConnectivitySection.MOBILE_NETWORK) },
             ) {
-                MobileNetworkDetails(state.mobileNetwork, state.hasPhonePermission, permissionLauncher)
+                MobileNetworkDetails(
+                    mobile = state.mobileNetwork,
+                    permissionState = phonePermission.state,
+                    onRequestPermission = {
+                        phonePermission.onRequestLaunched()
+                        phonePermissionLauncher.launch(phonePermission.permissions.toTypedArray())
+                    },
+                    onOpenSettings = phonePermission::openSettings,
+                )
             }
         }
     }
@@ -263,43 +337,63 @@ private fun WifiDetails(wifi: WifiState) {
 // ── Bluetooth Details ───────────────────────────────────────────────────────────
 
 @Composable
-private fun BluetoothDetails(bluetooth: BluetoothState) {
-    SectionBox {
-        if (!bluetooth.isAvailable) {
-            Text(
-                text = stringResource(R.string.conn_bt_not_supported),
-                style = MaterialTheme.typography.bodySmall,
-                color = Neutral500,
-            )
-            return@SectionBox
-        }
+private fun BluetoothDetails(
+    bluetooth: BluetoothState,
+    permissionState: PermissionState,
+    onRequestPermission: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        PermissionStatusCard(
+            state = permissionState,
+            rationale = stringResource(R.string.permission_rationale_bluetooth),
+            onRequest = onRequestPermission,
+            onOpenSettings = onOpenSettings,
+        )
+        SectionBox {
+            if (!bluetooth.isAvailable) {
+                Text(
+                    text = stringResource(R.string.conn_bt_not_supported),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Neutral500,
+                )
+                return@SectionBox
+            }
 
-        DetailInfoRow(
-            stringResource(R.string.conn_bt_status),
-            if (bluetooth.isEnabled) {
-                stringResource(R.string.status_enabled)
-            } else {
-                stringResource(R.string.status_disabled)
-            },
-            valueColor = if (bluetooth.isEnabled) Green400 else Red400,
-        )
-        bluetooth.name?.let { DetailInfoRow(stringResource(R.string.conn_bt_name), it) }
-        DetailInfoRow(
-            stringResource(R.string.conn_bt_ble),
-            if (bluetooth.bleSupported) {
-                stringResource(R.string.conn_supported)
-            } else {
-                stringResource(R.string.conn_not_supported)
-            },
-            valueColor = if (bluetooth.bleSupported) Green400 else Neutral500,
-        )
-        bluetooth.bluetoothVersion?.let {
-            DetailInfoRow(stringResource(R.string.conn_bt_version), it)
+            val canReadProtectedData =
+                permissionState == PermissionState.GRANTED ||
+                    permissionState == PermissionState.NOT_REQUIRED
+            if (canReadProtectedData) {
+                DetailInfoRow(
+                    stringResource(R.string.conn_bt_status),
+                    if (bluetooth.isEnabled) {
+                        stringResource(R.string.status_enabled)
+                    } else {
+                        stringResource(R.string.status_disabled)
+                    },
+                    valueColor = if (bluetooth.isEnabled) Green400 else Red400,
+                )
+                bluetooth.name?.let { DetailInfoRow(stringResource(R.string.conn_bt_name), it) }
+            }
+            DetailInfoRow(
+                stringResource(R.string.conn_bt_ble),
+                if (bluetooth.bleSupported) {
+                    stringResource(R.string.conn_supported)
+                } else {
+                    stringResource(R.string.conn_not_supported)
+                },
+                valueColor = if (bluetooth.bleSupported) Green400 else Neutral500,
+            )
+            bluetooth.bluetoothVersion?.let {
+                DetailInfoRow(stringResource(R.string.conn_bt_version), it)
+            }
+            if (canReadProtectedData) {
+                DetailInfoRow(
+                    stringResource(R.string.conn_bt_bonded),
+                    "${bluetooth.bondedDeviceCount}",
+                )
+            }
         }
-        DetailInfoRow(
-            stringResource(R.string.conn_bt_bonded),
-            "${bluetooth.bondedDeviceCount}",
-        )
     }
 }
 
@@ -343,11 +437,18 @@ private fun NfcDetails(nfc: NfcState) {
 @Composable
 private fun GpsDetails(
     gps: GpsState,
-    hasPermission: Boolean,
+    permissionState: PermissionState,
     viewModel: ConnectivityTestViewModel,
-    permissionLauncher: androidx.activity.result.ActivityResultLauncher<Array<String>>,
+    onRequestPermission: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        PermissionStatusCard(
+            state = permissionState,
+            rationale = stringResource(R.string.permission_rationale_location),
+            onRequest = onRequestPermission,
+            onOpenSettings = onOpenSettings,
+        )
         SectionBox {
             if (!gps.isAvailable) {
                 Text(
@@ -558,23 +659,7 @@ private fun GpsDetails(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                if (!hasPermission) {
-                    Button(
-                        onClick = {
-                            permissionLauncher.launch(
-                                arrayOf(
-                                    Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION,
-                                ),
-                            )
-                        },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = Blue400),
-                        shape = RoundedCornerShape(8.dp),
-                    ) {
-                        Text(stringResource(R.string.conn_grant_location))
-                    }
-                } else {
+                if (permissionState == PermissionState.GRANTED) {
                     when (gps.fixStatus) {
                         GpsFixStatus.NOT_STARTED, GpsFixStatus.FAILED -> {
                             Button(
@@ -622,10 +707,17 @@ private fun GpsDetails(
 @Composable
 private fun MobileNetworkDetails(
     mobile: MobileNetworkState,
-    hasPhonePermission: Boolean,
-    permissionLauncher: androidx.activity.result.ActivityResultLauncher<Array<String>>,
+    permissionState: PermissionState,
+    onRequestPermission: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        PermissionStatusCard(
+            state = permissionState,
+            rationale = stringResource(R.string.permission_rationale_phone),
+            onRequest = onRequestPermission,
+            onOpenSettings = onOpenSettings,
+        )
         SectionBox {
             if (!mobile.isAvailable) {
                 Text(
@@ -685,17 +777,5 @@ private fun MobileNetworkDetails(
             }
         }
 
-        if (!hasPhonePermission && mobile.isAvailable) {
-            Button(
-                onClick = {
-                    permissionLauncher.launch(arrayOf(Manifest.permission.READ_PHONE_STATE))
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Blue400),
-                shape = RoundedCornerShape(8.dp),
-            ) {
-                Text(stringResource(R.string.conn_grant_phone))
-            }
-        }
     }
 }

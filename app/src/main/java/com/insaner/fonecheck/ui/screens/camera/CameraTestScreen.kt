@@ -1,5 +1,8 @@
 package com.insaner.fonecheck.ui.screens.camera
 
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -28,6 +31,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,16 +43,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.permission.PermissionKind
+import com.insaner.fonecheck.domain.permission.PermissionState
 import com.insaner.fonecheck.ui.components.InfoCard
 import com.insaner.fonecheck.ui.components.InfoRow
+import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.StatusBadge
+import com.insaner.fonecheck.ui.permissions.rememberPermissionController
 import com.insaner.fonecheck.ui.theme.Green400
 import com.insaner.fonecheck.ui.theme.JetBrainsMono
 import com.insaner.fonecheck.ui.theme.Neutral500
@@ -64,6 +72,31 @@ fun CameraTestScreen(
     viewModel: CameraTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
+    val hasCamera =
+        remember(context) {
+            context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)
+        }
+    val cameraPermission =
+        rememberPermissionController(
+            kind = PermissionKind.CAMERA,
+            hardwareAvailable = hasCamera,
+        )
+    val cameraPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+            cameraPermission.refresh()
+        }
+    val requestCameraPermission = {
+        cameraPermission.onRequestLaunched()
+        cameraPermissionLauncher.launch(cameraPermission.permissions.toTypedArray())
+    }
+
+    LaunchedEffect(cameraPermission.state) {
+        if (cameraPermission.state != PermissionState.GRANTED) {
+            viewModel.turnOffFlash()
+            viewModel.stopPreview()
+        }
+    }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -80,8 +113,22 @@ fun CameraTestScreen(
                 .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        CameraPreviewCard(state, viewModel)
-        FlashTestCard(state, viewModel)
+        PermissionStatusCard(
+            state = cameraPermission.state,
+            rationale = stringResource(R.string.permission_rationale_camera),
+            onRequest = requestCameraPermission,
+            onOpenSettings = cameraPermission::openSettings,
+        )
+        CameraPreviewCard(
+            state = state,
+            viewModel = viewModel,
+            hasPermission = cameraPermission.state == PermissionState.GRANTED,
+        )
+        FlashTestCard(
+            state = state,
+            viewModel = viewModel,
+            hasPermission = cameraPermission.state == PermissionState.GRANTED,
+        )
         state.rearCapabilities?.let { caps ->
             CapabilitiesCard(
                 title = stringResource(R.string.camera_rear_caps_title),
@@ -110,6 +157,7 @@ fun CameraTestScreen(
 private fun CameraPreviewCard(
     state: CameraTestState,
     viewModel: CameraTestViewModel,
+    hasPermission: Boolean,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -149,7 +197,7 @@ private fun CameraPreviewCard(
                             },
                     ),
                 shape = MaterialTheme.shapes.medium,
-                enabled = state.rearCapabilities != null,
+                enabled = hasPermission && state.rearCapabilities != null,
             ) {
                 Text(stringResource(R.string.camera_rear))
             }
@@ -174,7 +222,7 @@ private fun CameraPreviewCard(
                             },
                     ),
                 shape = MaterialTheme.shapes.medium,
-                enabled = state.frontCapabilities != null,
+                enabled = hasPermission && state.frontCapabilities != null,
             ) {
                 Text(stringResource(R.string.camera_front))
             }
@@ -290,6 +338,7 @@ private fun CameraPreviewCard(
 private fun FlashTestCard(
     state: CameraTestState,
     viewModel: CameraTestViewModel,
+    hasPermission: Boolean,
 ) {
     val hasFlash = state.rearCapabilities?.hasFlash == true
 
@@ -331,7 +380,7 @@ private fun FlashTestCard(
                         disabledContainerColor = Neutral700,
                     ),
                 shape = MaterialTheme.shapes.medium,
-                enabled = hasFlash,
+                enabled = hasPermission && hasFlash,
             ) {
                 Text(
                     if (state.flashOn) {
