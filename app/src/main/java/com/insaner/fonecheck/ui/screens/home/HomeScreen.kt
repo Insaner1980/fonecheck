@@ -154,7 +154,9 @@ private fun DeviceSummaryCard(summary: DeviceSummary) {
             }
             Spacer(modifier = Modifier.width(12.dp))
             StatusBadge(
-                text = "${summary.batteryLevel}%",
+                text =
+                    summary.batteryLevel?.let { stringResource(R.string.batt_value_percent, it) }
+                        ?: stringResource(R.string.device_value_unavailable),
                 color = batteryColor(summary.batteryLevel),
             )
         }
@@ -162,8 +164,9 @@ private fun DeviceSummaryCard(summary: DeviceSummary) {
 }
 
 @Composable
-private fun batteryColor(level: Int): Color =
+private fun batteryColor(level: Int?): Color =
     when {
+        level == null -> MaterialTheme.colorScheme.outline
         level > 50 -> MaterialTheme.colorScheme.secondary
         level > 20 -> MaterialTheme.colorScheme.tertiary
         else -> MaterialTheme.colorScheme.error

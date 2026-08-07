@@ -577,6 +577,14 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** OEM current-sign convention ei ole yhdenmukainen.
 - **Decision required:** Ei.
 
+#### Implementation/status log — 2026-08-08
+
+- Home ja Battery näyttävät puuttuvan tai virheellisen varaustason, jännitteen, lämpötilan ja hetkellisen virran `Unavailable`-tilana; negatiivinen `-1 %` ei enää päädy mittaukseksi tai raporttiin. Tyhjä Capacity-osio ja perusteeton health-percentage-kenttä poistettiin kokonaan ilman `PowerProfile`-reflektiota tai vendor-tiedostojen lukua.
+- Hetkellinen virta muunnetaan mikroampeereista positiiviseksi mA-voimakkuudeksi, yli 20 A:n epäuskottava lukema hylätään ja suunta johdetaan Androidin dokumentoidusta etumerkistä. Jos OEM-etumerkki on ristiriidassa havaitun charging/discharging-tilan kanssa, suunta normalisoidaan tilasta ja caveat säilytetään canonical snapshotissa. Kaikkien OEM-profiilien virran varmuus on tarkoituksella `LOW` [BatteryManager API:n](https://developer.android.com/reference/android/os/BatteryManager) rajausten mukaisesti.
+- Cycle count luetaan Android 14+:ssa julkisesta `ACTION_BATTERY_CHANGED`-broadcastin `EXTRA_CYCLE_COUNT`-kentästä. Vanha virheellinen raw property `6` -luku poistettiin; kyseinen property-ID tarkoittaa akun status-arvoa, ei lataussyklien määrää.
+- Run All tallentaa health-, temperature-, level-, current-, current-direction-, sign-interpretation-, OEM-profile- ja cycle-count-evidencen tyypitettynä. Puuttuvalla mittauksella ei ole nolla-arvoa; virran confidence ja etumerkin normalisointicaveat säilyvät raporttisnapshotissa.
+- `BatteryRuntimePolicyTest`, akkuun liittyvät `RunAllSnapshotMapperTest`-tapaukset, koko `:app:testDebugUnitTest`, Android-testien Kotlin-käännös ja `:app:assembleDebug` läpäisevät. `adb devices -l` ei löytänyt fyysistä laitetta, joten charging/discharging- ja OEM-laitetestit odottavat laitetta. Android Lint tavoitti kolme aiempien tehtävien virhettä SIM- ja Camera-tiedostoissa; ne eivät liity akkumuutokseen. Käyttäjän keskeneräistä `PROJECT.md`-muutosta ei koskettu.
+
 ### 17. Add the Thermal diagnostic category
 
 - **Objective:** Toteuttaa puuttuva 13.10-specin mukainen Thermal-kategoria.

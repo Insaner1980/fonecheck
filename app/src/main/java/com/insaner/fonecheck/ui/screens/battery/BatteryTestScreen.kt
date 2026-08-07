@@ -1,6 +1,5 @@
 package com.insaner.fonecheck.ui.screens.battery
 
-import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -46,14 +45,19 @@ fun BatteryTestScreen(
         // Basic Info
         item {
             val healthLabel = stringResource(state.health.healthStatusLabel)
+            val batteryLevel = state.basic.level
+            val levelText =
+                batteryLevel?.let { stringResource(R.string.batt_value_percent, it) }
+                    ?: stringResource(R.string.device_value_unavailable)
             TestSectionCard(
-                icon = "BAT",
+                icon = stringResource(R.string.batt_icon_basic),
                 title = stringResource(R.string.batt_basic_title),
-                statusText = "${state.basic.level}% \u2022 $healthLabel",
+                statusText = "$levelText \u2022 $healthLabel",
                 statusColor =
                     when {
-                        state.basic.level > 50 -> Green400
-                        state.basic.level > 20 -> Yellow400
+                        batteryLevel == null -> Neutral500
+                        batteryLevel > 50 -> Green400
+                        batteryLevel > 20 -> Yellow400
                         else -> Red400
                     },
                 isExpanded = state.expandedSection == BatterySection.BASIC,
@@ -66,7 +70,7 @@ fun BatteryTestScreen(
         // Charging
         item {
             TestSectionCard(
-                icon = "CHG",
+                icon = stringResource(R.string.batt_icon_charging),
                 title = stringResource(R.string.batt_charging_title),
                 statusText = stringResource(viewModel.getChargingStatusLabel(state.charging.status)),
                 statusColor =
@@ -84,7 +88,7 @@ fun BatteryTestScreen(
         // Health
         item {
             TestSectionCard(
-                icon = "HP",
+                icon = stringResource(R.string.batt_icon_health),
                 title = stringResource(R.string.batt_health_title),
                 statusText = stringResource(state.health.healthStatusLabel),
                 statusColor =
@@ -100,28 +104,10 @@ fun BatteryTestScreen(
             }
         }
 
-        // Capacity
-        item {
-            val capacityText =
-                state.capacity.designCapacityMah?.let {
-                    "${it.toInt()} mAh"
-                } ?: stringResource(R.string.confidence_unavailable)
-            TestSectionCard(
-                icon = "CAP",
-                title = stringResource(R.string.batt_capacity_title),
-                statusText = capacityText,
-                statusColor = if (state.capacity.designCapacityMah != null) Green400 else Neutral500,
-                isExpanded = state.expandedSection == BatterySection.CAPACITY,
-                onClick = { viewModel.toggleSection(BatterySection.CAPACITY) },
-            ) {
-                CapacityDetails(state.capacity)
-            }
-        }
-
         // Manufacturer
         item {
             TestSectionCard(
-                icon = "MFR",
+                icon = stringResource(R.string.batt_icon_manufacturer),
                 title = stringResource(R.string.batt_manufacturer_title),
                 statusText = state.manufacturer.manufacturerName,
                 statusColor = Blue400,
@@ -184,27 +170,37 @@ private fun BasicDetails(
     viewModel: BatteryTestViewModel,
 ) {
     SectionBox {
+        val level = basic.level
         DetailInfoRow(
             label = stringResource(R.string.batt_level),
-            value = "${basic.level}%",
+            value =
+                level?.let { stringResource(R.string.batt_value_percent, it) }
+                    ?: stringResource(R.string.device_value_unavailable),
             valueColor =
                 when {
-                    basic.level > 50 -> Green400
-                    basic.level > 20 -> Yellow400
+                    level == null -> Neutral500
+                    level > 50 -> Green400
+                    level > 20 -> Yellow400
                     else -> Red400
                 },
         )
         DetailInfoRow(
             label = stringResource(R.string.batt_voltage),
-            value = "${basic.voltage} mV",
+            value =
+                basic.voltageMv?.let { stringResource(R.string.batt_value_millivolts, it) }
+                    ?: stringResource(R.string.device_value_unavailable),
         )
+        val temperature = basic.temperatureCelsius
         DetailInfoRow(
             label = stringResource(R.string.batt_temperature),
-            value = "%.1f \u00B0C".format(basic.temperatureCelsius),
+            value =
+                temperature?.let { stringResource(R.string.batt_value_celsius, it) }
+                    ?: stringResource(R.string.device_value_unavailable),
             valueColor =
                 when {
-                    basic.temperatureCelsius < 35f -> Green400
-                    basic.temperatureCelsius < 45f -> Yellow400
+                    temperature == null -> Neutral500
+                    temperature < 35f -> Green400
+                    temperature < 45f -> Yellow400
                     else -> Red400
                 },
         )
@@ -246,13 +242,30 @@ private fun ChargingDetails(
         if (charging.chargingCurrentMa != null) {
             InfoRowWithConfidence(
                 label = stringResource(R.string.batt_charging_current),
-                value = "${charging.chargingCurrentMa} mA",
+                value = stringResource(R.string.batt_value_milliamps, charging.chargingCurrentMa),
                 confidence = charging.chargingCurrentConfidence,
+            )
+            DetailInfoRow(
+                label = stringResource(R.string.batt_current_direction),
+                value = currentDirectionLabel(charging.currentDirection),
+            )
+            Text(
+                text =
+                    stringResource(
+                        if (charging.currentSignNormalized) {
+                            R.string.batt_current_sign_normalized
+                        } else {
+                            R.string.batt_current_caveat
+                        },
+                    ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp),
             )
         } else {
             InfoRowWithConfidence(
                 label = stringResource(R.string.batt_charging_current),
-                value = "\u2014",
+                value = stringResource(R.string.device_value_unavailable),
                 confidence = Confidence.UNAVAILABLE,
             )
         }
@@ -283,26 +296,18 @@ private fun HealthDetails(health: HealthState) {
                 },
         )
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        if (health.cycleCountSupported) {
             if (health.cycleCount != null) {
                 InfoRowWithConfidence(
                     label = stringResource(R.string.batt_cycle_count),
-                    value = "${health.cycleCount}",
+                    value = health.cycleCount.toString(),
                     confidence = health.cycleCountConfidence,
                 )
             } else {
                 InfoRowWithConfidence(
                     label = stringResource(R.string.batt_cycle_count),
-                    value = "\u2014",
+                    value = stringResource(R.string.device_value_unavailable),
                     confidence = Confidence.UNAVAILABLE,
-                )
-            }
-
-            if (health.healthPercentage != null) {
-                InfoRowWithConfidence(
-                    label = stringResource(R.string.batt_health_percentage),
-                    value = "${health.healthPercentage}%",
-                    confidence = health.healthPercentageConfidence,
                 )
             }
         } else {
@@ -310,33 +315,6 @@ private fun HealthDetails(health: HealthState) {
                 label = stringResource(R.string.batt_cycle_count),
                 value = stringResource(R.string.batt_requires_api34),
                 confidence = Confidence.UNAVAILABLE,
-            )
-        }
-    }
-}
-
-// ── Capacity Details ────────────────────────────────────────────────────────────
-
-@Composable
-private fun CapacityDetails(capacity: CapacityState) {
-    SectionBox {
-        if (capacity.designCapacityMah != null) {
-            InfoRowWithConfidence(
-                label = stringResource(R.string.batt_design_capacity),
-                value = "${capacity.designCapacityMah.toInt()} mAh",
-                confidence = capacity.designCapacityConfidence,
-            )
-        } else {
-            InfoRowWithConfidence(
-                label = stringResource(R.string.batt_design_capacity),
-                value = "\u2014",
-                confidence = Confidence.UNAVAILABLE,
-            )
-            Text(
-                text = stringResource(R.string.batt_capacity_unavailable_note),
-                style = MaterialTheme.typography.bodySmall,
-                color = Neutral500,
-                modifier = Modifier.padding(top = 4.dp),
             )
         }
     }
@@ -351,15 +329,16 @@ private fun ManufacturerDetails(manufacturer: ManufacturerState) {
             label = stringResource(R.string.batt_mfr_name),
             value = manufacturer.manufacturerName,
         )
-        DetailInfoRow(
+        InfoRowWithConfidence(
             label = stringResource(R.string.batt_mfr_profile),
             value =
                 when (manufacturer.profile) {
-                    ManufacturerProfile.SAMSUNG -> "Samsung"
-                    ManufacturerProfile.ONEPLUS -> "OnePlus"
-                    ManufacturerProfile.GOOGLE_PIXEL -> "Google Pixel"
+                    ManufacturerProfile.SAMSUNG -> stringResource(R.string.batt_mfr_samsung)
+                    ManufacturerProfile.ONEPLUS -> stringResource(R.string.batt_mfr_oneplus)
+                    ManufacturerProfile.GOOGLE_PIXEL -> stringResource(R.string.batt_mfr_pixel)
                     ManufacturerProfile.GENERIC -> stringResource(R.string.batt_mfr_generic)
                 },
+            confidence = manufacturer.profileConfidence,
         )
         manufacturer.notes.forEach { note ->
             Text(
@@ -371,3 +350,13 @@ private fun ManufacturerDetails(manufacturer: ManufacturerState) {
         }
     }
 }
+
+@Composable
+private fun currentDirectionLabel(direction: BatteryCurrentDirection): String =
+    stringResource(
+        when (direction) {
+            BatteryCurrentDirection.CHARGING -> R.string.batt_current_direction_charging
+            BatteryCurrentDirection.DISCHARGING -> R.string.batt_current_direction_discharging
+            BatteryCurrentDirection.IDLE -> R.string.batt_current_direction_idle
+        },
+    )

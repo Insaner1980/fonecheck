@@ -356,6 +356,11 @@ private fun evidenceLabelResId(checkId: String): Int? =
         "battery.health" -> R.string.batt_health_title
         "battery.temperature" -> R.string.batt_temperature
         "battery.level" -> R.string.batt_level
+        "battery.current_now" -> R.string.batt_charging_current
+        "battery.current_direction" -> R.string.batt_current_direction
+        "battery.current_interpretation" -> R.string.batt_current_interpretation
+        "battery.current_profile" -> R.string.batt_mfr_profile
+        "battery.cycle_count" -> R.string.batt_cycle_count
         "vibration.hardware" -> R.string.vibration_has_vibrator
         "vibration.motor" -> R.string.vibration_motor_title
         "buttons.volume" -> R.string.run_all_check_volume_buttons
@@ -398,6 +403,7 @@ private fun evidenceValueLabel(
         is EvidenceValue.DoubleValue ->
             when (unit?.value) {
                 "celsius" -> stringResource(R.string.run_all_detail_temperature, value.value)
+                "milliamperes" -> stringResource(R.string.batt_value_milliamps, value.value)
                 "mebibytes_per_second" ->
                     stringResource(R.string.perf_benchmark_memory_rate_value, value.value)
                 else -> value.value.toString()
@@ -417,6 +423,15 @@ private fun stableTextLabel(code: String): String =
             "over_voltage" -> R.string.batt_health_over_voltage
             "unspecified_failure" -> R.string.batt_health_failure
             "cold" -> R.string.batt_health_cold
+            "charging" -> R.string.batt_current_direction_charging
+            "discharging" -> R.string.batt_current_direction_discharging
+            "idle" -> R.string.batt_current_direction_idle
+            "api_sign" -> R.string.batt_current_sign_api
+            "status_sign_normalized" -> R.string.batt_current_sign_status
+            "samsung" -> R.string.batt_mfr_samsung
+            "oneplus" -> R.string.batt_mfr_oneplus
+            "google_pixel" -> R.string.batt_mfr_pixel
+            "generic" -> R.string.batt_mfr_generic
             "strong" -> R.string.biometric_strong
             "weak" -> R.string.biometric_weak
             "unavailable" -> R.string.biometric_not_available

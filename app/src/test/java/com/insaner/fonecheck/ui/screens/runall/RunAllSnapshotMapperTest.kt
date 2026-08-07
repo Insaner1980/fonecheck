@@ -21,7 +21,13 @@ import com.insaner.fonecheck.domain.model.SimTelephonyInfo
 import com.insaner.fonecheck.domain.model.TelephonyHardwareCode
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import com.insaner.fonecheck.ui.screens.audio.AudioTestState
+import com.insaner.fonecheck.ui.screens.battery.BasicBatteryState
+import com.insaner.fonecheck.ui.screens.battery.BatteryCurrentDirection
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestState
+import com.insaner.fonecheck.ui.screens.battery.ChargingState
+import com.insaner.fonecheck.ui.screens.battery.HealthState
+import com.insaner.fonecheck.ui.screens.battery.ManufacturerProfile
+import com.insaner.fonecheck.ui.screens.battery.ManufacturerState
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestState
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestState
 import com.insaner.fonecheck.ui.screens.camera.CameraTestState
@@ -406,6 +412,86 @@ class RunAllSnapshotMapperTest {
         assertEquals(DiagnosticStatus.WARNING, evidence.status)
         assertEquals(Confidence.LOW, evidence.confidence)
         assertEquals(EvidenceReasonCode.TIMEOUT, evidence.reason)
+    }
+
+    @Test
+    fun missingBatteryMeasurementsAreUnavailableInsteadOfZeroMeasurements() {
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots = diagnosticSnapshotsWithSensitiveConnectivity().copy(battery = BatteryTestState()),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(),
+                    capturedAt = Instant.parse("2026-08-08T12:00:00Z"),
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+
+        listOf("battery.health", "battery.temperature", "battery.level", "battery.current_now").forEach { id ->
+            assertEquals(DiagnosticStatus.NOT_AVAILABLE, evidence.getValue(id).status)
+            assertEquals(Confidence.UNAVAILABLE, evidence.getValue(id).confidence)
+            assertEquals(null, evidence.getValue(id).value)
+        }
+        assertEquals(
+            EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED,
+            evidence.getValue("battery.cycle_count").reason,
+        )
+    }
+
+    @Test
+    fun batterySnapshotPreservesCurrentConfidenceSignCaveatCycleCountAndOemProfile() {
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots =
+                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                            battery =
+                                BatteryTestState(
+                                    basic =
+                                        BasicBatteryState(
+                                            level = 75,
+                                            voltageMv = 4_100,
+                                            temperatureCelsius = 32.5f,
+                                            healthStatus = android.os.BatteryManager.BATTERY_HEALTH_GOOD,
+                                        ),
+                                    charging =
+                                        ChargingState(
+                                            chargingCurrentMa = 3_000.0,
+                                            currentDirection = BatteryCurrentDirection.CHARGING,
+                                            currentSignNormalized = true,
+                                            chargingCurrentConfidence = Confidence.LOW,
+                                        ),
+                                    health =
+                                        HealthState(
+                                            healthStatusRaw = android.os.BatteryManager.BATTERY_HEALTH_GOOD,
+                                            cycleCount = 240,
+                                            cycleCountSupported = true,
+                                            cycleCountConfidence = Confidence.HIGH,
+                                        ),
+                                    manufacturer =
+                                        ManufacturerState(
+                                            profile = ManufacturerProfile.SAMSUNG,
+                                            manufacturerName = "Samsung",
+                                        ),
+                                ),
+                        ),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(),
+                    capturedAt = Instant.parse("2026-08-08T12:00:00Z"),
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+
+        assertEquals(EvidenceValue.DoubleValue(3_000.0), evidence.getValue("battery.current_now").value)
+        assertEquals(Confidence.LOW, evidence.getValue("battery.current_now").confidence)
+        assertEquals(
+            EvidenceValue.StableTextCodeValue("status_sign_normalized"),
+            evidence.getValue("battery.current_interpretation").value,
+        )
+        assertEquals(
+            EvidenceValue.StableTextCodeValue("samsung"),
+            evidence.getValue("battery.current_profile").value,
+        )
+        assertEquals(EvidenceValue.IntValue(240), evidence.getValue("battery.cycle_count").value)
+        assertEquals(Confidence.HIGH, evidence.getValue("battery.cycle_count").confidence)
     }
 
     private fun diagnosticSnapshotsWithSensitiveConnectivity() =

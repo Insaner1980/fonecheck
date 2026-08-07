@@ -401,8 +401,11 @@
     <string name="batt_basic_title">Basic Info</string>
     <string name="batt_charging_title">Charging</string>
     <string name="batt_health_title">Health</string>
-    <string name="batt_capacity_title">Capacity</string>
     <string name="batt_manufacturer_title">Manufacturer</string>
+    <string name="batt_icon_basic" translatable="false">BAT</string>
+    <string name="batt_icon_charging" translatable="false">CHG</string>
+    <string name="batt_icon_health" translatable="false">HLT</string>
+    <string name="batt_icon_manufacturer" translatable="false">MFR</string>
 
     <!-- Basic -->
     <string name="batt_level">Level</string>
@@ -410,6 +413,9 @@
     <string name="batt_temperature">Temperature</string>
     <string name="batt_health_label">Health</string>
     <string name="batt_technology">Technology</string>
+    <string name="batt_value_percent">%1$d%%</string>
+    <string name="batt_value_millivolts">%1$d mV</string>
+    <string name="batt_value_celsius">%1$.1f °C</string>
 
     <!-- Health statuses -->
     <string name="batt_health_good">Good</string>
@@ -424,6 +430,16 @@
     <string name="batt_charging_status">Status</string>
     <string name="batt_plug_type">Plug Type</string>
     <string name="batt_charging_current">Current</string>
+    <string name="batt_value_milliamps">%1$.1f mA</string>
+    <string name="batt_current_direction">Direction</string>
+    <string name="batt_current_interpretation">Current interpretation</string>
+    <string name="batt_current_direction_charging">Charging</string>
+    <string name="batt_current_direction_discharging">Discharging</string>
+    <string name="batt_current_direction_idle">Idle</string>
+    <string name="batt_current_caveat">Instantaneous current is shown as a positive magnitude. Direction follows the Android current sign unless battery status contradicts it; readings over 20 A are unavailable.</string>
+    <string name="batt_current_sign_normalized">The OEM current sign contradicted battery status, so direction was normalized from the observed status.</string>
+    <string name="batt_current_sign_api">Android current sign used</string>
+    <string name="batt_current_sign_status">Direction normalized from battery status</string>
     <string name="batt_status_charging">Charging</string>
     <string name="batt_status_discharging">Discharging</string>
     <string name="batt_status_full">Full</string>
@@ -437,24 +453,23 @@
     <!-- Health advanced -->
     <string name="batt_health_status">Health Status</string>
     <string name="batt_cycle_count">Cycle Count</string>
-    <string name="batt_health_percentage">Health %</string>
     <string name="batt_requires_api34">Requires Android 14+</string>
-
-    <!-- Capacity -->
-    <string name="batt_design_capacity">Design Capacity</string>
-    <string name="batt_capacity_unavailable_note">Design capacity could not be read via PowerProfile reflection. This is normal on some devices.</string>
 
     <!-- Manufacturer -->
     <string name="batt_mfr_name">Manufacturer</string>
     <string name="batt_mfr_profile">Profile</string>
     <string name="batt_mfr_generic">Generic</string>
-    <string name="batt_mfr_samsung_note1">Samsung may report max theoretical charging current instead of real-time value.</string>
+    <string name="batt_mfr_samsung">Samsung</string>
+    <string name="batt_mfr_oneplus">OnePlus</string>
+    <string name="batt_mfr_pixel">Google Pixel</string>
+    <string name="batt_mfr_samsung_note1">Samsung battery current reporting can vary by model and firmware.</string>
     <string name="batt_mfr_samsung_note2">Battery health details may be restricted by Samsung Knox.</string>
-    <string name="batt_mfr_samsung_current_note">Samsung reports max theoretical current, not real-time.</string>
-    <string name="batt_mfr_oneplus_note1">OnePlus SUPERVOOC may report negative current values during charging.</string>
-    <string name="batt_mfr_oneplus_note2">Charging current sign is auto-corrected when charging is detected.</string>
-    <string name="batt_mfr_oneplus_current_note">OnePlus current sign auto-corrected for SUPERVOOC.</string>
-    <string name="batt_mfr_pixel_note1">Pixel devices provide accurate real-time charging current.</string>
+    <string name="batt_mfr_samsung_current_note">Treat Samsung current as an instantaneous, low-confidence reading.</string>
+    <string name="batt_mfr_oneplus_note1">OnePlus current sign can vary during proprietary fast charging.</string>
+    <string name="batt_mfr_oneplus_note2">Battery status is used when the reported sign conflicts with the observed state.</string>
+    <string name="batt_mfr_oneplus_current_note">Treat OnePlus current as an instantaneous, low-confidence reading.</string>
+    <string name="batt_mfr_pixel_note1">Pixel current is read from the public Android battery API.</string>
+    <string name="batt_mfr_pixel_current_note">Treat Pixel current as an instantaneous, low-confidence reading.</string>
 
     <!-- Home Screen -->
     <string name="home_device_summary">Device Summary</string>

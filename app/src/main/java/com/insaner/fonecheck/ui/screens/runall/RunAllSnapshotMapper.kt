@@ -21,7 +21,9 @@ import com.insaner.fonecheck.domain.model.PerformanceInfo
 import com.insaner.fonecheck.domain.model.SimInventoryCode
 import com.insaner.fonecheck.domain.model.SimTelephonyInfo
 import com.insaner.fonecheck.ui.screens.audio.AudioTestState
+import com.insaner.fonecheck.ui.screens.battery.BatteryCurrentDirection
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestState
+import com.insaner.fonecheck.ui.screens.battery.ManufacturerProfile
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestState
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestState
 import com.insaner.fonecheck.ui.screens.camera.CameraClassCode
@@ -707,52 +709,165 @@ object RunAllSnapshotMapper {
         snapshots: DiagnosticSnapshots,
         capturedAt: Instant,
     ): List<DiagnosticEvidence> {
-        val battery = snapshots.battery.basic
-        val healthCode = batteryHealthCode(battery.healthStatus)
-        val healthStatus =
-            when (battery.healthStatus) {
-                BatteryManager.BATTERY_HEALTH_GOOD -> DiagnosticStatus.PASS
-                BatteryManager.BATTERY_HEALTH_OVERHEAT,
-                BatteryManager.BATTERY_HEALTH_DEAD,
-                BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE,
-                BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE,
-                -> DiagnosticStatus.FAIL
+        val batteryState = snapshots.battery
+        val battery = batteryState.basic
+        val healthEvidence =
+            if (battery.healthStatus == BatteryManager.BATTERY_HEALTH_UNKNOWN) {
+                unavailableReading(DiagnosticCategoryId.BATTERY, "health", capturedAt)
+            } else {
+                val healthStatus =
+                    when (battery.healthStatus) {
+                        BatteryManager.BATTERY_HEALTH_GOOD -> DiagnosticStatus.PASS
+                        BatteryManager.BATTERY_HEALTH_OVERHEAT,
+                        BatteryManager.BATTERY_HEALTH_DEAD,
+                        BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE,
+                        BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE,
+                        -> DiagnosticStatus.FAIL
 
-                else -> DiagnosticStatus.WARNING
+                        else -> DiagnosticStatus.WARNING
+                    }
+                evidence(
+                    categoryId = DiagnosticCategoryId.BATTERY,
+                    id = "health",
+                    status = healthStatus,
+                    reason = EvidenceReasonCode.DEGRADED.takeIf { healthStatus != DiagnosticStatus.PASS },
+                    value = EvidenceValue.StableTextCodeValue(batteryHealthCode(battery.healthStatus)),
+                    capturedAt = capturedAt,
+                )
             }
-        val temperatureStatus =
+        val temperatureEvidence =
+            battery.temperatureCelsius?.let { temperature ->
+                val status =
+                    when {
+                        temperature >= 50f -> DiagnosticStatus.FAIL
+                        temperature < 0f || temperature > 45f -> DiagnosticStatus.WARNING
+                        else -> DiagnosticStatus.PASS
+                    }
+                evidence(
+                    categoryId = DiagnosticCategoryId.BATTERY,
+                    id = "temperature",
+                    status = status,
+                    source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                    reason = EvidenceReasonCode.DEGRADED.takeIf { status != DiagnosticStatus.PASS },
+                    value = EvidenceValue.DoubleValue(temperature.toDouble()),
+                    unit = EvidenceUnitCode("celsius"),
+                    capturedAt = capturedAt,
+                )
+            } ?: unavailableReading(DiagnosticCategoryId.BATTERY, "temperature", capturedAt)
+        val levelEvidence =
+            battery.level?.let { level ->
+                evidence(
+                    categoryId = DiagnosticCategoryId.BATTERY,
+                    id = "level",
+                    status = DiagnosticStatus.INFO,
+                    source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                    value = EvidenceValue.IntValue(level),
+                    unit = EvidenceUnitCode("percent"),
+                    capturedAt = capturedAt,
+                )
+            } ?: unavailableReading(DiagnosticCategoryId.BATTERY, "level", capturedAt)
+        val currentEvidence =
+            batteryState.charging.chargingCurrentMa?.let { currentMa ->
+                evidence(
+                    categoryId = DiagnosticCategoryId.BATTERY,
+                    id = "current_now",
+                    status = DiagnosticStatus.INFO,
+                    confidence = batteryState.charging.chargingCurrentConfidence,
+                    source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                    value = EvidenceValue.DoubleValue(currentMa),
+                    unit = EvidenceUnitCode("milliamperes"),
+                    capturedAt = capturedAt,
+                )
+            } ?: unavailableReading(DiagnosticCategoryId.BATTERY, "current_now", capturedAt)
+        val interpretationEvidence =
+            if (batteryState.charging.chargingCurrentMa != null) {
+                listOf(
+                    evidence(
+                        categoryId = DiagnosticCategoryId.BATTERY,
+                        id = "current_direction",
+                        status = DiagnosticStatus.INFO,
+                        confidence = Confidence.LOW,
+                        source = EvidenceSource.DERIVED,
+                        value =
+                            EvidenceValue.StableTextCodeValue(
+                                when (batteryState.charging.currentDirection) {
+                                    BatteryCurrentDirection.CHARGING -> "charging"
+                                    BatteryCurrentDirection.DISCHARGING -> "discharging"
+                                    BatteryCurrentDirection.IDLE -> "idle"
+                                },
+                            ),
+                        capturedAt = capturedAt,
+                    ),
+                    evidence(
+                        categoryId = DiagnosticCategoryId.BATTERY,
+                        id = "current_interpretation",
+                        status = DiagnosticStatus.INFO,
+                        confidence = Confidence.LOW,
+                        source = EvidenceSource.DERIVED,
+                        value =
+                            EvidenceValue.StableTextCodeValue(
+                                if (batteryState.charging.currentSignNormalized) {
+                                    "status_sign_normalized"
+                                } else {
+                                    "api_sign"
+                                },
+                            ),
+                        capturedAt = capturedAt,
+                    ),
+                )
+            } else {
+                emptyList()
+            }
+        val profileEvidence =
+            evidence(
+                categoryId = DiagnosticCategoryId.BATTERY,
+                id = "current_profile",
+                status = DiagnosticStatus.INFO,
+                confidence = batteryState.manufacturer.profileConfidence,
+                source = EvidenceSource.DERIVED,
+                value =
+                    EvidenceValue.StableTextCodeValue(
+                        when (batteryState.manufacturer.profile) {
+                            ManufacturerProfile.SAMSUNG -> "samsung"
+                            ManufacturerProfile.ONEPLUS -> "oneplus"
+                            ManufacturerProfile.GOOGLE_PIXEL -> "google_pixel"
+                            ManufacturerProfile.GENERIC -> "generic"
+                        },
+                    ),
+                capturedAt = capturedAt,
+            )
+        val cycleCountEvidence =
             when {
-                battery.temperatureCelsius >= 50f -> DiagnosticStatus.FAIL
-                battery.temperatureCelsius < 0f || battery.temperatureCelsius > 45f -> DiagnosticStatus.WARNING
-                else -> DiagnosticStatus.PASS
+                !batteryState.health.cycleCountSupported ->
+                    evidence(
+                        categoryId = DiagnosticCategoryId.BATTERY,
+                        id = "cycle_count",
+                        status = DiagnosticStatus.NOT_AVAILABLE,
+                        confidence = Confidence.UNAVAILABLE,
+                        applicability = Applicability.NOT_APPLICABLE,
+                        reason = EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED,
+                        capturedAt = capturedAt,
+                    )
+
+                batteryState.health.cycleCount == null ->
+                    unavailableReading(DiagnosticCategoryId.BATTERY, "cycle_count", capturedAt)
+
+                else ->
+                    evidence(
+                        categoryId = DiagnosticCategoryId.BATTERY,
+                        id = "cycle_count",
+                        status = DiagnosticStatus.INFO,
+                        confidence = batteryState.health.cycleCountConfidence,
+                        value = EvidenceValue.IntValue(batteryState.health.cycleCount),
+                        capturedAt = capturedAt,
+                    )
             }
         return listOf(
-            evidence(
-                categoryId = DiagnosticCategoryId.BATTERY,
-                id = "health",
-                status = healthStatus,
-                reason = EvidenceReasonCode.DEGRADED.takeIf { healthStatus != DiagnosticStatus.PASS },
-                value = EvidenceValue.StableTextCodeValue(healthCode),
-                capturedAt = capturedAt,
-            ),
-            evidence(
-                categoryId = DiagnosticCategoryId.BATTERY,
-                id = "temperature",
-                status = temperatureStatus,
-                reason = EvidenceReasonCode.DEGRADED.takeIf { temperatureStatus != DiagnosticStatus.PASS },
-                value = EvidenceValue.DoubleValue(battery.temperatureCelsius.toDouble()),
-                unit = EvidenceUnitCode("celsius"),
-                capturedAt = capturedAt,
-            ),
-            evidence(
-                categoryId = DiagnosticCategoryId.BATTERY,
-                id = "level",
-                status = DiagnosticStatus.INFO,
-                value = EvidenceValue.IntValue(battery.level),
-                unit = EvidenceUnitCode("percent"),
-                capturedAt = capturedAt,
-            ),
-        )
+            healthEvidence,
+            temperatureEvidence,
+            levelEvidence,
+            currentEvidence,
+        ) + interpretationEvidence + profileEvidence + cycleCountEvidence
     }
 
     private fun vibrationEvidence(
@@ -940,6 +1055,20 @@ object RunAllSnapshotMapper {
             applicability = Applicability.NOT_APPLICABLE,
             reason = EvidenceReasonCode.HARDWARE_UNAVAILABLE,
             value = value,
+            capturedAt = capturedAt,
+        )
+
+    private fun unavailableReading(
+        categoryId: DiagnosticCategoryId,
+        id: String,
+        capturedAt: Instant,
+    ): DiagnosticEvidence =
+        evidence(
+            categoryId = categoryId,
+            id = id,
+            status = DiagnosticStatus.NOT_AVAILABLE,
+            confidence = Confidence.UNAVAILABLE,
+            reason = EvidenceReasonCode.HARDWARE_UNAVAILABLE,
             capturedAt = capturedAt,
         )
 

@@ -399,7 +399,6 @@
     <string name="batt_basic_title">Perustiedot</string>
     <string name="batt_charging_title">Lataus</string>
     <string name="batt_health_title">Kunto</string>
-    <string name="batt_capacity_title">Kapasiteetti</string>
     <string name="batt_manufacturer_title">Valmistaja</string>
 
     <!-- Basic -->
@@ -408,6 +407,9 @@
     <string name="batt_temperature">Lämpötila</string>
     <string name="batt_health_label">Kunto</string>
     <string name="batt_technology">Teknologia</string>
+    <string name="batt_value_percent">%1$d%%</string>
+    <string name="batt_value_millivolts">%1$d mV</string>
+    <string name="batt_value_celsius">%1$.1f °C</string>
 
     <!-- Health statuses -->
     <string name="batt_health_good">Hyvä</string>
@@ -422,6 +424,16 @@
     <string name="batt_charging_status">Tila</string>
     <string name="batt_plug_type">Liitäntätyyppi</string>
     <string name="batt_charging_current">Virta</string>
+    <string name="batt_value_milliamps">%1$.1f mA</string>
+    <string name="batt_current_direction">Suunta</string>
+    <string name="batt_current_interpretation">Virran tulkinta</string>
+    <string name="batt_current_direction_charging">Lataa</string>
+    <string name="batt_current_direction_discharging">Purkautuu</string>
+    <string name="batt_current_direction_idle">Lepotila</string>
+    <string name="batt_current_caveat">Hetkellinen virta näytetään positiivisena voimakkuutena. Suunta seuraa Androidin etumerkkiä, ellei akun tila ole sen kanssa ristiriidassa; yli 20 A:n lukema ei ole saatavilla.</string>
+    <string name="batt_current_sign_normalized">OEM-virran etumerkki oli ristiriidassa akun tilan kanssa, joten suunta normalisoitiin havaitusta tilasta.</string>
+    <string name="batt_current_sign_api">Androidin virran etumerkkiä käytetty</string>
+    <string name="batt_current_sign_status">Suunta normalisoitu akun tilasta</string>
     <string name="batt_status_charging">Lataa</string>
     <string name="batt_status_discharging">Purkautuu</string>
     <string name="batt_status_full">Täynnä</string>
@@ -435,24 +447,23 @@
     <!-- Health advanced -->
     <string name="batt_health_status">Kuntotila</string>
     <string name="batt_cycle_count">Lataussyklien määrä</string>
-    <string name="batt_health_percentage">Kunto %</string>
     <string name="batt_requires_api34">Vaatii Android 14+</string>
-
-    <!-- Capacity -->
-    <string name="batt_design_capacity">Nimelliskapasiteetti</string>
-    <string name="batt_capacity_unavailable_note">Nimelliskapasiteettia ei voitu lukea PowerProfile-heijastuksella. Tämä on normaalia joillakin laitteilla.</string>
 
     <!-- Manufacturer -->
     <string name="batt_mfr_name">Valmistaja</string>
     <string name="batt_mfr_profile">Profiili</string>
     <string name="batt_mfr_generic">Yleinen</string>
-    <string name="batt_mfr_samsung_note1">Samsung saattaa ilmoittaa teoreettisen enimmäislatausvirran todellisen sijaan.</string>
+    <string name="batt_mfr_samsung">Samsung</string>
+    <string name="batt_mfr_oneplus">OnePlus</string>
+    <string name="batt_mfr_pixel">Google Pixel</string>
+    <string name="batt_mfr_samsung_note1">Samsungin akkuvirran raportointi voi vaihdella mallin ja laiteohjelmiston mukaan.</string>
     <string name="batt_mfr_samsung_note2">Akun kuntotiedot voivat olla Samsung Knoxin rajoittamia.</string>
-    <string name="batt_mfr_samsung_current_note">Samsung ilmoittaa teoreettisen enimmäisvirran, ei reaaliaikaista.</string>
-    <string name="batt_mfr_oneplus_note1">OnePlus SUPERVOOC voi ilmoittaa negatiivisia virta-arvoja latauksen aikana.</string>
-    <string name="batt_mfr_oneplus_note2">Latausvirran etumerkki korjataan automaattisesti latauksen aikana.</string>
-    <string name="batt_mfr_oneplus_current_note">OnePlus-virran etumerkki automaattisesti korjattu SUPERVOOCille.</string>
-    <string name="batt_mfr_pixel_note1">Pixel-laitteet tarjoavat tarkan reaaliaikaisen latausvirran.</string>
+    <string name="batt_mfr_samsung_current_note">Samsungin virta on hetkellinen ja matalan varmuuden lukema.</string>
+    <string name="batt_mfr_oneplus_note1">OnePlus-virran etumerkki voi vaihdella valmistajan pikalatauksessa.</string>
+    <string name="batt_mfr_oneplus_note2">Akun tilaa käytetään, jos ilmoitettu etumerkki on ristiriidassa havaitun tilan kanssa.</string>
+    <string name="batt_mfr_oneplus_current_note">OnePlus-virta on hetkellinen ja matalan varmuuden lukema.</string>
+    <string name="batt_mfr_pixel_note1">Pixelin virta luetaan Androidin julkisesta akkurajapinnasta.</string>
+    <string name="batt_mfr_pixel_current_note">Pixelin virta on hetkellinen ja matalan varmuuden lukema.</string>
 
     <!-- Home Screen -->
     <string name="home_device_summary">Laitteen yhteenveto</string>
