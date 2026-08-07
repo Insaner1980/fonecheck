@@ -507,6 +507,15 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** CameraX-selector ja Camera2-ID-yhteensopivuus; OEM logical camera behavior.
 - **Decision required:** Kyllä, Full Check camera -laajuus kohdassa 1.
 
+#### Implementation/status log — 2026-08-08
+
+- Lisätty tests-first Camera2 public-ID -luokittelu standard-, logical-, independently selectable physical- ja external-kameroille sekä token-pohjainen capture gate. Ensimmäinen kohdistettu ajo oli odotettu RED vain puuttuvista mapping/gate-symboleista; hidden physical ID:tä ei luokitella valittavaksi.
+- Capability-keruu säilyttää kaikki Androidin `cameraIdList`issä julkaisemat kamerat. Logical physical-ID -metadata kirjataan rajoitteeksi, mutta preview-valinta käyttää CameraX Camera2Interop -filteriä vain julkiselle täsmälliselle camera ID:lle. UI tarjoaa jokaiselle valittavalle ID:lle preview/capture-polun, luokituksen, flash/OIS/zoom/focus-metadatan ja eksplisiittisen vahvistuksen.
+- Preview-generation estää myöhäistä provider-callbackia sitomasta poistunutta näkymää. Capture-token hyväksyy vain yhden voimassa olevan success/error-callbackin; kahdeksan sekunnin timeout, navigation teardown ja uusi preview mitätöivät myöhäisen tuloksen.
+- Teardown sammuttaa torchin, peruu capture-timerin, mitätöi callbackit, kutsuu `unbindAll()` idempotentisti ja sulkee executorin ViewModelin mukana. `ImageProxy` suljetaan aina; thumbnailia, kuva- tai preview-byteja ei enää rakenneta tai tallenneta.
+- Canonical report tallentaa vain julkisten kameroiden määrän, logical-luokitusmäärän, capture-dimensiot ja ajan sekä nykyisen käyttäjän capture-vahvistuksen. Kamera-ID:tä tai kuva-aineistoa ei persistoidu.
+- `CameraRuntimePolicyTest`, koko `:app:testDebugUnitTest` ja Android-testien Kotlin-käännös läpäisevät. Multi-camera-, external-camera-, zoom/focus-, torch- ja navigation-laitekokeet odottavat yhdistettyä Android-laitetta.
+
 ### 14. Complete guided Sensors diagnostics and listener lifecycle
 
 - **Objective:** Muuttaa sensoriluettelo todellisiksi, rajatuiksi yleisten sensorien testeiksi.

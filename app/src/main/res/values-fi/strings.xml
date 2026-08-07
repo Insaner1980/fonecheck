@@ -208,6 +208,21 @@
     <string name="camera_autofocus">Automaattitarkennus</string>
     <string name="camera_show_technical_details">Näytä tekniset tiedot</string>
     <string name="camera_hide_technical_details">Piilota tekniset tiedot</string>
+    <string name="camera_capabilities_title">Kameran %1$s ominaisuudet</string>
+    <string name="camera_selector_label">Kamera %1$s · %2$s · %3$s</string>
+    <string name="camera_external">Ulkoinen kamera</string>
+    <string name="camera_unknown">Tuntematon</string>
+    <string name="camera_class_standard">tavallinen</string>
+    <string name="camera_class_logical">looginen monikamera</string>
+    <string name="camera_class_physical">itsenäisesti valittava fyysinen kamera</string>
+    <string name="camera_class_external">ulkoinen</string>
+    <string name="camera_confirm_question">Toimivatko valitun kameran esikatselu ja kuvaus oikein?</string>
+    <string name="camera_confirm_problem">Ongelma</string>
+    <string name="camera_confirm_pass">Vahvista</string>
+    <string name="camera_inventory_label">Julkiset kamerat</string>
+    <string name="camera_logical_count_label">Loogiset kamerat</string>
+    <string name="camera_no_public_cameras">Android ei ilmoittanut yhtään julkisesti valittavaa kameraa.</string>
+    <string name="camera_operation_failed">Kameratoiminto epäonnistui. Sulje esikatselu ja yritä uudelleen.</string>
 
     <!-- Sensor Test Screen -->
     <string name="sensor_summary_title">Anturien yhteenveto</string>

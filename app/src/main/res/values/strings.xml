@@ -210,6 +210,21 @@
     <string name="camera_autofocus">Autofocus</string>
     <string name="camera_show_technical_details">Show technical details</string>
     <string name="camera_hide_technical_details">Hide technical details</string>
+    <string name="camera_capabilities_title">Camera %1$s capabilities</string>
+    <string name="camera_selector_label">Camera %1$s · %2$s · %3$s</string>
+    <string name="camera_external">External camera</string>
+    <string name="camera_unknown">Unknown</string>
+    <string name="camera_class_standard">standard</string>
+    <string name="camera_class_logical">logical multi-camera</string>
+    <string name="camera_class_physical">independently selectable physical camera</string>
+    <string name="camera_class_external">external</string>
+    <string name="camera_confirm_question">Did this selected camera preview and capture correctly?</string>
+    <string name="camera_confirm_problem">Problem</string>
+    <string name="camera_confirm_pass">Confirmed</string>
+    <string name="camera_inventory_label">Public cameras</string>
+    <string name="camera_logical_count_label">Logical cameras</string>
+    <string name="camera_no_public_cameras">No publicly selectable camera was reported by Android.</string>
+    <string name="camera_operation_failed">The camera operation failed. Close the preview and try again.</string>
 
     <!-- Sensor Test Screen -->
     <string name="sensor_summary_title">Sensor Overview</string>

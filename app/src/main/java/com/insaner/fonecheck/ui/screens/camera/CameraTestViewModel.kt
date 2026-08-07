@@ -1,13 +1,14 @@
 package com.insaner.fonecheck.ui.screens.camera
 
 import android.app.Application
-import android.graphics.Bitmap
 import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CameraMetadata
 import android.util.Log
 import android.util.Size
+import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -15,13 +16,14 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.core.graphics.scale
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewModelScope
 import com.insaner.fonecheck.di.IoDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -40,18 +42,24 @@ data class CameraCapabilities(
     val zoomRange: String,
     val sensorSize: String,
     val autoFocusModes: List<String>,
+    val facingCode: CameraFacingCode,
+    val cameraClass: CameraClassCode,
+    val physicalCameraIds: Set<String>,
 )
 
 data class CaptureResult(
     val width: Int,
     val height: Int,
-    val thumbnail: Bitmap?,
     val timestamp: Long,
 )
 
 data class CameraTestState(
     val frontCapabilities: CameraCapabilities? = null,
     val rearCapabilities: CameraCapabilities? = null,
+    val cameras: List<CameraCapabilities> = emptyList(),
+    val selectedCameraId: String? = null,
+    val confirmations: Map<String, Boolean> = emptyMap(),
+    val isLoading: Boolean = true,
     val isFrontCamera: Boolean = false,
     val isPreviewActive: Boolean = false,
     val isCapturing: Boolean = false,
@@ -83,6 +91,9 @@ class CameraTestViewModel
 
         private var imageCapture: ImageCapture? = null
         private var cameraProvider: ProcessCameraProvider? = null
+        private var previewGeneration = 0L
+        private val captureGate = CameraCaptureGate()
+        private var captureTimeoutJob: Job? = null
 
         init {
             loadCapabilities()
@@ -97,24 +108,24 @@ class CameraTestViewModel
                     },
                 ) {
                     val cameraIds = cameraManager.cameraIdList
-                    var front: CameraCapabilities? = null
-                    var rear: CameraCapabilities? = null
-
-                    for (id in cameraIds) {
-                        val chars = cameraManager.getCameraCharacteristics(id)
-                        val facing = chars.get(CameraCharacteristics.LENS_FACING)
-                        val caps = buildCapabilities(id, chars)
-
-                        when (facing) {
-                            CameraCharacteristics.LENS_FACING_FRONT -> if (front == null) front = caps
-                            CameraCharacteristics.LENS_FACING_BACK -> if (rear == null) rear = caps
+                    val characteristics = cameraIds.associateWith(cameraManager::getCameraCharacteristics)
+                    val readings = characteristics.map { (id, chars) -> descriptorReading(id, chars) }
+                    val descriptors = CameraDescriptorMapper.map(cameraIds.toSet(), readings).associateBy { it.cameraId }
+                    val cameras =
+                        characteristics.map { (id, chars) ->
+                            buildCapabilities(id, chars, descriptors.getValue(id))
                         }
-                    }
+                    val front = cameras.firstOrNull { it.facingCode == CameraFacingCode.FRONT }
+                    val rear = cameras.firstOrNull { it.facingCode == CameraFacingCode.REAR }
 
                     _state.value =
                         _state.value.copy(
                             frontCapabilities = front,
                             rearCapabilities = rear,
+                            cameras = cameras,
+                            selectedCameraId = cameras.firstOrNull()?.cameraId,
+                            isLoading = false,
+                            error = "camera_no_public_cameras".takeIf { cameras.isEmpty() },
                         )
                 }
             }
@@ -123,6 +134,7 @@ class CameraTestViewModel
         private fun buildCapabilities(
             id: String,
             chars: CameraCharacteristics,
+            descriptor: CameraDescriptor,
         ): CameraCapabilities {
             val facing =
                 when (chars.get(CameraCharacteristics.LENS_FACING)) {
@@ -197,6 +209,38 @@ class CameraTestViewModel
                 zoomRange = zoomRange,
                 sensorSize = sensorSize,
                 autoFocusModes = autoFocusModes,
+                facingCode = descriptor.facing,
+                cameraClass = descriptor.cameraClass,
+                physicalCameraIds = descriptor.physicalCameraIds,
+            )
+        }
+
+        private fun descriptorReading(
+            id: String,
+            chars: CameraCharacteristics,
+        ): CameraDescriptorReading {
+            val capabilities =
+                chars.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES) ?: intArrayOf()
+            val isLogical =
+                android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P &&
+                    CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA in capabilities
+            val physicalIds =
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                    chars.physicalCameraIds
+                } else {
+                    emptySet()
+                }
+            return CameraDescriptorReading(
+                cameraId = id,
+                facing =
+                    when (chars.get(CameraCharacteristics.LENS_FACING)) {
+                        CameraCharacteristics.LENS_FACING_FRONT -> CameraFacingCode.FRONT
+                        CameraCharacteristics.LENS_FACING_BACK -> CameraFacingCode.REAR
+                        CameraCharacteristics.LENS_FACING_EXTERNAL -> CameraFacingCode.EXTERNAL
+                        else -> CameraFacingCode.UNKNOWN
+                    },
+                isLogical = isLogical,
+                physicalIds = physicalIds,
             )
         }
 
@@ -210,7 +254,26 @@ class CameraTestViewModel
             lifecycleOwner: LifecycleOwner,
             useFrontCamera: Boolean,
         ) {
-            _state.value = _state.value.copy(isFrontCamera = useFrontCamera, error = null)
+            val cameraId =
+                if (useFrontCamera) _state.value.frontCapabilities?.cameraId else _state.value.rearCapabilities?.cameraId
+            if (cameraId != null) startPreview(previewView, lifecycleOwner, cameraId)
+        }
+
+        @ExperimentalCamera2Interop
+        fun startPreview(
+            previewView: PreviewView,
+            lifecycleOwner: LifecycleOwner,
+            cameraId: String,
+        ) {
+            stopPreview()
+            val generation = ++previewGeneration
+            val selected = _state.value.cameras.firstOrNull { it.cameraId == cameraId } ?: return
+            _state.value =
+                _state.value.copy(
+                    selectedCameraId = cameraId,
+                    isFrontCamera = selected.facingCode == CameraFacingCode.FRONT,
+                    error = null,
+                )
             val context = getApplication<Application>()
 
             val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
@@ -222,6 +285,7 @@ class CameraTestViewModel
                     },
                 ) {
                     val provider = cameraProviderFuture.get()
+                    if (generation != previewGeneration) return@runCameraOperation
                     cameraProvider = provider
                     provider.unbindAll()
 
@@ -238,11 +302,11 @@ class CameraTestViewModel
                     imageCapture = capture
 
                     val selector =
-                        if (useFrontCamera) {
-                            CameraSelector.DEFAULT_FRONT_CAMERA
-                        } else {
-                            CameraSelector.DEFAULT_BACK_CAMERA
-                        }
+                        CameraSelector
+                            .Builder()
+                            .addCameraFilter { infos ->
+                                infos.filter { Camera2CameraInfo.from(it).cameraId == cameraId }
+                            }.build()
 
                     provider.bindToLifecycle(lifecycleOwner, selector, preview, capture)
                     _state.value = _state.value.copy(isPreviewActive = true)
@@ -251,7 +315,12 @@ class CameraTestViewModel
         }
 
         fun stopPreview() {
-            cameraProvider?.unbindAll()
+            turnOffFlash()
+            previewGeneration += 1
+            captureTimeoutJob?.cancel()
+            captureTimeoutJob = null
+            captureGate.cancelAll()
+            runCatching { cameraProvider?.unbindAll() }
             cameraProvider = null
             imageCapture = null
             _state.value = _state.value.copy(isPreviewActive = false, lastCapture = null)
@@ -259,7 +328,15 @@ class CameraTestViewModel
 
         fun capturePhoto() {
             val capture = imageCapture ?: return
+            val token = captureGate.begin()
             _state.value = _state.value.copy(isCapturing = true)
+            captureTimeoutJob?.cancel()
+            captureTimeoutJob =
+                viewModelScope.launch {
+                    delay(CAPTURE_TIMEOUT_MS)
+                    captureGate.cancel(token)
+                    _state.value = _state.value.copy(isCapturing = false, error = "camera_capture_timeout")
+                }
 
             capture.takePicture(
                 cameraExecutor,
@@ -267,15 +344,9 @@ class CameraTestViewModel
                     override fun onCaptureSuccess(image: ImageProxy) {
                         val width = image.width
                         val height = image.height
-                        val bitmap = image.toBitmap()
-                        val thumbnail =
-                            bitmap.scale(
-                                (bitmap.width * 120f / bitmap.height).toInt(),
-                                120,
-                                filter = true,
-                            )
                         image.close()
-
+                        if (!captureGate.complete(token)) return
+                        captureTimeoutJob?.cancel()
                         _state.value =
                             _state.value.copy(
                                 isCapturing = false,
@@ -283,13 +354,14 @@ class CameraTestViewModel
                                     CaptureResult(
                                         width = width,
                                         height = height,
-                                        thumbnail = thumbnail,
                                         timestamp = System.currentTimeMillis(),
                                     ),
                             )
                     }
 
                     override fun onError(exception: ImageCaptureException) {
+                        if (!captureGate.complete(token)) return
+                        captureTimeoutJob?.cancel()
                         _state.value =
                             _state.value.copy(
                                 isCapturing = false,
@@ -363,5 +435,14 @@ class CameraTestViewModel
 
         private companion object {
             const val TAG = "CameraTestViewModel"
+            const val CAPTURE_TIMEOUT_MS = 8_000L
+        }
+
+        fun confirmSelectedCamera(passed: Boolean) {
+            val cameraId = _state.value.selectedCameraId ?: return
+            _state.value =
+                _state.value.copy(
+                    confirmations = _state.value.confirmations + (cameraId to passed),
+                )
         }
     }

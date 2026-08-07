@@ -333,6 +333,9 @@ private fun evidenceLabelResId(checkId: String): Int? =
         "camera.rear" -> R.string.camera_rear
         "camera.front" -> R.string.camera_front
         "camera.capture" -> R.string.camera_capture_title
+        "camera.inventory" -> R.string.camera_inventory_label
+        "camera.logical_count" -> R.string.camera_logical_count_label
+        "camera.capture_dimensions" -> R.string.camera_max_resolution
         "sensors.inventory" -> R.string.sensor_count
         "sensors.motion" -> R.string.run_all_check_motion_sensor
         "connectivity.wifi" -> R.string.conn_wifi_title

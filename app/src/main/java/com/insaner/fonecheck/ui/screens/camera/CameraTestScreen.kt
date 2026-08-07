@@ -5,7 +5,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,7 +40,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -119,6 +117,9 @@ fun CameraTestScreen(
             onRequest = requestCameraPermission,
             onOpenSettings = cameraPermission::openSettings,
         )
+        if (state.isLoading) {
+            CircularProgressIndicator()
+        }
         CameraPreviewCard(
             state = state,
             viewModel = viewModel,
@@ -129,22 +130,23 @@ fun CameraTestScreen(
             viewModel = viewModel,
             hasPermission = cameraPermission.state == PermissionState.GRANTED,
         )
-        state.rearCapabilities?.let { caps ->
+        state.cameras.forEach { caps ->
             CapabilitiesCard(
-                title = stringResource(R.string.camera_rear_caps_title),
-                capabilities = caps,
-            )
-        }
-        state.frontCapabilities?.let { caps ->
-            CapabilitiesCard(
-                title = stringResource(R.string.camera_front_caps_title),
+                title = stringResource(R.string.camera_capabilities_title, caps.cameraId),
                 capabilities = caps,
             )
         }
         state.error?.let { error ->
             InfoCard(title = stringResource(R.string.camera_error_title)) {
                 Text(
-                    text = error,
+                    text =
+                        stringResource(
+                            if (error == "camera_no_public_cameras") {
+                                R.string.camera_no_public_cameras
+                            } else {
+                                R.string.camera_operation_failed
+                            },
+                        ),
                     style = MaterialTheme.typography.bodySmall,
                     color = Red400,
                 )
@@ -171,61 +173,34 @@ private fun CameraPreviewCard(
             modifier = Modifier.padding(bottom = 12.dp),
         )
 
-        // Camera selector buttons
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        state.cameras.forEach { camera ->
+            val isActive = state.isPreviewActive && state.selectedCameraId == camera.cameraId
             Button(
                 onClick = {
-                    viewModel.startPreview(previewView, lifecycleOwner, useFrontCamera = false)
+                    viewModel.startPreview(previewView, lifecycleOwner, camera.cameraId)
                 },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
                 colors =
                     ButtonDefaults.buttonColors(
                         containerColor =
-                            if (state.isPreviewActive && !state.isFrontCamera) {
+                            if (isActive) {
                                 MaterialTheme.colorScheme.primary
                             } else {
                                 MaterialTheme.colorScheme.surface
                             },
                         contentColor =
-                            if (state.isPreviewActive && !state.isFrontCamera) {
+                            if (isActive) {
                                 MaterialTheme.colorScheme.onPrimary
                             } else {
                                 MaterialTheme.colorScheme.onSurface
                             },
-                    ),
+                ),
                 shape = MaterialTheme.shapes.medium,
-                enabled = hasPermission && state.rearCapabilities != null,
+                enabled = hasPermission,
             ) {
-                Text(stringResource(R.string.camera_rear))
+                Text(cameraButtonLabel(camera))
             }
-            Button(
-                onClick = {
-                    viewModel.startPreview(previewView, lifecycleOwner, useFrontCamera = true)
-                },
-                modifier = Modifier.weight(1f),
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor =
-                            if (state.isPreviewActive && state.isFrontCamera) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.surface
-                            },
-                        contentColor =
-                            if (state.isPreviewActive && state.isFrontCamera) {
-                                MaterialTheme.colorScheme.onPrimary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            },
-                    ),
-                shape = MaterialTheme.shapes.medium,
-                enabled = hasPermission && state.frontCapabilities != null,
-            ) {
-                Text(stringResource(R.string.camera_front))
-            }
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
         // Preview
@@ -293,17 +268,6 @@ private fun CameraPreviewCard(
                         .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                result.thumbnail?.let { thumb ->
-                    Image(
-                        bitmap = thumb.asImageBitmap(),
-                        contentDescription = null,
-                        modifier =
-                            Modifier
-                                .size(60.dp)
-                                .clip(RoundedCornerShape(8.dp)),
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                }
                 Column {
                     Text(
                         text = stringResource(R.string.camera_captured),
@@ -330,8 +294,51 @@ private fun CameraPreviewCard(
                     )
                 }
             }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.camera_confirm_question),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedButton(
+                    onClick = { viewModel.confirmSelectedCamera(false) },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(stringResource(R.string.camera_confirm_problem))
+                }
+                Button(
+                    onClick = { viewModel.confirmSelectedCamera(true) },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(stringResource(R.string.camera_confirm_pass))
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun cameraButtonLabel(camera: CameraCapabilities): String {
+    val facing =
+        when (camera.facingCode) {
+            CameraFacingCode.FRONT -> stringResource(R.string.camera_front)
+            CameraFacingCode.REAR -> stringResource(R.string.camera_rear)
+            CameraFacingCode.EXTERNAL -> stringResource(R.string.camera_external)
+            CameraFacingCode.UNKNOWN -> stringResource(R.string.camera_unknown)
+        }
+    val cameraClass =
+        when (camera.cameraClass) {
+            CameraClassCode.STANDARD -> stringResource(R.string.camera_class_standard)
+            CameraClassCode.LOGICAL -> stringResource(R.string.camera_class_logical)
+            CameraClassCode.PHYSICAL_SELECTABLE -> stringResource(R.string.camera_class_physical)
+            CameraClassCode.EXTERNAL -> stringResource(R.string.camera_class_external)
+            CameraClassCode.UNKNOWN -> stringResource(R.string.camera_unknown)
+        }
+    return stringResource(R.string.camera_selector_label, camera.cameraId, facing, cameraClass)
 }
 
 @Composable

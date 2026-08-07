@@ -24,6 +24,7 @@ import com.insaner.fonecheck.ui.screens.audio.AudioTestState
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestState
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestState
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestState
+import com.insaner.fonecheck.ui.screens.camera.CameraClassCode
 import com.insaner.fonecheck.ui.screens.camera.CameraTestState
 import com.insaner.fonecheck.ui.screens.connectivity.ConnectivityTestState
 import com.insaner.fonecheck.ui.screens.display.DisplayTestState
@@ -346,8 +347,9 @@ object RunAllSnapshotMapper {
         manual: ManualCheckResults,
         permissions: RunAllPermissions,
         capturedAt: Instant,
-    ): List<DiagnosticEvidence> =
-        listOf(
+    ): List<DiagnosticEvidence> {
+        val capture = snapshots.camera.lastCapture
+        return listOf(
             presence(
                 DiagnosticCategoryId.CAMERA,
                 "rear",
@@ -371,7 +373,41 @@ object RunAllSnapshotMapper {
                     EvidenceSource.USER_CONFIRMATION,
                 )
             },
+            evidence(
+                categoryId = DiagnosticCategoryId.CAMERA,
+                id = "inventory",
+                status = DiagnosticStatus.INFO,
+                value = EvidenceValue.IntValue(snapshots.camera.cameras.size),
+                unit = EvidenceUnitCode("count"),
+                capturedAt = capturedAt,
+            ),
+            evidence(
+                categoryId = DiagnosticCategoryId.CAMERA,
+                id = "logical_count",
+                status = DiagnosticStatus.INFO,
+                value =
+                    EvidenceValue.IntValue(
+                        snapshots.camera.cameras.count { it.cameraClass == CameraClassCode.LOGICAL },
+                    ),
+                unit = EvidenceUnitCode("count"),
+                capturedAt = capturedAt,
+            ),
+            capture?.let {
+                evidence(
+                    categoryId = DiagnosticCategoryId.CAMERA,
+                    id = "capture_dimensions",
+                    status = DiagnosticStatus.INFO,
+                    value = EvidenceValue.LongValue(it.width.toLong() * it.height.toLong()),
+                    unit = EvidenceUnitCode("pixels"),
+                    capturedAt = Instant.ofEpochMilli(it.timestamp),
+                )
+            } ?: notTested(
+                categoryId = DiagnosticCategoryId.CAMERA,
+                id = "capture_dimensions",
+                capturedAt = capturedAt,
+            ),
         )
+    }
 
     private fun sensorEvidence(
         snapshots: DiagnosticSnapshots,
