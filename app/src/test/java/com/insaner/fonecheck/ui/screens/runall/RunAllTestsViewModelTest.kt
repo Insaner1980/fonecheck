@@ -1,8 +1,21 @@
 package com.insaner.fonecheck.ui.screens.runall
 
-import com.insaner.fonecheck.domain.model.DeviceInfo
+import com.insaner.fonecheck.domain.model.Applicability
+import com.insaner.fonecheck.domain.model.Confidence
+import com.insaner.fonecheck.domain.model.DiagnosticCatalog
+import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
+import com.insaner.fonecheck.domain.model.DiagnosticCategorySnapshot
+import com.insaner.fonecheck.domain.model.DiagnosticCheckId
+import com.insaner.fonecheck.domain.model.DiagnosticEvidence
+import com.insaner.fonecheck.domain.model.DiagnosticSnapshotVersion
+import com.insaner.fonecheck.domain.model.DiagnosticStatus
+import com.insaner.fonecheck.domain.model.EvidenceSource
+import com.insaner.fonecheck.domain.model.ReportAppContext
+import com.insaner.fonecheck.domain.model.ReportDeviceContext
+import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.IdProvider
+import java.time.Instant
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
@@ -10,59 +23,80 @@ import org.junit.Test
 
 class RunAllTestsViewModelTest {
     @Test
-    fun completeSessionUsesInjectedIdAndTimestamp() =
+    fun completeReportUsesInjectedIdentityAndTimestamps() =
         runTest {
+            val timestamps = listOf(100L, 200L).iterator()
             val viewModel =
                 RunAllTestsViewModel(
-                    clock = EpochMillisClock { 1_754_563_200_000L },
-                    idProvider = IdProvider { "session-123" },
+                    clock = EpochMillisClock { timestamps.next() },
+                    idProvider = IdProvider { "report-123" },
                 )
 
-            viewModel.completeSession(deviceInfo(), emptyList())
+            viewModel.completeReport(deviceContext(), appContext(), completeSnapshots())
 
-            val session = requireNotNull(viewModel.state.value.session)
-            assertEquals("session-123", session.id)
-            assertEquals(1_754_563_200_000L, session.timestamp)
+            val report = requireNotNull(viewModel.state.value.report)
+            assertEquals("report-123", report.stableId)
+            assertEquals(ReportKind.FULL_CHECK, report.kind)
+            assertEquals(Instant.ofEpochMilli(100L), report.startedAt)
+            assertEquals(Instant.ofEpochMilli(200L), report.completedAt)
+            assertEquals(deviceContext(), report.device)
+            assertEquals(appContext(), report.app)
+            assertEquals(DiagnosticCatalog.categories, report.categories.map { it.categoryId })
         }
 
     @Test
-    fun completeSessionKeepsTheFirstCompletedSession() =
+    fun completeReportKeepsTheFirstCompletedReport() =
         runTest {
             var nextId = 1
             var nextTimestamp = 100L
             val viewModel =
                 RunAllTestsViewModel(
                     clock = EpochMillisClock { nextTimestamp++ },
-                    idProvider = IdProvider { "session-${nextId++}" },
+                    idProvider = IdProvider { "report-${nextId++}" },
                 )
 
-            viewModel.completeSession(deviceInfo(model = "first"), emptyList())
-            val firstSession = requireNotNull(viewModel.state.value.session)
+            viewModel.completeReport(deviceContext(model = "first"), appContext(), completeSnapshots())
+            val firstReport = requireNotNull(viewModel.state.value.report)
 
-            viewModel.completeSession(deviceInfo(model = "second"), emptyList())
-            val secondSession = requireNotNull(viewModel.state.value.session)
+            viewModel.completeReport(deviceContext(model = "second"), appContext(), completeSnapshots())
+            val secondReport = requireNotNull(viewModel.state.value.report)
 
-            assertSame(firstSession, secondSession)
-            assertEquals("session-1", secondSession.id)
-            assertEquals(100L, secondSession.timestamp)
+            assertSame(firstReport, secondReport)
+            assertEquals("report-1", secondReport.stableId)
+            assertEquals(Instant.ofEpochMilli(100L), secondReport.startedAt)
+            assertEquals(Instant.ofEpochMilli(101L), secondReport.completedAt)
         }
 
-    private fun deviceInfo(model: String = "model") =
-        DeviceInfo(
-            model = model,
+    private fun completeSnapshots(): List<DiagnosticCategorySnapshot> =
+        DiagnosticCatalog.categories.map { categoryId ->
+            DiagnosticCategorySnapshot(
+                version = DiagnosticSnapshotVersion.CURRENT,
+                categoryId = categoryId,
+                evidence =
+                    listOf(
+                        DiagnosticEvidence(
+                            categoryId = categoryId,
+                            checkId = DiagnosticCheckId(categoryId, "${categoryId.stableId}.complete"),
+                            status = DiagnosticStatus.PASS,
+                            confidence = Confidence.HIGH,
+                            source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                            applicability = Applicability.APPLICABLE,
+                            capturedAt = Instant.ofEpochMilli(150L),
+                        ),
+                    ),
+            )
+        }
+
+    private fun deviceContext(model: String = "model") =
+        ReportDeviceContext(
             manufacturer = "manufacturer",
+            model = model,
             brand = "brand",
             product = "product",
-            androidVersion = "16",
+            androidRelease = "16",
             apiLevel = 36,
             securityPatch = "2026-08-01",
-            buildNumber = "build",
-            kernelVersion = "kernel",
-            basebandVersion = "baseband",
-            bootloaderVersion = "bootloader",
-            widevineLevel = "L1",
-            isRooted = false,
-            developerOptionsEnabled = false,
-            usbDebuggingEnabled = false,
         )
+
+    private fun appContext() = ReportAppContext(versionName = "1.0.0", versionCode = 1L)
 }

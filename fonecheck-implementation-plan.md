@@ -349,7 +349,7 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - Lisätty tests-first `ReportAssemblerTest` täydelle, 71 prosentin partial-, kokonaan unavailable- ja category-only-raportille. Testi lukitsee catalog-järjestyksen, nykyisen `ScoreCalculator`-semantiikan, snapshot-version ja deterministisen repository-JSON-serialisoinnin.
 - Käyttäjän kohdistettu unit-testiajo tuotti odotetun REDin. Gradle-daemonin loki vahvisti virheiden johtuvan vain tarkoituksella puuttuneista snapshot/assembler-symboleista ja niiden seurannaisviittauksista.
 - Lisätty Androidista riippumattomat versionoitu snapshot-malli, assembly request ja `ReportAssembler`. Assembler validoi snapshotit, järjestää Full Checkin `DiagnosticCatalog`in mukaan, muodostaa aggregate-statukset ja delegoi score/coverage-laskennan muuttamattomalle `ScoreCalculator`ille.
-- Assembler-unit-testin GREEN odottaa käyttäjän ajoa. Codex ei ajanut Gradlea.
+- Käyttäjä ilmoitti kohdistetun assembler-unit-testin ja debug-unit-testien Kotlin-käännöksen onnistuneen. Pure assembler on GREEN; Codex ei ajanut Gradlea.
 
 ### 7. Implement a unified permission-state and standalone permission flow
 

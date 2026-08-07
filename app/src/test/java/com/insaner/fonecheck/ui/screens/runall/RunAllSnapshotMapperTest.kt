@@ -1,0 +1,191 @@
+package com.insaner.fonecheck.ui.screens.runall
+
+import com.insaner.fonecheck.domain.model.Applicability
+import com.insaner.fonecheck.domain.model.Confidence
+import com.insaner.fonecheck.domain.model.DeviceInfo
+import com.insaner.fonecheck.domain.model.DiagnosticCatalog
+import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
+import com.insaner.fonecheck.domain.model.DiagnosticCheckId
+import com.insaner.fonecheck.domain.model.DiagnosticEvidence
+import com.insaner.fonecheck.domain.model.DiagnosticSnapshotVersion
+import com.insaner.fonecheck.domain.model.DiagnosticStatus
+import com.insaner.fonecheck.domain.model.EvidenceReasonCode
+import com.insaner.fonecheck.domain.model.EvidenceSource
+import com.insaner.fonecheck.domain.model.EvidenceValue
+import com.insaner.fonecheck.domain.model.PerformanceInfo
+import com.insaner.fonecheck.domain.model.SimTelephonyInfo
+import com.insaner.fonecheck.ui.screens.audio.AudioTestState
+import com.insaner.fonecheck.ui.screens.battery.BatteryTestState
+import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestState
+import com.insaner.fonecheck.ui.screens.buttons.ButtonTestState
+import com.insaner.fonecheck.ui.screens.camera.CameraTestState
+import com.insaner.fonecheck.ui.screens.connectivity.ConnectivityTestState
+import com.insaner.fonecheck.ui.screens.connectivity.GpsState
+import com.insaner.fonecheck.ui.screens.connectivity.MobileNetworkState
+import com.insaner.fonecheck.ui.screens.connectivity.WifiState
+import com.insaner.fonecheck.ui.screens.display.DisplayTestState
+import com.insaner.fonecheck.ui.screens.sensor.SensorTestState
+import com.insaner.fonecheck.ui.screens.vibration.VibrationTestState
+import java.time.Instant
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class RunAllSnapshotMapperTest {
+    @Test
+    fun mapProducesCurrentCatalogOrderedSnapshotsWithoutSensitiveConnectivityValues() {
+        val capturedAt = Instant.parse("2026-08-07T12:00:30Z")
+        val sensitiveValues =
+            listOf(
+                "private-ssid",
+                "00:11:22:33:44:55",
+                "192.0.2.10",
+                "60.1699",
+                "24.9384",
+                "private-operator",
+                "private-cell-id",
+            )
+        val snapshots =
+            RunAllSnapshotMapper.map(
+                snapshots = diagnosticSnapshotsWithSensitiveConnectivity(),
+                manual = ManualCheckResults(display = true, speaker = false),
+                permissions = RunAllPermissions(),
+                capturedAt = capturedAt,
+            )
+
+        assertEquals(DiagnosticCatalog.categories, snapshots.map { it.categoryId })
+        assertTrue(snapshots.all { it.version == DiagnosticSnapshotVersion.CURRENT })
+        assertTrue(snapshots.all { it.evidence.isNotEmpty() })
+        assertTrue(snapshots.flatMap { it.evidence }.all { it.capturedAt == capturedAt })
+        assertTrue(
+            snapshots.flatMap { it.evidence }.all { evidence ->
+                evidence.checkId.value.startsWith("${evidence.categoryId.stableId}.")
+            },
+        )
+
+        val rawTextValues =
+            snapshots
+                .flatMap { it.evidence }
+                .mapNotNull { (it.value as? EvidenceValue.RawTextValue)?.value }
+        assertFalse(sensitiveValues.any { sensitive -> rawTextValues.any { sensitive in it } })
+    }
+
+    @Test
+    fun mapPreservesManualPermissionAndHardwareOutcomesAsTypedEvidence() {
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots = diagnosticSnapshotsWithSensitiveConnectivity(),
+                    manual = ManualCheckResults(display = true, speaker = false),
+                    permissions = RunAllPermissions(camera = false),
+                    capturedAt = Instant.parse("2026-08-07T12:00:30Z"),
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+
+        assertEquals(
+            DiagnosticEvidence(
+                categoryId = DiagnosticCategoryId.DISPLAY,
+                checkId = DiagnosticCheckId(DiagnosticCategoryId.DISPLAY, "display.visual"),
+                status = DiagnosticStatus.PASS,
+                confidence = Confidence.HIGH,
+                source = EvidenceSource.USER_CONFIRMATION,
+                applicability = Applicability.APPLICABLE,
+                value = EvidenceValue.BooleanValue(true),
+                capturedAt = Instant.parse("2026-08-07T12:00:30Z"),
+            ),
+            evidence["display.visual"],
+        )
+        assertEquals(DiagnosticStatus.FAIL, evidence.getValue("audio.speaker").status)
+        assertEquals(EvidenceReasonCode.USER_CONFIRMED_FAILURE, evidence.getValue("audio.speaker").reason)
+        assertEquals(EvidenceValue.BooleanValue(false), evidence.getValue("audio.speaker").value)
+        assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue("camera.capture").status)
+        assertEquals(EvidenceReasonCode.PERMISSION_DENIED, evidence.getValue("camera.capture").reason)
+        assertEquals(DiagnosticStatus.NOT_AVAILABLE, evidence.getValue("vibration.hardware").status)
+        assertEquals(Applicability.NOT_APPLICABLE, evidence.getValue("vibration.hardware").applicability)
+        assertEquals(EvidenceReasonCode.HARDWARE_UNAVAILABLE, evidence.getValue("vibration.hardware").reason)
+    }
+
+    private fun diagnosticSnapshotsWithSensitiveConnectivity() =
+        DiagnosticSnapshots(
+            device = deviceInfo(),
+            performance = performanceInfo(),
+            sim =
+                SimTelephonyInfo(
+                    simSlots = emptyList(),
+                    isDualSim = false,
+                    phoneType = "none",
+                    phoneCount = 0,
+                    dataNetworkType = "unknown",
+                ),
+            display = DisplayTestState(),
+            audio = AudioTestState(),
+            camera = CameraTestState(),
+            sensors = SensorTestState(),
+            connectivity =
+                ConnectivityTestState(
+                    wifi =
+                        WifiState(
+                            isAvailable = true,
+                            isConnected = true,
+                            ssid = "private-ssid",
+                            bssid = "00:11:22:33:44:55",
+                            ipAddress = "192.0.2.10",
+                        ),
+                    gps =
+                        GpsState(
+                            isAvailable = true,
+                            isEnabled = true,
+                            latitude = 60.1699,
+                            longitude = 24.9384,
+                        ),
+                    mobileNetwork =
+                        MobileNetworkState(
+                            isAvailable = true,
+                            isConnected = true,
+                            operatorName = "private-operator",
+                            cellId = "private-cell-id",
+                        ),
+                ),
+            battery = BatteryTestState(),
+            vibration = VibrationTestState(),
+            buttons = ButtonTestState(),
+            biometrics = BiometricTestState(),
+        )
+
+    private fun deviceInfo() =
+        DeviceInfo(
+            model = "model",
+            manufacturer = "manufacturer",
+            brand = "brand",
+            product = "product",
+            androidVersion = "16",
+            apiLevel = 36,
+            securityPatch = "2026-08-01",
+            buildNumber = "build",
+            kernelVersion = "kernel",
+            basebandVersion = "baseband",
+            bootloaderVersion = "bootloader",
+            widevineLevel = "L1",
+            isRooted = false,
+            developerOptionsEnabled = false,
+            usbDebuggingEnabled = false,
+        )
+
+    private fun performanceInfo() =
+        PerformanceInfo(
+            cpuModel = "cpu",
+            cpuArchitecture = "arm64",
+            cpuCores = 8,
+            cpuFrequencies = emptyList(),
+            cpuConfidence = Confidence.HIGH,
+            totalRam = "8 GB",
+            availableRam = "4 GB",
+            ramConfidence = Confidence.HIGH,
+            glEsVersion = "3.2",
+            glRenderer = "gpu",
+            glVendor = "vendor",
+            vulkanSupported = true,
+            gpuConfidence = Confidence.HIGH,
+        )
+}
