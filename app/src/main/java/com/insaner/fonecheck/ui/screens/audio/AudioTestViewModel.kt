@@ -13,8 +13,9 @@ import android.media.MediaRecorder
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.insaner.fonecheck.di.IoDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -61,6 +62,7 @@ class AudioTestViewModel
     @Inject
     constructor(
         application: Application,
+        @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : AndroidViewModel(application) {
         private val audioManager = application.getSystemService(AudioManager::class.java)
 
@@ -108,7 +110,7 @@ class AudioTestViewModel
             _state.value = _state.value.copy(isPlaying = true, currentFrequency = frequencyHz)
 
             toneJob =
-                viewModelScope.launch(Dispatchers.IO) {
+                viewModelScope.launch(ioDispatcher) {
                     val usageType =
                         when (streamType) {
                             AudioManager.STREAM_VOICE_CALL -> AudioAttributes.USAGE_VOICE_COMMUNICATION
@@ -151,7 +153,7 @@ class AudioTestViewModel
             val frequencyHz = 440
 
             toneJob =
-                viewModelScope.launch(Dispatchers.IO) {
+                viewModelScope.launch(ioDispatcher) {
                     val (track, bufferSize) =
                         createAudioTrack(
                             channelMask = AudioFormat.CHANNEL_OUT_STEREO,
@@ -256,7 +258,7 @@ class AudioTestViewModel
             var totalSamples = 0
 
             recordJob =
-                viewModelScope.launch(Dispatchers.IO) {
+                viewModelScope.launch(ioDispatcher) {
                     record.startRecording()
                     val buffer = ShortArray(bufferSize / 2)
 
@@ -311,7 +313,7 @@ class AudioTestViewModel
             _state.value = _state.value.copy(isPlayingRecording = true)
 
             playbackJob =
-                viewModelScope.launch(Dispatchers.IO) {
+                viewModelScope.launch(ioDispatcher) {
                     val track =
                         createAudioTrack(
                             channelMask = AudioFormat.CHANNEL_OUT_MONO,

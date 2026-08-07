@@ -5,10 +5,11 @@ import com.insaner.fonecheck.domain.model.CategoryTestResult
 import com.insaner.fonecheck.domain.model.DeviceInfo
 import com.insaner.fonecheck.domain.model.TestSession
 import com.insaner.fonecheck.domain.model.TestStatus
+import com.insaner.fonecheck.runtime.EpochMillisClock
+import com.insaner.fonecheck.runtime.IdProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import java.util.UUID
 import javax.inject.Inject
 
 enum class RunAllStage {
@@ -53,7 +54,10 @@ data class RunAllTestsState(
 @HiltViewModel
 class RunAllTestsViewModel
     @Inject
-    constructor() : ViewModel() {
+    constructor(
+        private val clock: EpochMillisClock,
+        private val idProvider: IdProvider,
+    ) : ViewModel() {
         private val _state = MutableStateFlow(RunAllTestsState())
         val state: StateFlow<RunAllTestsState> = _state
 
@@ -114,8 +118,8 @@ class RunAllTestsViewModel
                 _state.value.copy(
                     session =
                         TestSession(
-                            id = UUID.randomUUID().toString(),
-                            timestamp = System.currentTimeMillis(),
+                            id = idProvider.newId(),
+                            timestamp = clock.currentTimeMillis(),
                             deviceInfo = deviceInfo,
                             categories = categories,
                             overallScore = calculateOverallScore(categories),

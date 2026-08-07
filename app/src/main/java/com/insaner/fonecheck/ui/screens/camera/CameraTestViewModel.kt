@@ -19,8 +19,9 @@ import androidx.core.graphics.scale
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewModelScope
+import com.insaner.fonecheck.di.IoDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -72,6 +73,7 @@ class CameraTestViewModel
     @Inject
     constructor(
         application: Application,
+        @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : AndroidViewModel(application) {
         private val cameraManager = application.getSystemService(CameraManager::class.java)
         private val cameraExecutor = Executors.newSingleThreadExecutor()
@@ -87,7 +89,7 @@ class CameraTestViewModel
         }
 
         private fun loadCapabilities() {
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch(ioDispatcher) {
                 runCameraOperation(
                     action = "load camera capabilities",
                     onFailure = { error ->

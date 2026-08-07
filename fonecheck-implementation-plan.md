@@ -254,6 +254,15 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Testi-infrastruktuurin paisuminen tai uusien riippuvuuksien turha lisääminen.
 - **Decision required:** Ei.
 
+#### Implementation/status log — 2026-08-07
+
+- Lisätty funktionaaliset epoch-millis-kello- ja ID-provider-rajapinnat sekä yksi Hilt-moduuli, joka tarjoaa niiden tuotantototeutukset ja kvalifioidun IO-dispatcherin.
+- `RunAllTestsViewModel` käyttää injektoitua kelloa ja ID-provideria; `AudioTestViewModel` ja `CameraTestViewModel` käyttävät vain nykyisten IO-töidensä injektoitua dispatcheria. Session idempotenssi ja legacy-scorelogiikka säilyvät ennallaan.
+- Lisätty kohdistettu `RunAllTestsViewModelTest`, pieni `FonecheckTheme`-instrumentaatiosmoke sekä vain niiden ja seuraavan Room-skeematehtävän tarvitsemat testiriippuvuudet version catalogiin.
+- Tehtävä on tarkistettu staattisesti ilman Gradlea projektisäännön mukaisesti. Rajattu unit-testi ja Android-testin Kotlin-käännös odottavat käyttäjän ajoa; instrumentaatiosmoke tarvitsee myöhemmin emulaattorin tai laitteen.
+- Audio/Camera `NEXT TOUCH` -kohdat arvioitiin: mekaaninen dispatcher-korvaus ei muuta resurssien vapautusta, lataustiloja, preview-elinkaarta tai virhepolkuja, joten niiden erillisiä korjauksia ei laajennettu tähän tehtävään.
+- `PROJECT.md`-integraatio on siirretty myöhemmäksi, koska käyttäjä omistaa tiedostossa suuren commitoimattoman uudelleenkirjoituksen; tiedostoa ei muokattu tässä tehtävässä.
+
 ### 4. Replace the placeholder database with the production report schema
 
 - **Objective:** Määrittää ensimmäisen julkisen version todellinen Room-skeema.
