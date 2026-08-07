@@ -231,14 +231,14 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - Toteutettu: `DiagnosticCategoryId`/`DiagnosticCatalog`, locale-neutral evidence- ja report-sopimukset sekä puhdas `ScoreCalculator` version 1 semantiikalla.
 - `diagnosticDestinations` johdetaan catalogista ja suodattaa toteutumattomat Thermal- ja Storage-kategoriat; nykyvirran `SYSTEM`-viittaukset vaihdettiin mekaanisesti `DEVICE`-arvoon.
 - Lisätty JUnit 4.13.2 -testit score-, coverage-, validation- ja version-yhteensopivuussopimukselle.
-- Staattisesti tarkistettu lähdekoodin viittaukset ja tehtävädiffi. Gradle-acceptance on nimenomaisesti kesken, kunnes käyttäjä ajaa `./gradlew :app:testDebugUnitTest --tests "com.insaner.fonecheck.domain.model.ScoreCalculatorTest"`.
+- Staattisesti tarkistettu lähdekoodin viittaukset ja tehtävädiffi. Käyttäjän uusinta-ajo `./gradlew :app:testDebugUnitTest --tests "com.insaner.fonecheck.domain.model.ScoreCalculatorTest"` onnistui: `BUILD SUCCESSFUL in 19s`, `30 actionable tasks: 7 executed, 23 up-to-date`; Task 2:n acceptance on täytetty.
 - `PROJECT.md`-päivitys on pending integration käyttäjän omien commitoimattomien muutosten kanssa; tiedostoa ei muokattu tässä tehtävässä.
 
 #### Verification repair log — 2026-08-07
 
 - Käyttäjän ajama rajattu JUnit-komento pysähtyi ennen testejä `:app:kspDebugUnitTestKotlin`-vaiheen dependency verificationiin, koska Task 2:n JUnit 4.13.2- ja transitiviset Hamcrest 1.3 -artefaktit puuttuivat metadatasta.
 - Lisätty artifact-level ignored-key- ja SHA-256-pinnit viidelle todistetusti Maven Central -julkaisua vastaavalle artefaktille. Globaaleja avainluottamuksia, signature verification- tai keyserver-asetuksia ei muutettu.
-- Uudelleenajo jää käyttäjälle; tässä korjauksessa tehtiin vain XML- ja diff-whitespace-tarkistukset.
+- Käyttäjän uusinta-ajo onnistui korjauksen jälkeen: `BUILD SUCCESSFUL in 19s`, `30 actionable tasks: 7 executed, 23 up-to-date`. Task 2:n acceptance on täytetty.
 
 ### 3. Establish deterministic runtime seams and the test foundation
 
