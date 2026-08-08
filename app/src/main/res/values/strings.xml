@@ -741,7 +741,8 @@
     <string name="settings_delete_error">Saved reports could not be deleted.</string>
     <string name="settings_loading">Loading settings…</string>
     <string name="licenses_title">Open-source licenses</string>
-    <string name="licenses_description">fonecheck uses AndroidX, Jetpack Compose, Material, Kotlin, Hilt, Room, CameraX, kotlinx.serialization, Okio, and their transitive open-source dependencies. Distribution notices are packaged with release artifacts.</string>
+    <string name="licenses_description">fonecheck includes open-source libraries. Their component inventory and applicable license terms are bundled below and in the release artifact.</string>
+    <string name="licenses_notices_heading">Third-party notices</string>
     <string name="onboarding_title">Getting started</string>
     <string name="onboarding_progress">Step %1$d of %2$d</string>
     <string name="onboarding_skip">Skip</string>

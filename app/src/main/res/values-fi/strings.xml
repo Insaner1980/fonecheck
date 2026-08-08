@@ -735,7 +735,8 @@
     <string name="settings_delete_error">Tallennettuja raportteja ei voitu poistaa.</string>
     <string name="settings_loading">Ladataan asetuksia…</string>
     <string name="licenses_title">Avoimen lähdekoodin lisenssit</string>
-    <string name="licenses_description">fonecheck käyttää AndroidX-, Jetpack Compose-, Material-, Kotlin-, Hilt-, Room-, CameraX-, kotlinx.serialization- ja Okio-kirjastoja sekä niiden avoimen lähdekoodin riippuvuuksia. Jakeluilmoitukset pakataan julkaisuversioon.</string>
+    <string name="licenses_description">fonecheck sisältää avoimen lähdekoodin kirjastoja. Komponenttiluettelo ja sovellettavat lisenssiehdot on pakattu alle sekä julkaisuversioon.</string>
+    <string name="licenses_notices_heading">Kolmannen osapuolen ilmoitukset</string>
     <string name="onboarding_title">Aloittaminen</string>
     <string name="onboarding_progress">Vaihe %1$d/%2$d</string>
     <string name="onboarding_skip">Ohita</string>

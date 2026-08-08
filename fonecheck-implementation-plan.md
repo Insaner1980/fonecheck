@@ -1076,6 +1076,13 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Ulkoiset URL:t, yhteystiedot, signing ja Play Console -oikeudet vaativat käyttäjän hallitseman inputin.
 - **Decision required:** Kyllä, release inputs kohdassa 1.
 
+#### Implementation/status log — 2026-08-08
+
+- `docs/release-readiness.md` lukitsee nimen `fonecheck`, application ID:n `com.insaner.fonecheck`, version `1.0.0 (1)`, Finnvekin omistajuuden, `contact@finnvek.com`-tuen, Play App Signing/upload key -vastuut, permission-perustelut, nykybinääriä vastaavat Data safety -vastaukset sekä faktantarkistetut englannin- ja suomenkieliset store-tekstit.
+- `docs/fonecheck-privacy-section.md` sisältää julkaistavan fonecheck-kohtaisen tietosuojatekstin. `https://finnvek.com/privacy/` vastaa, mutta julkinen sivu ei vielä nimeä fonecheckia eikä tukiosoitetta ja viittaa yhä kolmeen sovellukseen. Policy on siksi edelleen ulkoinen release-blocker.
+- Lisenssinäkymä näyttää nyt releaseen pakatun komponenttiluettelon ja Apache License 2.0 -ehdot; Compose-instrumentaatiotesti todentaa otsikon ja lisenssitekstin läsnäolon ja sen lähdekoodi kääntyy. `store-assets/feature-graphic.png` on valmis 1024 × 500 RGB PNG. Aidot käyttöliittymäkuvat on edelleen otettava allekirjoitetusta Play-buildistä oikealla laitteella.
+- Release-AAB rakentuu, mutta tiedostossa ei ole allekirjoituksen META-INF-merkintöjä eikä repositoryyn lisätty signing-materiaalia. Omistajan hallitseman upload keyn luonti, AAB:n allekirjoitus, Play-lomakkeet, content rating, test track, pre-launch report ja store-upload vaativat ulkoisen Play Console -työn. Kohta ja julkaisu pysyvät `NO-GO`-tilassa, kunnes nämä portit on todistettu.
+
 ### 40. Run final release-candidate QA and record the go/no-go decision
 
 - **Objective:** Vahvistaa koko final-product-scope ennen ensimmäistä julkista julkaisua.
