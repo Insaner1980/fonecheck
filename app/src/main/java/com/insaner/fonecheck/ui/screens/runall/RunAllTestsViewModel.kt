@@ -1,6 +1,7 @@
 package com.insaner.fonecheck.ui.screens.runall
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.insaner.fonecheck.domain.model.DiagnosticCategorySnapshot
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.ReportAppContext
@@ -12,9 +13,12 @@ import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.IdProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
+import javax.inject.Inject
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import javax.inject.Inject
+import kotlinx.coroutines.launch
 
 enum class RunAllStage {
     PREFLIGHT,
@@ -28,6 +32,29 @@ enum class RunAllStage {
     BUTTONS,
     BIOMETRICS,
     RESULTS,
+}
+
+enum class RunAllRunStatus {
+    NOT_STARTED,
+    RUNNING,
+    COMPLETED,
+}
+
+enum class RunAllStageOutcome {
+    COMPLETED,
+    PASSED,
+    FAILED,
+    SKIPPED,
+    UNAVAILABLE,
+    TIMED_OUT,
+    ERROR,
+}
+
+enum class RunAllInterruptionReason {
+    USER_CANCEL,
+    BACKGROUND,
+    CONFIGURATION_CHANGE,
+    SCREEN_DISPOSED,
 }
 
 data class RunAllPermissions(
@@ -46,16 +73,23 @@ data class ManualCheckResults(
     val vibration: Boolean? = null,
     val buttons: Boolean? = null,
     val biometrics: Boolean? = null,
+    val outcomes: Map<RunAllStage, RunAllStageOutcome> = emptyMap(),
 )
 
 data class RunAllTestsState(
     val stage: RunAllStage = RunAllStage.PREFLIGHT,
+    val stageToken: Long = 0L,
+    val runStatus: RunAllRunStatus = RunAllRunStatus.NOT_STARTED,
+    val lastInterruption: RunAllInterruptionReason? = null,
     val permissions: RunAllPermissions = RunAllPermissions(),
     val selections: RunAllSelections = RunAllSelections(),
     val hardware: RunAllHardwareProfile = RunAllHardwareProfile(),
     val plan: RunAllPlan = RunAllPlan.EMPTY,
     val manualChecks: ManualCheckResults = ManualCheckResults(),
     val displayColorIndex: Int = 0,
+    val cameraIds: List<String> = emptyList(),
+    val cameraIndex: Int = 0,
+    val stageIssue: RunAllStageOutcome? = null,
     val report: DiagnosticReport? = null,
 ) {
     val progress: RunAllProgress?
@@ -65,6 +99,12 @@ data class RunAllTestsState(
             } else {
                 null
             }
+
+    val stageOutcomes: Map<RunAllStage, RunAllStageOutcome>
+        get() = manualChecks.outcomes
+
+    val currentCameraId: String?
+        get() = cameraIds.getOrNull(cameraIndex)
 }
 
 @HiltViewModel
@@ -76,10 +116,18 @@ class RunAllTestsViewModel
     ) : ViewModel() {
         private val _state = MutableStateFlow(RunAllTestsState())
         val state: StateFlow<RunAllTestsState> = _state
-        private val reportStartedAt = Instant.ofEpochMilli(clock.currentTimeMillis())
+
+        private var nextStageToken = 0L
+        private var claimedStageToken: Long? = null
+        private var stageTimeoutJob: Job? = null
+        private var reportStartedAt: Instant? = null
 
         fun updateSelections(selections: RunAllSelections) {
-            if (_state.value.stage != RunAllStage.PREFLIGHT) return
+            if (_state.value.stage != RunAllStage.PREFLIGHT ||
+                _state.value.runStatus != RunAllRunStatus.NOT_STARTED
+            ) {
+                return
+            }
             _state.value = _state.value.copy(selections = selections)
         }
 
@@ -87,105 +135,351 @@ class RunAllTestsViewModel
             selections: RunAllSelections,
             hardware: RunAllHardwareProfile,
         ) {
-            _state.value =
+            if (_state.value.stage != RunAllStage.PREFLIGHT ||
+                _state.value.runStatus != RunAllRunStatus.NOT_STARTED
+            ) {
+                return
+            }
+            reportStartedAt = Instant.ofEpochMilli(clock.currentTimeMillis())
+            enterStage(
+                RunAllStage.PERMISSIONS,
                 _state.value.copy(
-                    stage = RunAllStage.PERMISSIONS,
                     selections = selections,
                     hardware = hardware,
-                )
+                    runStatus = RunAllRunStatus.RUNNING,
+                    lastInterruption = null,
+                ),
+            )
         }
 
         fun onPermissionsResolved(permissions: RunAllPermissions) {
+            val current = _state.value
+            if (current.runStatus != RunAllRunStatus.RUNNING || current.stage != RunAllStage.PERMISSIONS) return
             val plan =
                 RunAllStagePlanner.plan(
-                    hardware = _state.value.hardware,
+                    hardware = current.hardware,
                     permissions = permissions,
-                    selections = _state.value.selections,
+                    selections = current.selections,
                 )
-            _state.value =
-                _state.value.copy(
+            enterStage(
+                plan.stages.firstOrNull() ?: RunAllStage.RESULTS,
+                current.copy(
                     permissions = permissions,
                     plan = plan,
-                    stage = plan.stages.firstOrNull() ?: RunAllStage.RESULTS,
-                )
+                ),
+            )
         }
 
-        fun onAutomaticChecksComplete() {
-            advance()
+        fun claimStage(token: Long): Boolean {
+            val current = _state.value
+            if (!isCurrentStage(token) ||
+                current.stage == RunAllStage.PREFLIGHT ||
+                current.stage == RunAllStage.PERMISSIONS ||
+                current.stage == RunAllStage.RESULTS ||
+                claimedStageToken == token
+            ) {
+                return false
+            }
+            claimedStageToken = token
+            scheduleTimeout(token, current.stage)
+            return true
         }
 
-        fun nextDisplayColor(lastColorIndex: Int) {
+        fun onAutomaticChecksComplete(token: Long) {
+            finishStage(token, RunAllStage.AUTOMATIC, RunAllStageOutcome.COMPLETED)
+        }
+
+        fun nextDisplayColor(
+            token: Long,
+            lastColorIndex: Int,
+        ) {
+            if (!isCurrentStage(token, RunAllStage.DISPLAY)) return
             val current = _state.value.displayColorIndex
             if (current < lastColorIndex) {
                 _state.value = _state.value.copy(displayColorIndex = current + 1)
             }
         }
 
-        fun recordDisplay(result: Boolean?) {
-            recordManualCheck { it.copy(display = result) }
+        fun recordDisplay(
+            token: Long,
+            result: Boolean?,
+            outcome: RunAllStageOutcome = outcomeFor(result),
+        ) {
+            finishStage(token, RunAllStage.DISPLAY, outcome, result)
         }
 
-        fun recordSpeaker(result: Boolean?) {
-            recordManualCheck { it.copy(speaker = result) }
+        fun recordSpeaker(
+            token: Long,
+            result: Boolean?,
+            outcome: RunAllStageOutcome = outcomeFor(result),
+        ) {
+            finishStage(token, RunAllStage.AUDIO, outcome, result)
         }
 
-        fun recordCamera(result: Boolean?) {
-            recordManualCheck { it.copy(camera = result) }
+        fun recordCamera(
+            token: Long,
+            result: Boolean?,
+            outcome: RunAllStageOutcome = outcomeFor(result),
+        ) {
+            finishStage(token, RunAllStage.CAMERA, outcome, result)
         }
 
-        fun recordSensors(result: Boolean?) {
-            recordManualCheck { it.copy(sensors = result) }
+        fun prepareCameraStage(
+            token: Long,
+            cameraIds: List<String>,
+        ): Boolean {
+            if (!isCurrentStage(token, RunAllStage.CAMERA) || claimedStageToken != token) return false
+            val distinctIds = cameraIds.distinct()
+            if (distinctIds.isEmpty()) {
+                markStageUnavailable(token)
+                return false
+            }
+            if (_state.value.cameraIds.isEmpty()) {
+                _state.value =
+                    _state.value.copy(
+                        cameraIds = distinctIds,
+                        cameraIndex = 0,
+                    )
+            }
+            return _state.value.currentCameraId != null
         }
 
-        fun recordVibration(result: Boolean?) {
-            recordManualCheck { it.copy(vibration = result) }
+        fun recordCameraCapture(token: Long) {
+            val current = _state.value
+            if (!isCurrentStage(token, RunAllStage.CAMERA) || claimedStageToken != token) return
+            val hasNextCamera = current.cameraIndex + 1 < current.cameraIds.size
+            if (hasNextCamera) {
+                enterStage(
+                    RunAllStage.CAMERA,
+                    current.copy(
+                        cameraIndex = current.cameraIndex + 1,
+                        stageIssue = null,
+                    ),
+                )
+            } else {
+                finishStage(token, RunAllStage.CAMERA, RunAllStageOutcome.PASSED, true)
+            }
         }
 
-        fun recordButtons(result: Boolean?) {
-            recordManualCheck { it.copy(buttons = result) }
+        fun reportStageIssue(
+            token: Long,
+            issue: RunAllStageOutcome,
+        ) {
+            if (!isCurrentStage(token) || claimedStageToken != token || _state.value.stageIssue != null) return
+            require(issue == RunAllStageOutcome.TIMED_OUT || issue == RunAllStageOutcome.ERROR)
+            cancelStageTimeout()
+            _state.value = _state.value.copy(stageIssue = issue)
         }
 
-        fun recordBiometrics(result: Boolean?) {
-            recordManualCheck { it.copy(biometrics = result) }
+        fun recordSensors(
+            token: Long,
+            result: Boolean?,
+            outcome: RunAllStageOutcome = outcomeFor(result),
+        ) {
+            finishStage(token, RunAllStage.SENSORS, outcome, result)
+        }
+
+        fun recordVibration(
+            token: Long,
+            result: Boolean?,
+            outcome: RunAllStageOutcome = outcomeFor(result),
+        ) {
+            finishStage(token, RunAllStage.VIBRATION, outcome, result)
+        }
+
+        fun recordButtons(
+            token: Long,
+            result: Boolean?,
+            outcome: RunAllStageOutcome = outcomeFor(result),
+        ) {
+            finishStage(token, RunAllStage.BUTTONS, outcome, result)
+        }
+
+        fun recordBiometrics(
+            token: Long,
+            result: Boolean?,
+            outcome: RunAllStageOutcome = outcomeFor(result),
+        ) {
+            finishStage(token, RunAllStage.BIOMETRICS, outcome, result)
+        }
+
+        fun skipStage(token: Long) {
+            val stage = _state.value.stage
+            if (stage !in _state.value.plan.interactiveStages) return
+            finishStage(token, stage, RunAllStageOutcome.SKIPPED, null)
+        }
+
+        fun markStageUnavailable(token: Long) {
+            val stage = _state.value.stage
+            finishStage(token, stage, RunAllStageOutcome.UNAVAILABLE, null)
+        }
+
+        fun retryStage(token: Long): Boolean {
+            val current = _state.value
+            if (!isCurrentStage(token) || current.stage !in current.plan.interactiveStages) return false
+            val retryState =
+                if (current.stage == RunAllStage.DISPLAY) {
+                    current.copy(displayColorIndex = 0, stageIssue = null)
+                } else {
+                    current.copy(stageIssue = null)
+                }
+            enterStage(current.stage, retryState)
+            return true
+        }
+
+        fun interruptRun(reason: RunAllInterruptionReason): Boolean {
+            if (_state.value.runStatus != RunAllRunStatus.RUNNING) return false
+            cancelStageTimeout()
+            claimedStageToken = null
+            reportStartedAt = null
+            _state.value =
+                RunAllTestsState(
+                    stageToken = newToken(),
+                    lastInterruption = reason,
+                )
+            return true
         }
 
         fun completeReport(
+            token: Long,
             device: ReportDeviceContext,
             app: ReportAppContext,
             snapshots: List<DiagnosticCategorySnapshot>,
         ) {
-            if (_state.value.report != null) return
+            val current = _state.value
+            if (!isCurrentStage(token, RunAllStage.RESULTS) || current.report != null) return
+            val startedAt = reportStartedAt ?: return
 
             val report =
                 ReportAssembler.assemble(
                     ReportAssemblyRequest(
                         stableId = idProvider.newId(),
                         kind = ReportKind.FULL_CHECK,
-                        startedAt = reportStartedAt,
+                        startedAt = startedAt,
                         completedAt = Instant.ofEpochMilli(clock.currentTimeMillis()),
                         device = device,
                         app = app,
                         snapshots = snapshots,
                     ),
                 )
-            _state.value = _state.value.copy(report = report)
-        }
-
-        private fun recordManualCheck(
-            update: (ManualCheckResults) -> ManualCheckResults,
-        ) {
             _state.value =
-                _state.value.copy(
-                    manualChecks = update(_state.value.manualChecks),
+                current.copy(
+                    report = report,
+                    runStatus = RunAllRunStatus.COMPLETED,
                 )
-            advance()
         }
 
-        private fun advance() {
-            val currentIndex = _state.value.plan.stages.indexOf(_state.value.stage)
+        private fun finishStage(
+            token: Long,
+            expectedStage: RunAllStage,
+            outcome: RunAllStageOutcome,
+            result: Boolean? = null,
+        ) {
+            if (!isCurrentStage(token, expectedStage) || claimedStageToken != token) return
+            cancelStageTimeout()
+            claimedStageToken = null
+            val current = _state.value
+            val updatedManual =
+                updateManualResult(
+                    current.manualChecks.copy(
+                        outcomes = current.manualChecks.outcomes + (expectedStage to outcome),
+                    ),
+                    expectedStage,
+                    result,
+                )
+            val currentIndex = current.plan.stages.indexOf(expectedStage)
             if (currentIndex < 0) return
-            val nextStage = _state.value.plan.stages.getOrNull(currentIndex + 1) ?: RunAllStage.RESULTS
-            _state.value = _state.value.copy(stage = nextStage)
+            val nextStage = current.plan.stages.getOrNull(currentIndex + 1) ?: RunAllStage.RESULTS
+            enterStage(
+                nextStage,
+                current.copy(manualChecks = updatedManual),
+            )
         }
 
+        private fun updateManualResult(
+            manual: ManualCheckResults,
+            stage: RunAllStage,
+            result: Boolean?,
+        ): ManualCheckResults =
+            when (stage) {
+                RunAllStage.DISPLAY -> manual.copy(display = result)
+                RunAllStage.AUDIO -> manual.copy(speaker = result)
+                RunAllStage.CAMERA -> manual.copy(camera = result)
+                RunAllStage.SENSORS -> manual.copy(sensors = result)
+                RunAllStage.VIBRATION -> manual.copy(vibration = result)
+                RunAllStage.BUTTONS -> manual.copy(buttons = result)
+                RunAllStage.BIOMETRICS -> manual.copy(biometrics = result)
+                else -> manual
+            }
+
+        private fun scheduleTimeout(
+            token: Long,
+            stage: RunAllStage,
+        ) {
+            val timeout =
+                when (stage) {
+                    RunAllStage.AUTOMATIC -> AUTOMATIC_TIMEOUT_MS
+                    RunAllStage.DISPLAY -> DISPLAY_TIMEOUT_MS
+                    RunAllStage.CAMERA -> CAMERA_TIMEOUT_MS
+                    else -> null
+                } ?: return
+            stageTimeoutJob =
+                viewModelScope.launch {
+                    delay(timeout)
+                    if (stage == RunAllStage.CAMERA) {
+                        reportStageIssue(token, RunAllStageOutcome.TIMED_OUT)
+                    } else {
+                        finishStage(token, stage, RunAllStageOutcome.TIMED_OUT)
+                    }
+                }
+        }
+
+        private fun enterStage(
+            stage: RunAllStage,
+            baseState: RunAllTestsState = _state.value,
+        ) {
+            cancelStageTimeout()
+            claimedStageToken = null
+            _state.value =
+                baseState.copy(
+                    stage = stage,
+                    stageToken = newToken(),
+                    stageIssue = null,
+                )
+        }
+
+        private fun isCurrentStage(
+            token: Long,
+            expectedStage: RunAllStage = _state.value.stage,
+        ): Boolean {
+            val current = _state.value
+            return current.runStatus == RunAllRunStatus.RUNNING &&
+                current.stageToken == token &&
+                current.stage == expectedStage
+        }
+
+        private fun cancelStageTimeout() {
+            stageTimeoutJob?.cancel()
+            stageTimeoutJob = null
+        }
+
+        private fun newToken(): Long = ++nextStageToken
+
+        override fun onCleared() {
+            cancelStageTimeout()
+            super.onCleared()
+        }
+
+        companion object {
+            const val AUTOMATIC_TIMEOUT_MS = 70_000L
+            const val DISPLAY_TIMEOUT_MS = 30_000L
+            const val CAMERA_TIMEOUT_MS = 12_000L
+
+            private fun outcomeFor(result: Boolean?): RunAllStageOutcome =
+                when (result) {
+                    true -> RunAllStageOutcome.PASSED
+                    false -> RunAllStageOutcome.FAILED
+                    null -> RunAllStageOutcome.SKIPPED
+                }
+        }
     }

@@ -732,6 +732,14 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Monen nykyisen ViewModelin yhtäaikainen omistus; toteutus ei saa synnyttää toista category-listaa.
 - **Decision required:** Kyllä, interruption policy kohdassa 1.
 
+#### Implementation/status log — 2026-08-08
+
+- `RunAllTestsViewModel` omistaa nyt jokaiselle stage-instanssille monotonisen tokenin, yhden claimin, transitionin, lopputuloksen ja timeout-jobin. Vain nykyisen, claimatun tokenin ensimmäinen callback voi päättää vaiheen; duplicate-, late-success- ja timeout/success-race-callbackit eivät voi siirtää seuraavaa vaihetta.
+- Yksi `RunAllResourceOwner` keskittää stagekohtaisen ja koko ajon teardownin. Keskeytys tai poistuminen pysäyttää performance-työn, mikrofonin ja muun audion, kameran ja torchin, display-testit, sensorit, GNSS-haun, storage-benchmarkin, värinän, painiketestin, biometrisen promptin ja thermal-monitoroinnin idempotentisti. Activityn background ja konfiguraatiomuutos noudattavat hyväksyttyä interruption-päätöstä: keskeneräinen ajo hylätään ja paluu alkaa preflightista, eikä myöhäinen completion voi muodostaa raporttia.
+- Automaattivaiheella, displayllä ja kameralla on orkestroijan omistamat timeoutit. Kamera-error tai timeout jää eksplisiittiseen retry/skip-tilaan eikä muutu laiteviaksi. Jokaisessa interaktiivisessa vaiheessa on saavutettava skip ja koko ajon cancel; camera/buttons tarjoavat lisäksi retryn.
+- Full Check käy hyväksytyn päätöksen mukaisesti läpi jokaisen Camera2/CameraX:n julkisesti listaaman camera ID:n omalla tokenillaan. Preview/capture-resurssi puretaan kameraa vaihdettaessa, viimeinen capture-snapshot säilyy raportille ja fyysiset alikamerat jäävät edelleen metadataksi.
+- State-machine-unit-testit kattavat duplicate- ja late-callbackit, claimin recompositionissa, timeout/success-kilpajuoksun, background- ja configuration interruptionit, cancelin jälkeisen raporttihylkäyksen, kaikkien julkisten kameroiden jonon sekä camera retry/timeout/skip-polut. Resource owner -testi kattaa jokaisen omistetun stage-resurssin ja idempotentin stop-allin; mapper-testi säilyttää timeout/skip/unavailable-reasonit evidencessä. Koko `:app:testDebugUnitTest`, Android-testien Kotlin-käännös, `:app:lintDebug` ja `:app:assembleDebug` läpäisevät. `ktlintCheck` ajettiin, mutta se pysähtyi ennen linttausta samoihin 10 käyttäjän dependency-verification-tietueeseen; metadataa ei muutettu. Instrumentoitu lifecycle-/kamerakoe odottaa laitetta, koska `adb devices -l` on tyhjä. `PROJECT.md` jätettiin käyttäjän keskeneräisen muutoksen vuoksi koskematta.
+
 ### 24. Finalize and persist completed Full Check and retest reports
 
 - **Objective:** Tallentaa vain eksplisiittisesti valmis immutable report.

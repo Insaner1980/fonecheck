@@ -574,8 +574,9 @@
     <string name="run_all_play_again">Toista uudelleen</string>
     <string name="run_all_heard_tone">Kuulin äänen</string>
     <string name="run_all_no_tone">Ääntä ei kuulu</string>
-    <string name="run_all_camera_title">Takakameraa testataan</string>
-    <string name="run_all_camera_description">Esikatselu avataan ja yksi kuva otetaan automaattisesti.</string>
+    <string name="run_all_camera_title">Kameroita testataan</string>
+    <string name="run_all_camera_description">Jokaiselle julkiselle kameralle avataan esikatselu ja otetaan yksi kuva automaattisesti.</string>
+    <string name="run_all_camera_progress">Kamera %1$d/%2$d</string>
     <string name="run_all_sensor_title">Testaa liikeanturi</string>
     <string name="run_all_sensor_description">Ravista puhelinta kevyesti. Testi jatkuu automaattisesti, kun liike havaitaan.</string>
     <string name="run_all_vibration_title">Tunsitko värinän?</string>
@@ -587,6 +588,9 @@
     <string name="run_all_biometrics_title">Varmista biometrinen anturi</string>
     <string name="run_all_biometrics_description">Käytä vain biometriikan hyväksyvää järjestelmäkehotetta. PIN-koodia, kuviota tai salasanaa ei hyväksytä biometriseksi tulokseksi.</string>
     <string name="run_all_skip">Ohita tämä tarkistus</string>
+    <string name="run_all_cancel">Keskeytä Full Check</string>
+    <string name="run_all_stage_timeout">Tarkistus aikakatkaistiin. Yritä uudelleen tai jatka ohittamalla se.</string>
+    <string name="run_all_stage_error">Tarkistusta ei voitu jatkaa. Yritä uudelleen tai ohita se.</string>
     <string name="run_all_results_title">Puhelimesi raportti</string>
     <string name="run_all_results_description">Automaattiset ja vuorovaikutteiset tarkistukset on ryhmitelty alle kategorioittain.</string>
     <string name="run_all_overall_score">Kokonaispisteet</string>

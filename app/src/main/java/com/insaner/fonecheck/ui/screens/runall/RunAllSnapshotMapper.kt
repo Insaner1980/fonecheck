@@ -312,7 +312,13 @@ object RunAllSnapshotMapper {
                 unit = EvidenceUnitCode("pixels"),
                 capturedAt = capturedAt,
             ),
-            manualEvidence(DiagnosticCategoryId.DISPLAY, "visual", manual.display, capturedAt),
+            manualEvidence(
+                DiagnosticCategoryId.DISPLAY,
+                "visual",
+                manual.display,
+                manual.outcomes[RunAllStage.DISPLAY],
+                capturedAt,
+            ),
         )
     }
 
@@ -366,7 +372,13 @@ object RunAllSnapshotMapper {
             }
         return listOf(
             if (selections.includeSpeaker) {
-                manualEvidence(DiagnosticCategoryId.AUDIO, "speaker", manual.speaker, capturedAt)
+                manualEvidence(
+                    DiagnosticCategoryId.AUDIO,
+                    "speaker",
+                    manual.speaker,
+                    manual.outcomes[RunAllStage.AUDIO],
+                    capturedAt,
+                )
             } else {
                 notTested(
                     DiagnosticCategoryId.AUDIO,
@@ -425,7 +437,13 @@ object RunAllSnapshotMapper {
                     source = EvidenceSource.USER_CONFIRMATION,
                 )
             } else if (permissions.camera) {
-                manualEvidence(DiagnosticCategoryId.CAMERA, "capture", manual.camera, capturedAt)
+                manualEvidence(
+                    DiagnosticCategoryId.CAMERA,
+                    "capture",
+                    manual.camera,
+                    manual.outcomes[RunAllStage.CAMERA],
+                    capturedAt,
+                )
             } else {
                 notTested(
                     DiagnosticCategoryId.CAMERA,
@@ -574,13 +592,21 @@ object RunAllSnapshotMapper {
                     )
                 },
             )
-            add(automaticSensorEvidence("motion", manual.sensors, capturedAt))
+            add(
+                automaticSensorEvidence(
+                    "motion",
+                    manual.sensors,
+                    manual.outcomes[RunAllStage.SENSORS],
+                    capturedAt,
+                ),
+            )
         }
     }
 
     private fun automaticSensorEvidence(
         id: String,
         value: Boolean?,
+        outcome: RunAllStageOutcome?,
         capturedAt: Instant,
     ): DiagnosticEvidence =
         when (value) {
@@ -610,6 +636,7 @@ object RunAllSnapshotMapper {
                     categoryId = DiagnosticCategoryId.SENSORS,
                     id = id,
                     capturedAt = capturedAt,
+                    reason = reasonFor(outcome),
                     source = EvidenceSource.AUTOMATIC_MEASUREMENT,
                 )
         }
@@ -960,7 +987,13 @@ object RunAllSnapshotMapper {
                 capturedAt = capturedAt,
             ),
             if (hasVibrator) {
-                manualEvidence(DiagnosticCategoryId.VIBRATION, "motor", manual.vibration, capturedAt)
+                manualEvidence(
+                    DiagnosticCategoryId.VIBRATION,
+                    "motor",
+                    manual.vibration,
+                    manual.outcomes[RunAllStage.VIBRATION],
+                    capturedAt,
+                )
             } else {
                 unavailable(
                     DiagnosticCategoryId.VIBRATION,
@@ -1440,7 +1473,12 @@ object RunAllSnapshotMapper {
                     capturedAt = capturedAt,
                 )
             },
-            biometricAuthenticationEvidence(snapshots.biometrics, manual.biometrics, capturedAt),
+            biometricAuthenticationEvidence(
+                snapshots.biometrics,
+                manual.biometrics,
+                manual.outcomes[RunAllStage.BIOMETRICS],
+                capturedAt,
+            ),
         )
     }
 
@@ -1480,6 +1518,7 @@ object RunAllSnapshotMapper {
     private fun biometricAuthenticationEvidence(
         state: BiometricTestState,
         manualResult: Boolean?,
+        outcome: RunAllStageOutcome?,
         capturedAt: Instant,
     ): DiagnosticEvidence =
         when (state.authResult) {
@@ -1545,6 +1584,7 @@ object RunAllSnapshotMapper {
                     DiagnosticCategoryId.BIOMETRICS,
                     "authentication",
                     manualResult,
+                    outcome,
                     capturedAt,
                 )
         }
@@ -1553,6 +1593,14 @@ object RunAllSnapshotMapper {
         categoryId: DiagnosticCategoryId,
         id: String,
         value: Boolean?,
+        capturedAt: Instant,
+    ): DiagnosticEvidence = manualEvidence(categoryId, id, value, null, capturedAt)
+
+    private fun manualEvidence(
+        categoryId: DiagnosticCategoryId,
+        id: String,
+        value: Boolean?,
+        outcome: RunAllStageOutcome?,
         capturedAt: Instant,
     ): DiagnosticEvidence =
         when (value) {
@@ -1578,12 +1626,30 @@ object RunAllSnapshotMapper {
                 )
 
             null ->
-                notTested(
-                    categoryId = categoryId,
-                    id = id,
-                    capturedAt = capturedAt,
-                    source = EvidenceSource.USER_CONFIRMATION,
-                )
+                if (outcome == RunAllStageOutcome.UNAVAILABLE) {
+                    unavailable(
+                        categoryId = categoryId,
+                        id = id,
+                        capturedAt = capturedAt,
+                        source = EvidenceSource.USER_CONFIRMATION,
+                    )
+                } else {
+                    notTested(
+                        categoryId = categoryId,
+                        id = id,
+                        capturedAt = capturedAt,
+                        reason = reasonFor(outcome),
+                        source = EvidenceSource.USER_CONFIRMATION,
+                    )
+                }
+        }
+
+    private fun reasonFor(outcome: RunAllStageOutcome?): EvidenceReasonCode =
+        when (outcome) {
+            RunAllStageOutcome.SKIPPED -> EvidenceReasonCode.SKIPPED
+            RunAllStageOutcome.TIMED_OUT -> EvidenceReasonCode.TIMEOUT
+            RunAllStageOutcome.ERROR -> EvidenceReasonCode.ERROR
+            else -> EvidenceReasonCode.NOT_RUN
         }
 
     private fun availability(

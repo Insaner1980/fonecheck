@@ -261,6 +261,15 @@ class CameraTestViewModel
             if (cameraId != null) startPreview(previewView, lifecycleOwner, cameraId)
         }
 
+        @ExperimentalOptIn(markerClass = [ExperimentalCamera2Interop::class])
+        fun startPreviewById(
+            previewView: PreviewView,
+            lifecycleOwner: LifecycleOwner,
+            cameraId: String,
+        ) {
+            startPreview(previewView, lifecycleOwner, cameraId)
+        }
+
         @ExperimentalCamera2Interop
         fun startPreview(
             previewView: PreviewView,
@@ -274,6 +283,7 @@ class CameraTestViewModel
                 _state.value.copy(
                     selectedCameraId = cameraId,
                     isFrontCamera = selected.facingCode == CameraFacingCode.FRONT,
+                    lastCapture = null,
                     error = null,
                 )
             val context = getApplication<Application>()
@@ -325,7 +335,7 @@ class CameraTestViewModel
             runCatching { cameraProvider?.unbindAll() }
             cameraProvider = null
             imageCapture = null
-            _state.value = _state.value.copy(isPreviewActive = false, lastCapture = null)
+            _state.value = _state.value.copy(isPreviewActive = false, isCapturing = false)
         }
 
         fun capturePhoto() {
@@ -372,6 +382,10 @@ class CameraTestViewModel
                     }
                 },
             )
+        }
+
+        fun clearCaptureResult() {
+            _state.value = _state.value.copy(lastCapture = null, error = null)
         }
 
         fun toggleFlash() {

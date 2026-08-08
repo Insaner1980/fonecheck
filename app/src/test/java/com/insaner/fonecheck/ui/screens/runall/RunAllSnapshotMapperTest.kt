@@ -864,6 +864,41 @@ class RunAllSnapshotMapperTest {
         assertEquals(Applicability.NOT_APPLICABLE, absent.getValue("camera.capture").applicability)
     }
 
+    @Test
+    fun orchestrationOutcomesPreserveTimeoutSkipAndUnavailableReasons() {
+        val capturedAt = Instant.parse("2026-08-08T12:00:00Z")
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots = diagnosticSnapshotsWithSensitiveConnectivity(),
+                    manual =
+                        ManualCheckResults(
+                            outcomes =
+                                mapOf(
+                                    RunAllStage.DISPLAY to RunAllStageOutcome.TIMED_OUT,
+                                    RunAllStage.AUDIO to RunAllStageOutcome.SKIPPED,
+                                    RunAllStage.CAMERA to RunAllStageOutcome.UNAVAILABLE,
+                                ),
+                        ),
+                    permissions =
+                        RunAllPermissions(
+                            microphone = true,
+                            camera = true,
+                            location = true,
+                            phone = true,
+                            bluetooth = true,
+                        ),
+                    hardware = RunAllHardwareProfile.ALL_AVAILABLE,
+                    capturedAt = capturedAt,
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+
+        assertEquals(EvidenceReasonCode.TIMEOUT, evidence.getValue("display.visual").reason)
+        assertEquals(EvidenceReasonCode.SKIPPED, evidence.getValue("audio.speaker").reason)
+        assertEquals(DiagnosticStatus.NOT_AVAILABLE, evidence.getValue("camera.capture").status)
+        assertEquals(EvidenceReasonCode.HARDWARE_UNAVAILABLE, evidence.getValue("camera.capture").reason)
+    }
+
     private fun diagnosticSnapshotsWithSensitiveConnectivity() =
         DiagnosticSnapshots(
             device = deviceInfo(),

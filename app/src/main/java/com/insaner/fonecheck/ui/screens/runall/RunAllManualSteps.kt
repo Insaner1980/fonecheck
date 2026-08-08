@@ -31,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -190,6 +191,7 @@ private fun PreflightChoiceRow(
 fun PermissionReviewScreen(
     prompts: List<PermissionPrompt>,
     onContinue: () -> Unit,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -226,6 +228,12 @@ fun PermissionReviewScreen(
         ) {
             Text(stringResource(R.string.run_all_permissions_continue))
         }
+        TextButton(
+            onClick = onCancel,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(stringResource(R.string.run_all_cancel))
+        }
     }
 }
 
@@ -236,6 +244,7 @@ fun AutomaticCheckScreen(
     modifier: Modifier = Modifier,
     actionLabel: String? = null,
     onAction: () -> Unit = {},
+    onCancel: (() -> Unit)? = null,
 ) {
     Column(
         modifier =
@@ -269,6 +278,14 @@ fun AutomaticCheckScreen(
                 Text(label)
             }
         }
+        onCancel?.let { cancel ->
+            TextButton(
+                onClick = cancel,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            ) {
+                Text(stringResource(R.string.run_all_cancel))
+            }
+        }
     }
 }
 
@@ -278,6 +295,8 @@ fun DisplayCheckStep(
     progress: RunAllProgress,
     onNextColor: () -> Unit,
     onResult: (Boolean) -> Unit,
+    onSkip: () -> Unit,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val isLastColor = colorIndex == displayTestPatterns.lastIndex
@@ -336,6 +355,17 @@ fun DisplayCheckStep(
                         Text(stringResource(R.string.run_all_next_color))
                     }
                 }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    TextButton(onClick = onSkip) {
+                        Text(stringResource(R.string.run_all_skip))
+                    }
+                    TextButton(onClick = onCancel) {
+                        Text(stringResource(R.string.run_all_cancel))
+                    }
+                }
             }
         }
     }
@@ -347,6 +377,8 @@ fun AudioCheckStep(
     progress: RunAllProgress,
     onPlayAgain: () -> Unit,
     onResult: (Boolean) -> Unit,
+    onSkip: () -> Unit,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ManualCheckFrame(
@@ -354,6 +386,7 @@ fun AudioCheckStep(
         progress = progress,
         title = stringResource(R.string.run_all_audio_title),
         description = stringResource(R.string.run_all_audio_description),
+        onCancel = onCancel,
     ) {
         OutlinedButton(
             onClick = onPlayAgain,
@@ -368,6 +401,9 @@ fun AudioCheckStep(
             onPositive = { onResult(true) },
             onNegative = { onResult(false) },
         )
+        TextButton(onClick = onSkip) {
+            Text(stringResource(R.string.run_all_skip))
+        }
     }
 }
 
@@ -376,6 +412,12 @@ fun CameraCheckStep(
     previewView: PreviewView,
     state: CameraTestState,
     progress: RunAllProgress,
+    issue: RunAllStageOutcome?,
+    cameraPosition: Int,
+    cameraTotal: Int,
+    onRetry: () -> Unit,
+    onSkip: () -> Unit,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ManualCheckFrame(
@@ -383,7 +425,15 @@ fun CameraCheckStep(
         progress = progress,
         title = stringResource(R.string.run_all_camera_title),
         description = stringResource(R.string.run_all_camera_description),
+        onCancel = onCancel,
     ) {
+        if (cameraTotal > 0) {
+            Text(
+                text = stringResource(R.string.run_all_camera_progress, cameraPosition, cameraTotal),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
         Card(
             modifier =
                 Modifier
@@ -401,8 +451,28 @@ fun CameraCheckStep(
             )
         }
         Spacer(modifier = Modifier.height(16.dp))
-        if (state.lastCapture == null && state.error == null) {
+        if (state.lastCapture == null && state.error == null && issue == null) {
             CircularProgressIndicator()
+        }
+        if (state.error != null || issue != null) {
+            Text(
+                text =
+                    stringResource(
+                        if (issue == RunAllStageOutcome.TIMED_OUT) {
+                            R.string.run_all_stage_timeout
+                        } else {
+                            R.string.run_all_stage_error
+                        },
+                    ),
+                color = MaterialTheme.colorScheme.error,
+                textAlign = TextAlign.Center,
+            )
+            Button(onClick = onRetry) {
+                Text(stringResource(R.string.button_retry))
+            }
+        }
+        TextButton(onClick = onSkip) {
+            Text(stringResource(R.string.run_all_skip))
         }
     }
 }
@@ -412,6 +482,7 @@ fun SensorCheckStep(
     state: SensorTestState,
     progress: RunAllProgress,
     onSkip: () -> Unit,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ManualCheckFrame(
@@ -419,6 +490,7 @@ fun SensorCheckStep(
         progress = progress,
         title = stringResource(R.string.run_all_sensor_title),
         description = stringResource(R.string.run_all_sensor_description),
+        onCancel = onCancel,
     ) {
         LinearProgressIndicator(
             progress = { state.challenge.progress.coerceIn(0f, 1f) },
@@ -438,6 +510,7 @@ fun VibrationCheckStep(
     onStop: () -> Unit,
     onSkip: () -> Unit,
     onResult: (Boolean) -> Unit,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ManualCheckFrame(
@@ -445,6 +518,7 @@ fun VibrationCheckStep(
         progress = progress,
         title = stringResource(R.string.run_all_vibration_title),
         description = stringResource(R.string.run_all_vibration_description),
+        onCancel = onCancel,
     ) {
         OutlinedButton(onClick = onPlayAgain) {
             Text(stringResource(R.string.run_all_play_again))
@@ -477,6 +551,7 @@ fun ButtonCheckStep(
     progress: RunAllProgress,
     onRetry: () -> Unit,
     onSkip: () -> Unit,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ManualCheckFrame(
@@ -484,6 +559,7 @@ fun ButtonCheckStep(
         progress = progress,
         title = stringResource(R.string.run_all_buttons_title),
         description = stringResource(R.string.run_all_buttons_description),
+        onCancel = onCancel,
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -525,6 +601,7 @@ fun BiometricCheckStep(
     state: BiometricTestState,
     progress: RunAllProgress,
     onSkip: () -> Unit,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ManualCheckFrame(
@@ -532,6 +609,7 @@ fun BiometricCheckStep(
         progress = progress,
         title = stringResource(R.string.run_all_biometrics_title),
         description = stringResource(R.string.run_all_biometrics_description),
+        onCancel = onCancel,
     ) {
         if (state.promptActive) {
             CircularProgressIndicator()
@@ -557,6 +635,7 @@ private fun ManualCheckFrame(
     progress: RunAllProgress,
     title: String,
     description: String,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
@@ -585,6 +664,9 @@ private fun ManualCheckFrame(
         )
         content()
         Spacer(modifier = Modifier.weight(1f))
+        TextButton(onClick = onCancel) {
+            Text(stringResource(R.string.run_all_cancel))
+        }
     }
 }
 

@@ -580,8 +580,9 @@
     <string name="run_all_play_again">Play again</string>
     <string name="run_all_heard_tone">I heard it</string>
     <string name="run_all_no_tone">No sound</string>
-    <string name="run_all_camera_title">Testing the rear camera</string>
-    <string name="run_all_camera_description">Opening a preview and capturing one frame automatically.</string>
+    <string name="run_all_camera_title">Testing cameras</string>
+    <string name="run_all_camera_description">Each public camera opens a preview and captures one frame automatically.</string>
+    <string name="run_all_camera_progress">Camera %1$d of %2$d</string>
     <string name="run_all_sensor_title">Test the motion sensor</string>
     <string name="run_all_sensor_description">Shake the phone gently. The test continues automatically when movement is detected.</string>
     <string name="run_all_vibration_title">Did you feel the vibration?</string>
@@ -593,6 +594,9 @@
     <string name="run_all_biometrics_title">Verify the biometric sensor</string>
     <string name="run_all_biometrics_description">Use the biometric-only system prompt. A PIN, pattern, or password is not accepted as a biometric result.</string>
     <string name="run_all_skip">Skip this check</string>
+    <string name="run_all_cancel">Cancel Full Check</string>
+    <string name="run_all_stage_timeout">This check timed out. Retry it or skip it to continue.</string>
+    <string name="run_all_stage_error">This check could not continue. Retry it or skip it.</string>
     <string name="run_all_results_title">Your phone report</string>
     <string name="run_all_results_description">Automatic and interactive checks are grouped by category below.</string>
     <string name="run_all_overall_score">Overall score</string>

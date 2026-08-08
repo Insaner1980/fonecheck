@@ -25,6 +25,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
@@ -39,7 +41,6 @@ import com.insaner.fonecheck.ui.screens.battery.BatteryTestViewModel
 import com.insaner.fonecheck.ui.screens.biometrics.AuthResult
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestViewModel
 import com.insaner.fonecheck.ui.screens.biometrics.showBiometricPrompt
-import com.insaner.fonecheck.ui.screens.buttons.ButtonLifecycleEffect
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestPhase
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestViewModel
 import com.insaner.fonecheck.ui.screens.camera.CameraTestViewModel
@@ -53,9 +54,7 @@ import com.insaner.fonecheck.ui.screens.sensor.SensorTestViewModel
 import com.insaner.fonecheck.ui.screens.simtelephony.SimTelephonyViewModel
 import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkPhase
 import com.insaner.fonecheck.ui.screens.storage.StorageTestViewModel
-import com.insaner.fonecheck.ui.screens.thermal.ThermalMonitoringEffect
 import com.insaner.fonecheck.ui.screens.thermal.ThermalTestViewModel
-import com.insaner.fonecheck.ui.screens.vibration.VibrationLifecycleEffect
 import com.insaner.fonecheck.ui.screens.vibration.VibrationTestViewModel
 import java.time.Instant
 import kotlinx.coroutines.delay
@@ -66,10 +65,10 @@ import kotlinx.coroutines.withTimeoutOrNull
 private const val AUTOMATIC_MICROPHONE_DURATION_MS = 1_500L
 private const val AUTOMATIC_MICROPHONE_TIMEOUT_MS = 3_000L
 private const val SPEAKER_TONE_DURATION_MS = 1_500L
-private const val CAMERA_TEST_TIMEOUT_MS = 8_000L
 private const val AUTOMATIC_STATE_POLL_INTERVAL_MS = 100L
 private const val SPEAKER_TEST_FREQUENCY_HZ = 1_000
 private const val DEVICE_INFO_TIMEOUT_MS = 3_000L
+private const val CAMERA_CAPABILITY_TIMEOUT_MS = 3_000L
 private const val PERFORMANCE_TIMEOUT_MS = 7_000L
 private const val STORAGE_TIMEOUT_MS = 45_000L
 
@@ -113,10 +112,8 @@ fun RunAllTestsScreen(
     val buttonState by buttonViewModel.state.collectAsStateWithLifecycle()
     val biometricState by biometricViewModel.state.collectAsStateWithLifecycle()
     val simState by simViewModel.state.collectAsStateWithLifecycle()
-    var biometricPrompt by remember { mutableStateOf<BiometricPrompt?>(null) }
-    ThermalMonitoringEffect(thermalViewModel)
-    VibrationLifecycleEffect(vibrationViewModel)
-    ButtonLifecycleEffect(buttonViewModel)
+    val biometricPromptState = remember { mutableStateOf<BiometricPrompt?>(null) }
+    var biometricPrompt by biometricPromptState
     val previewView = remember { PreviewView(context) }
     val microphoneHardwareAvailable =
         remember(context) {
@@ -182,6 +179,81 @@ fun RunAllTestsScreen(
             phonePermission,
             bluetoothPermission,
         )
+    val resourceOwner =
+        remember(
+            performanceViewModel,
+            displayViewModel,
+            audioViewModel,
+            cameraViewModel,
+            sensorViewModel,
+            connectivityViewModel,
+            storageViewModel,
+            vibrationViewModel,
+            buttonViewModel,
+            biometricViewModel,
+            thermalViewModel,
+            biometricPromptState,
+        ) {
+            RunAllResourceOwner(
+                stopPerformance = performanceViewModel::cancelBenchmark,
+                stopMicrophone = audioViewModel::stopRecording,
+                stopGps = connectivityViewModel::cancelGpsFix,
+                stopStorage = storageViewModel::cancelBenchmark,
+                stopDisplay = {
+                    displayViewModel.stopVisualTest()
+                    displayViewModel.stopTouchTest()
+                },
+                stopAudio = {
+                    audioViewModel.stopTone()
+                    audioViewModel.stopRecording()
+                    audioViewModel.stopPlayback()
+                },
+                stopCamera = {
+                    cameraViewModel.turnOffFlash()
+                    cameraViewModel.stopPreview()
+                },
+                stopSensors = sensorViewModel::stopAllTests,
+                stopVibration = vibrationViewModel::cancelVibration,
+                stopButtons = buttonViewModel::stopTest,
+                stopBiometrics = {
+                    biometricViewModel.cancelAuthentication()
+                    biometricPromptState.value?.cancelAuthentication()
+                    biometricPromptState.value = null
+                },
+                stopThermal = thermalViewModel::stopMonitoring,
+            )
+        }
+
+    LaunchedEffect(sessionState.runStatus) {
+        if (sessionState.runStatus == RunAllRunStatus.RUNNING) {
+            resourceOwner.markRunStarted()
+            thermalViewModel.startMonitoring()
+        } else {
+            resourceOwner.stopAll()
+        }
+    }
+
+    DisposableEffect(lifecycleOwner, resourceOwner, sessionViewModel, context) {
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_STOP) {
+                    resourceOwner.stopAll()
+                    val reason =
+                        if ((context as? FragmentActivity)?.isChangingConfigurations == true) {
+                            RunAllInterruptionReason.CONFIGURATION_CHANGE
+                        } else {
+                            RunAllInterruptionReason.BACKGROUND
+                        }
+                    sessionViewModel.interruptRun(reason)
+                }
+            }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            resourceOwner.stopAll()
+            sessionViewModel.interruptRun(RunAllInterruptionReason.SCREEN_DISPOSED)
+        }
+    }
 
     val isDisplayFullscreen = sessionState.stage == RunAllStage.DISPLAY
     DisposableEffect(isDisplayFullscreen) {
@@ -202,8 +274,17 @@ fun RunAllTestsScreen(
         permissionLauncher.launch(controller.permissions.toTypedArray())
     }
 
-    LaunchedEffect(sessionState.stage) {
-        when (sessionState.stage) {
+    LaunchedEffect(sessionState.stageToken) {
+        val stage = sessionState.stage
+        val token = sessionState.stageToken
+        if (stage != RunAllStage.PREFLIGHT &&
+            stage != RunAllStage.PERMISSIONS &&
+            stage != RunAllStage.RESULTS &&
+            !sessionViewModel.claimStage(token)
+        ) {
+            return@LaunchedEffect
+        }
+        when (stage) {
             RunAllStage.PREFLIGHT,
             RunAllStage.PERMISSIONS -> Unit
 
@@ -243,7 +324,7 @@ fun RunAllTestsScreen(
                     }
                     audioViewModel.stopRecording()
                 }
-                sessionViewModel.onAutomaticChecksComplete()
+                sessionViewModel.onAutomaticChecksComplete(token)
             }
 
             RunAllStage.AUDIO -> {
@@ -254,17 +335,28 @@ fun RunAllTestsScreen(
 
             RunAllStage.CAMERA -> {
                 if (sessionState.permissions.camera) {
-                    cameraViewModel.startPreview(
-                        previewView = previewView,
-                        lifecycleOwner = lifecycleOwner,
-                        useFrontCamera = false,
-                    )
-                    delay(CAMERA_TEST_TIMEOUT_MS)
-                    if (sessionViewModel.state.value.stage == RunAllStage.CAMERA) {
-                        sessionViewModel.recordCamera(false)
+                    val readyState =
+                        withTimeoutOrNull(CAMERA_CAPABILITY_TIMEOUT_MS) {
+                            cameraViewModel.state.first { !it.isLoading }
+                        }
+                    if (readyState == null) {
+                        sessionViewModel.reportStageIssue(token, RunAllStageOutcome.TIMED_OUT)
+                    } else if (
+                        sessionViewModel.prepareCameraStage(
+                            token,
+                            readyState.cameras.map { it.cameraId },
+                        )
+                    ) {
+                        sessionViewModel.state.value.currentCameraId?.let { cameraId ->
+                            cameraViewModel.startPreviewById(
+                                previewView = previewView,
+                                lifecycleOwner = lifecycleOwner,
+                                cameraId = cameraId,
+                            )
+                        }
                     }
                 } else {
-                    sessionViewModel.recordCamera(null)
+                    sessionViewModel.markStageUnavailable(token)
                 }
             }
 
@@ -276,7 +368,7 @@ fun RunAllTestsScreen(
                 if (hasAccelerometer) {
                     sensorViewModel.startChallenge(InteractiveChallenge.SHAKE)
                 } else {
-                    sessionViewModel.recordSensors(null)
+                    sessionViewModel.markStageUnavailable(token)
                 }
             }
 
@@ -284,7 +376,7 @@ fun RunAllTestsScreen(
                 if (vibrationState.haptic.hasVibrator) {
                     vibrationViewModel.vibratePattern()
                 } else {
-                    sessionViewModel.recordVibration(null)
+                    sessionViewModel.markStageUnavailable(token)
                 }
             }
 
@@ -299,7 +391,7 @@ fun RunAllTestsScreen(
                         biometricState.capability.weakAvailable
                 val activity = context as? FragmentActivity
                 if (!available) {
-                    biometricViewModel.startAuthentication()
+                    sessionViewModel.markStageUnavailable(token)
                 } else if (activity == null) {
                     biometricViewModel.startAuthentication()
                     biometricViewModel.onAuthError(
@@ -331,20 +423,14 @@ fun RunAllTestsScreen(
                 }
             }
 
-            RunAllStage.DISPLAY -> {
-                delay(DisplayTestViewModel.VISUAL_TEST_TIMEOUT_MS)
-                if (sessionViewModel.state.value.stage == RunAllStage.DISPLAY) {
-                    sessionViewModel.recordDisplay(null)
-                }
-            }
+            RunAllStage.DISPLAY -> Unit
 
-            RunAllStage.RESULTS,
-            -> Unit
+            RunAllStage.RESULTS -> resourceOwner.stopAll()
         }
     }
 
     LaunchedEffect(
-        sessionState.stage,
+        sessionState.stageToken,
         cameraState.isPreviewActive,
         cameraState.isCapturing,
         cameraState.lastCapture,
@@ -353,49 +439,71 @@ fun RunAllTestsScreen(
         if (sessionState.stage != RunAllStage.CAMERA || !sessionState.permissions.camera) return@LaunchedEffect
 
         when {
-            cameraState.lastCapture != null -> sessionViewModel.recordCamera(true)
-            cameraState.error != null -> sessionViewModel.recordCamera(false)
+            cameraState.lastCapture != null -> {
+                cameraViewModel.confirmSelectedCamera(true)
+                if (sessionState.cameraIndex + 1 < sessionState.cameraIds.size) {
+                    cameraViewModel.stopPreview()
+                    cameraViewModel.clearCaptureResult()
+                }
+                sessionViewModel.recordCameraCapture(sessionState.stageToken)
+            }
+            cameraState.error != null ->
+                sessionViewModel.reportStageIssue(sessionState.stageToken, RunAllStageOutcome.ERROR)
             cameraState.isPreviewActive && !cameraState.isCapturing -> cameraViewModel.capturePhoto()
         }
     }
 
-    LaunchedEffect(sessionState.stage, sensorState.challenge.completed) {
+    LaunchedEffect(sessionState.stageToken, sessionState.stageIssue) {
+        if (sessionState.stage == RunAllStage.CAMERA && sessionState.stageIssue != null) {
+            resourceOwner.stopStage(RunAllStage.CAMERA)
+        }
+    }
+
+    LaunchedEffect(sessionState.stageToken, sensorState.challenge.completed) {
         if (sessionState.stage == RunAllStage.SENSORS && sensorState.challenge.completed) {
-            sessionViewModel.recordSensors(true)
+            sessionViewModel.recordSensors(sessionState.stageToken, true)
         }
     }
 
-    LaunchedEffect(sessionState.stage, buttonState.phase) {
+    LaunchedEffect(sessionState.stageToken, buttonState.phase) {
         if (sessionState.stage == RunAllStage.BUTTONS && buttonState.phase == ButtonTestPhase.COMPLETED) {
-            sessionViewModel.recordButtons(true)
+            sessionViewModel.recordButtons(sessionState.stageToken, true)
         }
     }
 
-    LaunchedEffect(sessionState.stage, biometricState.authResult) {
+    LaunchedEffect(sessionState.stageToken, biometricState.authResult) {
         if (sessionState.stage != RunAllStage.BIOMETRICS || !biometricState.authResult.isTerminal) {
             return@LaunchedEffect
         }
         val succeeded = biometricState.authResult == AuthResult.SUCCESS
-        sessionViewModel.recordBiometrics(if (succeeded) true else null)
+        val outcome =
+            when (biometricState.authResult) {
+                AuthResult.SUCCESS -> RunAllStageOutcome.PASSED
+                AuthResult.CANCELLED -> RunAllStageOutcome.SKIPPED
+                AuthResult.UNAVAILABLE,
+                AuthResult.NO_ENROLLMENT,
+                -> RunAllStageOutcome.UNAVAILABLE
+
+                AuthResult.LOCKED_OUT,
+                AuthResult.ERROR,
+                -> RunAllStageOutcome.ERROR
+
+                else -> return@LaunchedEffect
+            }
+        sessionViewModel.recordBiometrics(sessionState.stageToken, if (succeeded) true else null, outcome)
     }
 
-    DisposableEffect(sessionState.stage) {
+    DisposableEffect(sessionState.stageToken) {
+        val ownedStage = sessionState.stage
         onDispose {
-            when (sessionState.stage) {
-                RunAllStage.AUDIO -> audioViewModel.stopTone()
-                RunAllStage.CAMERA -> cameraViewModel.stopPreview()
-                RunAllStage.SENSORS -> sensorViewModel.clearChallenge()
-                RunAllStage.VIBRATION -> vibrationViewModel.cancelVibration()
-                RunAllStage.BUTTONS -> buttonViewModel.stopTest()
-                RunAllStage.BIOMETRICS -> {
-                    biometricViewModel.cancelAuthentication()
-                    biometricPrompt?.cancelAuthentication()
-                    biometricPrompt = null
-                }
-                RunAllStage.AUTOMATIC -> storageViewModel.cancelBenchmark()
-                else -> Unit
-            }
+            resourceOwner.stopStage(ownedStage)
         }
+    }
+
+    val cancelRunAndExit = {
+        resourceOwner.stopAll()
+        sessionViewModel.interruptRun(RunAllInterruptionReason.USER_CANCEL)
+        onDone()
     }
 
     when (sessionState.stage) {
@@ -471,6 +579,7 @@ fun RunAllTestsScreen(
                         ),
                     )
                 },
+                onCancel = cancelRunAndExit,
                 modifier = modifier,
             )
 
@@ -482,6 +591,7 @@ fun RunAllTestsScreen(
                     stringResource(R.string.storage_benchmark_skip)
                         .takeIf { storageState.benchmarkPhase == StorageBenchmarkPhase.RUNNING },
                 onAction = storageViewModel::skipBenchmark,
+                onCancel = cancelRunAndExit,
                 modifier = modifier,
             )
 
@@ -490,9 +600,16 @@ fun RunAllTestsScreen(
                 colorIndex = sessionState.displayColorIndex,
                 progress = requireNotNull(sessionState.progress),
                 onNextColor = {
-                    sessionViewModel.nextDisplayColor(displayTestPatterns.lastIndex)
+                    sessionViewModel.nextDisplayColor(
+                        sessionState.stageToken,
+                        displayTestPatterns.lastIndex,
+                    )
                 },
-                onResult = sessionViewModel::recordDisplay,
+                onResult = { result ->
+                    sessionViewModel.recordDisplay(sessionState.stageToken, result)
+                },
+                onSkip = { sessionViewModel.skipStage(sessionState.stageToken) },
+                onCancel = cancelRunAndExit,
             )
 
         RunAllStage.AUDIO ->
@@ -506,7 +623,11 @@ fun RunAllTestsScreen(
                         audioViewModel.stopTone()
                     }
                 },
-                onResult = sessionViewModel::recordSpeaker,
+                onResult = { result ->
+                    sessionViewModel.recordSpeaker(sessionState.stageToken, result)
+                },
+                onSkip = { sessionViewModel.skipStage(sessionState.stageToken) },
+                onCancel = cancelRunAndExit,
             )
 
         RunAllStage.CAMERA ->
@@ -514,6 +635,15 @@ fun RunAllTestsScreen(
                 previewView = previewView,
                 state = cameraState,
                 progress = requireNotNull(sessionState.progress),
+                issue = sessionState.stageIssue,
+                cameraPosition = sessionState.cameraIndex + 1,
+                cameraTotal = sessionState.cameraIds.size,
+                onRetry = {
+                    resourceOwner.stopStage(RunAllStage.CAMERA)
+                    sessionViewModel.retryStage(sessionState.stageToken)
+                },
+                onSkip = { sessionViewModel.skipStage(sessionState.stageToken) },
+                onCancel = cancelRunAndExit,
             )
 
         RunAllStage.SENSORS ->
@@ -522,8 +652,9 @@ fun RunAllTestsScreen(
                 progress = requireNotNull(sessionState.progress),
                 onSkip = {
                     sensorViewModel.skipChallenge()
-                    sessionViewModel.recordSensors(null)
+                    sessionViewModel.skipStage(sessionState.stageToken)
                 },
+                onCancel = cancelRunAndExit,
             )
 
         RunAllStage.VIBRATION ->
@@ -533,9 +664,12 @@ fun RunAllTestsScreen(
                 onStop = vibrationViewModel::cancelVibration,
                 onSkip = {
                     vibrationViewModel.cancelVibration()
-                    sessionViewModel.recordVibration(null)
+                    sessionViewModel.skipStage(sessionState.stageToken)
                 },
-                onResult = sessionViewModel::recordVibration,
+                onResult = { result ->
+                    sessionViewModel.recordVibration(sessionState.stageToken, result)
+                },
+                onCancel = cancelRunAndExit,
             )
 
         RunAllStage.BUTTONS ->
@@ -545,8 +679,9 @@ fun RunAllTestsScreen(
                 onRetry = buttonViewModel::retry,
                 onSkip = {
                     buttonViewModel.skip()
-                    sessionViewModel.recordButtons(null)
+                    sessionViewModel.skipStage(sessionState.stageToken)
                 },
+                onCancel = cancelRunAndExit,
             )
 
         RunAllStage.BIOMETRICS ->
@@ -556,7 +691,9 @@ fun RunAllTestsScreen(
                 onSkip = {
                     biometricViewModel.cancelAuthentication()
                     biometricPrompt?.cancelAuthentication()
+                    sessionViewModel.skipStage(sessionState.stageToken)
                 },
+                onCancel = cancelRunAndExit,
             )
 
         RunAllStage.RESULTS -> {
@@ -630,8 +767,13 @@ fun RunAllTestsScreen(
                         versionCode = PackageInfoCompat.getLongVersionCode(packageInfo),
                     )
                 }
-            LaunchedEffect(categorySnapshots, deviceContext, appContext) {
-                sessionViewModel.completeReport(deviceContext, appContext, categorySnapshots)
+            LaunchedEffect(categorySnapshots, deviceContext, appContext, sessionState.stageToken) {
+                sessionViewModel.completeReport(
+                    sessionState.stageToken,
+                    deviceContext,
+                    appContext,
+                    categorySnapshots,
+                )
             }
             sessionState.report?.let { report ->
                 RunAllResultsScreen(
