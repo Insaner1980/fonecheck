@@ -65,3 +65,14 @@ data class CategoryRetest(
 
 @Serializable
 object History
+
+@Serializable
+data class ReportComparison(
+    val firstReportId: String,
+    val secondReportId: String,
+)
+
+@Serializable
+data class ReportExport(
+    val reportId: String,
+)

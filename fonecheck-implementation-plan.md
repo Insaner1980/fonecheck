@@ -798,6 +798,14 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Aikaleiman locale/timezone-esitys ja suuret listat.
 - **Decision required:** Ei.
 
+#### Implementation/status log — 2026-08-08
+
+- `HistoryViewModel` kerää repositoryn summary-flow’ta yhteen eksplisiittiseen loading/empty/success/error-stateen, lajittelee raportit aina valmistumisajan mukaan newest-first ja säilyttää viimeisen onnistuneen listan, jos myöhempi flow epäonnistuu. Retry aloittaa keruun uudelleen; raporttikohtainen delete estää duplikaattipyynnöt ja säilyttää listan sekä näyttää virheen, jos poisto epäonnistuu.
+- History-lista näyttää paikallisen päivämäärän ja ajan, vain validin score-arvon, coveragen, warning/fail-yhteenvedon sekä erilliset complete Full Check-, partial Full Check-, incomplete Full Check-, category retest- ja unavailable-labelit. Corrupt/unsupported-summary ei näytä virheellistä scorea eikä salli compare/export-toimintoja.
+- Jokainen entry tarjoaa open-, compare-, export- ja delete-toiminnot. Open avaa immutable `Report(reportId)` -näkymän. Compare valitsee ensin kaksi raporttia ja siirtyy type-safe `ReportComparison(firstReportId, secondReportId)` -reittiin, jonka Task 27 täyttää. Export siirtyy `ReportExport(reportId)` -reittiin Task 28:aa varten. Delete kutsuu repositorya vasta eksplisiittisen vahvistusdialogin jälkeen.
+- Home tarjoaa Full Checkin rinnalla selkeän `Report history` -sisäänkäynnin. EN/FI-resurssit lisättiin pareittain; suuri lista käyttää `LazyColumn`ia ja toimintopainikkeet rivittyvää `FlowRow`ta pitkien lokalisaatioiden vuoksi.
+- Reaktiiviset ViewModel-unit-testit kattavat insert/delete-flow’n newest-first-järjestyksen, virheen jälkeisen datan säilymisen, retryn ja epäonnistuneen poiston. Compose-testit kattavat listan toiminnot, kahden raportin compare-valinnan, vahvistetun poiston, complete/partial/category-labelit, loading/empty/error-with-content-tilat ja invalid summary -fallbackin. Yhdistetty `:app:testDebugUnitTest :app:compileDebugAndroidTestKotlin :app:lintDebug :app:assembleDebug` läpäisee. Fyysinen Compose-ajo odottaa laitetta, koska `adb devices -l` on tyhjä. `ktlintCheck` pysähtyy edelleen ennen linttausta samoihin 10 dependency-verification-tietueeseen; käyttäjän metadataa ja `PROJECT.md`:ää ei muokattu.
+
 ### 27. Implement version-aware report comparison
 
 - **Objective:** Verrata kahta immutable reporttia ilman perusteettomia terveysväitteitä.

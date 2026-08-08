@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.navigation.DiagnosticDestination
+import com.insaner.fonecheck.navigation.History
 import com.insaner.fonecheck.navigation.diagnosticDestinations
 import com.insaner.fonecheck.ui.components.StandardCard
 import com.insaner.fonecheck.ui.components.StatusBadge
@@ -86,6 +88,20 @@ fun HomeScreen(
             ) {
                 Text(
                     text = stringResource(R.string.home_run_all),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            OutlinedButton(
+                onClick = { onNavigate(History) },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape = MaterialTheme.shapes.medium,
+            ) {
+                Text(
+                    text = stringResource(R.string.home_history),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                 )
