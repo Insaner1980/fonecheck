@@ -39,6 +39,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.navigation.DiagnosticDestination
 import com.insaner.fonecheck.navigation.History
+import com.insaner.fonecheck.navigation.Settings
 import com.insaner.fonecheck.navigation.diagnosticDestinations
 import com.insaner.fonecheck.ui.components.StandardCard
 import com.insaner.fonecheck.ui.components.StatusBadge
@@ -102,6 +103,20 @@ fun HomeScreen(
             ) {
                 Text(
                     text = stringResource(R.string.home_history),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            OutlinedButton(
+                onClick = { onNavigate(Settings) },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape = MaterialTheme.shapes.medium,
+            ) {
+                Text(
+                    text = stringResource(R.string.home_settings),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                 )

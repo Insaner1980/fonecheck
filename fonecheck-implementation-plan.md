@@ -885,6 +885,14 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Privacy URL, palautekanava ja lopullinen app metadata ovat ulkoisia release-inputteja.
 - **Decision required:** Kyllä, kieli/retention/optional toggles/export-all kohdassa 1.
 
+#### Implementation/status log — 2026-08-08
+
+- `DataStoreAppPreferencesRepository` tallentaa System/Light/Dark-teeman, testivaroitusten valinnan ja onboarding-valmistumisen AndroidX Preferences DataStoreen. DataStore `1.2.1` valittiin AndroidX:n virallisen stable release -tiedon perusteella; tuntematon tuleva theme-koodi palautuu turvallisesti System-teemaan.
+- `MainActivity` kerää preference-flow’ta lifecycle-aware tavalla ja käyttää valittua teemaa koko Compose-puun ympärillä, joten teema päivittyy välittömästi ja säilyy restartissa. Test warning -asetus ohjaa Full Check -preflightin valinnaista disclosure-listaa; varsinaiset testivalinnat ja aloitussopimus pysyvät aina näkyvissä.
+- Settings näyttää read-only permission-statukset ja päivittää ne `ON_RESUME`-tapahtumassa pyytämättä yhtään lupaa. Käyttäjä voi avata Androidin sovellusasetukset. Raporttimäärä seuraa repository-flow’ta ja delete-all vaatii eksplisiittisen vahvistuksen, estää kaksoispoiston ja näyttää epäonnistumisen kadottamatta dataa.
+- Settings tarjoaa paikallisen tietosuojakuvauksen, privacy policy -linkin `https://finnvek.com/privacy/`, support-kanavan `contact@finnvek.com`, version, disclaimerin, avoimen lähdekoodin lisenssinäkymän ja onboardingin uudelleenavauskomennon. Home tarjoaa erillisen Settings-sisäänkäynnin. Linkkien avaaminen tai Settingsin näyttäminen ei pyydä vaarallisia lupia.
+- DataStore-, theme resolution- ja SettingsViewModel-unit-testit läpäisevät. Compose-testit kattavat theme/warnings/permission/link/onboarding-toiminnot, delete-all-vahvistuksen ja testivaroitusten piilotuksen; Android-testikäännös läpäisee. Yhdistetty `:app:testDebugUnitTest :app:compileDebugAndroidTestKotlin :app:lintDebug :app:assembleDebug` läpäisee normaalilla dependency verificationilla. Fyysinen restart/link/permission-return-testaus odottaa laitetta, koska `adb devices -l` on tyhjä. Käyttäjän `PROJECT.md`-muutosta ei muokattu.
+
 ### 31. Complete the navigation shell and responsive design system
 
 - **Objective:** Vakauttaa koko sovelluksen yhteinen navigointi ja layout ennen lopullista feature-polishia.

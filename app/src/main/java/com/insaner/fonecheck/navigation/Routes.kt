@@ -54,6 +54,12 @@ object RunAllTests
 object Settings
 
 @Serializable
+object Licenses
+
+@Serializable
+object Onboarding
+
+@Serializable
 data class Report(
     val reportId: String,
 )

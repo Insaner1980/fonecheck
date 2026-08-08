@@ -81,6 +81,7 @@ fun RunAllTestsScreen(
     modifier: Modifier = Modifier,
     onDisplayFullscreenChanged: (Boolean) -> Unit = {},
     targetCategory: DiagnosticCategoryId? = null,
+    showTestWarnings: Boolean = true,
     sessionViewModel: RunAllTestsViewModel = hiltViewModel(),
     deviceViewModel: DeviceInfoViewModel = hiltViewModel(),
     performanceViewModel: PerformanceInfoViewModel = hiltViewModel(),
@@ -540,6 +541,7 @@ fun RunAllTestsScreen(
                             hardware = hardwareProfile,
                         )
                     },
+                    showWarnings = showTestWarnings,
                     modifier = modifier,
                 )
             } else {

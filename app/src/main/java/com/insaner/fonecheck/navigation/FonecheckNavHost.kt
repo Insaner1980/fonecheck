@@ -13,6 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
+import com.insaner.fonecheck.data.preferences.AppPreferences
 import com.insaner.fonecheck.ui.screens.audio.AudioTestScreen
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestScreen
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestScreen
@@ -29,6 +30,8 @@ import com.insaner.fonecheck.ui.screens.performance.PerformanceInfoScreen
 import com.insaner.fonecheck.ui.screens.report.ReportDetailRoute
 import com.insaner.fonecheck.ui.screens.runall.RunAllTestsScreen
 import com.insaner.fonecheck.ui.screens.sensor.SensorTestScreen
+import com.insaner.fonecheck.ui.screens.settings.LicensesScreen
+import com.insaner.fonecheck.ui.screens.settings.SettingsRoute
 import com.insaner.fonecheck.ui.screens.simtelephony.SimTelephonyScreen
 import com.insaner.fonecheck.ui.screens.storage.StorageTestScreen
 import com.insaner.fonecheck.ui.screens.thermal.ThermalTestScreen
@@ -39,6 +42,7 @@ fun FonecheckNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     onDisplayFullscreenChanged: (Boolean) -> Unit = {},
+    appPreferences: AppPreferences = AppPreferences(),
 ) {
     NavHost(
         navController = navController,
@@ -98,11 +102,17 @@ fun FonecheckNavHost(
                 onDone = { navController.popBackStack() },
                 onOpenCategory = { route -> navController.navigate(route) },
                 onDisplayFullscreenChanged = onDisplayFullscreenChanged,
+                showTestWarnings = appPreferences.testWarningsEnabled,
             )
         }
         composable<Settings> {
-            PlaceholderScreen("Settings")
+            SettingsRoute(
+                onOpenLicenses = { navController.navigate(Licenses) },
+                onOpenOnboarding = { navController.navigate(Onboarding) },
+            )
         }
+        composable<Licenses> { LicensesScreen() }
+        composable<Onboarding> { PlaceholderScreen(stringResource(R.string.onboarding_placeholder)) }
         composable<Report> {
             ReportDetailRoute(
                 onBack = { navController.popBackStack() },
@@ -120,6 +130,7 @@ fun FonecheckNavHost(
                     onOpenCategory = { destination -> navController.navigate(destination) },
                     onDisplayFullscreenChanged = onDisplayFullscreenChanged,
                     targetCategory = category,
+                    showTestWarnings = appPreferences.testWarningsEnabled,
                 )
             }
         }

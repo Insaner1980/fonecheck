@@ -74,6 +74,7 @@ fun FullCheckPreflightScreen(
     selections: RunAllSelections,
     onSelectionsChange: (RunAllSelections) -> Unit,
     onContinue: () -> Unit,
+    showWarnings: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -95,14 +96,16 @@ fun FullCheckPreflightScreen(
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        SectionBox {
-            PreflightDisclosure(R.string.run_all_preflight_interactions)
-            PreflightDisclosure(R.string.run_all_preflight_audio_vibration)
-            PreflightDisclosure(R.string.run_all_preflight_storage)
-            PreflightDisclosure(R.string.run_all_preflight_permissions)
-            PreflightDisclosure(R.string.run_all_preflight_unsupported)
-            PreflightDisclosure(R.string.run_all_preflight_local_report)
-            PreflightDisclosure(R.string.run_all_preflight_no_network)
+        if (showWarnings) {
+            SectionBox {
+                PreflightDisclosure(R.string.run_all_preflight_interactions)
+                PreflightDisclosure(R.string.run_all_preflight_audio_vibration)
+                PreflightDisclosure(R.string.run_all_preflight_storage)
+                PreflightDisclosure(R.string.run_all_preflight_permissions)
+                PreflightDisclosure(R.string.run_all_preflight_unsupported)
+                PreflightDisclosure(R.string.run_all_preflight_local_report)
+                PreflightDisclosure(R.string.run_all_preflight_no_network)
+            }
         }
         Text(
             text = stringResource(R.string.run_all_preflight_choices_title),

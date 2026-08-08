@@ -171,6 +171,9 @@ dependencies {
     // Biometric
     implementation(libs.androidx.biometric)
 
+    // Preferences
+    implementation(libs.androidx.datastore.preferences)
+
     // Serialization
     implementation(libs.kotlinx.serialization.json)
 

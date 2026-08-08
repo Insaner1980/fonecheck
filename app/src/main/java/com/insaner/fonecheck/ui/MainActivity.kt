@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,11 +34,14 @@ import androidx.fragment.app.FragmentActivity
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.data.preferences.AppPreferences
+import com.insaner.fonecheck.data.preferences.AppPreferencesRepository
 import com.insaner.fonecheck.navigation.FonecheckNavHost
 import com.insaner.fonecheck.navigation.Home
 import com.insaner.fonecheck.ui.screens.buttons.VolumeButtonEventSource
 import com.insaner.fonecheck.ui.screens.buttons.VolumeButtonKeyMapper
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -45,6 +49,9 @@ import javax.inject.Inject
 class MainActivity : FragmentActivity() {
     @Inject
     lateinit var volumeButtonEventSource: VolumeButtonEventSource
+
+    @Inject
+    lateinit var appPreferencesRepository: AppPreferencesRepository
 
     override fun onKeyDown(
         keyCode: Int,
@@ -88,7 +95,13 @@ class MainActivity : FragmentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            FonecheckTheme {
+            val preferences by
+                appPreferencesRepository.preferences.collectAsStateWithLifecycle(
+                    initialValue = AppPreferences(),
+                )
+            FonecheckTheme(
+                darkTheme = preferences.themeMode.resolveDarkTheme(isSystemInDarkTheme()),
+            ) {
                 val navController = rememberNavController()
                 val backStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = backStackEntry?.destination?.route
@@ -138,6 +151,7 @@ class MainActivity : FragmentActivity() {
                 ) { innerPadding ->
                     FonecheckNavHost(
                         navController = navController,
+                        appPreferences = preferences,
                         modifier =
                             if (isDisplayFullscreen) {
                                 Modifier.fillMaxSize()

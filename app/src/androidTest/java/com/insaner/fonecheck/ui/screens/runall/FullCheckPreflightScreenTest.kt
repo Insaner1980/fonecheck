@@ -5,8 +5,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.insaner.fonecheck.R
@@ -49,6 +51,27 @@ class FullCheckPreflightScreenTest {
         composeRule.onNodeWithText(labels.start).performClick()
 
         assertFalse(requireNotNull(accepted).includeCamera)
+    }
+
+    @Test
+    fun disabledTestWarningsHideOptionalDisclosureListButKeepChoices() {
+        lateinit var disclosure: String
+        lateinit var choice: String
+        composeRule.setContent {
+            disclosure = stringResource(R.string.run_all_preflight_storage)
+            choice = stringResource(R.string.run_all_preflight_camera_option)
+            FonecheckTheme {
+                FullCheckPreflightScreen(
+                    selections = RunAllSelections(),
+                    onSelectionsChange = {},
+                    onContinue = {},
+                    showWarnings = false,
+                )
+            }
+        }
+
+        composeRule.onAllNodesWithText(disclosure).assertCountEquals(0)
+        composeRule.onNodeWithText(choice).assertIsDisplayed()
     }
 
     private data class Labels(
