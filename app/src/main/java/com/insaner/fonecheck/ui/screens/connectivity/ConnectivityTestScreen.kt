@@ -489,7 +489,7 @@ private fun GpsDetails(
                     )
                     DetailInfoRow(
                         stringResource(R.string.conn_gps_elapsed),
-                        "%.1f s".format(gps.elapsedSearchMs / 1000f),
+                        stringResource(R.string.conn_gps_fix_duration_format, gps.elapsedSearchMs / 1000.0),
                     )
                     DetailInfoRow(
                         stringResource(R.string.conn_gps_satellites_visible),
@@ -519,7 +519,7 @@ private fun GpsDetails(
                     gps.fixTimeMs?.let {
                         DetailInfoRow(
                             stringResource(R.string.conn_gps_fix_time),
-                            "%.1f s".format(it / 1000f),
+                            stringResource(R.string.conn_gps_fix_duration_format, it / 1000.0),
                             valueColor =
                                 when {
                                     it < 5000 -> Green400
@@ -529,15 +529,21 @@ private fun GpsDetails(
                         )
                     }
                     gps.latitude?.let {
-                        DetailInfoRow(stringResource(R.string.conn_gps_latitude), "%.6f\u00B0".format(it))
+                        DetailInfoRow(
+                            stringResource(R.string.conn_gps_latitude),
+                            stringResource(R.string.conn_gps_coordinate_format, it),
+                        )
                     }
                     gps.longitude?.let {
-                        DetailInfoRow(stringResource(R.string.conn_gps_longitude), "%.6f\u00B0".format(it))
+                        DetailInfoRow(
+                            stringResource(R.string.conn_gps_longitude),
+                            stringResource(R.string.conn_gps_coordinate_format, it),
+                        )
                     }
                     gps.accuracy?.let {
                         DetailInfoRow(
                             stringResource(R.string.conn_gps_accuracy),
-                            "\u00B1%.1f m".format(it),
+                            stringResource(R.string.conn_gps_accuracy_format, it),
                             valueColor =
                                 when {
                                     it < 5f -> Green400
@@ -547,14 +553,24 @@ private fun GpsDetails(
                         )
                     }
                     gps.altitude?.let {
-                        DetailInfoRow(stringResource(R.string.conn_gps_altitude), "%.1f m".format(it))
+                        DetailInfoRow(
+                            stringResource(R.string.conn_gps_altitude),
+                            stringResource(R.string.conn_gps_altitude_format, it),
+                        )
                     }
                     gps.speed?.let {
-                        DetailInfoRow(stringResource(R.string.conn_gps_speed), "%.1f m/s".format(it))
+                        DetailInfoRow(
+                            stringResource(R.string.conn_gps_speed),
+                            stringResource(R.string.conn_gps_speed_format, it),
+                        )
                     }
                     DetailInfoRow(
                         stringResource(R.string.conn_gps_satellites_used),
-                        "${gps.satellitesUsed} / ${gps.satelliteCount}",
+                        stringResource(
+                            R.string.conn_gps_satellite_ratio,
+                            gps.satellitesUsed,
+                            gps.satelliteCount,
+                        ),
                     )
                 }
                 GpsFixStatus.FAILED -> {
@@ -632,7 +648,7 @@ private fun GpsDetails(
                             modifier = Modifier.weight(1f),
                         )
                         Text(
-                            "%.1f".format(sat.cn0DbHz),
+                            stringResource(R.string.conn_gps_cn0_format, sat.cn0DbHz),
                             style = MaterialTheme.typography.bodySmall.copy(fontFamily = JetBrainsMono),
                             color =
                                 when {

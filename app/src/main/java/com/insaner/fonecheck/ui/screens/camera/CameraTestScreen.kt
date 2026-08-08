@@ -284,7 +284,7 @@ private fun CameraPreviewCard(
                         color = Green400,
                     )
                     Text(
-                        text = "${result.width} × ${result.height}",
+                        text = stringResource(R.string.camera_dimensions_value, result.width, result.height),
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontFamily = JetBrainsMono,
@@ -294,7 +294,7 @@ private fun CameraPreviewCard(
                     )
                     val mp = (result.width.toLong() * result.height.toLong()) / 1_000_000.0
                     Text(
-                        text = "%.1f MP".format(mp),
+                        text = stringResource(R.string.camera_megapixels_value, mp),
                         style =
                             MaterialTheme.typography.bodySmall.copy(
                                 fontFamily = JetBrainsMono,
@@ -427,7 +427,10 @@ private fun CapabilitiesCard(
     var showTechnicalDetails by rememberSaveable(title) { mutableStateOf(false) }
 
     InfoCard(title = title) {
-        InfoRow(stringResource(R.string.camera_max_resolution), capabilities.maxResolution)
+        InfoRow(
+            stringResource(R.string.camera_max_resolution),
+            capabilities.maxResolution.ifBlank { stringResource(R.string.device_value_unavailable) },
+        )
         InfoRow(stringResource(R.string.camera_zoom), capabilities.zoomRange)
         InfoRow(
             stringResource(R.string.camera_ois),
@@ -482,7 +485,10 @@ private fun CapabilitiesCard(
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
-                    InfoRow(stringResource(R.string.camera_sensor_size), capabilities.sensorSize)
+                    InfoRow(
+                        stringResource(R.string.camera_sensor_size),
+                        capabilities.sensorSize.ifBlank { stringResource(R.string.device_value_unavailable) },
+                    )
                     TechnicalValueGroup(
                         title = stringResource(R.string.camera_fps_ranges),
                         values = capabilities.fpsRanges,
@@ -493,13 +499,27 @@ private fun CapabilitiesCard(
                     )
                     TechnicalValueGroup(
                         title = stringResource(R.string.camera_autofocus),
-                        values = capabilities.autoFocusModes,
+                        values = capabilities.autoFocusModes.map { cameraAutoFocusLabel(it) },
                     )
                 }
             }
         }
     }
 }
+
+@Composable
+private fun cameraAutoFocusLabel(code: String): String =
+    stringResource(
+        when (code) {
+            "off" -> R.string.camera_af_off
+            "auto" -> R.string.camera_af_auto
+            "macro" -> R.string.camera_af_macro
+            "continuous_video" -> R.string.camera_af_continuous_video
+            "continuous_picture" -> R.string.camera_af_continuous_picture
+            "edof" -> R.string.camera_af_edof
+            else -> R.string.camera_unknown
+        },
+    )
 
 @Composable
 private fun TechnicalValueGroup(

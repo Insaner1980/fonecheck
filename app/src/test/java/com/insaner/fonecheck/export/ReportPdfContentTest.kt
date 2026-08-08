@@ -10,6 +10,7 @@ import com.insaner.fonecheck.domain.model.DiagnosticEvidence
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceSource
+import com.insaner.fonecheck.domain.model.EvidenceReasonCode
 import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.ReportAppContext
 import com.insaner.fonecheck.domain.model.ReportDeviceContext
@@ -39,6 +40,7 @@ class ReportPdfContentTest {
         assertTrue(text.contains("battery.level"))
         assertTrue(text.contains("Source: android_api"))
         assertTrue(text.contains("Confidence: high"))
+        assertTrue(text.contains("Reason: permission denied"))
         assertTrue(text.contains("Differences and measurements do not prove physical device health."))
     }
 
@@ -94,6 +96,7 @@ class ReportPdfContentTest {
                                 source = EvidenceSource.ANDROID_API,
                                 applicability = Applicability.APPLICABLE,
                                 value = EvidenceValue.IntValue(80),
+                                reason = EvidenceReasonCode.PERMISSION_DENIED,
                                 capturedAt = Instant.parse("2026-08-08T10:00:30Z"),
                             ),
                         ),

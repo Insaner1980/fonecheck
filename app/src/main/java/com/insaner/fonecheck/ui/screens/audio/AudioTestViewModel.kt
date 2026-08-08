@@ -51,7 +51,7 @@ data class AudioTestState(
     val hasRecordedAudio: Boolean = false,
     val isPlayingRecording: Boolean = false,
     val headphonePlugged: Boolean = false,
-    val headphoneType: String? = null,
+    val headphoneType: HeadphoneTypeCode? = null,
     val volumeLevel: Int = 0,
     val maxVolume: Int = 15,
     val volumeStream: Int = AudioManager.STREAM_MUSIC,
@@ -63,6 +63,13 @@ data class AudioTestState(
 )
 
 enum class StereoChannel { LEFT, RIGHT, BOTH }
+
+enum class HeadphoneTypeCode {
+    WIRED_HEADSET,
+    WIRED_HEADPHONES,
+    USB_HEADSET,
+    UNKNOWN,
+}
 
 @HiltViewModel
 class AudioTestViewModel
@@ -99,17 +106,9 @@ class AudioTestViewModel
             _state.value =
                 _state.value.copy(
                     headphonePlugged = headphone != null,
-                    headphoneType = headphone?.let { getHeadphoneTypeName(it.type) },
+                    headphoneType = headphone?.let { headphoneTypeCode(it.type) },
                 )
         }
-
-        private fun getHeadphoneTypeName(type: Int): String =
-            when (type) {
-                AudioDeviceInfo.TYPE_WIRED_HEADSET -> "Wired Headset"
-                AudioDeviceInfo.TYPE_WIRED_HEADPHONES -> "Wired Headphones"
-                AudioDeviceInfo.TYPE_USB_HEADSET -> "USB Headset"
-                else -> "Unknown"
-            }
 
         fun playTone(
             frequencyHz: Int,
@@ -117,7 +116,12 @@ class AudioTestViewModel
         ) {
             stopTone()
             stopPlayback()
-            val route = if (streamType == AudioManager.STREAM_VOICE_CALL) AudioOutputRoute.EARPIECE else AudioOutputRoute.MEDIA
+            val route =
+                if (streamType == AudioManager.STREAM_VOICE_CALL) {
+                    AudioOutputRoute.EARPIECE
+                } else {
+                    AudioOutputRoute.MEDIA
+                }
             val routeSession = openRoute(route) ?: return
             _state.value = _state.value.copy(isPlaying = true, currentFrequency = frequencyHz)
 
@@ -237,7 +241,10 @@ class AudioTestViewModel
                     getApplication(),
                     Manifest.permission.RECORD_AUDIO,
                 ) == PackageManager.PERMISSION_GRANTED
-            val hasMicrophone = getApplication<Application>().packageManager.hasSystemFeature(PackageManager.FEATURE_MICROPHONE)
+            val hasMicrophone =
+                getApplication<Application>()
+                    .packageManager
+                    .hasSystemFeature(PackageManager.FEATURE_MICROPHONE)
             if (!AudioRecordingPolicy.canStart(hasMicrophone, permissionGranted, _state.value.isRecording)) return
             stopRecording()
             val bufferSize =
@@ -460,4 +467,12 @@ class AudioTestViewModel
             const val DEFAULT_RECORDING_DURATION_MS = 10_000L
             private const val MILLIS_PER_SECOND = 1_000L
         }
+    }
+
+internal fun headphoneTypeCode(type: Int): HeadphoneTypeCode =
+    when (type) {
+        AudioDeviceInfo.TYPE_WIRED_HEADSET -> HeadphoneTypeCode.WIRED_HEADSET
+        AudioDeviceInfo.TYPE_WIRED_HEADPHONES -> HeadphoneTypeCode.WIRED_HEADPHONES
+        AudioDeviceInfo.TYPE_USB_HEADSET -> HeadphoneTypeCode.USB_HEADSET
+        else -> HeadphoneTypeCode.UNKNOWN
     }

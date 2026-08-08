@@ -164,7 +164,11 @@ private fun DisplayOverview(
                         Spacer(Modifier.height(8.dp))
                         DetailInfoRow(
                             stringResource(R.string.display_touch_cells),
-                            "${state.touch.touchedCells.size} / ${touchCellCount()}",
+                            stringResource(
+                                R.string.display_value_ratio,
+                                state.touch.touchedCells.size,
+                                touchCellCount(),
+                            ),
                         )
                         DetailInfoRow(
                             stringResource(R.string.display_multi_touch_peak),
@@ -196,8 +200,14 @@ private fun DisplayInfoDetails(info: DisplayInfoState) {
                 resolutionSourceLabel(info.resolutionSource),
             ),
         )
-        DetailInfoRow(stringResource(R.string.display_density), "${info.densityDpi} dpi")
-        DetailInfoRow(stringResource(R.string.display_refresh_rate), "%.0f Hz".format(info.refreshRate))
+        DetailInfoRow(
+            stringResource(R.string.display_density),
+            stringResource(R.string.display_density_value, info.densityDpi),
+        )
+        DetailInfoRow(
+            stringResource(R.string.display_refresh_rate),
+            stringResource(R.string.display_refresh_rate_value, info.refreshRate),
+        )
         DetailInfoRow(
             stringResource(R.string.display_hdr),
             supportedLabel(info.hdrSupported),
@@ -208,7 +218,10 @@ private fun DisplayInfoDetails(info: DisplayInfoState) {
             supportedLabel(info.wideColorGamut),
             valueColor = if (info.wideColorGamut) Green400 else Neutral500,
         )
-        DetailInfoRow(stringResource(R.string.display_brightness), "${info.currentBrightness} / 255")
+        DetailInfoRow(
+            stringResource(R.string.display_brightness),
+            stringResource(R.string.display_value_ratio, info.currentBrightness, 255),
+        )
         DetailInfoRow(
             stringResource(R.string.display_auto_brightness),
             stringResource(if (info.autoBrightness) R.string.status_enabled else R.string.status_disabled),
@@ -278,7 +291,12 @@ private fun VisualTestOverlay(
                         Text(stringResource(R.string.display_exit_test))
                     }
                     Text(
-                        text = "${state.patternIndex + 1} / ${DisplayPattern.entries.size}",
+                        text =
+                            stringResource(
+                                R.string.display_value_ratio,
+                                state.patternIndex + 1,
+                                DisplayPattern.entries.size,
+                            ),
                         style = MaterialTheme.typography.labelLarge,
                     )
                 }

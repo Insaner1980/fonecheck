@@ -179,6 +179,11 @@
     <string name="audio_both">Both</string>
     <string name="audio_headphone_status">Status</string>
     <string name="audio_headphone_type">Type</string>
+    <string name="audio_headphone_wired_headset">Wired headset</string>
+    <string name="audio_headphone_wired_headphones">Wired headphones</string>
+    <string name="audio_headphone_usb_headset">USB headset</string>
+    <string name="audio_frequency_hz">%1$d\nHz</string>
+    <string name="audio_frequency_khz">%1$d\nkHz</string>
     <string name="audio_connected">Connected</string>
     <string name="audio_disconnected">Disconnected</string>
     <string name="audio_volume_level">Volume</string>
@@ -217,6 +222,14 @@
     <string name="camera_fps_ranges">FPS Ranges</string>
     <string name="camera_all_resolutions">All Resolutions</string>
     <string name="camera_autofocus">Autofocus</string>
+    <string name="camera_af_off">Off</string>
+    <string name="camera_af_auto">Auto</string>
+    <string name="camera_af_macro">Macro</string>
+    <string name="camera_af_continuous_video">Continuous video</string>
+    <string name="camera_af_continuous_picture">Continuous picture</string>
+    <string name="camera_af_edof">Extended depth of field</string>
+    <string name="camera_dimensions_value">%1$d × %2$d</string>
+    <string name="camera_megapixels_value">%1$.1f MP</string>
     <string name="camera_show_technical_details">Show technical details</string>
     <string name="camera_hide_technical_details">Hide technical details</string>
     <string name="camera_capabilities_title">Camera %1$s capabilities</string>
@@ -371,6 +384,12 @@
     <string name="conn_gps_elapsed">Elapsed</string>
     <string name="conn_gps_fix_time">Fix Time</string>
     <string name="conn_gps_fix_duration_format">%1$.1f s</string>
+    <string name="conn_gps_coordinate_format">%1$.6f°</string>
+    <string name="conn_gps_accuracy_format">±%1$.1f m</string>
+    <string name="conn_gps_altitude_format">%1$.1f m</string>
+    <string name="conn_gps_speed_format">%1$.1f m/s</string>
+    <string name="conn_gps_satellite_ratio">%1$d / %2$d</string>
+    <string name="conn_gps_cn0_format">%1$.1f</string>
     <string name="conn_gps_latitude">Latitude</string>
     <string name="conn_gps_longitude">Longitude</string>
     <string name="conn_gps_accuracy">Accuracy</string>
@@ -769,6 +788,7 @@
     <string name="pdf_reason">Reason</string>
     <string name="pdf_captured">Captured</string>
     <string name="pdf_disclaimer">Differences and measurements do not prove physical device health.</string>
+    <string name="pdf_unit_samples">samples</string>
     <string name="pdf_counts_value">%1$d completed, %2$d not tested, %3$d unavailable, %4$d warnings, %5$d failures</string>
     <string name="pdf_page">Page %1$d / %2$d</string>
     <string name="export_title">Export report</string>
@@ -925,6 +945,9 @@
     <string name="display_touch_grid_description">Touch-test grid. Drag across the whole area and place multiple fingers simultaneously.</string>
     <string name="display_touch_complete">Complete test</string>
     <string name="display_resolution_value">%1$d × %2$d px (%3$s)</string>
+    <string name="display_density_value">%1$d dpi</string>
+    <string name="display_refresh_rate_value">%1$.0f Hz</string>
+    <string name="display_value_ratio">%1$d / %2$d</string>
     <string name="display_resolution_source_window">app window</string>
     <string name="display_resolution_source_mode">display mode</string>
     <string name="display_resolution_source_physical">physical metrics</string>

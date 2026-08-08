@@ -50,6 +50,7 @@ import com.insaner.fonecheck.domain.model.EvidenceUnitCode
 import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.ScoreState
+import com.insaner.fonecheck.localization.evidenceReasonStringRes
 import com.insaner.fonecheck.domain.model.TestResult
 import com.insaner.fonecheck.domain.model.TestStatus
 import com.insaner.fonecheck.navigation.CategoryRetest
@@ -65,6 +66,7 @@ import com.insaner.fonecheck.ui.theme.Green400
 import com.insaner.fonecheck.ui.theme.Neutral400
 import com.insaner.fonecheck.ui.theme.Red400
 import com.insaner.fonecheck.ui.theme.Yellow400
+import java.text.NumberFormat
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -612,35 +614,40 @@ private fun evidenceValueLabel(
 
         is EvidenceValue.IntValue ->
             when (unit?.value) {
-                "percent" -> "${value.value}%"
+                "percent" -> stringResource(R.string.storage_percent_value, localizedNumber(value.value))
                 "samples" -> pluralStringResource(R.plurals.sensor_samples, value.value, value.value)
-                else -> value.value.toString()
+                else -> localizedNumber(value.value)
             }
 
         is EvidenceValue.LongValue ->
             when (unit?.value) {
                 "operations_per_second" ->
-                    stringResource(R.string.perf_benchmark_cpu_rate_value, value.value.toString())
+                    stringResource(R.string.perf_benchmark_cpu_rate_value, localizedNumber(value.value))
                 "milliseconds" ->
                     stringResource(R.string.conn_gps_fix_duration_format, value.value / 1_000.0)
                 "bytes" -> Formatter.formatFileSize(LocalContext.current, value.value)
-                else -> value.value.toString()
+                else -> localizedNumber(value.value)
             }
-        is EvidenceValue.DecimalValue -> value.value.toPlainString()
+        is EvidenceValue.DecimalValue -> localizedNumber(value.value)
         is EvidenceValue.DoubleValue ->
             when (unit?.value) {
                 "celsius" -> stringResource(R.string.run_all_detail_temperature, value.value)
                 "milliamperes" -> stringResource(R.string.batt_value_milliamps, value.value)
                 "ratio" -> stringResource(R.string.thermal_headroom_value, value.value)
-                "percent" -> stringResource(R.string.storage_percent_value, value.value.toString())
+                "percent" -> stringResource(R.string.storage_percent_value, localizedNumber(value.value))
                 "mebibytes_per_second" ->
                     stringResource(R.string.storage_rate_value, value.value)
-                else -> value.value.toString()
+                else -> localizedNumber(value.value)
             }
 
         is EvidenceValue.RawTextValue -> value.value
         is EvidenceValue.StableTextCodeValue -> stableTextLabel(value.value)
     }
+
+private fun localizedNumber(value: Number): String =
+    NumberFormat.getNumberInstance(Locale.getDefault()).apply {
+        maximumFractionDigits = 6
+    }.format(value)
 
 @Composable
 private fun stableTextLabel(code: String): String =
@@ -696,26 +703,7 @@ private fun stableTextLabel(code: String): String =
 
 @Composable
 private fun reasonLabel(reason: EvidenceReasonCode): String =
-    when (reason) {
-        EvidenceReasonCode.PERMISSION_DENIED -> R.string.run_all_permission_missing
-        EvidenceReasonCode.NOT_RUN -> R.string.run_all_summary_not_tested
-        EvidenceReasonCode.SKIPPED, EvidenceReasonCode.CANCELLED -> R.string.run_all_manual_skipped
-        EvidenceReasonCode.TIMEOUT -> R.string.conn_gps_failed
-        EvidenceReasonCode.INSUFFICIENT_SPACE -> R.string.storage_benchmark_insufficient_space
-        EvidenceReasonCode.USER_CONFIRMED_FAILURE -> R.string.run_all_manual_failed
-        EvidenceReasonCode.HARDWARE_UNAVAILABLE,
-        EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED,
-        -> R.string.run_all_status_unavailable
-
-        EvidenceReasonCode.PLATFORM_RESTRICTION -> R.string.button_power_unavailable
-        EvidenceReasonCode.BIOMETRIC_LOCKOUT -> R.string.biometric_locked_out
-        EvidenceReasonCode.BIOMETRIC_NOT_ENROLLED -> R.string.biometric_none_enrolled
-
-        EvidenceReasonCode.DISABLED -> R.string.status_disabled
-        EvidenceReasonCode.DEGRADED -> R.string.run_all_summary_warning
-        EvidenceReasonCode.ERROR -> R.string.run_all_summary_fail
-        else -> null
-    }?.let { stringResource(it) } ?: stableCodeFallback(reason.value)
+    evidenceReasonStringRes(reason)?.let { stringResource(it) } ?: stableCodeFallback(reason.value)
 
 @Composable
 private fun sourceLabel(source: EvidenceSource): String =

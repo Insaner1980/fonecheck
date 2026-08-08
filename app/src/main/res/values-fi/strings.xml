@@ -177,6 +177,11 @@
     <string name="audio_both">Molemmat</string>
     <string name="audio_headphone_status">Tila</string>
     <string name="audio_headphone_type">Tyyppi</string>
+    <string name="audio_headphone_wired_headset">Langallinen kuulokemikrofoni</string>
+    <string name="audio_headphone_wired_headphones">Langalliset kuulokkeet</string>
+    <string name="audio_headphone_usb_headset">USB-kuulokemikrofoni</string>
+    <string name="audio_frequency_hz">%1$d\nHz</string>
+    <string name="audio_frequency_khz">%1$d\nkHz</string>
     <string name="audio_connected">Yhdistetty</string>
     <string name="audio_disconnected">Ei yhdistetty</string>
     <string name="audio_volume_level">Äänenvoimakkuus</string>
@@ -215,6 +220,14 @@
     <string name="camera_fps_ranges">FPS-alueet</string>
     <string name="camera_all_resolutions">Kaikki resoluutiot</string>
     <string name="camera_autofocus">Automaattitarkennus</string>
+    <string name="camera_af_off">Pois käytöstä</string>
+    <string name="camera_af_auto">Automaattinen</string>
+    <string name="camera_af_macro">Makro</string>
+    <string name="camera_af_continuous_video">Jatkuva video</string>
+    <string name="camera_af_continuous_picture">Jatkuva kuva</string>
+    <string name="camera_af_edof">Laajennettu syväterävyys</string>
+    <string name="camera_dimensions_value">%1$d × %2$d</string>
+    <string name="camera_megapixels_value">%1$.1f MP</string>
     <string name="camera_show_technical_details">Näytä tekniset tiedot</string>
     <string name="camera_hide_technical_details">Piilota tekniset tiedot</string>
     <string name="camera_capabilities_title">Kameran %1$s ominaisuudet</string>
@@ -369,6 +382,12 @@
     <string name="conn_gps_elapsed">Kulunut aika</string>
     <string name="conn_gps_fix_time">Lukitusaika</string>
     <string name="conn_gps_fix_duration_format">%1$.1f s</string>
+    <string name="conn_gps_coordinate_format">%1$.6f°</string>
+    <string name="conn_gps_accuracy_format">±%1$.1f m</string>
+    <string name="conn_gps_altitude_format">%1$.1f m</string>
+    <string name="conn_gps_speed_format">%1$.1f m/s</string>
+    <string name="conn_gps_satellite_ratio">%1$d / %2$d</string>
+    <string name="conn_gps_cn0_format">%1$.1f</string>
     <string name="conn_gps_latitude">Leveysaste</string>
     <string name="conn_gps_longitude">Pituusaste</string>
     <string name="conn_gps_accuracy">Tarkkuus</string>
@@ -763,6 +782,7 @@
     <string name="pdf_reason">Syy</string>
     <string name="pdf_captured">Tallennettu</string>
     <string name="pdf_disclaimer">Erot ja mittaukset eivät todista laitteen fyysistä kuntoa.</string>
+    <string name="pdf_unit_samples">näytettä</string>
     <string name="pdf_counts_value">%1$d valmista, %2$d ei testattu, %3$d ei saatavilla, %4$d varoitusta, %5$d ongelmaa</string>
     <string name="pdf_page">Sivu %1$d / %2$d</string>
     <string name="export_title">Vie raportti</string>
@@ -919,6 +939,9 @@
     <string name="display_touch_grid_description">Kosketustestin ruudukko. Vedä koko alueen yli ja aseta useita sormia näytölle samanaikaisesti.</string>
     <string name="display_touch_complete">Viimeistele testi</string>
     <string name="display_resolution_value">%1$d × %2$d px (%3$s)</string>
+    <string name="display_density_value">%1$d dpi</string>
+    <string name="display_refresh_rate_value">%1$.0f Hz</string>
+    <string name="display_value_ratio">%1$d / %2$d</string>
     <string name="display_resolution_source_window">sovellusikkuna</string>
     <string name="display_resolution_source_mode">näyttötila</string>
     <string name="display_resolution_source_physical">fyysinen mitta</string>

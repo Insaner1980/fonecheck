@@ -183,14 +183,19 @@ private fun FrequencyButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val label = if (frequency >= 1000) "${frequency / 1000}k" else "$frequency"
+    val label =
+        if (frequency >= 1000) {
+            stringResource(R.string.audio_frequency_khz, frequency / 1000)
+        } else {
+            stringResource(R.string.audio_frequency_hz, frequency)
+        }
     ToneSelectionButton(
         onClick = onClick,
         isActive = isActive,
         modifier = modifier,
     ) {
         Text(
-            text = "${label}\nHz",
+            text = label,
             style =
                 MaterialTheme.typography.labelSmall.copy(
                     fontFamily = JetBrainsMono,
@@ -504,10 +509,21 @@ private fun HeadphoneJackCard(
             )
         }
         if (state.headphonePlugged && state.headphoneType != null) {
-            InfoRow(stringResource(R.string.audio_headphone_type), state.headphoneType)
+            InfoRow(stringResource(R.string.audio_headphone_type), headphoneTypeLabel(state.headphoneType))
         }
     }
 }
+
+@Composable
+private fun headphoneTypeLabel(type: HeadphoneTypeCode): String =
+    stringResource(
+        when (type) {
+            HeadphoneTypeCode.WIRED_HEADSET -> R.string.audio_headphone_wired_headset
+            HeadphoneTypeCode.WIRED_HEADPHONES -> R.string.audio_headphone_wired_headphones
+            HeadphoneTypeCode.USB_HEADSET -> R.string.audio_headphone_usb_headset
+            HeadphoneTypeCode.UNKNOWN -> R.string.sim_value_unknown
+        },
+    )
 
 @Composable
 private fun VolumeButtonCard(

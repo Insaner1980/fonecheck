@@ -6,7 +6,6 @@ import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CameraMetadata
 import android.util.Log
-import android.util.Size
 import androidx.annotation.OptIn as ExperimentalOptIn
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
@@ -28,12 +27,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.util.Locale
 import java.util.concurrent.Executors
 import javax.inject.Inject
 
 data class CameraCapabilities(
     val cameraId: String,
-    val facing: String,
     val resolutions: List<String>,
     val maxResolution: String,
     val fpsRanges: List<String>,
@@ -116,7 +115,10 @@ class CameraTestViewModel
                     val cameraIds = cameraManager.cameraIdList
                     val characteristics = cameraIds.associateWith(cameraManager::getCameraCharacteristics)
                     val readings = characteristics.map { (id, chars) -> descriptorReading(id, chars) }
-                    val descriptors = CameraDescriptorMapper.map(cameraIds.toSet(), readings).associateBy { it.cameraId }
+                    val descriptors =
+                        CameraDescriptorMapper
+                            .map(cameraIds.toSet(), readings)
+                            .associateBy { it.cameraId }
                     val cameras =
                         characteristics.map { (id, chars) ->
                             buildCapabilities(id, chars, descriptors.getValue(id))
@@ -142,14 +144,6 @@ class CameraTestViewModel
             chars: CameraCharacteristics,
             descriptor: CameraDescriptor,
         ): CameraCapabilities {
-            val facing =
-                when (chars.get(CameraCharacteristics.LENS_FACING)) {
-                    CameraCharacteristics.LENS_FACING_FRONT -> "Front"
-                    CameraCharacteristics.LENS_FACING_BACK -> "Rear"
-                    CameraCharacteristics.LENS_FACING_EXTERNAL -> "External"
-                    else -> "Unknown"
-                }
-
             val streamMap = chars.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
             val jpegSizes = streamMap?.getOutputSizes(ImageFormat.JPEG) ?: emptyArray()
             val resolutions =
@@ -157,7 +151,10 @@ class CameraTestViewModel
                     .sortedByDescending { it.width * it.height }
                     .map { "${it.width} × ${it.height}" }
             val maxRes = jpegSizes.maxByOrNull { it.width * it.height }
-            val maxResStr = maxRes?.let { "${it.width} × ${it.height} (${formatMegapixels(it)})" } ?: "N/A"
+            val maxResStr =
+                maxRes?.let {
+                    "${it.width} × ${it.height} (${formatCameraMegapixels(it.width.toLong() * it.height)})"
+                }.orEmpty()
 
             val fpsRanges =
                 chars
@@ -174,38 +171,41 @@ class CameraTestViewModel
             val focalLengths =
                 chars
                     .get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)
-                    ?.map { "%.2f mm".format(it) }
+                    ?.map { String.format(Locale.getDefault(), "%.2f mm", it) }
                     ?: emptyList()
 
             val zoomRange =
                 if (android.os.Build.VERSION.SDK_INT >= 30) {
                     val range = chars.get(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE)
-                    if (range != null) "%.1f× – %.1f×".format(range.lower, range.upper) else "1.0×"
+                    if (range != null) {
+                        String.format(Locale.getDefault(), "%.1f× – %.1f×", range.lower, range.upper)
+                    } else {
+                        String.format(Locale.getDefault(), "%.1f×", 1.0)
+                    }
                 } else {
                     val maxZoom = chars.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM) ?: 1f
-                    "1.0× – %.1f×".format(maxZoom)
+                    String.format(Locale.getDefault(), "%.1f× – %.1f×", 1.0, maxZoom)
                 }
 
             val sensorSizeRect = chars.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE)
-            val sensorSize = sensorSizeRect?.let { "${it.width()} × ${it.height()}" } ?: "N/A"
+            val sensorSize = sensorSizeRect?.let { "${it.width()} × ${it.height()}" }.orEmpty()
 
             val afModes = chars.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES)
             val autoFocusModes =
                 afModes?.toList()?.mapNotNull { mode: Int ->
                     when (mode) {
-                        CameraMetadata.CONTROL_AF_MODE_OFF -> "Off"
-                        CameraMetadata.CONTROL_AF_MODE_AUTO -> "Auto"
-                        CameraMetadata.CONTROL_AF_MODE_MACRO -> "Macro"
-                        CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO -> "Continuous Video"
-                        CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE -> "Continuous Picture"
-                        CameraMetadata.CONTROL_AF_MODE_EDOF -> "EDOF"
+                        CameraMetadata.CONTROL_AF_MODE_OFF -> "off"
+                        CameraMetadata.CONTROL_AF_MODE_AUTO -> "auto"
+                        CameraMetadata.CONTROL_AF_MODE_MACRO -> "macro"
+                        CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO -> "continuous_video"
+                        CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE -> "continuous_picture"
+                        CameraMetadata.CONTROL_AF_MODE_EDOF -> "edof"
                         else -> null
                     }
                 } ?: emptyList()
 
             return CameraCapabilities(
                 cameraId = id,
-                facing = facing,
                 resolutions = resolutions,
                 maxResolution = maxResStr,
                 fpsRanges = fpsRanges,
@@ -250,11 +250,6 @@ class CameraTestViewModel
             )
         }
 
-        private fun formatMegapixels(size: Size): String {
-            val mp = (size.width.toLong() * size.height.toLong()) / 1_000_000.0
-            return "%.1f MP".format(mp)
-        }
-
         @ExperimentalOptIn(markerClass = [ExperimentalCamera2Interop::class])
         fun startPreview(
             previewView: PreviewView,
@@ -262,7 +257,11 @@ class CameraTestViewModel
             useFrontCamera: Boolean,
         ) {
             val cameraId =
-                if (useFrontCamera) _state.value.frontCapabilities?.cameraId else _state.value.rearCapabilities?.cameraId
+                if (useFrontCamera) {
+                    _state.value.frontCapabilities?.cameraId
+                } else {
+                    _state.value.rearCapabilities?.cameraId
+                }
             if (cameraId != null) startPreview(previewView, lifecycleOwner, cameraId)
         }
 
@@ -467,3 +466,8 @@ class CameraTestViewModel
                 )
         }
     }
+
+internal fun formatCameraMegapixels(
+    pixelCount: Long,
+    locale: Locale = Locale.getDefault(),
+): String = String.format(locale, "%.1f MP", pixelCount / 1_000_000.0)

@@ -2,11 +2,14 @@ package com.insaner.fonecheck.export
 
 import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
+import com.insaner.fonecheck.domain.model.DiagnosticCheckId
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.domain.model.CoverageSummary
 import com.insaner.fonecheck.domain.model.EvidenceSource
+import com.insaner.fonecheck.domain.model.EvidenceReasonCode
+import com.insaner.fonecheck.domain.model.EvidenceUnitCode
 import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.ScoreState
 import java.time.Duration
@@ -106,10 +109,15 @@ data class PdfReportLabels(
     val captured: String,
     val disclaimer: String,
     val categoryName: (DiagnosticCategoryId) -> String,
+    val checkName: (DiagnosticCheckId) -> String,
     val statusName: (DiagnosticStatus) -> String,
     val scoreStateName: (ScoreState) -> String,
     val sourceName: (EvidenceSource) -> String,
     val confidenceName: (Confidence) -> String,
+    val reasonName: (EvidenceReasonCode) -> String,
+    val stableTextName: (String) -> String,
+    val numberValue: (Number) -> String,
+    val unitName: (EvidenceUnitCode) -> String,
     val countsValue: (CoverageSummary, Int, Int) -> String,
     val completedValue: (Instant) -> String,
     val durationValue: (Duration) -> String,
@@ -137,10 +145,15 @@ data class PdfReportLabels(
                 captured = "Captured",
                 disclaimer = "Differences and measurements do not prove physical device health.",
                 categoryName = { it.name.lowercase().replaceFirstChar(Char::uppercase) },
+                checkName = { it.value },
                 statusName = { it.name.lowercase() },
                 scoreStateName = { it.name.lowercase() },
                 sourceName = { it.name.lowercase() },
                 confidenceName = { it.name.lowercase() },
+                reasonName = { it.value.replace('_', ' ') },
+                stableTextName = { it.replace('_', ' ') },
+                numberValue = Number::toString,
+                unitName = ::englishUnitName,
                 countsValue = { coverage, warnings, failures ->
                     "${coverage.completedCount} completed, ${coverage.notTestedCount} not tested, " +
                         "${coverage.unavailableCount} unavailable, $warnings warnings, $failures failures"
@@ -217,14 +230,17 @@ object ReportPdfContentBuilder {
                 category?.evidence.orEmpty().forEach { item ->
                     add(
                         PdfTextBlock(
-                            "${item.checkId.value} — ${labels.statusName(item.status)}",
+                            "${labels.checkName(item.checkId)} — ${labels.statusName(item.status)}",
                             PdfTextStyle.MONO,
                         ),
                     )
                     item.value?.let {
                         add(
                             PdfTextBlock(
-                                "${valueText(it)}${item.unit?.value?.let { unit -> " $unit" }.orEmpty()}",
+                                "${valueText(it, labels)}" +
+                                    item.unit?.let(labels.unitName)?.takeIf(String::isNotBlank)?.let { unit ->
+                                        " $unit"
+                                    }.orEmpty(),
                                 PdfTextStyle.MONO,
                             ),
                         )
@@ -236,21 +252,41 @@ object ReportPdfContentBuilder {
                             PdfTextStyle.BODY,
                         ),
                     )
-                    item.reason?.let { add(PdfTextBlock("${labels.reason}: ${it.value}", PdfTextStyle.BODY)) }
+                    item.reason?.let {
+                        add(PdfTextBlock("${labels.reason}: ${labels.reasonName(it)}", PdfTextStyle.BODY))
+                    }
                     add(PdfTextBlock("${labels.captured}: ${item.capturedAt}", PdfTextStyle.BODY))
                 }
             }
         }
     }
 
-    private fun valueText(value: EvidenceValue): String =
+    private fun valueText(
+        value: EvidenceValue,
+        labels: PdfReportLabels,
+    ): String =
         when (value) {
             is EvidenceValue.BooleanValue -> value.value.toString()
-            is EvidenceValue.IntValue -> value.value.toString()
-            is EvidenceValue.LongValue -> value.value.toString()
-            is EvidenceValue.DecimalValue -> value.value.toPlainString()
-            is EvidenceValue.DoubleValue -> value.value.toString()
+            is EvidenceValue.IntValue -> labels.numberValue(value.value)
+            is EvidenceValue.LongValue -> labels.numberValue(value.value)
+            is EvidenceValue.DecimalValue -> labels.numberValue(value.value)
+            is EvidenceValue.DoubleValue -> labels.numberValue(value.value)
             is EvidenceValue.RawTextValue -> value.value
-            is EvidenceValue.StableTextCodeValue -> value.value
+            is EvidenceValue.StableTextCodeValue -> labels.stableTextName(value.value)
         }
 }
+
+private fun englishUnitName(unit: EvidenceUnitCode): String =
+    when (unit.value) {
+        "bytes" -> "bytes"
+        "celsius" -> "°C"
+        "count", "ratio" -> ""
+        "mebibytes_per_second" -> "MiB/s"
+        "milliamperes" -> "mA"
+        "milliseconds" -> "ms"
+        "operations_per_second" -> "operations/s"
+        "percent" -> "%"
+        "pixels" -> "px"
+        "samples" -> "samples"
+        else -> unit.value.replace('_', ' ')
+    }

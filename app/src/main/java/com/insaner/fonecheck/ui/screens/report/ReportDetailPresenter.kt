@@ -4,6 +4,7 @@ import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryResult
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
+import com.insaner.fonecheck.localization.stableCodeDisplayText
 import java.time.Duration
 
 data class ReportCategoryCounts(
@@ -50,4 +51,4 @@ object ReportDetailPresenter {
 }
 
 fun stableCodeFallback(code: String): String =
-    code.replace('_', ' ').replaceFirstChar { character -> character.titlecase() }
+    stableCodeDisplayText(code)

@@ -11,9 +11,15 @@ import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceSource
+import com.insaner.fonecheck.domain.model.EvidenceUnitCode
 import com.insaner.fonecheck.domain.model.ScoreState
+import com.insaner.fonecheck.localization.evidenceReasonStringRes
+import com.insaner.fonecheck.localization.evidenceLabelStringRes
+import com.insaner.fonecheck.localization.stableCodeDisplayText
+import com.insaner.fonecheck.localization.stableTextStringRes
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.OutputStream
+import java.text.NumberFormat
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -125,10 +131,23 @@ class ReportPdfRenderer
                 captured = context.getString(R.string.pdf_captured),
                 disclaimer = context.getString(R.string.pdf_disclaimer),
                 categoryName = { context.getString(it.labelResource()) },
+                checkName = { checkId ->
+                    evidenceLabelStringRes(checkId.value)?.let(context::getString)
+                        ?: stableCodeDisplayText(checkId.value.substringAfter('.'))
+                },
                 statusName = { context.getString(it.labelResource()) },
                 scoreStateName = { context.getString(it.labelResource()) },
                 sourceName = { context.getString(it.labelResource()) },
                 confidenceName = { context.getString(it.labelResource()) },
+                reasonName = { reason ->
+                    evidenceReasonStringRes(reason)?.let(context::getString)
+                        ?: stableCodeDisplayText(reason.value)
+                },
+                stableTextName = { code ->
+                    stableTextStringRes(code)?.let(context::getString) ?: stableCodeDisplayText(code)
+                },
+                numberValue = NumberFormat.getNumberInstance(Locale.getDefault())::format,
+                unitName = { unit -> localizedUnitName(context, unit) },
                 countsValue = { coverage, warnings, failures ->
                     context.getString(
                         R.string.pdf_counts_value,
@@ -213,4 +232,22 @@ private fun Confidence.labelResource(): Int =
         Confidence.HIGH -> R.string.confidence_high
         Confidence.LOW -> R.string.confidence_low
         Confidence.UNAVAILABLE -> R.string.confidence_unavailable
+    }
+
+private fun localizedUnitName(
+    context: Context,
+    unit: EvidenceUnitCode,
+): String =
+    when (unit.value) {
+        "bytes" -> "B"
+        "celsius" -> "°C"
+        "count", "ratio" -> ""
+        "mebibytes_per_second" -> "MiB/s"
+        "milliamperes" -> "mA"
+        "milliseconds" -> "ms"
+        "operations_per_second" -> "ops/s"
+        "percent" -> "%"
+        "pixels" -> "px"
+        "samples" -> context.getString(R.string.pdf_unit_samples)
+        else -> stableCodeDisplayText(unit.value)
     }

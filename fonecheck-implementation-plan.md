@@ -949,6 +949,13 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Tekniset termit, statusreasonit ja PDF-sivutus voivat vaatia eri pituiset muodot.
 - **Decision required:** Kyllä, system/per-app locale -linja kohdassa 1.
 
+#### Implementation/status log — 2026-08-08
+
+- Androidin system/per-app locale -päätös säilyy: sovellus ei lisää omaa kielivalitsinta. Default- ja `values-fi`-resurssien kaikki translatable string/plurals-avaimet ovat täydellisessä pariteetissa (999/999); vain tarkoituksella `translatable=false` merkityt app/ikonitunnisteet ovat yksin default-resursseissa.
+- Audio headphone type ja Camera autofocus/facing-data eivät enää tallenna englanninkielisiä UI-arvoja ViewModel-stateen. Ne käyttävät locale-neutraaleja koodeja ja ratkaisevat EN/FI-tekstin vasta Composessa. Camera unavailable-, dimension- ja megapixel-arvot sekä Audio-frequency-labelit tulevat resursseista.
+- GPS-, display-, camera- ja saved-evidence-numerot/yksiköt käyttävät locale-aware resurssi- tai `NumberFormat`-muotoilua. PDF käyttää nykyisen Android-lokaalin otsikoita, päivämääriä, numeroita, statuksia, syitä, evidence-nimiä, stable-value-tekstejä ja luettavia yksikköjä; koneluettava JSON säilyy tarkoituksella locale-neutraalina.
+- Resource parity-, evidence localization-, headphone code-, locale decimal- ja PDF content -unit-testit läpäisevät. EN/FI Compose- ja PDF-polut kääntyvät. Yhdistetty `:app:testDebugUnitTest :app:compileDebugAndroidTestKotlin :app:lintDebug :app:assembleDebug` läpäisee. Fyysinen pseudo-long-text-/locale-vaihto- ja PDF-katselukierros odottaa laitetta. Käyttäjän `PROJECT.md`-muutosta ei muokattu.
+
 ### 34. Complete accessibility and reduced-motion behavior
 
 - **Objective:** Tehdä koko tuote käytettäväksi TalkBackilla, näppäin-/kytkinohjauksella ja suurilla fonteilla.
