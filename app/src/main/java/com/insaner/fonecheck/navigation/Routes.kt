@@ -54,7 +54,14 @@ object RunAllTests
 object Settings
 
 @Serializable
-object Report
+data class Report(
+    val reportId: String,
+)
+
+@Serializable
+data class CategoryRetest(
+    val categoryId: String,
+)
 
 @Serializable
 object History

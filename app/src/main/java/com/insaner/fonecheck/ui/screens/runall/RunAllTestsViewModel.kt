@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.insaner.fonecheck.data.repository.ReportLoadResult
 import com.insaner.fonecheck.data.repository.ReportRepository
+import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticCategorySnapshot
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.ReportAppContext
@@ -102,6 +103,7 @@ data class RunAllTestsState(
     val stageIssue: RunAllStageOutcome? = null,
     val report: DiagnosticReport? = null,
     val saveStatus: ReportSaveStatus = ReportSaveStatus.IDLE,
+    val targetCategory: DiagnosticCategoryId? = null,
 ) {
     val progress: RunAllProgress?
         get() =
@@ -165,6 +167,35 @@ class RunAllTestsViewModel
             )
         }
 
+        fun onCategoryRetestRequested(
+            categoryId: DiagnosticCategoryId,
+            hardware: RunAllHardwareProfile,
+        ) {
+            if (_state.value.stage != RunAllStage.PREFLIGHT ||
+                _state.value.runStatus != RunAllRunStatus.NOT_STARTED
+            ) {
+                return
+            }
+            val selections =
+                RunAllSelections(
+                    includeSpeaker = categoryId == DiagnosticCategoryId.AUDIO,
+                    includeMicrophone = categoryId == DiagnosticCategoryId.AUDIO,
+                    includeCamera = categoryId == DiagnosticCategoryId.CAMERA,
+                    includeStorageBenchmark = categoryId == DiagnosticCategoryId.STORAGE,
+                )
+            reportStartedAt = Instant.ofEpochMilli(clock.currentTimeMillis())
+            enterStage(
+                RunAllStage.PERMISSIONS,
+                _state.value.copy(
+                    selections = selections,
+                    hardware = hardware,
+                    runStatus = RunAllRunStatus.RUNNING,
+                    lastInterruption = null,
+                    targetCategory = categoryId,
+                ),
+            )
+        }
+
         fun onPermissionsResolved(permissions: RunAllPermissions) {
             val current = _state.value
             if (current.runStatus != RunAllRunStatus.RUNNING || current.stage != RunAllStage.PERMISSIONS) return
@@ -173,6 +204,7 @@ class RunAllTestsViewModel
                     hardware = current.hardware,
                     permissions = permissions,
                     selections = current.selections,
+                    categories = current.targetCategory?.let(::listOf) ?: DiagnosticCategoryId.entries,
                 )
             enterStage(
                 plan.stages.firstOrNull() ?: RunAllStage.RESULTS,
@@ -367,12 +399,20 @@ class RunAllTestsViewModel
                 ReportAssembler.assemble(
                     ReportAssemblyRequest(
                         stableId = idProvider.newId(),
-                        kind = ReportKind.FULL_CHECK,
+                        kind =
+                            if (current.targetCategory == null) {
+                                ReportKind.FULL_CHECK
+                            } else {
+                                ReportKind.CATEGORY_ONLY
+                            },
                         startedAt = startedAt,
                         completedAt = Instant.ofEpochMilli(clock.currentTimeMillis()),
                         device = device,
                         app = app,
-                        snapshots = snapshots,
+                        snapshots =
+                            current.targetCategory?.let { categoryId ->
+                                listOf(snapshots.single { it.categoryId == categoryId })
+                            } ?: snapshots,
                     ),
                 )
             _state.value =

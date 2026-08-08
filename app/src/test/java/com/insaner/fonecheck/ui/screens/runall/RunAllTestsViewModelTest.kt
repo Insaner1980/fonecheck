@@ -351,6 +351,47 @@ class RunAllTestsViewModelTest {
             assertEquals(viewModel.state.value.report, loaded.report)
         }
 
+    @Test
+    fun categoryRetestPersistsOnlyTheRequestedFreshSnapshot() =
+        runTest {
+            val timestamps = listOf(100L, 200L).iterator()
+            val repository = FakeReportRepository()
+            val viewModel =
+                RunAllTestsViewModel(
+                    clock = EpochMillisClock { timestamps.next() },
+                    idProvider = IdProvider { "storage-retest" },
+                    reportRepository = repository,
+                )
+
+            viewModel.onCategoryRetestRequested(
+                categoryId = DiagnosticCategoryId.STORAGE,
+                hardware = RunAllHardwareProfile.ALL_AVAILABLE,
+            )
+            assertEquals(RunAllStage.PERMISSIONS, viewModel.state.value.stage)
+            assertEquals(DiagnosticCategoryId.STORAGE, viewModel.state.value.targetCategory)
+
+            viewModel.onPermissionsResolved(RunAllPermissions())
+            assertEquals(listOf(DiagnosticCategoryId.STORAGE), viewModel.state.value.plan.categories.map { it.categoryId })
+            val automaticToken = viewModel.state.value.stageToken
+            assertTrue(viewModel.claimStage(automaticToken))
+            viewModel.onAutomaticChecksComplete(automaticToken)
+            assertEquals(RunAllStage.RESULTS, viewModel.state.value.stage)
+
+            viewModel.completeReport(
+                viewModel.state.value.stageToken,
+                deviceContext(),
+                appContext(),
+                completeSnapshots(),
+            )
+            dispatcher.scheduler.runCurrent()
+
+            val report = requireNotNull(viewModel.state.value.report)
+            assertEquals(ReportKind.CATEGORY_ONLY, report.kind)
+            assertEquals(listOf(DiagnosticCategoryId.STORAGE), report.categories.map { it.categoryId })
+            assertEquals(ReportSaveStatus.SAVED, viewModel.state.value.saveStatus)
+            assertEquals(report, (repository.getById("storage-retest") as ReportLoadResult.Available).report)
+        }
+
     private fun completeSnapshots(): List<DiagnosticCategorySnapshot> =
         DiagnosticCatalog.categories.map { categoryId ->
             DiagnosticCategorySnapshot(

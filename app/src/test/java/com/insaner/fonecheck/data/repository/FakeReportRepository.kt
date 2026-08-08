@@ -6,6 +6,8 @@ import kotlinx.coroutines.flow.flowOf
 
 class FakeReportRepository(
     var insertFailuresRemaining: Int = 0,
+    var getByIdFailuresRemaining: Int = 0,
+    var getByIdOverride: ReportLoadResult? = null,
 ) : ReportRepository {
     val insertAttempts = mutableListOf<DiagnosticReport>()
     private val reports = linkedMapOf<String, DiagnosticReport>()
@@ -22,8 +24,15 @@ class FakeReportRepository(
 
     override fun observeSummaries(): Flow<List<SavedReportSummary>> = flowOf(emptyList())
 
-    override suspend fun getById(id: String): ReportLoadResult =
-        reports[id]?.let(ReportLoadResult::Available) ?: ReportLoadResult.NotFound
+    override suspend fun getById(id: String): ReportLoadResult {
+        if (getByIdFailuresRemaining > 0) {
+            getByIdFailuresRemaining -= 1
+            error("load_failed")
+        }
+        return getByIdOverride
+            ?: reports[id]?.let(ReportLoadResult::Available)
+            ?: ReportLoadResult.NotFound
+    }
 
     override suspend fun getForComparison(
         firstReportId: String,

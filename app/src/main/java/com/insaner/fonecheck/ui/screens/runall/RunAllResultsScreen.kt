@@ -24,12 +24,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -43,17 +45,35 @@ import com.insaner.fonecheck.domain.model.DiagnosticEvidence
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
+import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.EvidenceUnitCode
 import com.insaner.fonecheck.domain.model.EvidenceValue
+import com.insaner.fonecheck.domain.model.ReportKind
+import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.TestResult
 import com.insaner.fonecheck.domain.model.TestStatus
+import com.insaner.fonecheck.navigation.CategoryRetest
 import com.insaner.fonecheck.navigation.diagnosticDestinations
+import com.insaner.fonecheck.ui.components.ConfidenceBadge
+import com.insaner.fonecheck.ui.components.InfoRow
 import com.insaner.fonecheck.ui.components.StandardCard
 import com.insaner.fonecheck.ui.components.StatusBadge
+import com.insaner.fonecheck.ui.screens.report.ReportDetailPresentation
+import com.insaner.fonecheck.ui.screens.report.ReportDetailPresenter
+import com.insaner.fonecheck.ui.screens.report.stableCodeFallback
 import com.insaner.fonecheck.ui.theme.Green400
 import com.insaner.fonecheck.ui.theme.Neutral400
 import com.insaner.fonecheck.ui.theme.Red400
 import com.insaner.fonecheck.ui.theme.Yellow400
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
+
+enum class ReportResultMode {
+    COMPLETED_RUN,
+    SAVED_REPORT,
+}
 
 @Composable
 fun RunAllResultsScreen(
@@ -63,9 +83,11 @@ fun RunAllResultsScreen(
     onOpenCategory: (Any) -> Unit,
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
+    mode: ReportResultMode = ReportResultMode.COMPLETED_RUN,
 ) {
+    val presentation = remember(report) { ReportDetailPresenter.present(report) }
     val categories =
-        report.categories.mapNotNull { category ->
+        presentation.categories.mapNotNull { category ->
             if (diagnosticDestinations.none { it.category == category.categoryId }) {
                 null
             } else {
@@ -93,8 +115,14 @@ fun RunAllResultsScreen(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        if (mode == ReportResultMode.SAVED_REPORT) {
+            item {
+                ReportMetadataCard(report, presentation.durationMillis)
+            }
+        }
+
         item {
-            ResultsSummaryCard(report.score.value, categories)
+            ResultsSummaryCard(report, presentation)
         }
 
         if (saveStatus != ReportSaveStatus.SAVED) {
@@ -115,6 +143,7 @@ fun RunAllResultsScreen(
                 expandedCategoryName = expandedCategoryName,
                 onExpandedChange = { expandedCategoryName = it },
                 onOpenCategory = onOpenCategory,
+                mode = mode,
             )
         }
 
@@ -133,6 +162,7 @@ fun RunAllResultsScreen(
                         expandedCategoryName = toggleExpanded(expandedCategoryName, result)
                     },
                     onOpenCategory = onOpenCategory,
+                    mode = mode,
                 )
             }
         }
@@ -149,6 +179,7 @@ fun RunAllResultsScreen(
                 expandedCategoryName = expandedCategoryName,
                 onExpandedChange = { expandedCategoryName = it },
                 onOpenCategory = onOpenCategory,
+                mode = mode,
             )
         }
 
@@ -162,7 +193,15 @@ fun RunAllResultsScreen(
                         .padding(top = 8.dp, bottom = 20.dp),
                 shape = MaterialTheme.shapes.medium,
             ) {
-                Text(stringResource(R.string.run_all_done))
+                Text(
+                    stringResource(
+                        if (mode == ReportResultMode.SAVED_REPORT) {
+                            R.string.report_back
+                        } else {
+                            R.string.run_all_done
+                        },
+                    ),
+                )
             }
         }
     }
@@ -173,6 +212,7 @@ private fun LazyListScope.categoryResultItems(
     expandedCategoryName: String?,
     onExpandedChange: (String?) -> Unit,
     onOpenCategory: (Any) -> Unit,
+    mode: ReportResultMode,
 ) {
     items(
         items = results,
@@ -185,6 +225,7 @@ private fun LazyListScope.categoryResultItems(
                 onExpandedChange(toggleExpanded(expandedCategoryName, result))
             },
             onOpenCategory = onOpenCategory,
+            mode = mode,
         )
     }
 }
@@ -196,16 +237,11 @@ private fun toggleExpanded(
 
 @Composable
 private fun ResultsSummaryCard(
-    score: Int?,
-    categories: List<CategoryTestResult>,
+    report: DiagnosticReport,
+    presentation: ReportDetailPresentation,
 ) {
-    val passed = categories.count { it.status == TestStatus.Pass }
-    val warnings = categories.count { it.status is TestStatus.Warning }
-    val failed = categories.count { it.status is TestStatus.Fail }
-    val unavailable =
-        categories.count {
-            it.status == TestStatus.NotAvailable || it.status == TestStatus.NotTested
-        }
+    val score = report.score.value
+    val counts = presentation.counts
     val scoreColor =
         when {
             score == null -> Neutral400
@@ -243,7 +279,10 @@ private fun ResultsSummaryCard(
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = stringResource(R.string.run_all_overall_score),
+                        text =
+                            stringResource(R.string.run_all_overall_score) +
+                                " · " +
+                                scoreStateLabel(report.score.state),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -253,30 +292,146 @@ private fun ResultsSummaryCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     SummaryCount(
-                        pluralStringResource(R.plurals.run_all_passed_count, passed, passed),
+                        stringResource(R.string.report_completed_count, counts.pass + counts.info),
                         Green400,
                     )
                     SummaryCount(
-                        pluralStringResource(R.plurals.run_all_warning_count, warnings, warnings),
+                        pluralStringResource(R.plurals.run_all_warning_count, counts.warning, counts.warning),
                         Yellow400,
                     )
                     SummaryCount(
-                        pluralStringResource(R.plurals.run_all_failed_count, failed, failed),
+                        pluralStringResource(R.plurals.run_all_failed_count, counts.fail, counts.fail),
                         Red400,
                     )
                     SummaryCount(
                         pluralStringResource(
                             R.plurals.run_all_unavailable_count,
-                            unavailable,
-                            unavailable,
+                            counts.notAvailable,
+                            counts.notAvailable,
                         ),
+                        Neutral400,
+                    )
+                    SummaryCount(
+                        stringResource(R.string.report_not_tested_count, counts.notTested),
                         Neutral400,
                     )
                 }
             }
+            Text(
+                text =
+                    stringResource(R.string.report_coverage) +
+                        ": " +
+                        stringResource(
+                            R.string.report_coverage_value,
+                            report.coverage.percentage,
+                            report.coverage.completedCount,
+                            report.coverage.applicableCount,
+                        ),
+                modifier = Modifier.padding(top = 16.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
+
+@Composable
+private fun ReportMetadataCard(
+    report: DiagnosticReport,
+    durationMillis: Long,
+) {
+    val dateFormatter =
+        remember {
+            DateTimeFormatter
+                .ofLocalizedDateTime(FormatStyle.MEDIUM)
+                .withLocale(Locale.getDefault())
+                .withZone(ZoneId.systemDefault())
+        }
+    val durationSeconds = durationMillis / 1_000L
+    val deviceName =
+        listOf(report.device.manufacturer, report.device.model)
+            .filter(String::isNotBlank)
+            .distinct()
+            .joinToString(" ")
+
+    StandardCard {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.report_saved_title),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = stringResource(R.string.report_saved_description),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            InfoRow(
+                label = stringResource(R.string.report_kind),
+                value =
+                    stringResource(
+                        if (report.kind == ReportKind.FULL_CHECK) {
+                            R.string.report_kind_full
+                        } else {
+                            R.string.report_kind_category
+                        },
+                    ),
+            )
+            InfoRow(
+                label = stringResource(R.string.report_device),
+                value = deviceName,
+            )
+            InfoRow(
+                label = stringResource(R.string.report_android),
+                value =
+                    stringResource(
+                        R.string.report_android_value,
+                        report.device.androidRelease,
+                        report.device.apiLevel,
+                    ),
+            )
+            InfoRow(
+                label = stringResource(R.string.report_app_version),
+                value =
+                    stringResource(
+                        R.string.report_app_version_value,
+                        report.app.versionName,
+                        report.app.versionCode,
+                    ),
+            )
+            InfoRow(
+                label = stringResource(R.string.report_completed_at),
+                value = dateFormatter.format(report.completedAt),
+            )
+            InfoRow(
+                label = stringResource(R.string.report_duration),
+                value =
+                    stringResource(
+                        R.string.report_duration_value,
+                        durationSeconds / 60L,
+                        durationSeconds % 60L,
+                    ),
+            )
+            InfoRow(
+                label = stringResource(R.string.report_identifier),
+                value = report.stableId,
+            )
+        }
+    }
+}
+
+@Composable
+private fun scoreStateLabel(state: ScoreState): String =
+    stringResource(
+        when (state) {
+            ScoreState.COMPLETE -> R.string.report_score_complete
+            ScoreState.PARTIAL -> R.string.report_score_partial
+            ScoreState.INCOMPLETE -> R.string.report_score_incomplete
+        },
+    )
 
 @Composable
 private fun ReportSaveCard(
@@ -330,6 +485,8 @@ private fun DiagnosticEvidence.toUiResult(): TestResult =
         detail = evidenceDetail(this),
         confidence = confidence,
         timestamp = capturedAt.toEpochMilli(),
+        source = source,
+        reason = reason?.let { reasonLabel(it) },
     )
 
 private fun DiagnosticStatus.toLegacyStatus(): TestStatus =
@@ -443,7 +600,6 @@ private fun evidenceLabelResId(checkId: String): Int? =
 @Composable
 private fun evidenceDetail(evidence: DiagnosticEvidence): String? =
     evidence.value?.let { evidenceValueLabel(it, evidence.unit) }
-        ?: evidence.reason?.let { reasonLabel(it) }
 
 @Composable
 private fun evidenceValueLabel(
@@ -488,80 +644,88 @@ private fun evidenceValueLabel(
 
 @Composable
 private fun stableTextLabel(code: String): String =
-    stringResource(
-        when (code) {
-            "good" -> R.string.batt_health_good
-            "overheat" -> R.string.batt_health_overheat
-            "dead" -> R.string.batt_health_dead
-            "over_voltage" -> R.string.batt_health_over_voltage
-            "unspecified_failure" -> R.string.batt_health_failure
-            "cold" -> R.string.batt_health_cold
-            "charging" -> R.string.batt_current_direction_charging
-            "discharging" -> R.string.batt_current_direction_discharging
-            "idle" -> R.string.batt_current_direction_idle
-            "api_sign" -> R.string.batt_current_sign_api
-            "status_sign_normalized" -> R.string.batt_current_sign_status
-            "samsung" -> R.string.batt_mfr_samsung
-            "oneplus" -> R.string.batt_mfr_oneplus
-            "google_pixel" -> R.string.batt_mfr_pixel
-            "generic" -> R.string.batt_mfr_generic
-            "none" -> R.string.perf_thermal_none
-            "normal" -> R.string.thermal_severity_normal
-            "light" -> R.string.perf_thermal_light
-            "moderate" -> R.string.perf_thermal_moderate
-            "severe" -> R.string.perf_thermal_severe
-            "critical" -> R.string.perf_thermal_critical
-            "emergency" -> R.string.perf_thermal_emergency
-            "shutdown" -> R.string.perf_thermal_shutdown
-            "strong" -> R.string.biometric_strong
-            "weak" -> R.string.biometric_weak
-            "unavailable" -> R.string.biometric_not_available
-            "available" -> R.string.biometric_available
-            "no_hardware" -> R.string.biometric_no_hardware
-            "hardware_unavailable" -> R.string.biometric_hardware_unavailable
-            "none_enrolled" -> R.string.biometric_none_enrolled
-            "security_update_required" -> R.string.biometric_security_update_required
-            "unsupported" -> R.string.biometric_unsupported
-            "known_artifact_detected" -> R.string.device_root_artifact_detected
-            "no_known_artifact_detected" -> R.string.device_root_artifact_not_detected
-            "no_telephony" -> R.string.sim_inventory_no_telephony
-            "no_sim" -> R.string.sim_inventory_no_sim
-            "inactive_sim" -> R.string.sim_inventory_inactive
-            "single_sim" -> R.string.sim_inventory_single
-            "multiple_sim" -> R.string.sim_inventory_multiple
-            "second_generation" -> R.string.sim_network_2g
-            "third_generation" -> R.string.sim_network_3g
-            "fourth_generation" -> R.string.sim_network_4g
-            "fifth_generation" -> R.string.sim_network_5g
-            "unknown" -> R.string.sim_value_unknown
-            "observed" -> R.string.sensor_orientation_observed
-            "app_cache" -> R.string.storage_app_cache
-            else -> R.string.batt_health_unknown
-        },
-    )
+    when (code) {
+        "good" -> R.string.batt_health_good
+        "overheat" -> R.string.batt_health_overheat
+        "dead" -> R.string.batt_health_dead
+        "over_voltage" -> R.string.batt_health_over_voltage
+        "unspecified_failure" -> R.string.batt_health_failure
+        "cold" -> R.string.batt_health_cold
+        "charging" -> R.string.batt_current_direction_charging
+        "discharging" -> R.string.batt_current_direction_discharging
+        "idle" -> R.string.batt_current_direction_idle
+        "api_sign" -> R.string.batt_current_sign_api
+        "status_sign_normalized" -> R.string.batt_current_sign_status
+        "samsung" -> R.string.batt_mfr_samsung
+        "oneplus" -> R.string.batt_mfr_oneplus
+        "google_pixel" -> R.string.batt_mfr_pixel
+        "generic" -> R.string.batt_mfr_generic
+        "none" -> R.string.perf_thermal_none
+        "normal" -> R.string.thermal_severity_normal
+        "light" -> R.string.perf_thermal_light
+        "moderate" -> R.string.perf_thermal_moderate
+        "severe" -> R.string.perf_thermal_severe
+        "critical" -> R.string.perf_thermal_critical
+        "emergency" -> R.string.perf_thermal_emergency
+        "shutdown" -> R.string.perf_thermal_shutdown
+        "strong" -> R.string.biometric_strong
+        "weak" -> R.string.biometric_weak
+        "unavailable" -> R.string.biometric_not_available
+        "available" -> R.string.biometric_available
+        "no_hardware" -> R.string.biometric_no_hardware
+        "hardware_unavailable" -> R.string.biometric_hardware_unavailable
+        "none_enrolled" -> R.string.biometric_none_enrolled
+        "security_update_required" -> R.string.biometric_security_update_required
+        "unsupported" -> R.string.biometric_unsupported
+        "known_artifact_detected" -> R.string.device_root_artifact_detected
+        "no_known_artifact_detected" -> R.string.device_root_artifact_not_detected
+        "no_telephony" -> R.string.sim_inventory_no_telephony
+        "no_sim" -> R.string.sim_inventory_no_sim
+        "inactive_sim" -> R.string.sim_inventory_inactive
+        "single_sim" -> R.string.sim_inventory_single
+        "multiple_sim" -> R.string.sim_inventory_multiple
+        "second_generation" -> R.string.sim_network_2g
+        "third_generation" -> R.string.sim_network_3g
+        "fourth_generation" -> R.string.sim_network_4g
+        "fifth_generation" -> R.string.sim_network_5g
+        "unknown" -> R.string.sim_value_unknown
+        "observed" -> R.string.sensor_orientation_observed
+        "app_cache" -> R.string.storage_app_cache
+        else -> null
+    }?.let { stringResource(it) } ?: stableCodeFallback(code)
 
 @Composable
 private fun reasonLabel(reason: EvidenceReasonCode): String =
+    when (reason) {
+        EvidenceReasonCode.PERMISSION_DENIED -> R.string.run_all_permission_missing
+        EvidenceReasonCode.NOT_RUN -> R.string.run_all_summary_not_tested
+        EvidenceReasonCode.SKIPPED, EvidenceReasonCode.CANCELLED -> R.string.run_all_manual_skipped
+        EvidenceReasonCode.TIMEOUT -> R.string.conn_gps_failed
+        EvidenceReasonCode.INSUFFICIENT_SPACE -> R.string.storage_benchmark_insufficient_space
+        EvidenceReasonCode.USER_CONFIRMED_FAILURE -> R.string.run_all_manual_failed
+        EvidenceReasonCode.HARDWARE_UNAVAILABLE,
+        EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED,
+        -> R.string.run_all_status_unavailable
+
+        EvidenceReasonCode.PLATFORM_RESTRICTION -> R.string.button_power_unavailable
+        EvidenceReasonCode.BIOMETRIC_LOCKOUT -> R.string.biometric_locked_out
+        EvidenceReasonCode.BIOMETRIC_NOT_ENROLLED -> R.string.biometric_none_enrolled
+
+        EvidenceReasonCode.DISABLED -> R.string.status_disabled
+        EvidenceReasonCode.DEGRADED -> R.string.run_all_summary_warning
+        EvidenceReasonCode.ERROR -> R.string.run_all_summary_fail
+        else -> null
+    }?.let { stringResource(it) } ?: stableCodeFallback(reason.value)
+
+@Composable
+private fun sourceLabel(source: EvidenceSource): String =
     stringResource(
-        when (reason) {
-            EvidenceReasonCode.PERMISSION_DENIED -> R.string.run_all_permission_missing
-            EvidenceReasonCode.NOT_RUN -> R.string.run_all_summary_not_tested
-            EvidenceReasonCode.SKIPPED, EvidenceReasonCode.CANCELLED -> R.string.run_all_manual_skipped
-            EvidenceReasonCode.TIMEOUT -> R.string.conn_gps_failed
-            EvidenceReasonCode.INSUFFICIENT_SPACE -> R.string.storage_benchmark_insufficient_space
-            EvidenceReasonCode.USER_CONFIRMED_FAILURE -> R.string.run_all_manual_failed
-            EvidenceReasonCode.HARDWARE_UNAVAILABLE,
-            EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED,
-            -> R.string.run_all_status_unavailable
-
-            EvidenceReasonCode.PLATFORM_RESTRICTION -> R.string.button_power_unavailable
-            EvidenceReasonCode.BIOMETRIC_LOCKOUT -> R.string.biometric_locked_out
-            EvidenceReasonCode.BIOMETRIC_NOT_ENROLLED -> R.string.biometric_none_enrolled
-
-            EvidenceReasonCode.DISABLED -> R.string.status_disabled
-            EvidenceReasonCode.DEGRADED -> R.string.run_all_summary_warning
-            EvidenceReasonCode.ERROR -> R.string.run_all_summary_fail
-            else -> R.string.run_all_summary_not_tested
+        when (source) {
+            EvidenceSource.AUTOMATIC_MEASUREMENT -> R.string.report_source_automatic
+            EvidenceSource.ANDROID_API -> R.string.report_source_android_api
+            EvidenceSource.USER_CONFIRMATION -> R.string.report_source_user
+            EvidenceSource.DERIVED -> R.string.report_source_derived
+            EvidenceSource.ESTIMATE -> R.string.report_source_estimate
         },
     )
 
@@ -610,6 +774,7 @@ private fun ExpandedCategoryResult(
     isExpanded: Boolean,
     onToggle: () -> Unit,
     onOpenCategory: (Any) -> Unit,
+    mode: ReportResultMode,
 ) {
     val destination = diagnosticDestinations.first { it.category == result.category }
     CategoryResultCard(
@@ -618,7 +783,16 @@ private fun ExpandedCategoryResult(
         imageResId = destination.imageResId,
         isExpanded = isExpanded,
         onToggle = onToggle,
-        onOpen = { onOpenCategory(destination.route) },
+        onOpen = {
+            onOpenCategory(
+                if (mode == ReportResultMode.SAVED_REPORT) {
+                    CategoryRetest(result.category.stableId)
+                } else {
+                    destination.route
+                },
+            )
+        },
+        mode = mode,
     )
 }
 
@@ -628,6 +802,7 @@ private fun CompletedResultsCard(
     expandedCategoryName: String?,
     onToggle: (CategoryTestResult) -> Unit,
     onOpenCategory: (Any) -> Unit,
+    mode: ReportResultMode,
 ) {
     StandardCard {
         results.forEachIndexed { index, result ->
@@ -638,7 +813,16 @@ private fun CompletedResultsCard(
                 imageResId = destination.imageResId,
                 isExpanded = expandedCategoryName == result.category.name,
                 onToggle = { onToggle(result) },
-                onOpen = { onOpenCategory(destination.route) },
+                onOpen = {
+                    onOpenCategory(
+                        if (mode == ReportResultMode.SAVED_REPORT) {
+                            CategoryRetest(result.category.stableId)
+                        } else {
+                            destination.route
+                        },
+                    )
+                },
+                mode = mode,
             )
             if (index < results.lastIndex) {
                 HorizontalDivider(
@@ -658,11 +842,13 @@ private fun CompactResultRow(
     isExpanded: Boolean,
     onToggle: () -> Unit,
     onOpen: () -> Unit,
+    mode: ReportResultMode,
 ) {
     Column(
         modifier =
             Modifier
                 .fillMaxWidth()
+                .testTag("report_category_${result.category.stableId}")
                 .clickable(onClick = onToggle)
                 .padding(14.dp),
     ) {
@@ -674,7 +860,7 @@ private fun CompactResultRow(
             imageSize = 44.dp,
         )
         if (isExpanded) {
-            ResultDetails(result.results, onOpen)
+            ResultDetails(result.results, onOpen, mode)
         }
     }
 }
@@ -687,8 +873,10 @@ private fun CategoryResultCard(
     isExpanded: Boolean,
     onToggle: () -> Unit,
     onOpen: () -> Unit,
+    mode: ReportResultMode,
 ) {
     StandardCard(
+        modifier = Modifier.testTag("report_category_${result.category.stableId}"),
         onClick = onToggle,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -702,14 +890,20 @@ private fun CategoryResultCard(
             Text(
                 text =
                     stringResource(
-                        if (isExpanded) R.string.run_all_hide_details else R.string.run_all_view_details,
+                        when {
+                            mode == ReportResultMode.SAVED_REPORT && isExpanded ->
+                                R.string.report_hide_saved_evidence
+                            mode == ReportResultMode.SAVED_REPORT -> R.string.report_view_saved_evidence
+                            isExpanded -> R.string.run_all_hide_details
+                            else -> R.string.run_all_view_details
+                        },
                     ),
                 modifier = Modifier.padding(top = 12.dp),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
             if (isExpanded) {
-                ResultDetails(result.results, onOpen)
+                ResultDetails(result.results, onOpen, mode)
             }
         }
     }
@@ -760,12 +954,22 @@ private fun ResultHeader(
 private fun ResultDetails(
     results: List<TestResult>,
     onOpen: () -> Unit,
+    mode: ReportResultMode,
 ) {
     Column {
         Spacer(modifier = Modifier.height(14.dp))
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        results.forEach { testResult ->
-            ResultDetailRow(testResult)
+        if (results.isEmpty()) {
+            Text(
+                text = stringResource(R.string.report_no_saved_evidence),
+                modifier = Modifier.padding(vertical = 14.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            results.forEach { testResult ->
+                ResultDetailRow(testResult)
+            }
         }
         OutlinedButton(
             onClick = onOpen,
@@ -775,7 +979,15 @@ private fun ResultDetails(
                     .padding(top = 8.dp),
             shape = MaterialTheme.shapes.medium,
         ) {
-            Text(stringResource(R.string.run_all_open_test))
+            Text(
+                stringResource(
+                    if (mode == ReportResultMode.SAVED_REPORT) {
+                        R.string.report_retest
+                    } else {
+                        R.string.run_all_open_test
+                    },
+                ),
+            )
         }
     }
 }
@@ -803,6 +1015,28 @@ private fun ResultDetailRow(result: TestResult) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+            result.reason?.let { reason ->
+                Text(
+                    text = stringResource(R.string.report_evidence_reason, reason),
+                    modifier = Modifier.padding(top = 3.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Row(
+                modifier = Modifier.padding(top = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                result.source?.let { source ->
+                    Text(
+                        text = sourceLabel(source),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                ConfidenceBadge(confidence = result.confidence)
             }
         }
         StatusBadge(

@@ -109,6 +109,36 @@ class RunAllStagePlannerTest {
         assertEquals(RunAllProgress(position = 5, total = 5), plan.progressFor(RunAllStage.BIOMETRICS))
     }
 
+    @Test
+    fun categoryRetestPlansOnlyTheRequestedCanonicalCategory() {
+        val plan =
+            RunAllStagePlanner.plan(
+                hardware = fullHardware(),
+                permissions = fullPermissions(),
+                selections = RunAllSelections(),
+                categories = listOf(DiagnosticCategoryId.STORAGE),
+            )
+
+        assertEquals(listOf(DiagnosticCategoryId.STORAGE), plan.categories.map { it.categoryId })
+        assertEquals(listOf(RunAllStage.AUTOMATIC, RunAllStage.RESULTS), plan.stages)
+    }
+
+    @Test
+    fun audioRetestRunsTheAutomaticMicrophoneCheckBeforeSpeakerConfirmation() {
+        val plan =
+            RunAllStagePlanner.plan(
+                hardware = fullHardware(),
+                permissions = fullPermissions(),
+                selections = RunAllSelections(includeMicrophone = true, includeSpeaker = true),
+                categories = listOf(DiagnosticCategoryId.AUDIO),
+            )
+
+        assertEquals(
+            listOf(RunAllStage.AUTOMATIC, RunAllStage.AUDIO, RunAllStage.RESULTS),
+            plan.stages,
+        )
+    }
+
     private fun fullHardware() =
         RunAllHardwareProfile(
             microphoneAvailable = true,

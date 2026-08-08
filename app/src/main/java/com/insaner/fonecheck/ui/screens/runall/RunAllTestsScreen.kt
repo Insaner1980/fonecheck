@@ -31,9 +31,11 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.DeviceInfo
+import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.ReportAppContext
 import com.insaner.fonecheck.domain.model.ReportDeviceContext
 import com.insaner.fonecheck.domain.permission.PermissionKind
+import com.insaner.fonecheck.navigation.diagnosticDestinations
 import com.insaner.fonecheck.ui.permissions.PermissionController
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
 import com.insaner.fonecheck.ui.screens.audio.AudioTestViewModel
@@ -78,6 +80,7 @@ fun RunAllTestsScreen(
     onOpenCategory: (Any) -> Unit,
     modifier: Modifier = Modifier,
     onDisplayFullscreenChanged: (Boolean) -> Unit = {},
+    targetCategory: DiagnosticCategoryId? = null,
     sessionViewModel: RunAllTestsViewModel = hiltViewModel(),
     deviceViewModel: DeviceInfoViewModel = hiltViewModel(),
     performanceViewModel: PerformanceInfoViewModel = hiltViewModel(),
@@ -285,44 +288,63 @@ fun RunAllTestsScreen(
             return@LaunchedEffect
         }
         when (stage) {
-            RunAllStage.PREFLIGHT,
-            RunAllStage.PERMISSIONS -> Unit
+            RunAllStage.PREFLIGHT -> Unit
+
+            RunAllStage.PERMISSIONS -> {
+                val retestCategory = sessionState.targetCategory
+                if (retestCategory != null && !requiresPermissionReview(retestCategory)) {
+                    sessionViewModel.onPermissionsResolved(currentPermissions(context))
+                }
+            }
 
             RunAllStage.AUTOMATIC -> {
-                withTimeoutOrNull(DEVICE_INFO_TIMEOUT_MS) {
-                    deviceViewModel.state.first { !it.isLoading }
-                }
-                withTimeoutOrNull(DEVICE_INFO_TIMEOUT_MS) {
-                    simViewModel.state.first { !it.isLoading }
-                }
-                withTimeoutOrNull(PERFORMANCE_TIMEOUT_MS) {
-                    performanceViewModel.state.first { !it.isInfoLoading }
-                    performanceViewModel.startBenchmark()
-                    performanceViewModel.state.first { it.benchmarkPhase != BenchmarkPhase.RUNNING }
-                }
-                if (sessionState.selections.includeStorageBenchmark) {
-                    val storageCompleted =
-                        withTimeoutOrNull(STORAGE_TIMEOUT_MS) {
-                            storageViewModel.state.first { !it.isInfoLoading }
-                            storageViewModel.startBenchmark()
-                            storageViewModel.state.first {
-                                it.benchmarkPhase != StorageBenchmarkPhase.RUNNING
-                            }
-                        } != null
-                    if (!storageCompleted) storageViewModel.cancelBenchmark()
-                } else {
-                    storageViewModel.skipBenchmark()
-                }
-                audioViewModel.updateHeadphoneState()
-                connectivityViewModel.onPermissionsGranted()
-                if (sessionState.selections.includeMicrophone && sessionState.permissions.microphone) {
-                    audioViewModel.startRecording(AUTOMATIC_MICROPHONE_DURATION_MS)
-                    withTimeoutOrNull(AUTOMATIC_MICROPHONE_TIMEOUT_MS) {
-                        while (audioViewModel.state.value.isRecording) {
-                            delay(AUTOMATIC_STATE_POLL_INTERVAL_MS)
-                        }
+                val retestCategory = sessionState.targetCategory
+                if (retestCategory == null || retestCategory == DiagnosticCategoryId.DEVICE) {
+                    withTimeoutOrNull(DEVICE_INFO_TIMEOUT_MS) {
+                        deviceViewModel.state.first { !it.isLoading }
                     }
-                    audioViewModel.stopRecording()
+                }
+                if (retestCategory == null || retestCategory == DiagnosticCategoryId.SIM) {
+                    withTimeoutOrNull(DEVICE_INFO_TIMEOUT_MS) {
+                        simViewModel.state.first { !it.isLoading }
+                    }
+                }
+                if (retestCategory == null || retestCategory == DiagnosticCategoryId.PERFORMANCE) {
+                    withTimeoutOrNull(PERFORMANCE_TIMEOUT_MS) {
+                        performanceViewModel.state.first { !it.isInfoLoading }
+                        performanceViewModel.startBenchmark()
+                        performanceViewModel.state.first { it.benchmarkPhase != BenchmarkPhase.RUNNING }
+                    }
+                }
+                if (retestCategory == null || retestCategory == DiagnosticCategoryId.STORAGE) {
+                    if (sessionState.selections.includeStorageBenchmark) {
+                        val storageCompleted =
+                            withTimeoutOrNull(STORAGE_TIMEOUT_MS) {
+                                storageViewModel.state.first { !it.isInfoLoading }
+                                storageViewModel.startBenchmark()
+                                storageViewModel.state.first {
+                                    it.benchmarkPhase != StorageBenchmarkPhase.RUNNING
+                                }
+                            } != null
+                        if (!storageCompleted) storageViewModel.cancelBenchmark()
+                    } else {
+                        storageViewModel.skipBenchmark()
+                    }
+                }
+                if (retestCategory == null || retestCategory == DiagnosticCategoryId.AUDIO) {
+                    audioViewModel.updateHeadphoneState()
+                    if (sessionState.selections.includeMicrophone && sessionState.permissions.microphone) {
+                        audioViewModel.startRecording(AUTOMATIC_MICROPHONE_DURATION_MS)
+                        withTimeoutOrNull(AUTOMATIC_MICROPHONE_TIMEOUT_MS) {
+                            while (audioViewModel.state.value.isRecording) {
+                                delay(AUTOMATIC_STATE_POLL_INTERVAL_MS)
+                            }
+                        }
+                        audioViewModel.stopRecording()
+                    }
+                }
+                if (retestCategory == null || retestCategory == DiagnosticCategoryId.CONNECTIVITY) {
+                    connectivityViewModel.onPermissionsGranted()
                 }
                 sessionViewModel.onAutomaticChecksComplete(token)
             }
@@ -508,23 +530,40 @@ fun RunAllTestsScreen(
 
     when (sessionState.stage) {
         RunAllStage.PREFLIGHT ->
-            FullCheckPreflightScreen(
-                selections = sessionState.selections,
-                onSelectionsChange = sessionViewModel::updateSelections,
-                onContinue = {
-                    sessionViewModel.onPreflightAccepted(
-                        selections = sessionState.selections,
-                        hardware = hardwareProfile,
-                    )
-                },
-                modifier = modifier,
-            )
+            if (targetCategory == null) {
+                FullCheckPreflightScreen(
+                    selections = sessionState.selections,
+                    onSelectionsChange = sessionViewModel::updateSelections,
+                    onContinue = {
+                        sessionViewModel.onPreflightAccepted(
+                            selections = sessionState.selections,
+                            hardware = hardwareProfile,
+                        )
+                    },
+                    modifier = modifier,
+                )
+            } else {
+                CategoryRetestPreflightScreen(
+                    categoryLabel =
+                        stringResource(
+                            diagnosticDestinations.first { it.category == targetCategory }.labelResId,
+                        ),
+                    onStart = {
+                        sessionViewModel.onCategoryRetestRequested(targetCategory, hardwareProfile)
+                    },
+                    onCancel = onDone,
+                    modifier = modifier,
+                )
+            }
 
         RunAllStage.PERMISSIONS ->
             PermissionReviewScreen(
                 prompts =
                     listOfNotNull(
-                        if (sessionState.selections.includeMicrophone) {
+                        if ((sessionState.targetCategory == null ||
+                                sessionState.targetCategory == DiagnosticCategoryId.AUDIO) &&
+                            sessionState.selections.includeMicrophone
+                        ) {
                             PermissionPrompt(
                                 state = microphonePermission.state,
                                 rationale = stringResource(R.string.permission_rationale_microphone),
@@ -534,7 +573,10 @@ fun RunAllTestsScreen(
                         } else {
                             null
                         },
-                        if (sessionState.selections.includeCamera) {
+                        if ((sessionState.targetCategory == null ||
+                                sessionState.targetCategory == DiagnosticCategoryId.CAMERA) &&
+                            sessionState.selections.includeCamera
+                        ) {
                             PermissionPrompt(
                                 state = cameraPermission.state,
                                 rationale = stringResource(R.string.permission_rationale_camera),
@@ -544,24 +586,42 @@ fun RunAllTestsScreen(
                         } else {
                             null
                         },
-                        PermissionPrompt(
-                            state = locationPermission.state,
-                            rationale = stringResource(R.string.permission_rationale_location),
-                            onRequest = { requestPermission(locationPermission) },
-                            onOpenSettings = locationPermission::openSettings,
-                        ),
-                        PermissionPrompt(
-                            state = phonePermission.state,
-                            rationale = stringResource(R.string.permission_rationale_phone),
-                            onRequest = { requestPermission(phonePermission) },
-                            onOpenSettings = phonePermission::openSettings,
-                        ),
-                        PermissionPrompt(
-                            state = bluetoothPermission.state,
-                            rationale = stringResource(R.string.permission_rationale_bluetooth),
-                            onRequest = { requestPermission(bluetoothPermission) },
-                            onOpenSettings = bluetoothPermission::openSettings,
-                        ),
+                        if (sessionState.targetCategory == null ||
+                            sessionState.targetCategory == DiagnosticCategoryId.CONNECTIVITY
+                        ) {
+                            PermissionPrompt(
+                                state = locationPermission.state,
+                                rationale = stringResource(R.string.permission_rationale_location),
+                                onRequest = { requestPermission(locationPermission) },
+                                onOpenSettings = locationPermission::openSettings,
+                            )
+                        } else {
+                            null
+                        },
+                        if (sessionState.targetCategory == null ||
+                            sessionState.targetCategory == DiagnosticCategoryId.SIM
+                        ) {
+                            PermissionPrompt(
+                                state = phonePermission.state,
+                                rationale = stringResource(R.string.permission_rationale_phone),
+                                onRequest = { requestPermission(phonePermission) },
+                                onOpenSettings = phonePermission::openSettings,
+                            )
+                        } else {
+                            null
+                        },
+                        if (sessionState.targetCategory == null ||
+                            sessionState.targetCategory == DiagnosticCategoryId.CONNECTIVITY
+                        ) {
+                            PermissionPrompt(
+                                state = bluetoothPermission.state,
+                                rationale = stringResource(R.string.permission_rationale_bluetooth),
+                                onRequest = { requestPermission(bluetoothPermission) },
+                                onOpenSettings = bluetoothPermission::openSettings,
+                            )
+                        } else {
+                            null
+                        },
                     ),
                 onContinue = {
                     permissionControllers.forEach(PermissionController::refresh)
@@ -783,6 +843,12 @@ fun RunAllTestsScreen(
                     onOpenCategory = onOpenCategory,
                     onDone = onDone,
                     modifier = modifier.fillMaxSize(),
+                    mode =
+                        if (sessionState.targetCategory == null) {
+                            ReportResultMode.COMPLETED_RUN
+                        } else {
+                            ReportResultMode.SAVED_REPORT
+                        },
                 )
             } ?: AutomaticCheckScreen(
                 title = stringResource(R.string.run_all_results_title),
@@ -807,6 +873,12 @@ private fun currentPermissions(context: Context): RunAllPermissions =
             Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
                 permissionGranted(context, Manifest.permission.BLUETOOTH_CONNECT),
     )
+
+private fun requiresPermissionReview(categoryId: DiagnosticCategoryId): Boolean =
+    categoryId == DiagnosticCategoryId.AUDIO ||
+        categoryId == DiagnosticCategoryId.CAMERA ||
+        categoryId == DiagnosticCategoryId.SIM ||
+        categoryId == DiagnosticCategoryId.CONNECTIVITY
 
 private fun permissionGranted(
     context: Context,

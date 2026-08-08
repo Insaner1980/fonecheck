@@ -6,9 +6,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
+import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.ui.screens.audio.AudioTestScreen
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestScreen
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestScreen
@@ -19,6 +23,7 @@ import com.insaner.fonecheck.ui.screens.deviceinfo.DeviceInfoScreen
 import com.insaner.fonecheck.ui.screens.display.DisplayTestScreen
 import com.insaner.fonecheck.ui.screens.home.HomeScreen
 import com.insaner.fonecheck.ui.screens.performance.PerformanceInfoScreen
+import com.insaner.fonecheck.ui.screens.report.ReportDetailRoute
 import com.insaner.fonecheck.ui.screens.runall.RunAllTestsScreen
 import com.insaner.fonecheck.ui.screens.sensor.SensorTestScreen
 import com.insaner.fonecheck.ui.screens.simtelephony.SimTelephonyScreen
@@ -96,7 +101,24 @@ fun FonecheckNavHost(
             PlaceholderScreen("Settings")
         }
         composable<Report> {
-            PlaceholderScreen("Report")
+            ReportDetailRoute(
+                onBack = { navController.popBackStack() },
+                onRetest = { route -> navController.navigate(route) },
+            )
+        }
+        composable<CategoryRetest> { backStackEntry ->
+            val route = backStackEntry.toRoute<CategoryRetest>()
+            val category = DiagnosticCategoryId.entries.firstOrNull { it.stableId == route.categoryId }
+            if (category == null) {
+                PlaceholderScreen(stringResource(R.string.report_retest_unavailable))
+            } else {
+                RunAllTestsScreen(
+                    onDone = { navController.popBackStack() },
+                    onOpenCategory = { destination -> navController.navigate(destination) },
+                    onDisplayFullscreenChanged = onDisplayFullscreenChanged,
+                    targetCategory = category,
+                )
+            }
         }
         composable<History> {
             PlaceholderScreen("History")

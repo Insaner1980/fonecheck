@@ -238,6 +238,50 @@ fun PermissionReviewScreen(
 }
 
 @Composable
+fun CategoryRetestPreflightScreen(
+    categoryLabel: String,
+    onStart: () -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = stringResource(R.string.report_retest_title, categoryLabel),
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = stringResource(R.string.report_retest_description),
+            modifier = Modifier.padding(top = 10.dp),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Button(
+            onClick = onStart,
+            modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+        ) {
+            Text(stringResource(R.string.report_retest_start))
+        }
+        TextButton(
+            onClick = onCancel,
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        ) {
+            Text(stringResource(R.string.report_retest_cancel))
+        }
+    }
+}
+
+@Composable
 fun AutomaticCheckScreen(
     title: String,
     description: String,

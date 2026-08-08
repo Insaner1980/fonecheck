@@ -776,6 +776,14 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Suuret raportit ja pitkät lokalisoidut tekstit.
 - **Decision required:** Ei.
 
+#### Implementation/status log — 2026-08-08
+
+- Type-safe `Report(reportId)` -reitti lataa immutable-raportin vain `ReportRepositoryn` kautta. `ReportDetailViewModel` erottaa loading-, not found-, unsupported schema-, corrupt data- ja repository error -tilat ja tarjoaa virheisiin saman ID:n retryn ilman live-diagnostiikkastaten käyttöä.
+- Yhteinen report-renderer näyttää tallennetun device/app-kontekstin, paikallisen valmistumisajan, keston, raporttityypin ja ID:n sekä score-tilan, coveragen ja erilliset completed/warning/fail/not available/not tested -laskurit. Presenter täydentää puuttuvat kategoriat canonical 14 kategorian järjestykseen `NOT_TESTED`-riveinä muuttamatta eksplisiittistä `NOT_AVAILABLE`-tilaa.
+- Evidencerivit näyttävät tallennetun arvon, reasonin, lähteen, confidence-tason ja statuksen. Tuntemattomat stable text- ja reason-koodit saavat luettavan locale-neutralin fallbackin; pitkät arvot rivittyvät. Saved-tila nimeää avaustoiminnon `View saved evidence` -toiminnoksi ja erottaa sen live-`Retest`-reitistä.
+- `CategoryRetest(categoryId)` käyttää samaa orkestroijaa vain valitulle canonical-kategorialle, näyttää ennen aloitusta erillisen category-only-sopimuksen ja tallentaa tuoreen snapshotin uutena `CATEGORY_ONLY`-raporttina muuttamatta lähderaporttia. Permission review rajautuu kategorian tarvitsemiin lupiin; audio-retest suorittaa automaattisen mikrofonimittauksen ennen kaiuttimen käyttäjävahvistusta. Keskeytetty retest palaa aloitusvahvistukseen eikä käynnisty taustalta automaattisesti.
+- Presenter-, ViewModel-, planner- ja category-retest-unit-testit läpäisevät osana koko `:app:testDebugUnitTest`-ajoa. Saved report -Compose-testit kattavat complete/partial/category-only-, status-, pitkä arvo-, loading/not found/corrupt/error- ja retry/retest-polut ja niiden Android-testikäännös läpäisee. `:app:lintDebug` ja `:app:assembleDebug` läpäisevät. Fyysinen Compose-ajo odottaa laitetta, koska `adb devices -l` on tyhjä. `ktlintCheck` pysähtyy ennen linttausta samoihin 10 ktlint-artifaktin puuttuvaan dependency-verification-tietueeseen; käyttäjän metadataa tai keskeneräistä `PROJECT.md`:ää ei muokattu.
+
 ### 26. Implement History lifecycle, deletion, and entry actions
 
 - **Objective:** Korvata History-placeholder pysyvällä listalla.

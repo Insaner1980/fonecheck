@@ -7,4 +7,6 @@ data class TestResult(
     val detail: String?,
     val confidence: Confidence,
     val timestamp: Long,
+    val source: EvidenceSource? = null,
+    val reason: String? = null,
 )

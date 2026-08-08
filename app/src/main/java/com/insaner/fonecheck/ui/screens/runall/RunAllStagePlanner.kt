@@ -74,13 +74,23 @@ object RunAllStagePlanner {
         hardware: RunAllHardwareProfile,
         permissions: RunAllPermissions,
         selections: RunAllSelections,
+        categories: List<DiagnosticCategoryId> = DiagnosticCatalog.categories,
     ): RunAllPlan {
-        val categories =
-            DiagnosticCatalog.categories.map { categoryId ->
+        require(categories.distinct().size == categories.size)
+        val categoryPlans =
+            categories.map { categoryId ->
                 categoryPlan(categoryId, hardware, permissions, selections)
             }
-        val stages = categories.mapNotNull(RunAllCategoryPlan::stage).distinct() + RunAllStage.RESULTS
-        return RunAllPlan(categories = categories, stages = stages)
+        val automaticPrerequisites =
+            if (DiagnosticCategoryId.AUDIO in categories && selections.includeMicrophone) {
+                listOf(RunAllStage.AUTOMATIC)
+            } else {
+                emptyList()
+            }
+        val stages =
+            (automaticPrerequisites + categoryPlans.mapNotNull(RunAllCategoryPlan::stage)).distinct() +
+                RunAllStage.RESULTS
+        return RunAllPlan(categories = categoryPlans, stages = stages)
     }
 
     private fun categoryPlan(
