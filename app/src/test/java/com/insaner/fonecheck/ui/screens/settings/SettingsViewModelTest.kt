@@ -83,7 +83,7 @@ class SettingsViewModelTest {
 
             viewModel.reopenOnboarding()
             advanceUntilIdle()
-            assertFalse(preferences.values.value.onboardingComplete)
+            assertTrue(preferences.values.value.onboardingComplete)
             assertTrue(viewModel.state.value.openOnboarding)
             viewModel.consumeOpenOnboarding()
             assertFalse(viewModel.state.value.openOnboarding)

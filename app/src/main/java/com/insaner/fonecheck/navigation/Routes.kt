@@ -57,7 +57,9 @@ object Settings
 object Licenses
 
 @Serializable
-object Onboarding
+data class Onboarding(
+    val reopened: Boolean = false,
+)
 
 @Serializable
 data class Report(

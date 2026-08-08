@@ -26,6 +26,7 @@ import com.insaner.fonecheck.ui.screens.display.DisplayTestScreen
 import com.insaner.fonecheck.ui.screens.export.ReportExportRoute
 import com.insaner.fonecheck.ui.screens.home.HomeScreen
 import com.insaner.fonecheck.ui.screens.history.HistoryRoute
+import com.insaner.fonecheck.ui.screens.onboarding.OnboardingRoute
 import com.insaner.fonecheck.ui.screens.performance.PerformanceInfoScreen
 import com.insaner.fonecheck.ui.screens.report.ReportDetailRoute
 import com.insaner.fonecheck.ui.screens.runall.RunAllTestsScreen
@@ -46,7 +47,7 @@ fun FonecheckNavHost(
 ) {
     NavHost(
         navController = navController,
-        startDestination = Home,
+        startDestination = initialDestination(appPreferences),
         modifier = modifier,
     ) {
         composable<Home> {
@@ -108,11 +109,25 @@ fun FonecheckNavHost(
         composable<Settings> {
             SettingsRoute(
                 onOpenLicenses = { navController.navigate(Licenses) },
-                onOpenOnboarding = { navController.navigate(Onboarding) },
+                onOpenOnboarding = { navController.navigate(Onboarding(reopened = true)) },
             )
         }
         composable<Licenses> { LicensesScreen() }
-        composable<Onboarding> { PlaceholderScreen(stringResource(R.string.onboarding_placeholder)) }
+        composable<Onboarding> { backStackEntry ->
+            val route = backStackEntry.toRoute<Onboarding>()
+            OnboardingRoute(
+                onFinished = {
+                    if (route.reopened) {
+                        navController.popBackStack()
+                    } else {
+                        navController.navigate(Home) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                },
+            )
+        }
         composable<Report> {
             ReportDetailRoute(
                 onBack = { navController.popBackStack() },
@@ -123,7 +138,12 @@ fun FonecheckNavHost(
             val route = backStackEntry.toRoute<CategoryRetest>()
             val category = DiagnosticCategoryId.entries.firstOrNull { it.stableId == route.categoryId }
             if (category == null) {
-                PlaceholderScreen(stringResource(R.string.report_retest_unavailable))
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(stringResource(R.string.report_retest_unavailable))
+                }
             } else {
                 RunAllTestsScreen(
                     onDone = { navController.popBackStack() },
@@ -152,12 +172,5 @@ fun FonecheckNavHost(
     }
 }
 
-@Composable
-private fun PlaceholderScreen(title: String) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(title)
-    }
-}
+internal fun initialDestination(preferences: AppPreferences): Any =
+    if (preferences.onboardingComplete) Home else Onboarding()

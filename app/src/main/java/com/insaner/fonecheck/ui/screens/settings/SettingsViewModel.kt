@@ -131,18 +131,9 @@ class SettingsViewModel
             }
         }
 
-        fun reopenOnboarding() {
-            viewModelScope.launch {
-                try {
-                    withContext(ioDispatcher) { preferencesRepository.setOnboardingComplete(false) }
-                    _state.value = _state.value.copy(openOnboarding = true, error = null)
-                } catch (error: CancellationException) {
-                    throw error
-                } catch (_: Exception) {
-                    _state.value = _state.value.copy(error = SETTINGS_UPDATE_FAILED)
-                }
-            }
-        }
+    fun reopenOnboarding() {
+        _state.value = _state.value.copy(openOnboarding = true, error = null)
+    }
 
         fun consumeOpenOnboarding() {
             _state.value = _state.value.copy(openOnboarding = false)

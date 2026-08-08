@@ -36,7 +36,7 @@ class NavigationChromeTest {
                 RunAllTests::class.qualifiedName to R.string.home_run_all,
                 Settings::class.qualifiedName to R.string.settings_title,
                 Licenses::class.qualifiedName to R.string.licenses_title,
-                Onboarding::class.qualifiedName to R.string.onboarding_placeholder,
+                Onboarding::class.qualifiedName to R.string.onboarding_title,
                 History::class.qualifiedName to R.string.history_title,
             )
 

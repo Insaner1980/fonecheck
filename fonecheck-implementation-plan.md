@@ -992,6 +992,14 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Copy voi luvata enemmän kuin lopulliset diagnostiset rajat; tekstit johdetaan hyväksytystä target-statesta.
 - **Decision required:** Ei kohdan 1 jälkeen.
 
+#### Implementation/status log — 2026-08-08
+
+- Ensimmäinen NavHost luodaan vasta, kun DataStore-preference on luettu. Keskeneräinen ensimmäinen käynnistys alkaa type-safe `Onboarding`-reitiltä, mutta jo valmistunut käyttäjä menee suoraan Homeen ilman onboarding-välähdystä. Skip ja Start tallentavat valmistumisen ennen navigointia; tallennusvirhe jättää käyttäjän flow’hun ja tarjoaa retryn.
+- Kuusivaiheinen EN/FI-flow kattaa tervetulon, automaattisten ja manuaalisten testien mallin, local-only-yksityisyyden, tarvittaessa pyydettävät käyttöoikeudet, immutable report snapshotit ja tuotteen diagnostiset rajat. Onboarding ei sisällä permission launcher -kutsuja eikä pyydä vaarallisia lupia.
+- Sisältö käyttää scrollattavaa layoutia, semanttista sivuotsikkoa, progress-indikaattoria ja Material-painikkeita. Back/Next/Skip/Start pysyvät käytettävissä suurilla fonteilla; ensimmäisen käynnistyksen top bar ei näytä toimimatonta takaisin-painiketta, koska shell näyttää sen vain kun back stackissa on todellinen edeltäjä.
+- Settingsin Reopen onboarding avaa flow’n muuttamatta pysyvää completion-arvoa. Reopened-flow’n system back palaa Settingsiin, ja Skip/Start tallentaa arvon idempotentisti ennen paluuta. Näin pelkkä ohjeiden katselu ja keskeytys eivät muuta seuraavaa käynnistystä.
+- Start destination-, sivuraja-, persistence- ja Settings-reopen-unit-testit läpäisevät. 200 % font scale-, Next/Skip- ja final Start -Compose-testit kääntyvät. Yhdistetty `:app:testDebugUnitTest :app:compileDebugAndroidTestKotlin :app:lintDebug :app:assembleDebug` läpäisee. Fyysinen restart/landscape/TalkBack/theme-kierros odottaa laitetta, koska ADB:ssä ei ole laitetta; käyttäjän `PROJECT.md`-muutosta ei muokattu.
+
 ### 36. Complete cross-feature automated and instrumented verification
 
 - **Objective:** Todistaa integraatiot, joita yksittäisten kohtien testit eivät kata.

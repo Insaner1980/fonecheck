@@ -17,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -42,6 +43,7 @@ import androidx.navigation.compose.rememberNavController
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.data.preferences.AppPreferences
 import com.insaner.fonecheck.data.preferences.AppPreferencesRepository
+import com.insaner.fonecheck.data.preferences.AppThemeMode
 import com.insaner.fonecheck.navigation.FonecheckNavHost
 import com.insaner.fonecheck.navigation.navigationChromeFor
 import com.insaner.fonecheck.ui.screens.buttons.VolumeButtonEventSource
@@ -49,6 +51,7 @@ import com.insaner.fonecheck.ui.screens.buttons.VolumeButtonKeyMapper
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlinx.coroutines.flow.map
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
@@ -109,14 +112,24 @@ class MainActivity : FragmentActivity() {
 
         enableEdgeToEdge()
         setContent {
+            val preferenceFlow =
+                remember(appPreferencesRepository) {
+                    appPreferencesRepository.preferences.map<AppPreferences, AppPreferences?> { it }
+                }
             val preferences by
-                appPreferencesRepository.preferences.collectAsStateWithLifecycle(
-                    initialValue = AppPreferences(),
+                preferenceFlow.collectAsStateWithLifecycle(
+                    initialValue = null,
                 )
-            val darkTheme = preferences.themeMode.resolveDarkTheme(isSystemInDarkTheme())
+            val darkTheme =
+                (preferences?.themeMode ?: AppThemeMode.SYSTEM).resolveDarkTheme(isSystemInDarkTheme())
             FonecheckTheme(
                 darkTheme = darkTheme,
             ) {
+                val loadedPreferences = preferences
+                if (loadedPreferences == null) {
+                    Surface(modifier = Modifier.fillMaxSize()) {}
+                    return@FonecheckTheme
+                }
                 val navController = rememberNavController()
                 val backStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = backStackEntry?.destination?.route
@@ -160,7 +173,10 @@ class MainActivity : FragmentActivity() {
                                     )
                                 },
                                 navigationIcon = {
-                                    if (navigationChrome.showBackAction) {
+                                    if (
+                                        navigationChrome.showBackAction &&
+                                        navController.previousBackStackEntry != null
+                                    ) {
                                         IconButton(onClick = { navController.popBackStack() }) {
                                             Icon(
                                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -180,7 +196,7 @@ class MainActivity : FragmentActivity() {
                 ) { innerPadding ->
                     FonecheckNavHost(
                         navController = navController,
-                        appPreferences = preferences,
+                        appPreferences = loadedPreferences,
                         modifier =
                             if (isDisplayFullscreen) {
                                 Modifier.fillMaxSize()

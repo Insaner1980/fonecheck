@@ -28,7 +28,8 @@ internal fun navigationChromeFor(route: String?): NavigationChrome =
         route.matches(RunAllTests) -> NavigationChrome(R.string.home_run_all, showBackAction = true)
         route.matches(Settings) -> NavigationChrome(R.string.settings_title, showBackAction = true)
         route.matches(Licenses) -> NavigationChrome(R.string.licenses_title, showBackAction = true)
-        route.matches(Onboarding) -> NavigationChrome(R.string.onboarding_placeholder, showBackAction = true)
+        route.matches(Onboarding::class.qualifiedName) ->
+            NavigationChrome(R.string.onboarding_title, showBackAction = true)
         route.matches(Report::class.qualifiedName) ->
             NavigationChrome(R.string.report_saved_title, showBackAction = true)
         route.matches(CategoryRetest::class.qualifiedName) ->
