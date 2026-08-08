@@ -1014,6 +1014,13 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Hardware-API:a ei voi todistaa pelkillä fakeilla; fyysinen matriisi on erillinen kohta.
 - **Decision required:** Ei.
 
+#### Implementation/status log — 2026-08-08
+
+- `docs/test-inventory.md` mapittaa catalog/navigation-, permission-, Full Check-, Room/persistence-, History/detail/retest-, Comparison-, PDF/JSON Export-, Settings-, Onboarding-, accessibility-, locale- ja hardware-policy-riskit olemassa oleviin JVM- ja Android-suiteihin. Inventaario erottaa testilähteen kääntymisen aidosta suorituksesta.
+- `:app:testDebugUnitTest` suoritti 212 testiä: 0 failures, 0 errors, 0 skipped. Samassa varmennusketjussa `:app:compileDebugAndroidTestKotlin`, `:app:lintDebug` ja `:app:assembleDebug` läpäisivät. Android-lähteissä on 43 instrumentoitua testimetodia, ja niiden app/test-APK:t rakentuvat.
+- `:app:connectedDebugAndroidTest` käynnistettiin Codexista. Build eteni test-APK:n paketointiin mutta pysähtyi ennen yhtään testimetodia virheeseen `DeviceException: No connected devices!`. SDK:ssa ei ole AVD:tä tai asennettua system imagea. Siksi instrumentoitua suoritusosuutta ei merkitä läpäistyksi eikä kohdan koko acceptancea valmiiksi.
+- Käyttäjän `PROJECT.md`-muutosta ei muokattu; test inventory on erillisessä docs-tiedostossa, kunnes projektidokumentin käyttäjämuutos voidaan turvallisesti yhdistää.
+
 ### 37. Execute hardware, OEM, API-level, and lifecycle QA
 
 - **Objective:** Varmistaa julkisiin Android API:eihin perustuvan käytöksen oikeellisuus todellisilla laitteilla.
@@ -1027,6 +1034,12 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Documentation:** Laitemalli/API/build/result/issue kirjataan QA-matriisiin ilman sensitiivisiä tunnisteita.
 - **Risks:** Kaikkea laitteistoa ei välttämättä ole saatavilla; puuttuva kattavuus raportoidaan avoimesti.
 - **Decision required:** Mahdollisesti laitteiden saatavuudesta, ei tuotteen semantiikasta.
+
+#### Implementation/status log — 2026-08-08
+
+- `docs/hardware-qa-matrix.md` määrittää API 26/29/31/33/34/36 -rajat, no-telephony-, single/dual-SIM-, camera-, sensor-, BLE/NFC-, biometric-, audio-, low-storage- ja thermal-profiilit sekä accessibility-, lifecycle- ja report/share-virrat. Jokainen rivi on rehellisesti `NOT RUN` ilman laite-evidenssiä.
+- Paikallinen ADB-lista on tyhjä. Emulator executable löytyy Android SDK:sta, mutta AVD-lista ja asennetut system imaget ovat tyhjiä. Fyysistä hardware/OEM/API/lifecycle-QA:ta ei voi suorittaa nykyisessä ympäristössä eikä kohdan acceptancea merkitä valmiiksi.
+- JVM:n API-boundary-, permission-, reducer-, timeout- ja resource-cleanup-testit läpäisevät, mutta niitä ei kirjata fyysisen hardware-käytöksen todisteeksi.
 
 ### 38. Prepare release configuration, R8, dependencies, and security
 
