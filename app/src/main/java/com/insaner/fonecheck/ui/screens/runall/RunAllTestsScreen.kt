@@ -1,4 +1,4 @@
-@file:Suppress("ktlint:compose:multiple-emitters-check")
+@file:Suppress("ktlint:compose:multiple-emitters-check", "MultipleEmitters")
 
 package com.insaner.fonecheck.ui.screens.runall
 
@@ -286,11 +286,15 @@ fun RunAllTestsScreen(
     LaunchedEffect(sessionState.stageToken) {
         val stage = sessionState.stage
         val token = sessionState.stageToken
-        if (stage != RunAllStage.PREFLIGHT &&
-            stage != RunAllStage.PERMISSIONS &&
-            stage != RunAllStage.RESULTS &&
-            !sessionViewModel.claimStage(token)
-        ) {
+        val requiresClaim =
+            when (stage) {
+                RunAllStage.PREFLIGHT,
+                RunAllStage.PERMISSIONS,
+                RunAllStage.RESULTS,
+                -> false
+                else -> true
+            }
+        if (requiresClaim && !sessionViewModel.claimStage(token)) {
             return@LaunchedEffect
         }
         when (stage) {

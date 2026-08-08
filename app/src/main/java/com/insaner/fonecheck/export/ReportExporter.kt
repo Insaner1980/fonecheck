@@ -37,9 +37,8 @@ class AndroidReportExporter
                 temporaryFile.outputStream().buffered().use { pdfRenderer.render(report, it) }
                 if (outputFile.exists()) check(outputFile.delete()) { "Could not replace PDF export." }
                 check(temporaryFile.renameTo(outputFile)) { "Could not finalize PDF export." }
-            } catch (error: Exception) {
-                temporaryFile.delete()
-                throw error
+            } finally {
+                if (temporaryFile.exists()) temporaryFile.delete()
             }
             return ExportedReport(
                 uri =
@@ -65,9 +64,8 @@ class AndroidReportExporter
                 temporaryFile.writeText(ReportPayloadCodec.encode(report), Charsets.UTF_8)
                 if (outputFile.exists()) check(outputFile.delete()) { "Could not replace JSON export." }
                 check(temporaryFile.renameTo(outputFile)) { "Could not finalize JSON export." }
-            } catch (error: Exception) {
-                temporaryFile.delete()
-                throw error
+            } finally {
+                if (temporaryFile.exists()) temporaryFile.delete()
             }
             return ExportedReport(
                 uri =

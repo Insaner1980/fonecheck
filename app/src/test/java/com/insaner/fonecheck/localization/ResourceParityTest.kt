@@ -33,10 +33,11 @@ class ResourceParityTest {
         val nodes = document.documentElement.childNodes
         return buildSet {
             for (index in 0 until nodes.length) {
-                val element = nodes.item(index) as? Element ?: continue
-                if (element.getAttribute("translatable") == "false") continue
-                val name = element.getAttribute("name")
-                if (name.isNotBlank()) add("${element.tagName}:$name")
+                val element = nodes.item(index) as? Element
+                if (element != null && element.getAttribute("translatable") != "false") {
+                    val name = element.getAttribute("name")
+                    if (name.isNotBlank()) add("${element.tagName}:$name")
+                }
             }
         }
     }

@@ -66,6 +66,7 @@ data class DiagnosticSnapshots(
     val biometrics: BiometricTestState,
 )
 
+@Suppress("LargeClass", "TooManyFunctions") // One canonical mapper owns every diagnostic category.
 object RunAllSnapshotMapper {
     fun map(
         snapshots: DiagnosticSnapshots,
@@ -787,6 +788,7 @@ object RunAllSnapshotMapper {
             unavailable(DiagnosticCategoryId.CONNECTIVITY, id, capturedAt)
         }
 
+    @Suppress("LongMethod") // Keeps the battery category's related evidence mapping atomic.
     private fun batteryEvidence(
         snapshots: DiagnosticSnapshots,
         capturedAt: Instant,

@@ -121,6 +121,7 @@ data class RunAllTestsState(
 }
 
 @HiltViewModel
+@Suppress("TooManyFunctions") // The state machine exposes one event method per diagnostic stage.
 class RunAllTestsViewModel
     @Inject
     constructor(
@@ -217,14 +218,15 @@ class RunAllTestsViewModel
 
         fun claimStage(token: Long): Boolean {
             val current = _state.value
-            if (!isCurrentStage(token) ||
-                current.stage == RunAllStage.PREFLIGHT ||
-                current.stage == RunAllStage.PERMISSIONS ||
-                current.stage == RunAllStage.RESULTS ||
-                claimedStageToken == token
-            ) {
-                return false
-            }
+            val claimableStage =
+                when (current.stage) {
+                    RunAllStage.PREFLIGHT,
+                    RunAllStage.PERMISSIONS,
+                    RunAllStage.RESULTS,
+                    -> false
+                    else -> true
+                }
+            if (!isCurrentStage(token) || !claimableStage || claimedStageToken == token) return false
             claimedStageToken = token
             scheduleTimeout(token, current.stage)
             return true

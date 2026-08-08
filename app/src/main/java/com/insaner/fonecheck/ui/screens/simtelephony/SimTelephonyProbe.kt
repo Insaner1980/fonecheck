@@ -85,19 +85,21 @@ object SimTelephonyProbe {
     fun inventory(
         hasTelephonyHardware: Boolean,
         slots: List<SimSlotInfo>,
-    ): SimInventoryCode {
-        if (!hasTelephonyHardware) return SimInventoryCode.NO_TELEPHONY
-        val activeCount = slots.count { it.activity == SimActivityCode.ACTIVE }
-        if (activeCount > 1) return SimInventoryCode.MULTIPLE_SIM
-        if (activeCount == 1) return SimInventoryCode.SINGLE_SIM
-        if (slots.isNotEmpty() && slots.all { it.state == SimSlotStateCode.ABSENT }) {
-            return SimInventoryCode.NO_SIM
+    ): SimInventoryCode =
+        if (!hasTelephonyHardware) {
+            SimInventoryCode.NO_TELEPHONY
+        } else {
+            val activeCount = slots.count { it.activity == SimActivityCode.ACTIVE }
+            when {
+                activeCount > 1 -> SimInventoryCode.MULTIPLE_SIM
+                activeCount == 1 -> SimInventoryCode.SINGLE_SIM
+                slots.isNotEmpty() && slots.all { it.state == SimSlotStateCode.ABSENT } -> SimInventoryCode.NO_SIM
+                slots.any {
+                    it.state != SimSlotStateCode.ABSENT && it.state != SimSlotStateCode.UNKNOWN
+                } -> SimInventoryCode.INACTIVE_SIM
+                else -> SimInventoryCode.UNKNOWN
+            }
         }
-        if (slots.any { it.state != SimSlotStateCode.ABSENT && it.state != SimSlotStateCode.UNKNOWN }) {
-            return SimInventoryCode.INACTIVE_SIM
-        }
-        return SimInventoryCode.UNKNOWN
-    }
 
     fun modemCount(
         sdkInt: Int,

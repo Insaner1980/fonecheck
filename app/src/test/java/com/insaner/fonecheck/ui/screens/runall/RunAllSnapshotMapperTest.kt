@@ -69,6 +69,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Instant
 
+@Suppress("LargeClass") // Mirrors the canonical mapper's complete category contract in one suite.
 class RunAllSnapshotMapperTest {
     @Test
     fun mapProducesCurrentCatalogOrderedSnapshotsWithoutSensitiveConnectivityValues() {

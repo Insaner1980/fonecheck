@@ -1,3 +1,5 @@
+@file:Suppress("MatchingDeclarationName")
+
 package com.insaner.fonecheck.ui.components
 
 import androidx.annotation.StringRes

@@ -75,6 +75,7 @@ class MainActivity : FragmentActivity() {
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
+    @Suppress("LongMethod") // Activity-level window, theme, and navigation wiring is kept together.
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashStartedAt = SystemClock.uptimeMillis()
         val splashScreen = installSplashScreen()

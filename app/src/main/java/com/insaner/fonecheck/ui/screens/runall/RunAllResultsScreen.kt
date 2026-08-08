@@ -1,3 +1,5 @@
+@file:Suppress("MatchingDeclarationName")
+
 package com.insaner.fonecheck.ui.screens.runall
 
 import android.text.format.Formatter

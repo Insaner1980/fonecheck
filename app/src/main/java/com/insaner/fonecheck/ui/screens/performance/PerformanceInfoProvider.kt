@@ -182,14 +182,16 @@ private class AndroidGlInfoSession : GlInfoSession {
     }
 
     companion object {
-        fun open(): AndroidGlInfoSession =
-            AndroidGlInfoSession().also { session ->
-                try {
-                    session.initialize()
-                } catch (error: Exception) {
-                    session.close()
-                    throw error
-                }
+        fun open(): AndroidGlInfoSession {
+            val session = AndroidGlInfoSession()
+            var initialized = false
+            try {
+                session.initialize()
+                initialized = true
+                return session
+            } finally {
+                if (!initialized) session.close()
             }
+        }
     }
 }

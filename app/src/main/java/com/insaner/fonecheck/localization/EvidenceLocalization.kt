@@ -28,6 +28,7 @@ fun evidenceReasonStringRes(reason: EvidenceReasonCode): Int? =
     }
 
 @StringRes
+@Suppress("CyclomaticComplexMethod") // Exhaustive stable-ID to resource lookup.
 fun evidenceLabelStringRes(checkId: String): Int? =
     when (checkId) {
         "device.identity" -> R.string.device_info_title
@@ -110,6 +111,7 @@ fun evidenceLabelStringRes(checkId: String): Int? =
     }
 
 @StringRes
+@Suppress("CyclomaticComplexMethod") // Exhaustive persisted-code to resource lookup.
 fun stableTextStringRes(code: String): Int? =
     when (code) {
         "good" -> R.string.batt_health_good

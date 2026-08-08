@@ -8,7 +8,9 @@ object BatteryLevelNormalizer {
         level: Int?,
         scale: Int?,
     ): Int? {
-        if (level == null || scale == null || level < 0 || scale <= 0 || level > scale) return null
+        if (level == null || scale == null) return null
+        if (level < 0 || scale <= 0) return null
+        if (level > scale) return null
         return ((level.toLong() * 100L) / scale).toInt()
     }
 }

@@ -40,12 +40,7 @@ fun PermissionStatusCard(
                     },
             )
 
-            if (
-                state == PermissionState.NOT_REQUESTED ||
-                state == PermissionState.DENIED ||
-                state == PermissionState.SETTINGS_RECOVERY ||
-                state == PermissionState.PARTIAL
-            ) {
+            if (state.showsRationale()) {
                 Text(
                     text = rationale,
                     style = MaterialTheme.typography.bodySmall,
@@ -79,6 +74,19 @@ fun PermissionStatusCard(
         }
     }
 }
+
+private fun PermissionState.showsRationale(): Boolean =
+    when (this) {
+        PermissionState.NOT_REQUESTED,
+        PermissionState.DENIED,
+        PermissionState.SETTINGS_RECOVERY,
+        PermissionState.PARTIAL,
+        -> true
+        PermissionState.GRANTED,
+        PermissionState.NOT_REQUIRED,
+        PermissionState.HARDWARE_ABSENT,
+        -> false
+    }
 
 @Composable
 private fun PermissionButton(
