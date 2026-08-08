@@ -58,6 +58,8 @@ import com.insaner.fonecheck.ui.theme.Yellow400
 @Composable
 fun RunAllResultsScreen(
     report: DiagnosticReport,
+    saveStatus: ReportSaveStatus,
+    onRetrySave: () -> Unit,
     onOpenCategory: (Any) -> Unit,
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
@@ -93,6 +95,12 @@ fun RunAllResultsScreen(
     ) {
         item {
             ResultsSummaryCard(report.score.value, categories)
+        }
+
+        if (saveStatus != ReportSaveStatus.SAVED) {
+            item {
+                ReportSaveCard(saveStatus, onRetrySave)
+            }
         }
 
         if (attentionResults.isNotEmpty()) {
@@ -147,6 +155,7 @@ fun RunAllResultsScreen(
         item {
             Button(
                 onClick = onDone,
+                enabled = saveStatus == ReportSaveStatus.SAVED,
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -263,6 +272,40 @@ private fun ResultsSummaryCard(
                         ),
                         Neutral400,
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReportSaveCard(
+    status: ReportSaveStatus,
+    onRetry: () -> Unit,
+) {
+    StandardCard {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text =
+                    stringResource(
+                        if (status == ReportSaveStatus.FAILED) {
+                            R.string.run_all_save_failed
+                        } else {
+                            R.string.run_all_saving_report
+                        },
+                    ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (status == ReportSaveStatus.FAILED) {
+                Button(
+                    onClick = onRetry,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.run_all_retry_save))
                 }
             }
         }

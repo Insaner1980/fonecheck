@@ -2,6 +2,8 @@ package com.insaner.fonecheck.ui.screens.runall
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.insaner.fonecheck.data.repository.ReportLoadResult
+import com.insaner.fonecheck.data.repository.ReportRepository
 import com.insaner.fonecheck.domain.model.DiagnosticCategorySnapshot
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.ReportAppContext
@@ -14,6 +16,7 @@ import com.insaner.fonecheck.runtime.IdProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -57,6 +60,13 @@ enum class RunAllInterruptionReason {
     SCREEN_DISPOSED,
 }
 
+enum class ReportSaveStatus {
+    IDLE,
+    SAVING,
+    SAVED,
+    FAILED,
+}
+
 data class RunAllPermissions(
     val microphone: Boolean = false,
     val camera: Boolean = false,
@@ -91,6 +101,7 @@ data class RunAllTestsState(
     val cameraIndex: Int = 0,
     val stageIssue: RunAllStageOutcome? = null,
     val report: DiagnosticReport? = null,
+    val saveStatus: ReportSaveStatus = ReportSaveStatus.IDLE,
 ) {
     val progress: RunAllProgress?
         get() =
@@ -113,6 +124,7 @@ class RunAllTestsViewModel
     constructor(
         private val clock: EpochMillisClock,
         private val idProvider: IdProvider,
+        private val reportRepository: ReportRepository,
     ) : ViewModel() {
         private val _state = MutableStateFlow(RunAllTestsState())
         val state: StateFlow<RunAllTestsState> = _state
@@ -120,6 +132,7 @@ class RunAllTestsViewModel
         private var nextStageToken = 0L
         private var claimedStageToken: Long? = null
         private var stageTimeoutJob: Job? = null
+        private var reportSaveJob: Job? = null
         private var reportStartedAt: Instant? = null
 
         fun updateSelections(selections: RunAllSelections) {
@@ -366,7 +379,17 @@ class RunAllTestsViewModel
                 current.copy(
                     report = report,
                     runStatus = RunAllRunStatus.COMPLETED,
+                    saveStatus = ReportSaveStatus.SAVING,
                 )
+            persistFrozenReport(report)
+        }
+
+        fun retryReportSave() {
+            val current = _state.value
+            val report = current.report ?: return
+            if (current.saveStatus != ReportSaveStatus.FAILED) return
+            _state.value = current.copy(saveStatus = ReportSaveStatus.SAVING)
+            persistFrozenReport(report)
         }
 
         private fun finishStage(
@@ -463,10 +486,39 @@ class RunAllTestsViewModel
             stageTimeoutJob = null
         }
 
+        private fun persistFrozenReport(report: DiagnosticReport) {
+            if (reportSaveJob?.isActive == true) return
+            reportSaveJob =
+                viewModelScope.launch {
+                    val saved =
+                        try {
+                            reportRepository.insert(report)
+                            true
+                        } catch (error: CancellationException) {
+                            throw error
+                        } catch (_: Exception) {
+                            val existing = runCatching { reportRepository.getById(report.stableId) }.getOrNull()
+                            existing is ReportLoadResult.Available && existing.report == report
+                        }
+                    if (_state.value.report?.stableId == report.stableId) {
+                        _state.value =
+                            _state.value.copy(
+                                saveStatus =
+                                    if (saved) {
+                                        ReportSaveStatus.SAVED
+                                    } else {
+                                        ReportSaveStatus.FAILED
+                                    },
+                            )
+                    }
+                }
+        }
+
         private fun newToken(): Long = ++nextStageToken
 
         override fun onCleared() {
             cancelStageTimeout()
+            reportSaveJob?.cancel()
             super.onCleared()
         }
 

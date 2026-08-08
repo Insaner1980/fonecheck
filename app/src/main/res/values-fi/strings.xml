@@ -617,6 +617,9 @@
     <string name="run_all_hide_details">Piilota tiedot</string>
     <string name="run_all_open_test">Avaa yksittäinen testi</string>
     <string name="run_all_done">Valmis</string>
+    <string name="run_all_saving_report">Valmista raporttia tallennetaan tälle laitteelle…</string>
+    <string name="run_all_save_failed">Valmista raporttia ei voitu tallentaa. Mitattu snapshot on lukittu, eikä tallennuksen uusiminen suorita testejä uudelleen.</string>
+    <string name="run_all_retry_save">Yritä tallennusta uudelleen</string>
     <string name="run_all_status_pass">Läpäisty</string>
     <string name="run_all_status_warning">Varoitus</string>
     <string name="run_all_status_fail">Hylätty</string>

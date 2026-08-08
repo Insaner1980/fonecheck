@@ -754,6 +754,14 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Tallennusvirhe tulosruudulla; UI:n on tarjottava retry ilman report payloadin uudelleenmittausta.
 - **Decision required:** Kyllä, retest policy kohdassa 1.
 
+#### Implementation/status log — 2026-08-08
+
+- Results-token lukitsee nyt yhden `DiagnosticReport`-snapshotin, jossa ovat preflightin hyväksynnässä otettu `startedAt`, finalisoinnin `completedAt`, app/device-konteksti, 14 category snapshotia sekä saman immutable payloadin score ja coverage. Vain `RUNNING`-ajon nykyinen Results-token voi finalisoida; cancel, process death ennen finalisointia tai myöhäinen callback ei luo raporttia.
+- `RunAllTestsViewModel` insertoi frozen-raportin `ReportRepositoryyn` täsmälleen kerran. Duplicate completion säilyttää ensimmäisen report-instanssin. Mahdollisen epäselvän insert-virheen jälkeen sama ID luetaan takaisin ja identtinen payload hyväksytään jo tallennetuksi; muu virhe jättää saman snapshotin `FAILED`-tilaan retrytä varten.
+- Results UI näyttää tallennuksen etenemisen, estää poistumisen Done-painikkeella ennen onnistunutta tallennusta ja tarjoaa virheessä retryn ilman uutta ID:tä, aikaleimaa tai mittausta. Onnistunut raportti on tämän jälkeen Room-repositoryn kautta ladattavissa riippumatta alkuperäisestä ViewModel-instanssista.
+- `CategoryRetestFinalizer` jäädyttää hyväksytyn policy-ratkaisun mukaisen uuden `CATEGORY_ONLY`-raportin yhdestä canonical snapshotista ja tallentaa sen immutable-repositoryyn muuttamatta lähderaporttia. Task 25:n Report-detail kytkee tämän sopimuksen käyttäjän Retest-toimintoon; historiallista reporttia ei käytetä live-staten renderöintiin.
+- Unit-testit kattavat yhden insertin, duplicate completionin, failure → saman frozen payloadin retry -polun, uuden repository-lukijan restart-semanttiikan, cancelin ilman inserttiä ja category-only-retestin uuden ID:n/yhden kategorian. ResultsScreenin instrumentaatiotesti kattaa tallennusvirheen retry-toiminnon ja kääntyy. Koko `:app:testDebugUnitTest`, Android-testien Kotlin-käännös, `:app:lintDebug` ja `:app:assembleDebug` läpäisevät. Room/process-restart- ja Compose-testien fyysinen ajo odottaa laitetta; `adb devices -l` on edelleen tyhjä. `ktlintCheck` on edelleen estynyt ennen linttausta samoihin 10 käyttäjän dependency-verification-tietueeseen, eikä käyttäjän metadata- tai `PROJECT.md`-muutoksia muokattu.
+
 ### 25. Implement completed and saved Report detail
 
 - **Objective:** Korvata Report-placeholder täydellä raporttinäkymällä.

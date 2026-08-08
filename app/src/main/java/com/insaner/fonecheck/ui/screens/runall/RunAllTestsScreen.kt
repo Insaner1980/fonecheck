@@ -778,6 +778,8 @@ fun RunAllTestsScreen(
             sessionState.report?.let { report ->
                 RunAllResultsScreen(
                     report = report,
+                    saveStatus = sessionState.saveStatus,
+                    onRetrySave = sessionViewModel::retryReportSave,
                     onOpenCategory = onOpenCategory,
                     onDone = onDone,
                     modifier = modifier.fillMaxSize(),

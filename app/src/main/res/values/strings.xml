@@ -623,6 +623,9 @@
     <string name="run_all_hide_details">Hide details</string>
     <string name="run_all_open_test">Open individual test</string>
     <string name="run_all_done">Done</string>
+    <string name="run_all_saving_report">Saving the completed report on this device…</string>
+    <string name="run_all_save_failed">The completed report could not be saved. The measured snapshot is frozen; retrying will not run the checks again.</string>
+    <string name="run_all_retry_save">Retry saving</string>
     <string name="run_all_status_pass">Pass</string>
     <string name="run_all_status_warning">Warning</string>
     <string name="run_all_status_fail">Fail</string>

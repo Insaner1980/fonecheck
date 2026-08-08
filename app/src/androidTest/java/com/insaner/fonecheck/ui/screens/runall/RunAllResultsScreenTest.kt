@@ -3,6 +3,7 @@ package com.insaner.fonecheck.ui.screens.runall
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -29,6 +30,7 @@ import com.insaner.fonecheck.domain.model.ScoreVersion
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import java.time.Instant
 import org.junit.Rule
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -45,6 +47,8 @@ class RunAllResultsScreenTest {
             FonecheckTheme {
                 RunAllResultsScreen(
                     report = report(),
+                    saveStatus = ReportSaveStatus.SAVED,
+                    onRetrySave = {},
                     onOpenCategory = {},
                     onDone = {},
                 )
@@ -61,6 +65,30 @@ class RunAllResultsScreenTest {
             .onNodeWithText(context.getString(R.string.batt_health_dead))
             .performScrollTo()
             .assertIsDisplayed()
+    }
+
+    @Test
+    fun failedSaveOffersRetryWithoutReplacingTheReport() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        var retries = 0
+        composeRule.setContent {
+            FonecheckTheme {
+                RunAllResultsScreen(
+                    report = report(),
+                    saveStatus = ReportSaveStatus.FAILED,
+                    onRetrySave = { retries += 1 },
+                    onOpenCategory = {},
+                    onDone = {},
+                )
+            }
+        }
+
+        composeRule
+            .onNodeWithText(context.getString(R.string.run_all_retry_save))
+            .performScrollTo()
+            .performClick()
+
+        assertEquals(1, retries)
     }
 
     private fun report(): DiagnosticReport {

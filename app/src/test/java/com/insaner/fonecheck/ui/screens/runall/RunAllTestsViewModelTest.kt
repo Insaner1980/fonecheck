@@ -1,5 +1,7 @@
 package com.insaner.fonecheck.ui.screens.runall
 
+import com.insaner.fonecheck.data.repository.FakeReportRepository
+import com.insaner.fonecheck.data.repository.ReportLoadResult
 import com.insaner.fonecheck.domain.model.Applicability
 import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.domain.model.DiagnosticCatalog
@@ -175,7 +177,13 @@ class RunAllTestsViewModelTest {
 
     @Test
     fun cancelledRunRejectsLateReportCompletion() {
-        val viewModel = runAllViewModel()
+        val repository = FakeReportRepository()
+        val viewModel =
+            RunAllTestsViewModel(
+                clock = EpochMillisClock { 100L },
+                idProvider = IdProvider { "report" },
+                reportRepository = repository,
+            )
         enterResults(viewModel)
         val resultsToken = viewModel.state.value.stageToken
 
@@ -184,6 +192,7 @@ class RunAllTestsViewModelTest {
 
         assertEquals(RunAllStage.PREFLIGHT, viewModel.state.value.stage)
         assertEquals(null, viewModel.state.value.report)
+        assertTrue(repository.insertAttempts.isEmpty())
     }
 
     @Test
@@ -236,10 +245,12 @@ class RunAllTestsViewModelTest {
     fun completeReportUsesInjectedIdentityAndTimestamps() =
         runTest {
             val timestamps = listOf(100L, 200L).iterator()
+            val repository = FakeReportRepository()
             val viewModel =
                 RunAllTestsViewModel(
                     clock = EpochMillisClock { timestamps.next() },
                     idProvider = IdProvider { "report-123" },
+                    reportRepository = repository,
                 )
             enterResults(viewModel)
             val resultsToken = viewModel.state.value.stageToken
@@ -254,6 +265,9 @@ class RunAllTestsViewModelTest {
             assertEquals(deviceContext(), report.device)
             assertEquals(appContext(), report.app)
             assertEquals(DiagnosticCatalog.categories, report.categories.map { it.categoryId })
+            dispatcher.scheduler.runCurrent()
+            assertEquals(ReportSaveStatus.SAVED, viewModel.state.value.saveStatus)
+            assertEquals(listOf(report), repository.insertAttempts)
         }
 
     @Test
@@ -261,10 +275,12 @@ class RunAllTestsViewModelTest {
         runTest {
             var nextId = 1
             var nextTimestamp = 100L
+            val repository = FakeReportRepository()
             val viewModel =
                 RunAllTestsViewModel(
                     clock = EpochMillisClock { nextTimestamp++ },
                     idProvider = IdProvider { "report-${nextId++}" },
+                    reportRepository = repository,
                 )
             enterResults(viewModel)
             val resultsToken = viewModel.state.value.stageToken
@@ -279,6 +295,60 @@ class RunAllTestsViewModelTest {
             assertEquals("report-1", secondReport.stableId)
             assertEquals(Instant.ofEpochMilli(100L), secondReport.startedAt)
             assertEquals(Instant.ofEpochMilli(101L), secondReport.completedAt)
+            dispatcher.scheduler.runCurrent()
+            assertEquals(1, repository.insertAttempts.size)
+        }
+
+    @Test
+    fun failedSaveRetriesTheSameFrozenReportWithoutRemeasuring() =
+        runTest {
+            val repository = FakeReportRepository(insertFailuresRemaining = 1)
+            val viewModel =
+                RunAllTestsViewModel(
+                    clock = EpochMillisClock { 100L },
+                    idProvider = IdProvider { "report" },
+                    reportRepository = repository,
+                )
+            enterResults(viewModel)
+
+            viewModel.completeReport(
+                viewModel.state.value.stageToken,
+                deviceContext(),
+                appContext(),
+                completeSnapshots(),
+            )
+            dispatcher.scheduler.runCurrent()
+            val frozen = requireNotNull(viewModel.state.value.report)
+            assertEquals(ReportSaveStatus.FAILED, viewModel.state.value.saveStatus)
+
+            viewModel.retryReportSave()
+            dispatcher.scheduler.runCurrent()
+
+            assertEquals(ReportSaveStatus.SAVED, viewModel.state.value.saveStatus)
+            assertEquals(listOf(frozen, frozen), repository.insertAttempts)
+        }
+
+    @Test
+    fun savedReportIsAvailableToANewRepositoryReaderAfterCompletion() =
+        runTest {
+            val repository = FakeReportRepository()
+            val viewModel =
+                RunAllTestsViewModel(
+                    clock = EpochMillisClock { 100L },
+                    idProvider = IdProvider { "persisted" },
+                    reportRepository = repository,
+                )
+            enterResults(viewModel)
+            viewModel.completeReport(
+                viewModel.state.value.stageToken,
+                deviceContext(),
+                appContext(),
+                completeSnapshots(),
+            )
+            dispatcher.scheduler.runCurrent()
+
+            val loaded = repository.getById("persisted") as ReportLoadResult.Available
+            assertEquals(viewModel.state.value.report, loaded.report)
         }
 
     private fun completeSnapshots(): List<DiagnosticCategorySnapshot> =
@@ -318,6 +388,7 @@ class RunAllTestsViewModelTest {
         RunAllTestsViewModel(
             clock = EpochMillisClock { 100L },
             idProvider = IdProvider { "report" },
+            reportRepository = FakeReportRepository(),
         )
 
     private fun enterFirstInteractiveStage(viewModel: RunAllTestsViewModel) {
