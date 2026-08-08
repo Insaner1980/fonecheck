@@ -15,6 +15,7 @@ class FakeReportRepository(
     val insertAttempts = mutableListOf<DiagnosticReport>()
     private val reports = linkedMapOf<String, DiagnosticReport>()
     private val summaries = MutableStateFlow<List<SavedReportSummary>>(emptyList())
+    val getByIdOverrides = mutableMapOf<String, ReportLoadResult>()
     var summariesFlowOverride: Flow<List<SavedReportSummary>>? = null
 
     override suspend fun insert(report: DiagnosticReport) {
@@ -35,7 +36,8 @@ class FakeReportRepository(
             getByIdFailuresRemaining -= 1
             error("load_failed")
         }
-        return getByIdOverride
+        return getByIdOverrides[id]
+            ?: getByIdOverride
             ?: reports[id]?.let(ReportLoadResult::Available)
             ?: ReportLoadResult.NotFound
     }

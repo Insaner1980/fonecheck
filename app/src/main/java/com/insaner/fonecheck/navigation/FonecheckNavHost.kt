@@ -18,6 +18,7 @@ import com.insaner.fonecheck.ui.screens.battery.BatteryTestScreen
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestScreen
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestScreen
 import com.insaner.fonecheck.ui.screens.camera.CameraTestScreen
+import com.insaner.fonecheck.ui.screens.comparison.ReportComparisonRoute
 import com.insaner.fonecheck.ui.screens.connectivity.ConnectivityTestScreen
 import com.insaner.fonecheck.ui.screens.deviceinfo.DeviceInfoScreen
 import com.insaner.fonecheck.ui.screens.display.DisplayTestScreen
@@ -131,7 +132,7 @@ fun FonecheckNavHost(
             )
         }
         composable<ReportComparison> {
-            PlaceholderScreen(stringResource(R.string.history_comparison_placeholder))
+            ReportComparisonRoute(onBack = { navController.popBackStack() })
         }
         composable<ReportExport> {
             PlaceholderScreen(stringResource(R.string.history_export_placeholder))

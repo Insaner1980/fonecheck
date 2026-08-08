@@ -820,6 +820,14 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Kategoriakohtainen evidence voi muuttua schema-versioiden välillä.
 - **Decision required:** Ei.
 
+#### Implementation/status log — 2026-08-08
+
+- Puhdas `ReportComparisonEngine` yhdistää evidence-rivit vakailla check ID:illä, tuottaa kategoriat aina kanonisessa 14 kategorian järjestyksessä ja erottaa lisätyn, poistetun, muuttuneen, newly available-, newly unavailable-, not run- ja unchanged-tilan. Warning/fail-huomion ilmestyminen, poistuminen ja tilan muutos luokitellaan erikseen; pelkkä capture timestamp ei aiheuta väärää value change -tulosta.
+- Score-delta näytetään vain samalle `ScoreVersion`-versiolle ja vain kahden numeerisen scoren välillä. Eri score-versiot saavat eksplisiittisen incompatibility-selityksen ilman deltaa. Coverage-delta estetään eri report schema -versioilla. Vertailu säilyttää molempien raporttien ID:t, ajankohdat, app-versiot ja schema-versiot.
+- Type-safe `ReportComparison(firstReportId, secondReportId)` -reitti lataa molemmat immutable-raportit repositoryn `getForComparison`-operaatiolla. ViewModel erottaa loading-, not found-, unavailable- ja error-tilat ja retry käyttää samoja raporttitunnisteita.
+- Vertailunäkymä näyttää raporttiparin metadatan, score- ja coverage-erot, kategoriakohtaiset before/after-statukset ja avattavat check-muutokset. Puuttuva check näytetään erillään `NotAvailable`-statuksesta. Näkymä kertoo eksplisiittisesti, etteivät tallennetun evidenssin erot todista fyysistä kulumista tai laitteen kunnon muutosta; EN/FI-resurssit lisättiin pareittain.
+- Pure diff- ja ViewModel-unit-testit läpäisevät. Comparison Compose -testien Android-testikäännös läpäisee ja kattaa yhteensopivan deltaesityksen, canonical-kategoriat, added/newly unavailable -eron, incompatibility-selityksen ja error-tilan. Yhdistetty `:app:testDebugUnitTest :app:compileDebugAndroidTestKotlin :app:lintDebug :app:assembleDebug` läpäisee. Fyysinen Compose-ajo odottaa laitetta, koska `adb devices -l` on tyhjä. `ktlintCheck` pysähtyy ennen linttausta samoihin 10 ktlint-artifaktin puuttuvaan dependency-verification-tietueeseen; käyttäjän metadataa ja keskeneräistä `PROJECT.md`:ää ei muokattu.
+
 ### 28. Implement local PDF generation and secure sharing
 
 - **Objective:** Tuottaa viimeistelty, tietosuojattu ihmisluettava raportti.
