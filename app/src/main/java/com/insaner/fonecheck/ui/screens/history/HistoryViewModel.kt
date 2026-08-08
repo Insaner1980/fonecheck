@@ -6,7 +6,6 @@ import com.insaner.fonecheck.data.repository.ReportRepository
 import com.insaner.fonecheck.data.repository.SavedReportSummary
 import com.insaner.fonecheck.di.IoDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
@@ -16,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 data class HistoryState(
     val reports: List<SavedReportSummary> = emptyList(),

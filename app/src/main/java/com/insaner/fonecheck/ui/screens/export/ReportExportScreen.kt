@@ -126,7 +126,7 @@ private fun ExportReady(
     onExportPdf: () -> Unit,
     onExportJson: () -> Unit,
     onBack: () -> Unit,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.fillMaxSize().padding(20.dp),
@@ -149,7 +149,8 @@ private fun ExportReady(
                 InfoRow(stringResource(R.string.report_identifier), state.report.stableId)
                 InfoRow(
                     stringResource(R.string.pdf_report_format),
-                    state.report.schemaVersion.value.toString(),
+                    state.report.schemaVersion.value
+                        .toString(),
                 )
                 Text(
                     text = stringResource(R.string.export_local_only),
@@ -212,7 +213,7 @@ private fun ExportMessage(
     message: String,
     onRetry: (() -> Unit)?,
     onBack: (() -> Unit)?,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
 ) {
     ScreenStateScreen(
         type = type,

@@ -5,12 +5,12 @@ import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.Instant
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.time.Instant
+import javax.inject.Inject
 
 enum class ThermalErrorCode {
     STATUS_UNAVAILABLE,
@@ -94,8 +94,10 @@ class ThermalTestViewModel
                 }
             val shouldReadHeadroom =
                 platform.headroomApiSupported &&
-                    (lastHeadroomAttemptMillis == null ||
-                        nowMillis - requireNotNull(lastHeadroomAttemptMillis) >= HEADROOM_MIN_INTERVAL_MILLIS)
+                    (
+                        lastHeadroomAttemptMillis == null ||
+                            nowMillis - requireNotNull(lastHeadroomAttemptMillis) >= HEADROOM_MIN_INTERVAL_MILLIS
+                    )
             val headroom =
                 if (shouldReadHeadroom) {
                     lastHeadroomAttemptMillis = nowMillis

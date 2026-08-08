@@ -81,7 +81,12 @@ class AndroidPerformanceInfoProvider
 
         private fun readFrequency(path: String): Long? =
             try {
-                File(path).readText().trim().toLongOrNull()?.takeIf { it > 0L }?.div(1_000L)
+                File(path)
+                    .readText()
+                    .trim()
+                    .toLongOrNull()
+                    ?.takeIf { it > 0L }
+                    ?.div(1_000L)
             } catch (_: Exception) {
                 null
             }
@@ -152,7 +157,8 @@ private class AndroidGlInfoSession : GlInfoSession {
                 1,
                 configCount,
                 0,
-            ) && configCount[0] > 0,
+            ) &&
+                configCount[0] > 0,
         )
         val config = checkNotNull(configs[0])
         surface =

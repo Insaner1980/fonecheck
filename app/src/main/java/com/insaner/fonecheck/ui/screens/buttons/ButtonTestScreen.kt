@@ -35,7 +35,7 @@ fun ButtonTestScreen(
     viewModel: ButtonTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    ButtonLifecycleEffect(viewModel)
+    ButtonLifecycleEffect(onStopTest = viewModel::stopTest)
 
     TestScreenContent(modifier = modifier) {
         item {

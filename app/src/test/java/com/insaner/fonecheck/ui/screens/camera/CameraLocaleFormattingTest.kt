@@ -1,8 +1,8 @@
 package com.insaner.fonecheck.ui.screens.camera
 
-import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.util.Locale
 
 class CameraLocaleFormattingTest {
     @Test

@@ -1,9 +1,9 @@
 package com.insaner.fonecheck.localization
 
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class EvidenceLocalizationTest {

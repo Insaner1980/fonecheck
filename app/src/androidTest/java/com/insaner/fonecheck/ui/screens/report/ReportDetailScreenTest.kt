@@ -6,8 +6,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -38,11 +38,11 @@ import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
 import com.insaner.fonecheck.navigation.CategoryRetest
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
-import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.Instant
 
 @RunWith(AndroidJUnit4::class)
 class ReportDetailScreenTest {
@@ -168,25 +168,25 @@ class ReportDetailScreenTest {
                     listOf(category(DiagnosticCategoryId.STORAGE, DiagnosticStatus.WARNING))
                 } else {
                     listOf(
-                    category(DiagnosticCategoryId.DEVICE, DiagnosticStatus.PASS),
-                    category(
-                        DiagnosticCategoryId.PERFORMANCE,
-                        DiagnosticStatus.WARNING,
-                        DiagnosticEvidence(
-                            categoryId = DiagnosticCategoryId.PERFORMANCE,
-                            checkId = DiagnosticCheckId(DiagnosticCategoryId.PERFORMANCE, "performance.cpu"),
-                            status = DiagnosticStatus.WARNING,
-                            confidence = Confidence.HIGH,
-                            source = EvidenceSource.ANDROID_API,
-                            applicability = Applicability.APPLICABLE,
-                            reason = EvidenceReasonCode("future_vendor_reason"),
-                            value = EvidenceValue.RawTextValue(longValue),
-                            capturedAt = capturedAt,
+                        category(DiagnosticCategoryId.DEVICE, DiagnosticStatus.PASS),
+                        category(
+                            DiagnosticCategoryId.PERFORMANCE,
+                            DiagnosticStatus.WARNING,
+                            DiagnosticEvidence(
+                                categoryId = DiagnosticCategoryId.PERFORMANCE,
+                                checkId = DiagnosticCheckId(DiagnosticCategoryId.PERFORMANCE, "performance.cpu"),
+                                status = DiagnosticStatus.WARNING,
+                                confidence = Confidence.HIGH,
+                                source = EvidenceSource.ANDROID_API,
+                                applicability = Applicability.APPLICABLE,
+                                reason = EvidenceReasonCode("future_vendor_reason"),
+                                value = EvidenceValue.RawTextValue(longValue),
+                                capturedAt = capturedAt,
+                            ),
                         ),
-                    ),
-                    category(DiagnosticCategoryId.SIM, DiagnosticStatus.INFO),
-                    category(DiagnosticCategoryId.AUDIO, DiagnosticStatus.NOT_TESTED),
-                    category(DiagnosticCategoryId.CAMERA, DiagnosticStatus.NOT_AVAILABLE),
+                        category(DiagnosticCategoryId.SIM, DiagnosticStatus.INFO),
+                        category(DiagnosticCategoryId.AUDIO, DiagnosticStatus.NOT_TESTED),
+                        category(DiagnosticCategoryId.CAMERA, DiagnosticStatus.NOT_AVAILABLE),
                         category(DiagnosticCategoryId.STORAGE, DiagnosticStatus.FAIL),
                     )
                 },

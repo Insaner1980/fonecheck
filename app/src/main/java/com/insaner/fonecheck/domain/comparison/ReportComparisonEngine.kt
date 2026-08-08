@@ -190,6 +190,5 @@ object ReportComparisonEngine {
         }
     }
 
-    private fun DiagnosticEvidence.withoutTimestamp() =
-        copy(capturedAt = java.time.Instant.EPOCH)
+    private fun DiagnosticEvidence.withoutTimestamp() = copy(capturedAt = java.time.Instant.EPOCH)
 }

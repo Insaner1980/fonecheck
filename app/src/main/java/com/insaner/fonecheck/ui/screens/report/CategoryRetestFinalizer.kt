@@ -11,9 +11,9 @@ import com.insaner.fonecheck.domain.model.ReportDeviceContext
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.IdProvider
+import kotlinx.coroutines.CancellationException
 import java.time.Instant
 import javax.inject.Inject
-import kotlinx.coroutines.CancellationException
 
 class CategoryRetestFinalizer
     @Inject

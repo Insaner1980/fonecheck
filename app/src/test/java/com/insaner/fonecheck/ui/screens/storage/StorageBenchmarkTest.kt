@@ -2,12 +2,6 @@ package com.insaner.fonecheck.ui.screens.storage
 
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.NanoTimeSource
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.IOException
-import java.io.InputStream
-import java.io.OutputStream
-import java.time.Instant
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -16,6 +10,12 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
+import java.time.Instant
 
 class StorageBenchmarkTest {
     @Test
@@ -123,18 +123,17 @@ class StorageBenchmarkTest {
     private fun runner(
         store: StorageBenchmarkStore,
         times: LongArray = longArrayOf(),
-    ) =
-        DefaultStorageBenchmarkRunner(
-            store = store,
-            nanoTimeSource = SequenceNanoTimeSource(*times),
-            epochMillisClock = EpochMillisClock { Instant.parse("2026-08-08T00:00:00Z").toEpochMilli() },
-            config =
-                StorageBenchmarkConfig(
-                    dataSizeBytes = 8,
-                    bufferSizeBytes = 4,
-                    minimumFreeBytesAfterRun = 4,
-                ),
-        )
+    ) = DefaultStorageBenchmarkRunner(
+        store = store,
+        nanoTimeSource = SequenceNanoTimeSource(*times),
+        epochMillisClock = EpochMillisClock { Instant.parse("2026-08-08T00:00:00Z").toEpochMilli() },
+        config =
+            StorageBenchmarkConfig(
+                dataSizeBytes = 8,
+                bufferSizeBytes = 4,
+                minimumFreeBytesAfterRun = 4,
+            ),
+    )
 
     private class InMemoryStorageBenchmarkStore(
         private val availableBytes: Long,
@@ -177,7 +176,9 @@ class StorageBenchmarkTest {
         }
     }
 
-    private class SequenceNanoTimeSource(vararg values: Long) : NanoTimeSource {
+    private class SequenceNanoTimeSource(
+        vararg values: Long,
+    ) : NanoTimeSource {
         private val values = ArrayDeque(values.toList())
 
         override fun nanoTime(): Long = values.removeFirst()

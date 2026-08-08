@@ -240,7 +240,9 @@ private fun StorageBenchmarkRows(result: StorageBenchmarkResult) {
     InfoRow(stringResource(R.string.storage_benchmark_location), stringResource(R.string.storage_app_cache))
     InfoRow(
         stringResource(R.string.storage_benchmark_cleanup),
-        stringResource(if (result.cleanupSucceeded) R.string.storage_cleanup_complete else R.string.storage_cleanup_failed),
+        stringResource(
+            if (result.cleanupSucceeded) R.string.storage_cleanup_complete else R.string.storage_cleanup_failed,
+        ),
     )
     Text(
         text = stringResource(R.string.storage_benchmark_conditions),

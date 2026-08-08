@@ -5,6 +5,10 @@ import android.os.StatFs
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.NanoTimeSource
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.yield
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.File
@@ -15,10 +19,6 @@ import java.io.OutputStream
 import java.time.Instant
 import java.util.zip.CRC32
 import javax.inject.Inject
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.yield
 
 data class StorageBenchmarkConfig(
     val dataSizeBytes: Int = 64 * MEBIBYTE,
@@ -253,18 +253,16 @@ class DefaultStorageBenchmarkRunner internal constructor(
         availableBytes: Long,
         cleanupSucceeded: Boolean,
         error: StorageBenchmarkErrorCode,
-    ) =
-        StorageBenchmarkResult(
-            dataSizeBytes = config.dataSizeBytes.toLong(),
-            bufferSizeBytes = config.bufferSizeBytes,
-            availableBeforeBytes = availableBytes,
-            cleanupSucceeded = cleanupSucceeded,
-            capturedAt = Instant.ofEpochMilli(epochMillisClock.currentTimeMillis()),
-            error = error,
-        )
+    ) = StorageBenchmarkResult(
+        dataSizeBytes = config.dataSizeBytes.toLong(),
+        bufferSizeBytes = config.bufferSizeBytes,
+        availableBeforeBytes = availableBytes,
+        cleanupSucceeded = cleanupSucceeded,
+        capturedAt = Instant.ofEpochMilli(epochMillisClock.currentTimeMillis()),
+        error = error,
+    )
 
-    private fun elapsedSince(startNanos: Long): Long =
-        (nanoTimeSource.nanoTime() - startNanos).coerceAtLeast(1L)
+    private fun elapsedSince(startNanos: Long): Long = (nanoTimeSource.nanoTime() - startNanos).coerceAtLeast(1L)
 
     private fun mebibytesPerSecond(
         bytes: Long,

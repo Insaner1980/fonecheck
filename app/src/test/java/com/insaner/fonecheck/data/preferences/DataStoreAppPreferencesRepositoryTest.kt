@@ -2,7 +2,6 @@ package com.insaner.fonecheck.data.preferences
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.edit
-import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -10,14 +9,15 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import okio.Path.Companion.toPath
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import okio.Path.Companion.toPath
+import java.io.File
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DataStoreAppPreferencesRepositoryTest {
@@ -80,6 +80,5 @@ class DataStoreAppPreferencesRepositoryTest {
             },
         )
 
-    private fun dataStoreScope() =
-        CoroutineScope(SupervisorJob() + Dispatchers.IO).also(scopes::add)
+    private fun dataStoreScope() = CoroutineScope(SupervisorJob() + Dispatchers.IO).also(scopes::add)
 }

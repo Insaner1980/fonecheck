@@ -10,7 +10,6 @@ import com.insaner.fonecheck.domain.model.ReportSchemaVersion
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
-import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -26,6 +25,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class HistoryViewModelTest {
@@ -49,16 +49,28 @@ class HistoryViewModelTest {
             val viewModel = HistoryViewModel(repository, dispatcher)
             advanceUntilIdle()
 
-            assertEquals(listOf("older"), viewModel.state.value.reports.map { it.stableId })
+            assertEquals(
+                listOf("older"),
+                viewModel.state.value.reports
+                    .map { it.stableId },
+            )
             assertFalse(viewModel.state.value.isLoading)
 
             repository.insert(report("newer", "2026-08-08T11:00:00Z"))
             advanceUntilIdle()
-            assertEquals(listOf("newer", "older"), viewModel.state.value.reports.map { it.stableId })
+            assertEquals(
+                listOf("newer", "older"),
+                viewModel.state.value.reports
+                    .map { it.stableId },
+            )
 
             viewModel.delete("newer")
             advanceUntilIdle()
-            assertEquals(listOf("older"), viewModel.state.value.reports.map { it.stableId })
+            assertEquals(
+                listOf("older"),
+                viewModel.state.value.reports
+                    .map { it.stableId },
+            )
         }
 
     @Test
@@ -75,13 +87,21 @@ class HistoryViewModelTest {
             val viewModel = HistoryViewModel(repository, dispatcher)
             advanceUntilIdle()
 
-            assertEquals(listOf("saved"), viewModel.state.value.reports.map { it.stableId })
+            assertEquals(
+                listOf("saved"),
+                viewModel.state.value.reports
+                    .map { it.stableId },
+            )
             assertEquals("history_load_failed", viewModel.state.value.error)
 
             repository.summariesFlowOverride = saved
             viewModel.retry()
             advanceUntilIdle()
-            assertEquals(listOf("saved"), viewModel.state.value.reports.map { it.stableId })
+            assertEquals(
+                listOf("saved"),
+                viewModel.state.value.reports
+                    .map { it.stableId },
+            )
             assertEquals(null, viewModel.state.value.error)
         }
 
@@ -96,25 +116,31 @@ class HistoryViewModelTest {
             viewModel.delete("saved")
             advanceUntilIdle()
 
-            assertEquals(listOf("saved"), viewModel.state.value.reports.map { it.stableId })
+            assertEquals(
+                listOf("saved"),
+                viewModel.state.value.reports
+                    .map { it.stableId },
+            )
             assertEquals("history_delete_failed", viewModel.state.value.error)
-            assertTrue(viewModel.state.value.deletingReportIds.isEmpty())
+            assertTrue(
+                viewModel.state.value.deletingReportIds
+                    .isEmpty(),
+            )
         }
 
     private fun report(
         id: String,
         completedAt: String,
-    ) =
-        DiagnosticReport(
-            stableId = id,
-            kind = ReportKind.FULL_CHECK,
-            startedAt = Instant.parse(completedAt).minusSeconds(60),
-            completedAt = Instant.parse(completedAt),
-            device = ReportDeviceContext("Finnvek", "Test", "Fonecheck", "test", "16", 36, null),
-            app = ReportAppContext("1.0.0", 1L),
-            categories = emptyList(),
-            score = ScoreSummary(ScoreVersion.CURRENT, 90, ScoreState.COMPLETE),
-            coverage = CoverageSummary(1, 1, 0, 0, 100),
-            schemaVersion = ReportSchemaVersion.CURRENT,
-        )
+    ) = DiagnosticReport(
+        stableId = id,
+        kind = ReportKind.FULL_CHECK,
+        startedAt = Instant.parse(completedAt).minusSeconds(60),
+        completedAt = Instant.parse(completedAt),
+        device = ReportDeviceContext("Finnvek", "Test", "Fonecheck", "test", "16", 36, null),
+        app = ReportAppContext("1.0.0", 1L),
+        categories = emptyList(),
+        score = ScoreSummary(ScoreVersion.CURRENT, 90, ScoreState.COMPLETE),
+        coverage = CoverageSummary(1, 1, 0, 0, 100),
+        schemaVersion = ReportSchemaVersion.CURRENT,
+    )
 }

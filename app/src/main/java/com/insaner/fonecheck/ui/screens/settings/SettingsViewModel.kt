@@ -14,16 +14,16 @@ import com.insaner.fonecheck.data.repository.ReportRepository
 import com.insaner.fonecheck.di.IoDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 data class SettingsPermissionSnapshot(
     val camera: Boolean = false,
@@ -131,9 +131,9 @@ class SettingsViewModel
             }
         }
 
-    fun reopenOnboarding() {
-        _state.value = _state.value.copy(openOnboarding = true, error = null)
-    }
+        fun reopenOnboarding() {
+            _state.value = _state.value.copy(openOnboarding = true, error = null)
+        }
 
         fun consumeOpenOnboarding() {
             _state.value = _state.value.copy(openOnboarding = false)

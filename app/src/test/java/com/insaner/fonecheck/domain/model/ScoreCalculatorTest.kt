@@ -1,11 +1,11 @@
 package com.insaner.fonecheck.domain.model
 
-import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Instant
 
 class ScoreCalculatorTest {
     @Test
@@ -51,34 +51,36 @@ class ScoreCalculatorTest {
 
     @Test
     fun `informational evidence does not increase a category score`() {
-        val result = ScoreCalculator.calculate(
-            listOf(
-                category(
-                    DiagnosticCategoryId.BATTERY,
-                    evidence(DiagnosticCategoryId.BATTERY, "battery.pass", DiagnosticStatus.PASS),
-                    evidence(DiagnosticCategoryId.BATTERY, "battery.info", DiagnosticStatus.INFO),
+        val result =
+            ScoreCalculator.calculate(
+                listOf(
+                    category(
+                        DiagnosticCategoryId.BATTERY,
+                        evidence(DiagnosticCategoryId.BATTERY, "battery.pass", DiagnosticStatus.PASS),
+                        evidence(DiagnosticCategoryId.BATTERY, "battery.info", DiagnosticStatus.INFO),
+                    ),
                 ),
-            ),
-        )
+            )
 
         assertEquals(100, result.score.value)
     }
 
     @Test
     fun `category scores have equal weight regardless of evidence count`() {
-        val result = ScoreCalculator.calculate(
-            listOf(
-                category(
-                    DiagnosticCategoryId.BATTERY,
-                    evidence(DiagnosticCategoryId.BATTERY, "battery.pass_one", DiagnosticStatus.PASS),
-                    evidence(DiagnosticCategoryId.BATTERY, "battery.pass_two", DiagnosticStatus.PASS),
+        val result =
+            ScoreCalculator.calculate(
+                listOf(
+                    category(
+                        DiagnosticCategoryId.BATTERY,
+                        evidence(DiagnosticCategoryId.BATTERY, "battery.pass_one", DiagnosticStatus.PASS),
+                        evidence(DiagnosticCategoryId.BATTERY, "battery.pass_two", DiagnosticStatus.PASS),
+                    ),
+                    category(
+                        DiagnosticCategoryId.CAMERA,
+                        evidence(DiagnosticCategoryId.CAMERA, "camera.fail", DiagnosticStatus.FAIL),
+                    ),
                 ),
-                category(
-                    DiagnosticCategoryId.CAMERA,
-                    evidence(DiagnosticCategoryId.CAMERA, "camera.fail", DiagnosticStatus.FAIL),
-                ),
-            ),
-        )
+            )
 
         assertEquals(50, result.score.value)
     }
@@ -102,20 +104,21 @@ class ScoreCalculatorTest {
 
     @Test
     fun `not available hardware is excluded from coverage`() {
-        val result = ScoreCalculator.calculate(
-            listOf(
-                category(
-                    DiagnosticCategoryId.CAMERA,
-                    evidence(DiagnosticCategoryId.CAMERA, "camera.available", DiagnosticStatus.PASS),
-                    evidence(
+        val result =
+            ScoreCalculator.calculate(
+                listOf(
+                    category(
                         DiagnosticCategoryId.CAMERA,
-                        "camera.flash",
-                        DiagnosticStatus.NOT_AVAILABLE,
-                        EvidenceReasonCode.HARDWARE_UNAVAILABLE,
+                        evidence(DiagnosticCategoryId.CAMERA, "camera.available", DiagnosticStatus.PASS),
+                        evidence(
+                            DiagnosticCategoryId.CAMERA,
+                            "camera.flash",
+                            DiagnosticStatus.NOT_AVAILABLE,
+                            EvidenceReasonCode.HARDWARE_UNAVAILABLE,
+                        ),
                     ),
                 ),
-            ),
-        )
+            )
 
         assertEquals(100, result.coverage.percentage)
         assertEquals(1, result.coverage.unavailableCount)
@@ -123,17 +126,33 @@ class ScoreCalculatorTest {
 
     @Test
     fun `applicable not tested reasons reduce coverage`() {
-        val result = ScoreCalculator.calculate(
-            listOf(
-                category(
-                    DiagnosticCategoryId.SIM,
-                    evidence(DiagnosticCategoryId.SIM, "sim.available", DiagnosticStatus.PASS),
-                    evidence(DiagnosticCategoryId.SIM, "sim.permission", DiagnosticStatus.NOT_TESTED, EvidenceReasonCode.PERMISSION_DENIED),
-                    evidence(DiagnosticCategoryId.SIM, "sim.skip", DiagnosticStatus.NOT_TESTED, EvidenceReasonCode.SKIPPED),
-                    evidence(DiagnosticCategoryId.SIM, "sim.error", DiagnosticStatus.NOT_TESTED, EvidenceReasonCode.ERROR),
+        val result =
+            ScoreCalculator.calculate(
+                listOf(
+                    category(
+                        DiagnosticCategoryId.SIM,
+                        evidence(DiagnosticCategoryId.SIM, "sim.available", DiagnosticStatus.PASS),
+                        evidence(
+                            DiagnosticCategoryId.SIM,
+                            "sim.permission",
+                            DiagnosticStatus.NOT_TESTED,
+                            EvidenceReasonCode.PERMISSION_DENIED,
+                        ),
+                        evidence(
+                            DiagnosticCategoryId.SIM,
+                            "sim.skip",
+                            DiagnosticStatus.NOT_TESTED,
+                            EvidenceReasonCode.SKIPPED,
+                        ),
+                        evidence(
+                            DiagnosticCategoryId.SIM,
+                            "sim.error",
+                            DiagnosticStatus.NOT_TESTED,
+                            EvidenceReasonCode.ERROR,
+                        ),
+                    ),
                 ),
-            ),
-        )
+            )
 
         assertEquals(25, result.coverage.percentage)
         assertEquals(3, result.coverage.notTestedCount)
@@ -142,9 +161,15 @@ class ScoreCalculatorTest {
     @Test
     fun `empty and informational reports have no numeric score`() {
         val empty = ScoreCalculator.calculate(emptyList())
-        val informational = ScoreCalculator.calculate(
-            listOf(category(DiagnosticCategoryId.DEVICE, evidence(DiagnosticCategoryId.DEVICE, "device.info", DiagnosticStatus.INFO))),
-        )
+        val informational =
+            ScoreCalculator.calculate(
+                listOf(
+                    category(
+                        DiagnosticCategoryId.DEVICE,
+                        evidence(DiagnosticCategoryId.DEVICE, "device.info", DiagnosticStatus.INFO),
+                    ),
+                ),
+            )
 
         assertNull(empty.score.value)
         assertEquals(ScoreState.INCOMPLETE, empty.score.state)
@@ -159,45 +184,59 @@ class ScoreCalculatorTest {
         assertFalse(ScoreVersion.CURRENT.isCompatibleWith(ScoreVersion(2)))
     }
 
-    private fun assertScore(status: DiagnosticStatus, expectedScore: Int) {
-        val result = ScoreCalculator.calculate(
-            listOf(category(DiagnosticCategoryId.BATTERY, evidence(DiagnosticCategoryId.BATTERY, "battery.check", status))),
-        )
+    private fun assertScore(
+        status: DiagnosticStatus,
+        expectedScore: Int,
+    ) {
+        val result =
+            ScoreCalculator.calculate(
+                listOf(
+                    category(
+                        DiagnosticCategoryId.BATTERY,
+                        evidence(DiagnosticCategoryId.BATTERY, "battery.check", status),
+                    ),
+                ),
+            )
 
         assertEquals(expectedScore, result.score.value)
     }
 
-    private fun categoryWithCoverage(category: DiagnosticCategoryId, completedCount: Int): DiagnosticCategoryResult =
+    private fun categoryWithCoverage(
+        category: DiagnosticCategoryId,
+        completedCount: Int,
+    ): DiagnosticCategoryResult =
         category(
             category,
-            *(0 until 100).map { index ->
-                evidence(
-                    category,
-                    "${category.stableId}.check_$index",
-                    if (index < completedCount) DiagnosticStatus.PASS else DiagnosticStatus.NOT_TESTED,
-                )
-            }.toTypedArray(),
+            *(0 until 100)
+                .map { index ->
+                    evidence(
+                        category,
+                        "${category.stableId}.check_$index",
+                        if (index < completedCount) DiagnosticStatus.PASS else DiagnosticStatus.NOT_TESTED,
+                    )
+                }.toTypedArray(),
         )
 
-    private fun category(category: DiagnosticCategoryId, vararg evidence: DiagnosticEvidence) =
-        DiagnosticCategoryResult(category, aggregateStatus = DiagnosticStatus.INFO, evidence = evidence.toList())
+    private fun category(
+        category: DiagnosticCategoryId,
+        vararg evidence: DiagnosticEvidence,
+    ) = DiagnosticCategoryResult(category, aggregateStatus = DiagnosticStatus.INFO, evidence = evidence.toList())
 
     private fun evidence(
         category: DiagnosticCategoryId,
         checkId: String,
         status: DiagnosticStatus,
         reason: EvidenceReasonCode? = null,
-    ) =
-        DiagnosticEvidence(
-            categoryId = category,
-            checkId = DiagnosticCheckId(category, checkId),
-            status = status,
-            confidence = Confidence.HIGH,
-            source = EvidenceSource.AUTOMATIC_MEASUREMENT,
-            applicability = Applicability.APPLICABLE,
-            reason = reason,
-            capturedAt = Instant.EPOCH,
-        )
+    ) = DiagnosticEvidence(
+        categoryId = category,
+        checkId = DiagnosticCheckId(category, checkId),
+        status = status,
+        confidence = Confidence.HIGH,
+        source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+        applicability = Applicability.APPLICABLE,
+        reason = reason,
+        capturedAt = Instant.EPOCH,
+    )
 
     private fun assertValidationFails(block: () -> Unit) {
         try {

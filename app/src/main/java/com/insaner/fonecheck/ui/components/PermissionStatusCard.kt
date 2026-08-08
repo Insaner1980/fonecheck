@@ -54,20 +54,23 @@ fun PermissionStatusCard(
             }
 
             when (state) {
-                PermissionState.NOT_REQUESTED -> PermissionButton(
-                    text = stringResource(R.string.permission_action_allow),
-                    onClick = onRequest,
-                )
-                PermissionState.DENIED -> PermissionButton(
-                    text = stringResource(R.string.permission_action_retry),
-                    onClick = onRequest,
-                )
+                PermissionState.NOT_REQUESTED ->
+                    PermissionButton(
+                        text = stringResource(R.string.permission_action_allow),
+                        onClick = onRequest,
+                    )
+                PermissionState.DENIED ->
+                    PermissionButton(
+                        text = stringResource(R.string.permission_action_retry),
+                        onClick = onRequest,
+                    )
                 PermissionState.SETTINGS_RECOVERY,
                 PermissionState.PARTIAL,
-                -> PermissionButton(
-                    text = stringResource(R.string.permission_action_open_settings),
-                    onClick = onOpenSettings,
-                )
+                ->
+                    PermissionButton(
+                        text = stringResource(R.string.permission_action_open_settings),
+                        onClick = onOpenSettings,
+                    )
                 PermissionState.GRANTED,
                 PermissionState.NOT_REQUIRED,
                 PermissionState.HARDWARE_ABSENT,

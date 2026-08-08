@@ -43,11 +43,12 @@ class AndroidReportExporter
             }
             return ExportedReport(
                 uri =
-                    FileProvider.getUriForFile(
-                        context,
-                        "${context.packageName}.fileprovider",
-                        outputFile,
-                    ).toString(),
+                    FileProvider
+                        .getUriForFile(
+                            context,
+                            "${context.packageName}.fileprovider",
+                            outputFile,
+                        ).toString(),
                 mimeType = PDF_MIME_TYPE,
                 displayName = displayName,
             )
@@ -70,11 +71,12 @@ class AndroidReportExporter
             }
             return ExportedReport(
                 uri =
-                    FileProvider.getUriForFile(
-                        context,
-                        "${context.packageName}.fileprovider",
-                        outputFile,
-                    ).toString(),
+                    FileProvider
+                        .getUriForFile(
+                            context,
+                            "${context.packageName}.fileprovider",
+                            outputFile,
+                        ).toString(),
                 mimeType = JSON_MIME_TYPE,
                 displayName = displayName,
             )
@@ -82,7 +84,11 @@ class AndroidReportExporter
 
         private fun cleanupOldExports(exportRoot: File) {
             val cutoff = System.currentTimeMillis() - EXPORT_RETENTION_MILLIS
-            exportRoot.listFiles().orEmpty().filter { it.lastModified() < cutoff }.forEach(File::delete)
+            exportRoot
+                .listFiles()
+                .orEmpty()
+                .filter { it.lastModified() < cutoff }
+                .forEach(File::delete)
         }
 
         private companion object {

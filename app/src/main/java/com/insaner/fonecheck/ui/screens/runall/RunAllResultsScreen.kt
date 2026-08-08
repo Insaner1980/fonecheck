@@ -55,9 +55,9 @@ import com.insaner.fonecheck.domain.model.EvidenceUnitCode
 import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.ScoreState
-import com.insaner.fonecheck.localization.evidenceReasonStringRes
 import com.insaner.fonecheck.domain.model.TestResult
 import com.insaner.fonecheck.domain.model.TestStatus
+import com.insaner.fonecheck.localization.evidenceReasonStringRes
 import com.insaner.fonecheck.navigation.CategoryRetest
 import com.insaner.fonecheck.navigation.diagnosticDestinations
 import com.insaner.fonecheck.ui.components.ConfidenceBadge
@@ -520,8 +520,7 @@ private fun categorySummary(status: DiagnosticStatus): String =
     )
 
 @Composable
-private fun evidenceLabel(checkId: String): String =
-    evidenceLabelResId(checkId)?.let { stringResource(it) } ?: checkId
+private fun evidenceLabel(checkId: String): String = evidenceLabelResId(checkId)?.let { stringResource(it) } ?: checkId
 
 @StringRes
 private fun evidenceLabelResId(checkId: String): Int? =
@@ -651,9 +650,11 @@ private fun evidenceValueLabel(
     }
 
 private fun localizedNumber(value: Number): String =
-    NumberFormat.getNumberInstance(Locale.getDefault()).apply {
-        maximumFractionDigits = 6
-    }.format(value)
+    NumberFormat
+        .getNumberInstance(Locale.getDefault())
+        .apply {
+            maximumFractionDigits = 6
+        }.format(value)
 
 @Composable
 private fun stableTextLabel(code: String): String =
@@ -851,8 +852,7 @@ private fun CompactResultRow(
                 .semantics {
                     role = Role.Button
                     stateDescription = "$statusText, $expansionState"
-                }
-                .clickable(onClick = onToggle)
+                }.clickable(onClick = onToggle)
                 .padding(14.dp),
     ) {
         ResultHeader(

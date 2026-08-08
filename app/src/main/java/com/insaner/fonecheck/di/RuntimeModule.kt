@@ -1,11 +1,11 @@
 package com.insaner.fonecheck.di
 
 import android.content.Context
+import com.insaner.fonecheck.export.AndroidReportExporter
+import com.insaner.fonecheck.export.ReportExporter
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.IdProvider
 import com.insaner.fonecheck.runtime.NanoTimeSource
-import com.insaner.fonecheck.export.AndroidReportExporter
-import com.insaner.fonecheck.export.ReportExporter
 import com.insaner.fonecheck.ui.screens.biometrics.AndroidBiometricCapabilityProvider
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricCapabilityProvider
 import com.insaner.fonecheck.ui.screens.buttons.DefaultVolumeButtonEventSource
@@ -39,16 +39,13 @@ annotation class IoDispatcher
 @InstallIn(SingletonComponent::class)
 object RuntimeModule {
     @Provides
-    fun provideEpochMillisClock(): EpochMillisClock =
-        EpochMillisClock { System.currentTimeMillis() }
+    fun provideEpochMillisClock(): EpochMillisClock = EpochMillisClock { System.currentTimeMillis() }
 
     @Provides
-    fun provideIdProvider(): IdProvider =
-        IdProvider { UUID.randomUUID().toString() }
+    fun provideIdProvider(): IdProvider = IdProvider { UUID.randomUUID().toString() }
 
     @Provides
-    fun provideNanoTimeSource(): NanoTimeSource =
-        NanoTimeSource(System::nanoTime)
+    fun provideNanoTimeSource(): NanoTimeSource = NanoTimeSource(System::nanoTime)
 
     @Provides
     fun provideThermalPlatform(
@@ -72,9 +69,8 @@ object RuntimeModule {
     fun provideVolumeButtonEventSource(source: DefaultVolumeButtonEventSource): VolumeButtonEventSource = source
 
     @Provides
-    fun provideBiometricCapabilityProvider(
-        provider: AndroidBiometricCapabilityProvider,
-    ): BiometricCapabilityProvider = provider
+    fun provideBiometricCapabilityProvider(provider: AndroidBiometricCapabilityProvider): BiometricCapabilityProvider =
+        provider
 
     @Provides
     fun provideReportExporter(exporter: AndroidReportExporter): ReportExporter = exporter

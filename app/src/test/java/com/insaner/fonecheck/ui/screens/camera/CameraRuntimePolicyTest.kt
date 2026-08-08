@@ -10,15 +10,21 @@ class CameraRuntimePolicyTest {
     @Test
     fun publicIdsAreClassifiedWithoutClaimingHiddenPhysicalCamerasAsSelectable() {
         val descriptors =
-            CameraDescriptorMapper.map(
-                publicIds = setOf("0", "1", "2"),
-                readings =
-                    listOf(
-                        CameraDescriptorReading("0", CameraFacingCode.REAR, isLogical = true, physicalIds = setOf("2", "3")),
-                        CameraDescriptorReading("1", CameraFacingCode.FRONT, isLogical = false),
-                        CameraDescriptorReading("2", CameraFacingCode.REAR, isLogical = false),
-                    ),
-            ).associateBy { it.cameraId }
+            CameraDescriptorMapper
+                .map(
+                    publicIds = setOf("0", "1", "2"),
+                    readings =
+                        listOf(
+                            CameraDescriptorReading(
+                                "0",
+                                CameraFacingCode.REAR,
+                                isLogical = true,
+                                physicalIds = setOf("2", "3"),
+                            ),
+                            CameraDescriptorReading("1", CameraFacingCode.FRONT, isLogical = false),
+                            CameraDescriptorReading("2", CameraFacingCode.REAR, isLogical = false),
+                        ),
+                ).associateBy { it.cameraId }
 
         assertEquals(CameraClassCode.LOGICAL, descriptors.getValue("0").cameraClass)
         assertEquals(setOf("2", "3"), descriptors.getValue("0").physicalCameraIds)
@@ -30,10 +36,14 @@ class CameraRuntimePolicyTest {
     @Test
     fun externalCameraRemainsASelectablePublicCamera() {
         val descriptor =
-            CameraDescriptorMapper.map(
-                publicIds = setOf("external"),
-                readings = listOf(CameraDescriptorReading("external", CameraFacingCode.EXTERNAL, isLogical = false)),
-            ).single()
+            CameraDescriptorMapper
+                .map(
+                    publicIds = setOf("external"),
+                    readings =
+                        listOf(
+                            CameraDescriptorReading("external", CameraFacingCode.EXTERNAL, isLogical = false),
+                        ),
+                ).single()
 
         assertEquals(CameraClassCode.EXTERNAL, descriptor.cameraClass)
     }

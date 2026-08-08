@@ -13,7 +13,5 @@ import javax.inject.Singleton
 abstract class SimTelephonyModule {
     @Binds
     @Singleton
-    abstract fun bindSimTelephonyProvider(
-        implementation: AndroidSimTelephonyProvider,
-    ): SimTelephonyProvider
+    abstract fun bindSimTelephonyProvider(implementation: AndroidSimTelephonyProvider): SimTelephonyProvider
 }

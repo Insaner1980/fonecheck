@@ -17,9 +17,7 @@ import javax.inject.Singleton
 abstract class PerformanceModule {
     @Binds
     @Singleton
-    abstract fun bindPerformanceInfoProvider(
-        implementation: AndroidPerformanceInfoProvider,
-    ): PerformanceInfoProvider
+    abstract fun bindPerformanceInfoProvider(implementation: AndroidPerformanceInfoProvider): PerformanceInfoProvider
 
     @Binds
     abstract fun bindPerformanceBenchmarkRunner(
@@ -27,7 +25,5 @@ abstract class PerformanceModule {
     ): PerformanceBenchmarkRunner
 
     @Binds
-    abstract fun bindThermalStatusReader(
-        implementation: AndroidThermalStatusReader,
-    ): ThermalStatusReader
+    abstract fun bindThermalStatusReader(implementation: AndroidThermalStatusReader): ThermalStatusReader
 }

@@ -55,9 +55,9 @@ import com.insaner.fonecheck.ui.theme.JetBrainsMono
 import com.insaner.fonecheck.ui.theme.Neutral500
 import com.insaner.fonecheck.ui.theme.Neutral700
 import com.insaner.fonecheck.ui.theme.Neutral800
-import com.insaner.fonecheck.ui.theme.readableStatusColor
 import com.insaner.fonecheck.ui.theme.Neutral850
 import com.insaner.fonecheck.ui.theme.Yellow400
+import com.insaner.fonecheck.ui.theme.readableStatusColor
 
 @Composable
 fun SensorTestScreen(
@@ -432,11 +432,12 @@ private fun GuidedSensorCode.valueLabels(): List<String> =
         GuidedSensorCode.GYROSCOPE,
         GuidedSensorCode.GRAVITY,
         GuidedSensorCode.MAGNETOMETER,
-        -> listOf(
-            stringResource(R.string.sensor_axis_x),
-            stringResource(R.string.sensor_axis_y),
-            stringResource(R.string.sensor_axis_z),
-        )
+        ->
+            listOf(
+                stringResource(R.string.sensor_axis_x),
+                stringResource(R.string.sensor_axis_y),
+                stringResource(R.string.sensor_axis_z),
+            )
         else -> listOf(stringResource(R.string.sensor_value))
     }
 

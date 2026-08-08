@@ -815,7 +815,6 @@ private fun MobileNetworkDetails(
                 DetailInfoRow(stringResource(R.string.conn_mobile_mcc_mnc), "${mobile.mcc}/${mobile.mnc}")
             }
         }
-
     }
 }
 

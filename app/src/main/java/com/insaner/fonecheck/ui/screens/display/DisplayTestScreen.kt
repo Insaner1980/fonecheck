@@ -27,6 +27,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -66,15 +67,16 @@ internal const val DISPLAY_EXIT_BUTTON_TAG = "display_exit_button"
 @Suppress("ViewModelForwarding", "ktlint:compose:vm-forwarding-check")
 fun DisplayTestScreen(
     modifier: Modifier = Modifier,
-    onFullscreenChanged: (Boolean) -> Unit = {},
+    onFullscreenChange: (Boolean) -> Unit = {},
     viewModel: DisplayTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val isFullscreen = state.visual.isActive || state.touch.isActive
+    val currentOnFullscreenChange by rememberUpdatedState(onFullscreenChange)
 
     DisposableEffect(isFullscreen) {
-        onFullscreenChanged(isFullscreen)
-        onDispose { onFullscreenChanged(false) }
+        currentOnFullscreenChange(isFullscreen)
+        onDispose { currentOnFullscreenChange(false) }
     }
     LaunchedEffect(state.visual.isActive) {
         if (state.visual.isActive) {
@@ -98,8 +100,8 @@ fun DisplayTestScreen(
         state.touch.isActive -> {
             TouchTestOverlay(
                 state = state.touch,
-                onCellsTouched = { cells -> viewModel.recordTouch(cells = cells) },
-                onPointersChanged = { pointers -> viewModel.recordTouch(activePointers = pointers) },
+                onTouchCells = { cells -> viewModel.recordTouch(cells = cells) },
+                onPointerChange = { pointers -> viewModel.recordTouch(activePointers = pointers) },
                 onReset = viewModel::resetTouchTest,
                 onComplete = viewModel::completeTouchTest,
                 onExit = viewModel::stopTouchTest,
@@ -107,15 +109,20 @@ fun DisplayTestScreen(
             BackHandler(onBack = viewModel::stopTouchTest)
         }
 
-        else -> DisplayOverview(modifier, state, viewModel)
+        else ->
+            DisplayOverview(
+                state = state,
+                viewModel = viewModel,
+                modifier = modifier,
+            )
     }
 }
 
 @Composable
 private fun DisplayOverview(
-    modifier: Modifier,
     state: DisplayTestState,
     viewModel: DisplayTestViewModel,
+    modifier: Modifier = Modifier,
 ) {
     TestScreenContent(modifier = modifier) {
         item {
@@ -360,8 +367,8 @@ private fun VisualTestOverlay(
 @Composable
 internal fun TouchTestOverlay(
     state: TouchTestState,
-    onCellsTouched: (Set<Int>) -> Unit,
-    onPointersChanged: (Map<Long, TouchPoint>) -> Unit,
+    onTouchCells: (Set<Int>) -> Unit,
+    onPointerChange: (Map<Long, TouchPoint>) -> Unit,
     onReset: () -> Unit,
     onComplete: () -> Unit,
     onExit: () -> Unit,
@@ -419,11 +426,10 @@ internal fun TouchTestOverlay(
                         stateDescription = progressDescription
                         role = Role.Button
                         onClick(label = gridActionLabel) {
-                            onCellsTouched(setOf(0))
+                            onTouchCells(setOf(0))
                             true
                         }
-                    }
-                    .pointerInput(onCellsTouched, onPointersChanged) {
+                    }.pointerInput(onTouchCells, onPointerChange) {
                         awaitEachGesture {
                             do {
                                 val event = awaitPointerEvent()
@@ -434,7 +440,7 @@ internal fun TouchTestOverlay(
                                             change.id.value to
                                                 change.position.toTouchPoint(size.width, size.height)
                                         }
-                                onPointersChanged(pointers)
+                                onPointerChange(pointers)
                                 val cells =
                                     event.changes
                                         .filter { it.pressed || it.previousPressed }
@@ -451,10 +457,10 @@ internal fun TouchTestOverlay(
                                                 rows = DisplayTestViewModel.TOUCH_GRID_ROWS,
                                             )
                                         }
-                                if (cells.isNotEmpty()) onCellsTouched(cells)
+                                if (cells.isNotEmpty()) onTouchCells(cells)
                                 event.changes.forEach { it.consume() }
                             } while (event.changes.any { it.pressed })
-                            onPointersChanged(emptyMap())
+                            onPointerChange(emptyMap())
                         }
                     },
         ) {

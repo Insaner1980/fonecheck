@@ -14,7 +14,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
-import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import com.insaner.fonecheck.ui.components.InfoCard
 import com.insaner.fonecheck.ui.components.InfoRow
@@ -32,7 +31,10 @@ fun ThermalTestScreen(
     viewModel: ThermalTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    ThermalMonitoringEffect(viewModel)
+    ThermalMonitoringEffect(
+        onStartMonitoring = viewModel::startMonitoring,
+        onStopMonitoring = viewModel::stopMonitoring,
+    )
 
     TestScreenContent(modifier = modifier) {
         item {

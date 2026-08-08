@@ -17,7 +17,6 @@ import com.insaner.fonecheck.domain.model.ReportDeviceContext
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.IdProvider
-import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -31,6 +30,7 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RunAllTestsViewModelTest {
@@ -371,7 +371,11 @@ class RunAllTestsViewModelTest {
             assertEquals(DiagnosticCategoryId.STORAGE, viewModel.state.value.targetCategory)
 
             viewModel.onPermissionsResolved(RunAllPermissions())
-            assertEquals(listOf(DiagnosticCategoryId.STORAGE), viewModel.state.value.plan.categories.map { it.categoryId })
+            assertEquals(
+                listOf(DiagnosticCategoryId.STORAGE),
+                viewModel.state.value.plan.categories
+                    .map { it.categoryId },
+            )
             val automaticToken = viewModel.state.value.stageToken
             assertTrue(viewModel.claimStage(automaticToken))
             viewModel.onAutomaticChecksComplete(automaticToken)

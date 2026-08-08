@@ -1,10 +1,10 @@
 package com.insaner.fonecheck.domain.model
 
 import com.insaner.fonecheck.data.repository.ReportPayloadCodec
-import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import java.time.Instant
 
 class ReportAssemblerTest {
     @Test
@@ -95,25 +95,24 @@ class ReportAssemblerTest {
     private fun request(
         kind: ReportKind = ReportKind.FULL_CHECK,
         snapshots: List<DiagnosticCategorySnapshot>,
-    ) =
-        ReportAssemblyRequest(
-            stableId = "report-golden",
-            kind = kind,
-            startedAt = Instant.parse("2026-08-07T12:00:00Z"),
-            completedAt = Instant.parse("2026-08-07T12:01:00Z"),
-            device =
-                ReportDeviceContext(
-                    manufacturer = "Finnvek",
-                    model = "Test Device",
-                    brand = "Fonecheck",
-                    product = "golden",
-                    androidRelease = "16",
-                    apiLevel = 36,
-                    securityPatch = "2026-08-01",
-                ),
-            app = ReportAppContext(versionName = "1.0.0", versionCode = 1L),
-            snapshots = snapshots,
-        )
+    ) = ReportAssemblyRequest(
+        stableId = "report-golden",
+        kind = kind,
+        startedAt = Instant.parse("2026-08-07T12:00:00Z"),
+        completedAt = Instant.parse("2026-08-07T12:01:00Z"),
+        device =
+            ReportDeviceContext(
+                manufacturer = "Finnvek",
+                model = "Test Device",
+                brand = "Fonecheck",
+                product = "golden",
+                androidRelease = "16",
+                apiLevel = 36,
+                securityPatch = "2026-08-01",
+            ),
+        app = ReportAppContext(versionName = "1.0.0", versionCode = 1L),
+        snapshots = snapshots,
+    )
 
     private fun snapshot(
         categoryId: DiagnosticCategoryId,

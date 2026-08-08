@@ -22,11 +22,12 @@ class FonecheckDatabaseSchemaTest {
         migrationHelper.createDatabase(TEST_DATABASE, 1).use { database ->
             database.query("PRAGMA table_info(`reports`)").use { cursor ->
                 val nameColumn = cursor.getColumnIndexOrThrow("name")
-                val columnNames = buildSet {
-                    while (cursor.moveToNext()) {
-                        add(cursor.getString(nameColumn))
+                val columnNames =
+                    buildSet {
+                        while (cursor.moveToNext()) {
+                            add(cursor.getString(nameColumn))
+                        }
                     }
-                }
 
                 assertEquals(EXPECTED_REPORT_COLUMNS, columnNames)
             }

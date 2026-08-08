@@ -25,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +54,7 @@ fun SettingsRoute(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val currentOnOpenOnboarding by rememberUpdatedState(onOpenOnboarding)
     val context = LocalContext.current
     val packageInfo = remember { context.packageManager.getPackageInfo(context.packageName, 0) }
     val appVersion = "${packageInfo.versionName} (${PackageInfoCompat.getLongVersionCode(packageInfo)})"
@@ -60,7 +62,7 @@ fun SettingsRoute(
     LaunchedEffect(state.openOnboarding) {
         if (state.openOnboarding) {
             viewModel.consumeOpenOnboarding()
-            onOpenOnboarding()
+            currentOnOpenOnboarding()
         }
     }
     SettingsScreen(

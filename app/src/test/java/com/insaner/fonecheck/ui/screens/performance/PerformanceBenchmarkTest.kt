@@ -4,12 +4,12 @@ import com.insaner.fonecheck.domain.model.BenchmarkErrorCode
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.NanoTimeSource
-import java.time.Instant
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Test
+import java.time.Instant
 
 class PerformanceBenchmarkTest {
     @Test
@@ -74,7 +74,9 @@ class PerformanceBenchmarkTest {
         }
     }
 
-    private class SequenceNanoTimeSource(vararg values: Long) : NanoTimeSource {
+    private class SequenceNanoTimeSource(
+        vararg values: Long,
+    ) : NanoTimeSource {
         private val values = ArrayDeque(values.toList())
 
         override fun nanoTime(): Long = values.removeFirst()

@@ -63,11 +63,11 @@ import com.insaner.fonecheck.ui.screens.vibration.HapticCapabilityState
 import com.insaner.fonecheck.ui.screens.vibration.VibrationEffectCode
 import com.insaner.fonecheck.ui.screens.vibration.VibrationPrimitiveCode
 import com.insaner.fonecheck.ui.screens.vibration.VibrationTestState
-import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Instant
 
 class RunAllSnapshotMapperTest {
     @Test
@@ -944,21 +944,20 @@ class RunAllSnapshotMapperTest {
     private fun storageBenchmarkResult(
         capturedAt: Instant,
         error: StorageBenchmarkErrorCode? = null,
-    ) =
-        StorageBenchmarkResult(
-            writeMebibytesPerSecond = 120.0.takeIf { error == null },
-            readMebibytesPerSecond = 240.0.takeIf { error == null },
-            bytesWritten = if (error == null) 64L * MEBIBYTE else 0L,
-            bytesRead = if (error == null) 64L * MEBIBYTE else 0L,
-            checksumCrc32 = if (error == null) 42L else 0L,
-            durationMillis = 1_000L,
-            dataSizeBytes = 64L * MEBIBYTE,
-            bufferSizeBytes = 64 * 1_024,
-            availableBeforeBytes = 128L * MEBIBYTE,
-            cleanupSucceeded = true,
-            capturedAt = capturedAt,
-            error = error,
-        )
+    ) = StorageBenchmarkResult(
+        writeMebibytesPerSecond = 120.0.takeIf { error == null },
+        readMebibytesPerSecond = 240.0.takeIf { error == null },
+        bytesWritten = if (error == null) 64L * MEBIBYTE else 0L,
+        bytesRead = if (error == null) 64L * MEBIBYTE else 0L,
+        checksumCrc32 = if (error == null) 42L else 0L,
+        durationMillis = 1_000L,
+        dataSizeBytes = 64L * MEBIBYTE,
+        bufferSizeBytes = 64 * 1_024,
+        availableBeforeBytes = 128L * MEBIBYTE,
+        cleanupSucceeded = true,
+        capturedAt = capturedAt,
+        error = error,
+    )
 
     private companion object {
         const val MEBIBYTE = 1_048_576

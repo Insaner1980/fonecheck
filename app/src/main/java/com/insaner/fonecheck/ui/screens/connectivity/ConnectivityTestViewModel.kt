@@ -34,7 +34,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,6 +41,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 // ── WiFi ────────────────────────────────────────────────────────────────────────
 
@@ -802,6 +802,7 @@ class ConnectivityTestViewModel
                     }
                 val fallbackMcc = operatorCodes?.take(3)
                 val fallbackMnc = operatorCodes?.drop(3)
+
                 @Suppress("DEPRECATION")
                 val networkType = getNetworkTypeName(telephonyManager.dataNetworkType)
                 ProtectedMobileState(
@@ -831,10 +832,10 @@ class ConnectivityTestViewModel
                 else -> MobileDataStateCode.UNKNOWN
             }
 
+        @Suppress("DEPRECATION")
         private fun phoneType(type: Int): String =
             when (type) {
                 TelephonyManager.PHONE_TYPE_GSM -> "GSM"
-                @Suppress("DEPRECATION")
                 TelephonyManager.PHONE_TYPE_CDMA -> "CDMA"
                 TelephonyManager.PHONE_TYPE_SIP -> "SIP"
                 else -> "None"

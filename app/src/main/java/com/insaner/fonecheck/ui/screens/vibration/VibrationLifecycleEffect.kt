@@ -2,22 +2,25 @@ package com.insaner.fonecheck.ui.screens.vibration
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 
 @Composable
-fun VibrationLifecycleEffect(viewModel: VibrationTestViewModel) {
+fun VibrationLifecycleEffect(onCancelVibration: () -> Unit) {
     val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner, viewModel) {
+    val currentOnCancelVibration by rememberUpdatedState(onCancelVibration)
+    DisposableEffect(lifecycleOwner) {
         val observer =
             LifecycleEventObserver { _, event ->
-                if (event == Lifecycle.Event.ON_STOP) viewModel.cancelVibration()
+                if (event == Lifecycle.Event.ON_STOP) currentOnCancelVibration()
             }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            viewModel.cancelVibration()
+            currentOnCancelVibration()
         }
     }
 }

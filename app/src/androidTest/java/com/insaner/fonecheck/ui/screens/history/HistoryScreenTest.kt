@@ -18,11 +18,11 @@ import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
-import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.Instant
 
 @RunWith(AndroidJUnit4::class)
 class HistoryScreenTest {
@@ -158,19 +158,18 @@ class HistoryScreenTest {
         unavailableReason: ReportReadFailure? = null,
         kind: ReportKind = ReportKind.FULL_CHECK,
         categoryId: DiagnosticCategoryId? = null,
-    ) =
-        SavedReportSummary(
-            stableId = id,
-            kind = kind,
-            categoryId = categoryId,
-            completedAt = Instant.parse(completedAt),
-            reportSchemaVersion = 1,
-            scoreVersion = 1,
-            scoreValue = scoreValue,
-            scoreState = scoreState,
-            coveragePercentage = 100,
-            warningCount = 1,
-            failureCount = 0,
-            unavailableReason = unavailableReason,
-        )
+    ) = SavedReportSummary(
+        stableId = id,
+        kind = kind,
+        categoryId = categoryId,
+        completedAt = Instant.parse(completedAt),
+        reportSchemaVersion = 1,
+        scoreVersion = 1,
+        scoreValue = scoreValue,
+        scoreState = scoreState,
+        coveragePercentage = 100,
+        warningCount = 1,
+        failureCount = 0,
+        unavailableReason = unavailableReason,
+    )
 }

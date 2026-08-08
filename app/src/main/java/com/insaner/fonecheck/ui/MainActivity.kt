@@ -7,9 +7,9 @@ import android.os.SystemClock
 import android.view.KeyEvent
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -50,8 +50,8 @@ import com.insaner.fonecheck.ui.screens.buttons.VolumeButtonEventSource
 import com.insaner.fonecheck.ui.screens.buttons.VolumeButtonKeyMapper
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
@@ -65,11 +65,12 @@ class MainActivity : FragmentActivity() {
         keyCode: Int,
         event: KeyEvent,
     ): Boolean {
-        VolumeButtonKeyMapper.directionFor(
-            keyCode = keyCode,
-            action = KeyEvent.ACTION_DOWN,
-            repeatCount = event.repeatCount,
-        )?.let(volumeButtonEventSource::record)
+        VolumeButtonKeyMapper
+            .directionFor(
+                keyCode = keyCode,
+                action = KeyEvent.ACTION_DOWN,
+                repeatCount = event.repeatCount,
+            )?.let(volumeButtonEventSource::record)
         return super.onKeyDown(keyCode, event)
     }
 
@@ -203,7 +204,7 @@ class MainActivity : FragmentActivity() {
                             } else {
                                 Modifier.padding(innerPadding)
                             },
-                        onDisplayFullscreenChanged = { isDisplayFullscreen = it },
+                        onDisplayFullscreenChange = { isDisplayFullscreen = it },
                     )
                 }
             }

@@ -6,7 +6,6 @@ import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CameraMetadata
 import android.util.Log
-import androidx.annotation.OptIn as ExperimentalOptIn
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraSelector
@@ -30,6 +29,7 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 import java.util.concurrent.Executors
 import javax.inject.Inject
+import androidx.annotation.OptIn as ExperimentalOptIn
 
 data class CameraCapabilities(
     val cameraId: String,
@@ -152,9 +152,10 @@ class CameraTestViewModel
                     .map { "${it.width} × ${it.height}" }
             val maxRes = jpegSizes.maxByOrNull { it.width * it.height }
             val maxResStr =
-                maxRes?.let {
-                    "${it.width} × ${it.height} (${formatCameraMegapixels(it.width.toLong() * it.height)})"
-                }.orEmpty()
+                maxRes
+                    ?.let {
+                        "${it.width} × ${it.height} (${formatCameraMegapixels(it.width.toLong() * it.height)})"
+                    }.orEmpty()
 
             val fpsRanges =
                 chars

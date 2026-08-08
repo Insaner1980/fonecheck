@@ -3,7 +3,6 @@ package com.insaner.fonecheck.ui.screens.camera
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.OptIn as ExperimentalOptIn
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.BorderStroke
@@ -66,6 +65,7 @@ import com.insaner.fonecheck.ui.theme.Neutral700
 import com.insaner.fonecheck.ui.theme.Neutral950
 import com.insaner.fonecheck.ui.theme.Red400
 import com.insaner.fonecheck.ui.theme.Yellow400
+import androidx.annotation.OptIn as ExperimentalOptIn
 
 @Composable
 @Suppress("ViewModelForwarding", "ktlint:compose:vm-forwarding-check")
@@ -203,7 +203,7 @@ private fun CameraPreviewCard(
                             } else {
                                 MaterialTheme.colorScheme.onSurface
                             },
-                ),
+                    ),
                 shape = MaterialTheme.shapes.medium,
                 enabled = hasPermission,
             ) {

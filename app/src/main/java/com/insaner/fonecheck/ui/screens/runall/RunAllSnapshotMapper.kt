@@ -1215,8 +1215,16 @@ object RunAllSnapshotMapper {
         val rateEvidence =
             if (ratesAreUsable) {
                 listOf(
-                    storageRateEvidence("sequential_write", requireNotNull(result.writeMebibytesPerSecond), result.capturedAt),
-                    storageRateEvidence("sequential_read", requireNotNull(result.readMebibytesPerSecond), result.capturedAt),
+                    storageRateEvidence(
+                        "sequential_write",
+                        requireNotNull(result.writeMebibytesPerSecond),
+                        result.capturedAt,
+                    ),
+                    storageRateEvidence(
+                        "sequential_read",
+                        requireNotNull(result.readMebibytesPerSecond),
+                        result.capturedAt,
+                    ),
                 )
             } else {
                 val reason =
@@ -1243,45 +1251,51 @@ object RunAllSnapshotMapper {
                 )
             }
         val conditions =
-            result?.let {
-                listOf(
-                    storageLongEvidence("benchmark_data_size", it.dataSizeBytes, "bytes", it.capturedAt),
-                    storageLongEvidence("benchmark_available_before", it.availableBeforeBytes, "bytes", it.capturedAt),
-                    evidence(
-                        categoryId = DiagnosticCategoryId.STORAGE,
-                        id = "benchmark_location",
-                        status = DiagnosticStatus.INFO,
-                        source = EvidenceSource.DERIVED,
-                        value = EvidenceValue.StableTextCodeValue("app_cache"),
-                        capturedAt = it.capturedAt,
-                    ),
-                ) +
-                    if (it.bytesWritten > 0L) {
-                        listOf(
-                            evidence(
-                                categoryId = DiagnosticCategoryId.STORAGE,
-                                id = "benchmark_cleanup",
-                                status =
-                                    if (it.cleanupSucceeded) {
-                                        DiagnosticStatus.INFO
-                                    } else {
-                                        DiagnosticStatus.WARNING
-                                    },
-                                source = EvidenceSource.DERIVED,
-                                reason =
-                                    if (it.cleanupSucceeded) {
-                                        null
-                                    } else {
-                                        EvidenceReasonCode.DEGRADED
-                                    },
-                                value = EvidenceValue.BooleanValue(it.cleanupSucceeded),
-                                capturedAt = it.capturedAt,
-                            ),
-                        )
-                    } else {
-                        emptyList()
-                    }
-            }.orEmpty()
+            result
+                ?.let {
+                    listOf(
+                        storageLongEvidence("benchmark_data_size", it.dataSizeBytes, "bytes", it.capturedAt),
+                        storageLongEvidence(
+                            "benchmark_available_before",
+                            it.availableBeforeBytes,
+                            "bytes",
+                            it.capturedAt,
+                        ),
+                        evidence(
+                            categoryId = DiagnosticCategoryId.STORAGE,
+                            id = "benchmark_location",
+                            status = DiagnosticStatus.INFO,
+                            source = EvidenceSource.DERIVED,
+                            value = EvidenceValue.StableTextCodeValue("app_cache"),
+                            capturedAt = it.capturedAt,
+                        ),
+                    ) +
+                        if (it.bytesWritten > 0L) {
+                            listOf(
+                                evidence(
+                                    categoryId = DiagnosticCategoryId.STORAGE,
+                                    id = "benchmark_cleanup",
+                                    status =
+                                        if (it.cleanupSucceeded) {
+                                            DiagnosticStatus.INFO
+                                        } else {
+                                            DiagnosticStatus.WARNING
+                                        },
+                                    source = EvidenceSource.DERIVED,
+                                    reason =
+                                        if (it.cleanupSucceeded) {
+                                            null
+                                        } else {
+                                            EvidenceReasonCode.DEGRADED
+                                        },
+                                    value = EvidenceValue.BooleanValue(it.cleanupSucceeded),
+                                    capturedAt = it.capturedAt,
+                                ),
+                            )
+                        } else {
+                            emptyList()
+                        }
+                }.orEmpty()
         return rateEvidence + conditions
     }
 

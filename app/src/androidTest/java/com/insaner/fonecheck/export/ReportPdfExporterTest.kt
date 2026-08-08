@@ -23,15 +23,15 @@ import com.insaner.fonecheck.domain.model.ReportSchemaVersion
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.time.Instant
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.time.Instant
 
 @RunWith(AndroidJUnit4::class)
 class ReportPdfExporterTest {
@@ -87,8 +87,16 @@ class ReportPdfExporterTest {
 
             assertEquals("application/json", exported.mimeType)
             assertEquals("content", uri.scheme)
-            val json = context.contentResolver.openInputStream(uri)!!.bufferedReader().use { it.readText() }
-            assertEquals(report(), com.insaner.fonecheck.data.repository.ReportPayloadCodec.decode(json))
+            val json =
+                context.contentResolver
+                    .openInputStream(uri)!!
+                    .bufferedReader()
+                    .use { it.readText() }
+            assertEquals(
+                report(),
+                com.insaner.fonecheck.data.repository.ReportPayloadCodec
+                    .decode(json),
+            )
         }
 
     private fun report(): DiagnosticReport {

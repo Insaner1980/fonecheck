@@ -5,11 +5,11 @@ import com.insaner.fonecheck.domain.model.PerformanceBenchmarkResult
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.NanoTimeSource
-import java.time.Instant
-import javax.inject.Inject
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.yield
+import java.time.Instant
+import javax.inject.Inject
 
 data class PerformanceBenchmarkConfig(
     val cpuIterations: Int = 2_000_000,
@@ -125,8 +125,7 @@ class DefaultPerformanceBenchmarkRunner internal constructor(
             null
         }
 
-    private fun elapsedSince(start: Long): Long =
-        (nanoTimeSource.nanoTime() - start).coerceAtLeast(1L)
+    private fun elapsedSince(start: Long): Long = (nanoTimeSource.nanoTime() - start).coerceAtLeast(1L)
 
     private fun rate(
         operations: Long,

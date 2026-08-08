@@ -30,10 +30,10 @@ import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
-import java.time.Instant
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.Instant
 
 @RunWith(AndroidJUnit4::class)
 class ReportComparisonScreenTest {
@@ -127,16 +127,15 @@ class ReportComparisonScreenTest {
     private fun evidence(
         suffix: String,
         status: DiagnosticStatus,
-    ) =
-        DiagnosticEvidence(
-            categoryId = DiagnosticCategoryId.DEVICE,
-            checkId = DiagnosticCheckId(DiagnosticCategoryId.DEVICE, "device.$suffix"),
-            status = status,
-            confidence = Confidence.HIGH,
-            source = EvidenceSource.ANDROID_API,
-            applicability = Applicability.APPLICABLE,
-            capturedAt = Instant.parse("2026-08-08T10:00:00Z"),
-        )
+    ) = DiagnosticEvidence(
+        categoryId = DiagnosticCategoryId.DEVICE,
+        checkId = DiagnosticCheckId(DiagnosticCategoryId.DEVICE, "device.$suffix"),
+        status = status,
+        confidence = Confidence.HIGH,
+        source = EvidenceSource.ANDROID_API,
+        applicability = Applicability.APPLICABLE,
+        capturedAt = Instant.parse("2026-08-08T10:00:00Z"),
+    )
 
     private fun report(
         id: String,
@@ -144,28 +143,27 @@ class ReportComparisonScreenTest {
         coverage: Int,
         scoreVersion: ScoreVersion = ScoreVersion.CURRENT,
         evidence: List<DiagnosticEvidence> = emptyList(),
-    ) =
-        DiagnosticReport(
-            stableId = id,
-            kind = ReportKind.FULL_CHECK,
-            startedAt = Instant.parse("2026-08-08T10:00:00Z"),
-            completedAt = Instant.parse("2026-08-08T10:01:00Z"),
-            device = ReportDeviceContext("Finnvek", "Test", "Fonecheck", "test", "16", 36, null),
-            app = ReportAppContext("1.0.0", 1L),
-            categories =
-                if (evidence.isEmpty()) {
-                    emptyList()
-                } else {
-                    listOf(
-                        DiagnosticCategoryResult(
-                            DiagnosticCategoryId.DEVICE,
-                            evidence.maxBy { it.status.ordinal }.status,
-                            evidence,
-                        ),
-                    )
-                },
-            score = ScoreSummary(scoreVersion, score, ScoreState.PARTIAL),
-            coverage = CoverageSummary(4, 3, 1, 0, coverage),
-            schemaVersion = ReportSchemaVersion.CURRENT,
-        )
+    ) = DiagnosticReport(
+        stableId = id,
+        kind = ReportKind.FULL_CHECK,
+        startedAt = Instant.parse("2026-08-08T10:00:00Z"),
+        completedAt = Instant.parse("2026-08-08T10:01:00Z"),
+        device = ReportDeviceContext("Finnvek", "Test", "Fonecheck", "test", "16", 36, null),
+        app = ReportAppContext("1.0.0", 1L),
+        categories =
+            if (evidence.isEmpty()) {
+                emptyList()
+            } else {
+                listOf(
+                    DiagnosticCategoryResult(
+                        DiagnosticCategoryId.DEVICE,
+                        evidence.maxBy { it.status.ordinal }.status,
+                        evidence,
+                    ),
+                )
+            },
+        score = ScoreSummary(scoreVersion, score, ScoreState.PARTIAL),
+        coverage = CoverageSummary(4, 3, 1, 0, coverage),
+        schemaVersion = ReportSchemaVersion.CURRENT,
+    )
 }

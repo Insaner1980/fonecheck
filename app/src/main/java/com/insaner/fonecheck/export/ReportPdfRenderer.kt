@@ -13,8 +13,8 @@ import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.EvidenceUnitCode
 import com.insaner.fonecheck.domain.model.ScoreState
-import com.insaner.fonecheck.localization.evidenceReasonStringRes
 import com.insaner.fonecheck.localization.evidenceLabelStringRes
+import com.insaner.fonecheck.localization.evidenceReasonStringRes
 import com.insaner.fonecheck.localization.stableCodeDisplayText
 import com.insaner.fonecheck.localization.stableTextStringRes
 import dagger.hilt.android.qualifiers.ApplicationContext

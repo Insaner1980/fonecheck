@@ -102,8 +102,14 @@ class SimTelephonyProbeTest {
             2,
             SimTelephonyProbe.modemCount(
                 sdkInt = 30,
-                activeModemCount = { modernCalls += 1; 2 },
-                legacyPhoneCount = { legacyCalls += 1; 1 },
+                activeModemCount = {
+                    modernCalls += 1
+                    2
+                },
+                legacyPhoneCount = {
+                    legacyCalls += 1
+                    1
+                },
             ),
         )
         assertEquals(1, modernCalls)
@@ -113,8 +119,14 @@ class SimTelephonyProbeTest {
             1,
             SimTelephonyProbe.modemCount(
                 sdkInt = 29,
-                activeModemCount = { modernCalls += 1; 2 },
-                legacyPhoneCount = { legacyCalls += 1; 1 },
+                activeModemCount = {
+                    modernCalls += 1
+                    2
+                },
+                legacyPhoneCount = {
+                    legacyCalls += 1
+                    1
+                },
             ),
         )
         assertEquals(1, modernCalls)
@@ -155,14 +167,13 @@ class SimTelephonyProbeTest {
     private fun slot(
         state: SimSlotStateCode,
         activity: SimActivityCode,
-    ) =
-        SimSlotInfo(
-            slotIndex = 0,
-            state = state,
-            activity = activity,
-            formFactor = SimFormFactorCode.UNKNOWN,
-            operatorName = null,
-            countryIso = null,
-            networkType = NetworkGenerationCode.UNKNOWN,
-        )
+    ) = SimSlotInfo(
+        slotIndex = 0,
+        state = state,
+        activity = activity,
+        formFactor = SimFormFactorCode.UNKNOWN,
+        operatorName = null,
+        countryIso = null,
+        networkType = NetworkGenerationCode.UNKNOWN,
+    )
 }

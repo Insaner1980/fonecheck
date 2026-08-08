@@ -2,22 +2,25 @@ package com.insaner.fonecheck.ui.screens.buttons
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 
 @Composable
-fun ButtonLifecycleEffect(viewModel: ButtonTestViewModel) {
+fun ButtonLifecycleEffect(onStopTest: () -> Unit) {
     val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner, viewModel) {
+    val currentOnStopTest by rememberUpdatedState(onStopTest)
+    DisposableEffect(lifecycleOwner) {
         val observer =
             LifecycleEventObserver { _, event ->
-                if (event == Lifecycle.Event.ON_STOP) viewModel.stopTest()
+                if (event == Lifecycle.Event.ON_STOP) currentOnStopTest()
             }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            viewModel.stopTest()
+            currentOnStopTest()
         }
     }
 }

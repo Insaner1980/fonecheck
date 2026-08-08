@@ -1,7 +1,6 @@
 package com.insaner.fonecheck.ui.screens.deviceinfo
 
 import com.insaner.fonecheck.domain.model.DeviceInfo
-import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -16,6 +15,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
+import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DeviceInfoViewModelTest {
@@ -51,13 +51,21 @@ class DeviceInfoViewModelTest {
 
             advanceUntilIdle()
             assertEquals(1, captureCount)
-            assertEquals("first", viewModel.state.value.info?.model)
+            assertEquals(
+                "first",
+                viewModel.state.value.info
+                    ?.model,
+            )
             assertFalse(viewModel.state.value.isLoading)
 
             viewModel.refresh()
             advanceUntilIdle()
             assertEquals(2, captureCount)
-            assertEquals("second", viewModel.state.value.info?.model)
+            assertEquals(
+                "second",
+                viewModel.state.value.info
+                    ?.model,
+            )
             assertNull(viewModel.state.value.error)
         }
 
@@ -80,7 +88,11 @@ class DeviceInfoViewModelTest {
             viewModel.refresh()
             advanceUntilIdle()
 
-            assertEquals("available", viewModel.state.value.info?.model)
+            assertEquals(
+                "available",
+                viewModel.state.value.info
+                    ?.model,
+            )
             assertFalse(viewModel.state.value.isLoading)
             assertNotNull(viewModel.state.value.error)
         }

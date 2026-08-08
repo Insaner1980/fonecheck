@@ -166,17 +166,16 @@ object RunAllStagePlanner {
     private fun automatic(
         categoryId: DiagnosticCategoryId,
         limited: Boolean = false,
-    ) =
-        RunAllCategoryPlan(
-            categoryId = categoryId,
-            stage = RunAllStage.AUTOMATIC,
-            disposition =
-                if (limited) {
-                    RunAllCategoryDisposition.PERMISSION_LIMITED
-                } else {
-                    RunAllCategoryDisposition.AUTOMATIC
-                },
-        )
+    ) = RunAllCategoryPlan(
+        categoryId = categoryId,
+        stage = RunAllStage.AUTOMATIC,
+        disposition =
+            if (limited) {
+                RunAllCategoryDisposition.PERMISSION_LIMITED
+            } else {
+                RunAllCategoryDisposition.AUTOMATIC
+            },
+    )
 
     private fun interactive(
         categoryId: DiagnosticCategoryId,

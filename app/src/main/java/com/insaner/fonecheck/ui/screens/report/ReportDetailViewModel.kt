@@ -9,7 +9,6 @@ import com.insaner.fonecheck.data.repository.ReportRepository
 import com.insaner.fonecheck.di.IoDispatcher
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
@@ -18,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 sealed interface ReportDetailState {
     data object Loading : ReportDetailState

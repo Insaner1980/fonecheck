@@ -54,14 +54,22 @@ class SimTelephonyViewModelTest {
 
             advanceUntilIdle()
             assertEquals(1, captureCount)
-            assertEquals(SimInventoryCode.SINGLE_SIM, viewModel.state.value.info?.inventory)
+            assertEquals(
+                SimInventoryCode.SINGLE_SIM,
+                viewModel.state.value.info
+                    ?.inventory,
+            )
             assertFalse(viewModel.state.value.isLoading)
 
             shouldFail = true
             viewModel.refresh()
             advanceUntilIdle()
 
-            assertEquals(SimInventoryCode.SINGLE_SIM, viewModel.state.value.info?.inventory)
+            assertEquals(
+                SimInventoryCode.SINGLE_SIM,
+                viewModel.state.value.info
+                    ?.inventory,
+            )
             assertFalse(viewModel.state.value.isLoading)
             assertNotNull(viewModel.state.value.error)
         }

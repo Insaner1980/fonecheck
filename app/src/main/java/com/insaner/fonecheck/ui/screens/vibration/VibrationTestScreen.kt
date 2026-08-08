@@ -36,7 +36,7 @@ fun VibrationTestScreen(
     viewModel: VibrationTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    VibrationLifecycleEffect(viewModel)
+    VibrationLifecycleEffect(onCancelVibration = viewModel::cancelVibration)
 
     TestScreenContent(modifier = modifier) {
         item {
@@ -61,8 +61,8 @@ fun VibrationTestScreen(
                     onLong = viewModel::vibrateLong,
                     onPattern = viewModel::vibratePattern,
                     onStop = viewModel::cancelVibration,
-                    onFelt = { viewModel.reportFelt(true) },
-                    onNotFelt = { viewModel.reportFelt(false) },
+                    onConfirmSuccess = { viewModel.reportFelt(true) },
+                    onConfirmFailure = { viewModel.reportFelt(false) },
                     onSkip = viewModel::skipMotorConfirmation,
                 )
             }
@@ -99,8 +99,8 @@ private fun MotorTestDetails(
     onLong: () -> Unit,
     onPattern: () -> Unit,
     onStop: () -> Unit,
-    onFelt: () -> Unit,
-    onNotFelt: () -> Unit,
+    onConfirmSuccess: () -> Unit,
+    onConfirmFailure: () -> Unit,
     onSkip: () -> Unit,
 ) {
     val enabled = state.haptic.hasVibrator
@@ -147,7 +147,7 @@ private fun MotorTestDetails(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             OutlinedButton(
-                onClick = onFelt,
+                onClick = onConfirmSuccess,
                 enabled = enabled,
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(8.dp),
@@ -155,7 +155,7 @@ private fun MotorTestDetails(
                 Text(stringResource(R.string.vibration_yes))
             }
             OutlinedButton(
-                onClick = onNotFelt,
+                onClick = onConfirmFailure,
                 enabled = enabled,
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(8.dp),
@@ -184,7 +184,7 @@ private fun VibrationButton(
     label: String,
     enabled: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
 ) {
     Button(
         onClick = onClick,

@@ -1,14 +1,14 @@
 package com.insaner.fonecheck.export
 
+import com.insaner.fonecheck.domain.model.Confidence
+import com.insaner.fonecheck.domain.model.CoverageSummary
 import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticCheckId
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
-import com.insaner.fonecheck.domain.model.Confidence
-import com.insaner.fonecheck.domain.model.CoverageSummary
-import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
+import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.EvidenceUnitCode
 import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.ScoreState
@@ -238,9 +238,12 @@ object ReportPdfContentBuilder {
                         add(
                             PdfTextBlock(
                                 "${valueText(it, labels)}" +
-                                    item.unit?.let(labels.unitName)?.takeIf(String::isNotBlank)?.let { unit ->
-                                        " $unit"
-                                    }.orEmpty(),
+                                    item.unit
+                                        ?.let(labels.unitName)
+                                        ?.takeIf(String::isNotBlank)
+                                        ?.let { unit ->
+                                            " $unit"
+                                        }.orEmpty(),
                                 PdfTextStyle.MONO,
                             ),
                         )

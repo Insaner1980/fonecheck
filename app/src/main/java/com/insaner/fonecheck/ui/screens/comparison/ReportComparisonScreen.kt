@@ -117,7 +117,7 @@ fun ReportComparisonScreen(
 private fun ComparisonContent(
     comparison: ReportComparison,
     onBack: () -> Unit,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
 ) {
     var expandedCategory by rememberSaveable { mutableStateOf<String?>(null) }
     val dateFormatter =
@@ -300,7 +300,10 @@ private fun ComparisonCategoryCard(
             ?.let { stringResource(it.labelResId) }
             ?: category.categoryId.stableId
     TestSectionCard(
-        icon = category.categoryId.stableId.take(2).uppercase(Locale.ROOT),
+        icon =
+            category.categoryId.stableId
+                .take(2)
+                .uppercase(Locale.ROOT),
         title = label,
         statusText =
             stringResource(
@@ -402,7 +405,7 @@ private fun ComparisonMessage(
     message: String,
     onRetry: (() -> Unit)?,
     onBack: (() -> Unit)?,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
 ) {
     ScreenStateScreen(
         type = type,

@@ -76,19 +76,33 @@ value class EvidenceUnitCode(
 }
 
 sealed interface EvidenceValue {
-    data class BooleanValue(val value: Boolean) : EvidenceValue
+    data class BooleanValue(
+        val value: Boolean,
+    ) : EvidenceValue
 
-    data class IntValue(val value: Int) : EvidenceValue
+    data class IntValue(
+        val value: Int,
+    ) : EvidenceValue
 
-    data class LongValue(val value: Long) : EvidenceValue
+    data class LongValue(
+        val value: Long,
+    ) : EvidenceValue
 
-    data class DecimalValue(val value: BigDecimal) : EvidenceValue
+    data class DecimalValue(
+        val value: BigDecimal,
+    ) : EvidenceValue
 
-    data class DoubleValue(val value: Double) : EvidenceValue
+    data class DoubleValue(
+        val value: Double,
+    ) : EvidenceValue
 
-    data class RawTextValue(val value: String) : EvidenceValue
+    data class RawTextValue(
+        val value: String,
+    ) : EvidenceValue
 
-    data class StableTextCodeValue(val value: String) : EvidenceValue {
+    data class StableTextCodeValue(
+        val value: String,
+    ) : EvidenceValue {
         init {
             require(value.matches(STABLE_CODE_PATTERN)) { "Stable text code must be a lower-case snake-case code." }
         }

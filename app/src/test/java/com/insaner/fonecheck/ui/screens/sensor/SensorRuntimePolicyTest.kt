@@ -9,9 +9,10 @@ class SensorRuntimePolicyTest {
     @Test
     fun catalogKeepsEveryGuidedSensorAndMarksMissingHardwareUnavailable() {
         val tests =
-            GuidedSensorCatalog.create(
-                availableTypes = setOf(SensorType.ACCELEROMETER, SensorType.LIGHT, SensorType.STEP_COUNTER),
-            ).associateBy { it.code }
+            GuidedSensorCatalog
+                .create(
+                    availableTypes = setOf(SensorType.ACCELEROMETER, SensorType.LIGHT, SensorType.STEP_COUNTER),
+                ).associateBy { it.code }
 
         assertEquals(GuidedSensorStatus.NOT_TESTED, tests.getValue(GuidedSensorCode.ACCELEROMETER).status)
         assertEquals(GuidedSensorStatus.NOT_TESTED, tests.getValue(GuidedSensorCode.LIGHT).status)

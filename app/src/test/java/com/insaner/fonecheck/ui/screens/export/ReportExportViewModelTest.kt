@@ -15,7 +15,6 @@ import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
 import com.insaner.fonecheck.export.ExportedReport
 import com.insaner.fonecheck.export.ReportExporter
-import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -28,6 +27,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
+import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReportExportViewModelTest {
@@ -115,13 +115,12 @@ class ReportExportViewModelTest {
     private fun viewModel(
         repository: FakeReportRepository,
         exporter: ReportExporter,
-    ) =
-        ReportExportViewModel(
-            savedStateHandle = SavedStateHandle(mapOf("reportId" to "saved-report")),
-            reportRepository = repository,
-            reportExporter = exporter,
-            ioDispatcher = dispatcher,
-        )
+    ) = ReportExportViewModel(
+        savedStateHandle = SavedStateHandle(mapOf("reportId" to "saved-report")),
+        reportRepository = repository,
+        reportExporter = exporter,
+        ioDispatcher = dispatcher,
+    )
 
     private class FakeExporter(
         var failuresRemaining: Int = 0,

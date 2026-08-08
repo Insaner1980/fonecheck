@@ -1,6 +1,5 @@
 package com.insaner.fonecheck.ui.screens.storage
 
-import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
@@ -15,6 +14,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
+import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class StorageTestViewModelTest {
@@ -89,12 +89,11 @@ class StorageTestViewModelTest {
     private fun viewModel(
         infoProvider: StorageInfoProvider = StorageInfoProvider { storageInfo() },
         runner: StorageBenchmarkRunner = StorageBenchmarkRunner { benchmarkResult() },
-    ) =
-        StorageTestViewModel(
-            infoProvider = infoProvider,
-            benchmarkRunner = runner,
-            ioDispatcher = dispatcher,
-        )
+    ) = StorageTestViewModel(
+        infoProvider = infoProvider,
+        benchmarkRunner = runner,
+        ioDispatcher = dispatcher,
+    )
 
     private fun storageInfo() =
         StorageInfo(

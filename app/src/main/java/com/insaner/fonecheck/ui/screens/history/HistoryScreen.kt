@@ -1,7 +1,6 @@
 package com.insaner.fonecheck.ui.screens.history
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,7 +13,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -176,7 +174,7 @@ fun HistoryScreen(
 }
 
 @Composable
-private fun HistoryLoading(modifier: Modifier) {
+private fun HistoryLoading(modifier: Modifier = Modifier) {
     ScreenStateScreen(
         type = ScreenStateType.LOADING,
         message = stringResource(R.string.history_loading),

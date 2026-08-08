@@ -30,12 +30,10 @@ object PreferencesModule {
 
     @Provides
     @Singleton
-    fun provideAppPreferencesRepository(
-        dataStore: DataStore<Preferences>,
-    ): AppPreferencesRepository = DataStoreAppPreferencesRepository(dataStore)
+    fun provideAppPreferencesRepository(dataStore: DataStore<Preferences>): AppPreferencesRepository =
+        DataStoreAppPreferencesRepository(dataStore)
 
     @Provides
-    fun provideSettingsPermissionProvider(
-        provider: AndroidSettingsPermissionProvider,
-    ): SettingsPermissionProvider = provider
+    fun provideSettingsPermissionProvider(provider: AndroidSettingsPermissionProvider): SettingsPermissionProvider =
+        provider
 }

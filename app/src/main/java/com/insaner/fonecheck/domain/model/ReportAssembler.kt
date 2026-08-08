@@ -48,7 +48,12 @@ object ReportAssembler {
         require(request.snapshots.all { it.version == DiagnosticSnapshotVersion.CURRENT }) {
             "Only the current diagnostic snapshot version can be assembled."
         }
-        require(request.snapshots.map { it.categoryId }.distinct().size == request.snapshots.size) {
+        require(
+            request.snapshots
+                .map { it.categoryId }
+                .distinct()
+                .size == request.snapshots.size,
+        ) {
             "A report must not contain duplicate category snapshots."
         }
         val orderedSnapshots = request.orderedSnapshots()

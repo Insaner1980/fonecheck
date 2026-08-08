@@ -13,9 +13,9 @@ import com.insaner.fonecheck.domain.model.ReportSchemaVersion
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
-import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.time.Instant
 
 class ReportDetailPresenterTest {
     @Test
@@ -74,26 +74,25 @@ class ReportDetailPresenterTest {
     private fun report(
         kind: ReportKind = ReportKind.FULL_CHECK,
         categories: List<DiagnosticCategoryResult>,
-    ) =
-        DiagnosticReport(
-            stableId = "report-detail",
-            kind = kind,
-            startedAt = Instant.parse("2026-08-08T10:00:00Z"),
-            completedAt = Instant.parse("2026-08-08T10:01:00Z"),
-            device =
-                ReportDeviceContext(
-                    manufacturer = "Finnvek",
-                    model = "Test Device",
-                    brand = "Fonecheck",
-                    product = "test-product",
-                    androidRelease = "16",
-                    apiLevel = 36,
-                    securityPatch = "2026-08-01",
-                ),
-            app = ReportAppContext("1.0.0", 1L),
-            categories = categories,
-            score = ScoreSummary(ScoreVersion.CURRENT, 82, ScoreState.PARTIAL),
-            coverage = CoverageSummary(14, categories.size, 14 - categories.size, 0, 50),
-            schemaVersion = ReportSchemaVersion.CURRENT,
-        )
+    ) = DiagnosticReport(
+        stableId = "report-detail",
+        kind = kind,
+        startedAt = Instant.parse("2026-08-08T10:00:00Z"),
+        completedAt = Instant.parse("2026-08-08T10:01:00Z"),
+        device =
+            ReportDeviceContext(
+                manufacturer = "Finnvek",
+                model = "Test Device",
+                brand = "Fonecheck",
+                product = "test-product",
+                androidRelease = "16",
+                apiLevel = 36,
+                securityPatch = "2026-08-01",
+            ),
+        app = ReportAppContext("1.0.0", 1L),
+        categories = categories,
+        score = ScoreSummary(ScoreVersion.CURRENT, 82, ScoreState.PARTIAL),
+        coverage = CoverageSummary(14, categories.size, 14 - categories.size, 0, 50),
+        schemaVersion = ReportSchemaVersion.CURRENT,
+    )
 }

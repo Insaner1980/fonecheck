@@ -12,8 +12,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.insaner.fonecheck.R
-import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.data.preferences.AppPreferences
+import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.ui.screens.audio.AudioTestScreen
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestScreen
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestScreen
@@ -24,8 +24,8 @@ import com.insaner.fonecheck.ui.screens.connectivity.ConnectivityTestScreen
 import com.insaner.fonecheck.ui.screens.deviceinfo.DeviceInfoScreen
 import com.insaner.fonecheck.ui.screens.display.DisplayTestScreen
 import com.insaner.fonecheck.ui.screens.export.ReportExportRoute
-import com.insaner.fonecheck.ui.screens.home.HomeScreen
 import com.insaner.fonecheck.ui.screens.history.HistoryRoute
+import com.insaner.fonecheck.ui.screens.home.HomeScreen
 import com.insaner.fonecheck.ui.screens.onboarding.OnboardingRoute
 import com.insaner.fonecheck.ui.screens.performance.PerformanceInfoScreen
 import com.insaner.fonecheck.ui.screens.report.ReportDetailRoute
@@ -42,7 +42,7 @@ import com.insaner.fonecheck.ui.screens.vibration.VibrationTestScreen
 fun FonecheckNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    onDisplayFullscreenChanged: (Boolean) -> Unit = {},
+    onDisplayFullscreenChange: (Boolean) -> Unit = {},
     appPreferences: AppPreferences = AppPreferences(),
 ) {
     NavHost(
@@ -87,7 +87,7 @@ fun FonecheckNavHost(
             StorageTestScreen()
         }
         composable<DisplayTest> {
-            DisplayTestScreen(onFullscreenChanged = onDisplayFullscreenChanged)
+            DisplayTestScreen(onFullscreenChange = onDisplayFullscreenChange)
         }
         composable<VibrationTest> {
             VibrationTestScreen()
@@ -102,7 +102,7 @@ fun FonecheckNavHost(
             RunAllTestsScreen(
                 onDone = { navController.popBackStack() },
                 onOpenCategory = { route -> navController.navigate(route) },
-                onDisplayFullscreenChanged = onDisplayFullscreenChanged,
+                onDisplayFullscreenChange = onDisplayFullscreenChange,
                 showTestWarnings = appPreferences.testWarningsEnabled,
             )
         }
@@ -116,7 +116,7 @@ fun FonecheckNavHost(
         composable<Onboarding> { backStackEntry ->
             val route = backStackEntry.toRoute<Onboarding>()
             OnboardingRoute(
-                onFinished = {
+                onFinish = {
                     if (route.reopened) {
                         navController.popBackStack()
                     } else {
@@ -148,7 +148,7 @@ fun FonecheckNavHost(
                 RunAllTestsScreen(
                     onDone = { navController.popBackStack() },
                     onOpenCategory = { destination -> navController.navigate(destination) },
-                    onDisplayFullscreenChanged = onDisplayFullscreenChanged,
+                    onDisplayFullscreenChange = onDisplayFullscreenChange,
                     targetCategory = category,
                     showTestWarnings = appPreferences.testWarningsEnabled,
                 )

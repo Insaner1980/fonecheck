@@ -19,10 +19,10 @@ import com.insaner.fonecheck.domain.model.ReportSchemaVersion
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
-import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import java.time.Instant
 
 class ReportComparisonEngineTest {
     @Test
@@ -171,17 +171,16 @@ class ReportComparisonEngineTest {
         checkSuffix: String,
         status: DiagnosticStatus,
         value: EvidenceValue? = null,
-    ) =
-        DiagnosticEvidence(
-            categoryId = categoryId,
-            checkId = DiagnosticCheckId(categoryId, "${categoryId.stableId}.$checkSuffix"),
-            status = status,
-            confidence = Confidence.HIGH,
-            source = EvidenceSource.ANDROID_API,
-            applicability = Applicability.APPLICABLE,
-            value = value,
-            capturedAt = Instant.parse("2026-08-08T10:00:00Z"),
-        )
+    ) = DiagnosticEvidence(
+        categoryId = categoryId,
+        checkId = DiagnosticCheckId(categoryId, "${categoryId.stableId}.$checkSuffix"),
+        status = status,
+        confidence = Confidence.HIGH,
+        source = EvidenceSource.ANDROID_API,
+        applicability = Applicability.APPLICABLE,
+        value = value,
+        capturedAt = Instant.parse("2026-08-08T10:00:00Z"),
+    )
 
     private fun report(
         id: String,
@@ -189,17 +188,16 @@ class ReportComparisonEngineTest {
         score: Int = 80,
         coverage: Int = 75,
         scoreVersion: ScoreVersion = ScoreVersion.CURRENT,
-    ) =
-        DiagnosticReport(
-            stableId = id,
-            kind = ReportKind.FULL_CHECK,
-            startedAt = Instant.parse("2026-08-08T10:00:00Z"),
-            completedAt = Instant.parse("2026-08-08T10:01:00Z"),
-            device = ReportDeviceContext("Finnvek", "Test", "Fonecheck", "test", "16", 36, null),
-            app = ReportAppContext("1.0.0", 1L),
-            categories = categories,
-            score = ScoreSummary(scoreVersion, score, ScoreState.PARTIAL),
-            coverage = CoverageSummary(4, 3, 1, 0, coverage),
-            schemaVersion = ReportSchemaVersion.CURRENT,
-        )
+    ) = DiagnosticReport(
+        stableId = id,
+        kind = ReportKind.FULL_CHECK,
+        startedAt = Instant.parse("2026-08-08T10:00:00Z"),
+        completedAt = Instant.parse("2026-08-08T10:01:00Z"),
+        device = ReportDeviceContext("Finnvek", "Test", "Fonecheck", "test", "16", 36, null),
+        app = ReportAppContext("1.0.0", 1L),
+        categories = categories,
+        score = ScoreSummary(scoreVersion, score, ScoreState.PARTIAL),
+        coverage = CoverageSummary(4, 3, 1, 0, coverage),
+        schemaVersion = ReportSchemaVersion.CURRENT,
+    )
 }

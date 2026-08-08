@@ -19,6 +19,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -37,15 +38,16 @@ import com.insaner.fonecheck.ui.components.SectionBox
 
 @Composable
 fun OnboardingRoute(
-    onFinished: () -> Unit,
+    onFinish: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: OnboardingViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val currentOnFinish by rememberUpdatedState(onFinish)
     LaunchedEffect(state.finished) {
         if (state.finished) {
             viewModel.consumeFinished()
-            onFinished()
+            currentOnFinish()
         }
     }
     OnboardingScreen(

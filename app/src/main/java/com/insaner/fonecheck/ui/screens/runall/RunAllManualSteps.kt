@@ -78,8 +78,8 @@ fun FullCheckPreflightScreen(
     selections: RunAllSelections,
     onSelectionsChange: (RunAllSelections) -> Unit,
     onContinue: () -> Unit,
-    showWarnings: Boolean = true,
     modifier: Modifier = Modifier,
+    showWarnings: Boolean = true,
 ) {
     Column(
         modifier =
@@ -156,7 +156,9 @@ fun FullCheckPreflightScreen(
 }
 
 @Composable
-private fun PreflightDisclosure(@StringRes textResId: Int) {
+private fun PreflightDisclosure(
+    @StringRes textResId: Int,
+) {
     Text(
         text = stringResource(textResId),
         style = MaterialTheme.typography.bodyMedium,

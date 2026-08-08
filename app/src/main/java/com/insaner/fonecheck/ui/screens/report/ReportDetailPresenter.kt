@@ -50,5 +50,4 @@ object ReportDetailPresenter {
     }
 }
 
-fun stableCodeFallback(code: String): String =
-    stableCodeDisplayText(code)
+fun stableCodeFallback(code: String): String = stableCodeDisplayText(code)

@@ -125,12 +125,13 @@ class AndroidVibrationPlatform
                         VibrationEffect.EFFECT_TICK,
                     )
                 }.getOrNull()
-            return support?.let {
-                VibrationCapabilityPolicy.supportedEffects(
-                    results = it,
-                    supportedValue = Vibrator.VIBRATION_EFFECT_SUPPORT_YES,
-                )
-            }.orEmpty()
+            return support
+                ?.let {
+                    VibrationCapabilityPolicy.supportedEffects(
+                        results = it,
+                        supportedValue = Vibrator.VIBRATION_EFFECT_SUPPORT_YES,
+                    )
+                }.orEmpty()
         }
 
         @RequiresApi(Build.VERSION_CODES.S)

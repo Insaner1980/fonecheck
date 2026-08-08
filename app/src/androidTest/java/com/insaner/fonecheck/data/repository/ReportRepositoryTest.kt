@@ -25,9 +25,6 @@ import com.insaner.fonecheck.domain.model.ReportSchemaVersion
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
-import java.math.BigDecimal
-import java.time.Instant
-import java.util.UUID
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -38,6 +35,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.math.BigDecimal
+import java.time.Instant
+import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class ReportRepositoryTest {
@@ -245,24 +245,23 @@ class ReportRepositoryTest {
         completedAt: Long,
         reportSchemaVersion: Int = ReportSchemaVersion.CURRENT.value,
         payloadJson: String,
-    ) =
-        ReportEntity(
-            id = id,
-            reportKindCode = "full_check",
-            categoryId = null,
-            startedAtEpochMillis = 1_000L,
-            completedAtEpochMillis = completedAt,
-            reportSchemaVersion = reportSchemaVersion,
-            scoreVersion = 1,
-            scoreValue = 100,
-            scoreStateCode = "complete",
-            coveragePercentage = 100,
-            applicableCount = 1,
-            completedCount = 1,
-            notTestedCount = 0,
-            unavailableCount = 0,
-            warningCount = 0,
-            failureCount = 0,
-            payloadJson = payloadJson,
-        )
+    ) = ReportEntity(
+        id = id,
+        reportKindCode = "full_check",
+        categoryId = null,
+        startedAtEpochMillis = 1_000L,
+        completedAtEpochMillis = completedAt,
+        reportSchemaVersion = reportSchemaVersion,
+        scoreVersion = 1,
+        scoreValue = 100,
+        scoreStateCode = "complete",
+        coveragePercentage = 100,
+        applicableCount = 1,
+        completedCount = 1,
+        notTestedCount = 0,
+        unavailableCount = 0,
+        warningCount = 0,
+        failureCount = 0,
+        payloadJson = payloadJson,
+    )
 }

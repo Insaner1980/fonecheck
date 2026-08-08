@@ -4,8 +4,8 @@ import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.ScoreState
-import java.time.Instant
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 
 interface ReportRepository {
     suspend fun insert(report: DiagnosticReport)

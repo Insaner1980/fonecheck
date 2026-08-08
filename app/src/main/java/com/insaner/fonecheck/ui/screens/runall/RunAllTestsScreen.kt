@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:compose:multiple-emitters-check")
+
 package com.insaner.fonecheck.ui.screens.runall
 
 import android.Manifest
@@ -17,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -58,11 +61,11 @@ import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkPhase
 import com.insaner.fonecheck.ui.screens.storage.StorageTestViewModel
 import com.insaner.fonecheck.ui.screens.thermal.ThermalTestViewModel
 import com.insaner.fonecheck.ui.screens.vibration.VibrationTestViewModel
-import java.time.Instant
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import java.time.Instant
 
 private const val AUTOMATIC_MICROPHONE_DURATION_MS = 1_500L
 private const val AUTOMATIC_MICROPHONE_TIMEOUT_MS = 3_000L
@@ -79,7 +82,7 @@ fun RunAllTestsScreen(
     onDone: () -> Unit,
     onOpenCategory: (Any) -> Unit,
     modifier: Modifier = Modifier,
-    onDisplayFullscreenChanged: (Boolean) -> Unit = {},
+    onDisplayFullscreenChange: (Boolean) -> Unit = {},
     targetCategory: DiagnosticCategoryId? = null,
     showTestWarnings: Boolean = true,
     sessionViewModel: RunAllTestsViewModel = hiltViewModel(),
@@ -99,6 +102,7 @@ fun RunAllTestsScreen(
     biometricViewModel: BiometricTestViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val currentOnDisplayFullscreenChange by rememberUpdatedState(onDisplayFullscreenChange)
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     val sessionState by sessionViewModel.state.collectAsStateWithLifecycle()
@@ -261,8 +265,8 @@ fun RunAllTestsScreen(
 
     val isDisplayFullscreen = sessionState.stage == RunAllStage.DISPLAY
     DisposableEffect(isDisplayFullscreen) {
-        onDisplayFullscreenChanged(isDisplayFullscreen)
-        onDispose { onDisplayFullscreenChanged(false) }
+        currentOnDisplayFullscreenChange(isDisplayFullscreen)
+        onDispose { currentOnDisplayFullscreenChange(false) }
     }
 
     val permissionLauncher =
@@ -273,6 +277,7 @@ fun RunAllTestsScreen(
             connectivityViewModel.onPermissionsGranted()
             simViewModel.refresh()
         }
+
     fun requestPermission(controller: PermissionController) {
         controller.onRequestLaunched()
         permissionLauncher.launch(controller.permissions.toTypedArray())
@@ -562,8 +567,10 @@ fun RunAllTestsScreen(
             PermissionReviewScreen(
                 prompts =
                     listOfNotNull(
-                        if ((sessionState.targetCategory == null ||
-                                sessionState.targetCategory == DiagnosticCategoryId.AUDIO) &&
+                        if ((
+                                sessionState.targetCategory == null ||
+                                    sessionState.targetCategory == DiagnosticCategoryId.AUDIO
+                            ) &&
                             sessionState.selections.includeMicrophone
                         ) {
                             PermissionPrompt(
@@ -575,8 +582,10 @@ fun RunAllTestsScreen(
                         } else {
                             null
                         },
-                        if ((sessionState.targetCategory == null ||
-                                sessionState.targetCategory == DiagnosticCategoryId.CAMERA) &&
+                        if ((
+                                sessionState.targetCategory == null ||
+                                    sessionState.targetCategory == DiagnosticCategoryId.CAMERA
+                            ) &&
                             sessionState.selections.includeCamera
                         ) {
                             PermissionPrompt(

@@ -3,7 +3,6 @@ package com.insaner.fonecheck.data.local
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import java.util.concurrent.Executor
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -12,6 +11,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.Executor
 
 @RunWith(AndroidJUnit4::class)
 class ReportDaoTest {
@@ -22,13 +22,14 @@ class ReportDaoTest {
     fun setUp() {
         executedQueries.clear()
         database =
-            Room.inMemoryDatabaseBuilder(
-                InstrumentationRegistry.getInstrumentation().targetContext,
-                FonecheckDatabase::class.java,
-            ).setQueryCallback(
-                { sqlQuery, _ -> executedQueries += sqlQuery },
-                Executor { command -> command.run() },
-            ).build()
+            Room
+                .inMemoryDatabaseBuilder(
+                    InstrumentationRegistry.getInstrumentation().targetContext,
+                    FonecheckDatabase::class.java,
+                ).setQueryCallback(
+                    { sqlQuery, _ -> executedQueries += sqlQuery },
+                    Executor { command -> command.run() },
+                ).build()
     }
 
     @After
@@ -71,43 +72,41 @@ class ReportDaoTest {
     private fun summary(
         id: String,
         completedAt: Long,
-    ) =
-        ReportSummary(
-            id = id,
-            reportKindCode = "full_check",
-            categoryId = null,
-            completedAtEpochMillis = completedAt,
-            reportSchemaVersion = 1,
-            scoreVersion = 1,
-            scoreValue = 90,
-            scoreStateCode = "complete",
-            coveragePercentage = 100,
-            warningCount = 1,
-            failureCount = 0,
-        )
+    ) = ReportSummary(
+        id = id,
+        reportKindCode = "full_check",
+        categoryId = null,
+        completedAtEpochMillis = completedAt,
+        reportSchemaVersion = 1,
+        scoreVersion = 1,
+        scoreValue = 90,
+        scoreStateCode = "complete",
+        coveragePercentage = 100,
+        warningCount = 1,
+        failureCount = 0,
+    )
 
     private fun report(
         id: String,
         completedAt: Long,
         payload: String,
-    ) =
-        ReportEntity(
-            id = id,
-            reportKindCode = "full_check",
-            categoryId = null,
-            startedAtEpochMillis = 1_000L,
-            completedAtEpochMillis = completedAt,
-            reportSchemaVersion = 1,
-            scoreVersion = 1,
-            scoreValue = 90,
-            scoreStateCode = "complete",
-            coveragePercentage = 100,
-            applicableCount = 2,
-            completedCount = 2,
-            notTestedCount = 0,
-            unavailableCount = 0,
-            warningCount = 1,
-            failureCount = 0,
-            payloadJson = payload,
-        )
+    ) = ReportEntity(
+        id = id,
+        reportKindCode = "full_check",
+        categoryId = null,
+        startedAtEpochMillis = 1_000L,
+        completedAtEpochMillis = completedAt,
+        reportSchemaVersion = 1,
+        scoreVersion = 1,
+        scoreValue = 90,
+        scoreStateCode = "complete",
+        coveragePercentage = 100,
+        applicableCount = 2,
+        completedCount = 2,
+        notTestedCount = 0,
+        unavailableCount = 0,
+        warningCount = 1,
+        failureCount = 0,
+        payloadJson = payload,
+    )
 }

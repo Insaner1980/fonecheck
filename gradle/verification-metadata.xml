@@ -7,17 +7,22 @@
       <key-servers enabled="false"/>
       <ignored-keys>
          <ignored-key id="153E7A3C2B4E5118" reason="Public key is unavailable; artifact is verified by SHA-256"/>
+         <ignored-key id="31D2D79DF7E85DD3" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="32EE5355A6BC6E42" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="340B090F727518D8" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="34918B7D3969D2F5" reason="Public key is unavailable; artifact is verified by SHA-256"/>
+         <ignored-key id="36D4E9618F3ADAB5" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="379CE192D401AB61" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="38EE757D69184620" reason="Public key is unavailable; artifact is verified by SHA-256"/>
+         <ignored-key id="3967D4EDA591B991" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="3AD93C3C677A106E" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="3B42B015E1C86D65" reason="Public key is unavailable; artifact is verified by SHA-256"/>
+         <ignored-key id="3D002DBC5EA9615F" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="3D12CA2AC19F3181" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="3FAAD2CD5ECBB314" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="40A3C4432BD7308C" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="419A28E3A649A40B" reason="Public key is unavailable; artifact is verified by SHA-256"/>
+         <ignored-key id="479D601F3A7B5C1A" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="4871433C7653D10C" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="4ECE492B63E38ACF" reason="Public key is unavailable; artifact is verified by SHA-256"/>
          <ignored-key id="530AA5F25C25011F" reason="Key couldn't be downloaded from any key server"/>

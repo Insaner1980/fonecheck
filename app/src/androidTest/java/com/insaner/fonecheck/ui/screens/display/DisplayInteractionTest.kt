@@ -28,8 +28,8 @@ class DisplayInteractionTest {
             FonecheckTheme {
                 TouchTestOverlay(
                     state = TouchTestState(isActive = true),
-                    onCellsTouched = touchedCells::addAll,
-                    onPointersChanged = { pointerCounts += it.size },
+                    onTouchCells = touchedCells::addAll,
+                    onPointerChange = { pointerCounts += it.size },
                     onReset = {},
                     onComplete = {},
                     onExit = { exited = true },

@@ -246,8 +246,7 @@ private fun authResultDescription(state: BiometricTestState): String =
     }
 
 @Composable
-private fun yesNoLabel(value: Boolean): String =
-    stringResource(if (value) R.string.status_yes else R.string.status_no)
+private fun yesNoLabel(value: Boolean): String = stringResource(if (value) R.string.status_yes else R.string.status_no)
 
 private fun authResultColor(result: AuthResult) =
     when (result) {

@@ -4,7 +4,6 @@ import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.domain.model.PerformanceBenchmarkResult
 import com.insaner.fonecheck.domain.model.PerformanceInfo
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
-import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
@@ -21,6 +20,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
+import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PerformanceInfoViewModelTest {
@@ -93,9 +93,7 @@ class PerformanceInfoViewModelTest {
             assertNull(viewModel.state.value.benchmarkError)
         }
 
-    private fun viewModel(
-        benchmarkRunner: PerformanceBenchmarkRunner,
-    ) =
+    private fun viewModel(benchmarkRunner: PerformanceBenchmarkRunner) =
         PerformanceInfoViewModel(
             performanceInfoProvider = PerformanceInfoProvider(::performanceInfo),
             benchmarkRunner = benchmarkRunner,
