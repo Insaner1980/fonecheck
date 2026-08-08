@@ -39,6 +39,7 @@ class ReportExportScreenTest {
                 ReportExportScreen(
                     state = ReportExportState.Ready(report()),
                     onExportPdf = { exported = true },
+                    onExportJson = {},
                     onRetryLoad = {},
                     onBack = {},
                 )
@@ -48,6 +49,7 @@ class ReportExportScreenTest {
         composeRule.onNodeWithText(context.getString(R.string.export_local_only)).assertIsDisplayed()
         composeRule.onNodeWithTag("export_pdf").performClick()
         assertTrue(exported)
+        composeRule.onNodeWithText(context.getString(R.string.export_json)).assertIsDisplayed()
     }
 
     @Test
@@ -58,6 +60,7 @@ class ReportExportScreenTest {
                 ReportExportScreen(
                     state = ReportExportState.Ready(report(), isGenerating = true),
                     onExportPdf = {},
+                    onExportJson = {},
                     onRetryLoad = {},
                     onBack = {},
                 )
@@ -71,6 +74,7 @@ class ReportExportScreenTest {
                 ReportExportScreen(
                     state = ReportExportState.Ready(report(), error = "pdf_export_failed"),
                     onExportPdf = {},
+                    onExportJson = {},
                     onRetryLoad = {},
                     onBack = {},
                 )

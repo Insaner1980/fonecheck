@@ -64,18 +64,29 @@ class ReportExportViewModel
         }
 
         fun exportPdf() {
+            export(PDF_EXPORT_FAILED, reportExporter::exportPdf)
+        }
+
+        fun exportJson() {
+            export(JSON_EXPORT_FAILED, reportExporter::exportJson)
+        }
+
+        private fun export(
+            errorCode: String,
+            operation: suspend (DiagnosticReport) -> ExportedReport,
+        ) {
             val ready = _state.value as? ReportExportState.Ready ?: return
             if (ready.isGenerating) return
             _state.value = ready.copy(isGenerating = true, error = null, shareRequest = null)
             exportJob =
                 viewModelScope.launch {
                     try {
-                        val exported = withContext(ioDispatcher) { reportExporter.exportPdf(ready.report) }
+                        val exported = withContext(ioDispatcher) { operation(ready.report) }
                         _state.value = ready.copy(shareRequest = exported)
                     } catch (error: CancellationException) {
                         throw error
                     } catch (_: Exception) {
-                        _state.value = ready.copy(error = PDF_EXPORT_FAILED)
+                        _state.value = ready.copy(error = errorCode)
                     }
                 }
         }
@@ -113,5 +124,6 @@ class ReportExportViewModel
         private companion object {
             const val REPORT_ID_ARGUMENT = "reportId"
             const val PDF_EXPORT_FAILED = "pdf_export_failed"
+            const val JSON_EXPORT_FAILED = "json_export_failed"
         }
     }

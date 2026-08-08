@@ -78,6 +78,19 @@ class ReportPdfExporterTest {
             assertTrue(provider.grantUriPermissions)
         }
 
+    @Test
+    fun jsonExportUsesTheSameRestrictedProviderWithJsonMimeType() =
+        runBlocking {
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            val exported = AndroidReportExporter(context, ReportPdfRenderer(context)).exportJson(report())
+            val uri = Uri.parse(exported.uri)
+
+            assertEquals("application/json", exported.mimeType)
+            assertEquals("content", uri.scheme)
+            val json = context.contentResolver.openInputStream(uri)!!.bufferedReader().use { it.readText() }
+            assertEquals(report(), com.insaner.fonecheck.data.repository.ReportPayloadCodec.decode(json))
+        }
+
     private fun report(): DiagnosticReport {
         val evidence =
             (1..70).map { index ->

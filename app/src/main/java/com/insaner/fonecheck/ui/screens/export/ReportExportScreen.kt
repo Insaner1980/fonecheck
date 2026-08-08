@@ -57,6 +57,7 @@ fun ReportExportRoute(
     ReportExportScreen(
         state = state,
         onExportPdf = viewModel::exportPdf,
+        onExportJson = viewModel::exportJson,
         onRetryLoad = viewModel::retryLoad,
         onBack = onBack,
         modifier = modifier,
@@ -67,6 +68,7 @@ fun ReportExportRoute(
 fun ReportExportScreen(
     state: ReportExportState,
     onExportPdf: () -> Unit,
+    onExportJson: () -> Unit,
     onRetryLoad: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -85,6 +87,7 @@ fun ReportExportScreen(
             ExportReady(
                 state = state,
                 onExportPdf = onExportPdf,
+                onExportJson = onExportJson,
                 onBack = onBack,
                 modifier = modifier,
             )
@@ -122,6 +125,7 @@ fun ReportExportScreen(
 private fun ExportReady(
     state: ReportExportState.Ready,
     onExportPdf: () -> Unit,
+    onExportJson: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier,
 ) {
@@ -157,11 +161,22 @@ private fun ExportReady(
                     text = stringResource(R.string.export_pdf_description),
                     style = MaterialTheme.typography.bodyMedium,
                 )
+                Text(
+                    text = stringResource(R.string.export_json_description),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
             }
         }
         state.error?.let {
             Text(
-                text = stringResource(R.string.export_pdf_error),
+                text =
+                    stringResource(
+                        if (it == "json_export_failed") {
+                            R.string.export_json_error
+                        } else {
+                            R.string.export_pdf_error
+                        },
+                    ),
                 color = MaterialTheme.colorScheme.error,
             )
         }
@@ -175,6 +190,13 @@ private fun ExportReady(
                     if (state.isGenerating) R.string.export_generating else R.string.export_pdf,
                 ),
             )
+        }
+        OutlinedButton(
+            onClick = onExportJson,
+            enabled = !state.isGenerating,
+            modifier = Modifier.fillMaxWidth().testTag("export_json"),
+        ) {
+            Text(stringResource(R.string.export_json))
         }
         OutlinedButton(
             onClick = onBack,

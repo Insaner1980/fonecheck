@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://finnvek.com/fonecheck/report-export-v1.schema.json",
+  "title": "fonecheck report export v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "stableId",
+    "kind",
+    "startedAt",
+    "completedAt",
+    "device",
+    "app",
+    "categories",
+    "score",
+    "coverage"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "stableId": { "type": "string", "minLength": 1 },
+    "kind": { "enum": ["full_check", "category_only"] },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "completedAt": { "type": "string", "format": "date-time" },
+    "device": {
+      "type": "object",
+      "required": ["manufacturer", "model", "brand", "product", "androidRelease", "apiLevel"],
+      "properties": {
+        "manufacturer": { "type": "string" },
+        "model": { "type": "string" },
+        "brand": { "type": "string" },
+        "product": { "type": "string" },
+        "androidRelease": { "type": "string" },
+        "apiLevel": { "type": "integer" },
+        "securityPatch": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "app": {
+      "type": "object",
+      "required": ["versionName", "versionCode"],
+      "properties": {
+        "versionName": { "type": "string" },
+        "versionCode": { "type": "integer" }
+      },
+      "additionalProperties": true
+    },
+    "categories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["categoryId", "aggregateStatus", "evidence"],
+        "properties": {
+          "categoryId": { "type": "string" },
+          "aggregateStatus": { "$ref": "#/$defs/status" },
+          "evidence": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/evidence" }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "score": {
+      "type": "object",
+      "required": ["version", "value", "state"],
+      "properties": {
+        "version": { "type": "integer", "minimum": 1 },
+        "value": { "type": ["integer", "null"], "minimum": 0, "maximum": 100 },
+        "state": { "enum": ["incomplete", "partial", "complete"] }
+      },
+      "additionalProperties": true
+    },
+    "coverage": {
+      "type": "object",
+      "required": ["applicableCount", "completedCount", "notTestedCount", "unavailableCount", "percentage"],
+      "properties": {
+        "applicableCount": { "type": "integer", "minimum": 0 },
+        "completedCount": { "type": "integer", "minimum": 0 },
+        "notTestedCount": { "type": "integer", "minimum": 0 },
+        "unavailableCount": { "type": "integer", "minimum": 0 },
+        "percentage": { "type": "integer", "minimum": 0, "maximum": 100 }
+      },
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "status": {
+      "enum": ["pass", "fail", "warning", "info", "not_available", "not_tested"]
+    },
+    "evidence": {
+      "type": "object",
+      "required": [
+        "categoryId",
+        "checkId",
+        "status",
+        "confidence",
+        "source",
+        "applicability",
+        "reason",
+        "value",
+        "unit",
+        "capturedAt"
+      ],
+      "properties": {
+        "categoryId": { "type": "string" },
+        "checkId": { "type": "string" },
+        "status": { "$ref": "#/$defs/status" },
+        "confidence": { "enum": ["high", "low", "unavailable"] },
+        "source": {
+          "enum": ["automatic_measurement", "android_api", "user_confirmation", "derived", "estimate"]
+        },
+        "applicability": { "enum": ["applicable", "not_applicable"] },
+        "reason": { "type": ["string", "null"] },
+        "value": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/typedValue" }
+          ]
+        },
+        "unit": { "type": ["string", "null"] },
+        "capturedAt": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": true
+    },
+    "typedValue": {
+      "type": "object",
+      "required": ["type", "value"],
+      "properties": {
+        "type": {
+          "enum": ["boolean", "int", "long", "decimal", "double", "raw_text", "stable_text_code"]
+        },
+        "value": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

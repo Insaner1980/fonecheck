@@ -725,6 +725,9 @@
     <string name="export_pdf">Create and share PDF</string>
     <string name="export_generating">Creating PDF…</string>
     <string name="export_pdf_error">The PDF could not be created. You can try again.</string>
+    <string name="export_json_description">JSON is the versioned, machine-readable report with stable IDs, typed values, statuses, sources, confidence, and timestamps.</string>
+    <string name="export_json">Create and share JSON</string>
+    <string name="export_json_error">The JSON file could not be created. You can try again.</string>
     <string name="export_share_title">Share fonecheck report</string>
     <string name="export_not_found">The saved report was not found.</string>
     <string name="export_unavailable">This saved report cannot be exported by this app version.</string>

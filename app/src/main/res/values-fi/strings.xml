@@ -719,6 +719,9 @@
     <string name="export_pdf">Luo ja jaa PDF</string>
     <string name="export_generating">Luodaan PDF-tiedostoa…</string>
     <string name="export_pdf_error">PDF-tiedostoa ei voitu luoda. Voit yrittää uudelleen.</string>
+    <string name="export_json_description">JSON on versionoitu koneluettava raportti, jossa ovat vakaat tunnisteet, tyypitetyt arvot, tilat, lähteet, luottamustasot ja aikaleimat.</string>
+    <string name="export_json">Luo ja jaa JSON</string>
+    <string name="export_json_error">JSON-tiedostoa ei voitu luoda. Voit yrittää uudelleen.</string>
     <string name="export_share_title">Jaa fonecheck-raportti</string>
     <string name="export_not_found">Tallennettua raporttia ei löytynyt.</string>
     <string name="export_unavailable">Tätä tallennettua raporttia ei voi viedä tällä sovellusversiolla.</string>

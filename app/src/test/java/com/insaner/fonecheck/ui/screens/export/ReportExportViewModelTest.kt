@@ -79,6 +79,22 @@ class ReportExportViewModelTest {
         }
 
     @Test
+    fun jsonExportUsesTheSameLoadedImmutableReport() =
+        runTest(dispatcher.scheduler) {
+            val report = report()
+            val repository = FakeReportRepository(getByIdOverride = ReportLoadResult.Available(report))
+            val exporter = FakeExporter()
+            val viewModel = viewModel(repository, exporter)
+            advanceUntilIdle()
+
+            viewModel.exportJson()
+            advanceUntilIdle()
+
+            assertEquals(listOf(report), exporter.jsonReports)
+            assertEquals(exporter.jsonResult, (viewModel.state.value as ReportExportState.Ready).shareRequest)
+        }
+
+    @Test
     fun missingAndUnreadableReportsRemainDistinct() =
         runTest(dispatcher.scheduler) {
             val repository = FakeReportRepository(getByIdOverride = ReportLoadResult.NotFound)
@@ -112,6 +128,8 @@ class ReportExportViewModelTest {
     ) : ReportExporter {
         val reports = mutableListOf<DiagnosticReport>()
         val result = ExportedReport("content://report.pdf", "application/pdf", "report.pdf")
+        val jsonReports = mutableListOf<DiagnosticReport>()
+        val jsonResult = ExportedReport("content://report.json", "application/json", "report.json")
 
         override suspend fun exportPdf(report: DiagnosticReport): ExportedReport {
             reports += report
@@ -120,6 +138,11 @@ class ReportExportViewModelTest {
                 error("failed")
             }
             return result
+        }
+
+        override suspend fun exportJson(report: DiagnosticReport): ExportedReport {
+            jsonReports += report
+            return jsonResult
         }
     }
 

@@ -864,6 +864,13 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Formaatista tulee de facto julkinen sopimus, joten versionointi on pakollinen.
 - **Decision required:** Kyllä, machine export kohdassa 1.
 
+#### Implementation/status log — 2026-08-08
+
+- Hyväksytty JSON-vienti käyttää suoraan samaa `ReportPayloadCodec`-sopimusta kuin immutable Room-payload. Export sisältää report schema- ja score-versiot, vakaat category/check ID:t, locale-neutralit enum-koodit, tyypitetyn value-rakenteen, unitin, reasonin, source/confidence/applicability-tiedot ja ISO-aikaleimat; rinnakkaista serialisointimallia ei lisätty.
+- `AndroidReportExporter.exportJson` kirjoittaa UTF-8 JSON:n samaan rajattuun `cache/report-exports/`-hakemistoon väliaikaistiedoston kautta, käyttää `application/json`-MIME-tyyppiä ja jakaa tiedoston saman ei-exported FileProviderin kertaluonteisella read grantilla. PDF- ja JSON-painikkeet käyttävät samaa immutable repository-snapshotia ja estävät päällekkäisen generoinnin.
+- `docs/report-export-v1.schema.json` dokumentoi v1-kentät, stable enum -arvot ja typed-value-vaihtoehdot sekä sallii tuntemattomat tulevat kentät. `docs/report-export-v1.example.json` antaa syntaktisesti validin esimerkin ilman lokalisoituja näyttötekstejä tai sensitiivisiä location/network/cell/audio/image-kenttiä.
+- Unit-testit todistavat deterministisen JSON:n, typed-evidence round-tripin, v1-fixturen unknown-field-yhteensopivuuden ja kiellettyjen sensitiivisten kenttänimien puuttumisen. Export-ViewModel-testit todistavat saman immutable-raportin käytön. JSON FileProvider/MIME/readback- ja Compose-toimintotestit kääntyvät; schema ja example läpäisevät JSON-parserin. Yhdistetty `:app:testDebugUnitTest :app:compileDebugAndroidTestKotlin :app:lintDebug :app:assembleDebug` läpäisee. Fyysinen share/readback-ajo odottaa edelleen laitetta; `PROJECT.md` ja käyttäjän dependency-verification-metadata jäivät koskematta.
+
 ### 30. Implement functional Settings and persistent preferences
 
 - **Objective:** Korvata Settings-placeholder tuotteen hallintanäkymällä.
