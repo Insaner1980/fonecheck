@@ -20,6 +20,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,17 +33,17 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.data.preferences.AppPreferences
 import com.insaner.fonecheck.data.preferences.AppPreferencesRepository
 import com.insaner.fonecheck.navigation.FonecheckNavHost
-import com.insaner.fonecheck.navigation.Home
+import com.insaner.fonecheck.navigation.navigationChromeFor
 import com.insaner.fonecheck.ui.screens.buttons.VolumeButtonEventSource
 import com.insaner.fonecheck.ui.screens.buttons.VolumeButtonKeyMapper
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -99,16 +101,26 @@ class MainActivity : FragmentActivity() {
                 appPreferencesRepository.preferences.collectAsStateWithLifecycle(
                     initialValue = AppPreferences(),
                 )
+            val darkTheme = preferences.themeMode.resolveDarkTheme(isSystemInDarkTheme())
             FonecheckTheme(
-                darkTheme = preferences.themeMode.resolveDarkTheme(isSystemInDarkTheme()),
+                darkTheme = darkTheme,
             ) {
                 val navController = rememberNavController()
                 val backStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = backStackEntry?.destination?.route
                 var isDisplayFullscreen by remember { mutableStateOf(false) }
-                val isHome =
-                    currentRoute == null ||
-                        currentRoute == Home::class.qualifiedName
+                val navigationChrome = navigationChromeFor(currentRoute)
+
+                LaunchedEffect(currentRoute) {
+                    isDisplayFullscreen = false
+                }
+
+                SideEffect {
+                    WindowCompat.getInsetsController(window, window.decorView).apply {
+                        isAppearanceLightStatusBars = !darkTheme
+                        isAppearanceLightNavigationBars = !darkTheme
+                    }
+                }
 
                 DisposableEffect(isDisplayFullscreen) {
                     val controller = WindowCompat.getInsetsController(window, window.decorView)
@@ -129,9 +141,9 @@ class MainActivity : FragmentActivity() {
                     topBar = {
                         if (!isDisplayFullscreen) {
                             TopAppBar(
-                                title = { Text(stringResource(R.string.app_name)) },
+                                title = { Text(stringResource(navigationChrome.titleResId)) },
                                 navigationIcon = {
-                                    if (!isHome) {
+                                    if (navigationChrome.showBackAction) {
                                         IconButton(onClick = { navController.popBackStack() }) {
                                             Icon(
                                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,

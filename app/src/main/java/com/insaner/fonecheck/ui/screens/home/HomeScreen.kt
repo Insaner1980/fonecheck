@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -53,105 +55,130 @@ fun HomeScreen(
 ) {
     val summary by viewModel.summary.collectAsState()
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        modifier =
-            modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-        contentPadding =
-            PaddingValues(
-                start = 16.dp,
-                top = 12.dp,
-                end = 16.dp,
-                bottom = 32.dp,
-            ),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            DeviceSummaryCard(summary)
-        }
+    HomeContent(
+        summary = summary,
+        onNavigate = onNavigate,
+        onRunAllTests = onRunAllTests,
+        modifier = modifier,
+    )
+}
 
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            Button(
-                onClick = onRunAllTests,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ),
-                shape = MaterialTheme.shapes.medium,
-            ) {
-                Text(
-                    text = stringResource(R.string.home_run_all),
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
+@Composable
+internal fun HomeContent(
+    summary: DeviceSummary,
+    onNavigate: (Any) -> Unit,
+    onRunAllTests: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val columnCount = homeGridColumnCount(maxWidth.value)
+        val horizontalPadding = if (maxWidth < 600.dp) 16.dp else 24.dp
+        val itemSpacing = if (maxWidth < 600.dp) 12.dp else 16.dp
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(columnCount),
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+            contentPadding =
+                PaddingValues(
+                    start = horizontalPadding,
+                    top = 12.dp,
+                    end = horizontalPadding,
+                    bottom = 32.dp,
+                ),
+            horizontalArrangement = Arrangement.spacedBy(itemSpacing),
+            verticalArrangement = Arrangement.spacedBy(itemSpacing),
+        ) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                DeviceSummaryCard(summary)
+            }
+
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Button(
+                    onClick = onRunAllTests,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 56.dp),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                        ),
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    Text(
+                        text = stringResource(R.string.home_run_all),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                OutlinedButton(
+                    onClick = { onNavigate(History) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    Text(
+                        text = stringResource(R.string.home_history),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                OutlinedButton(
+                    onClick = { onNavigate(Settings) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    Text(
+                        text = stringResource(R.string.home_settings),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Column(modifier = Modifier.padding(top = 12.dp, bottom = 2.dp)) {
+                    Text(
+                        text = stringResource(R.string.home_categories_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = stringResource(R.string.home_categories_subtitle),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            items(
+                items = diagnosticDestinations,
+                key = { it.labelResId },
+            ) { category ->
+                CategoryGridItem(
+                    category = category,
+                    label = stringResource(category.labelResId),
+                    onClick = { onNavigate(category.route) },
                 )
             }
-        }
-
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            OutlinedButton(
-                onClick = { onNavigate(History) },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = MaterialTheme.shapes.medium,
-            ) {
-                Text(
-                    text = stringResource(R.string.home_history),
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-        }
-
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            OutlinedButton(
-                onClick = { onNavigate(Settings) },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = MaterialTheme.shapes.medium,
-            ) {
-                Text(
-                    text = stringResource(R.string.home_settings),
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-        }
-
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            Column(modifier = Modifier.padding(top = 12.dp, bottom = 2.dp)) {
-                Text(
-                    text = stringResource(R.string.home_categories_title),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontWeight = FontWeight.Bold,
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = stringResource(R.string.home_categories_subtitle),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-
-        items(
-            items = diagnosticDestinations,
-            key = { it.labelResId },
-        ) { category ->
-            CategoryGridItem(
-                category = category,
-                label = stringResource(category.labelResId),
-                onClick = { onNavigate(category.route) },
-            )
         }
     }
 }
+
+internal fun homeGridColumnCount(availableWidthDp: Float): Int =
+    when {
+        availableWidthDp < 600f -> 2
+        availableWidthDp < 840f -> 3
+        else -> 4
+    }
 
 @Composable
 private fun DeviceSummaryCard(summary: DeviceSummary) {
@@ -211,19 +238,18 @@ private fun CategoryGridItem(
 ) {
     StandardCard(
         onClick = onClick,
-        modifier = Modifier.height(190.dp),
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
             modifier =
                 Modifier
-                    .fillMaxSize()
                     .padding(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 16.dp),
         ) {
             Box(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .weight(1f),
+                        .height(126.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Image(

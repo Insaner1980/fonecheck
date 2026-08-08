@@ -907,6 +907,13 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Laaja samanaikainen redesign voisi vaikeuttaa behavior-regressioiden paikantamista; työ tehdään vain shell-tasolla.
 - **Decision required:** Ei.
 
+#### Implementation/status log — 2026-08-08
+
+- Yhteinen top bar johtaa nyt otsikon ja takaisin-toiminnon aktiivisesta type-safe-reitistä. Kaikki diagnostiikka-, Full Check-, History-, Settings-, lisenssi-, onboarding-, raportti-, vertailu- ja vientireitit käyttävät samaa `NavigationChrome`-määritystä; tuntematon reitti palautuu turvallisesti sovelluksen nimeen.
+- Fullscreen säilyy vain sitä pyytävän näyttötestin ajan ja nollautuu reitin vaihtuessa. Järjestelmäpalkkien ikonikontrasti seuraa aktiivista light/dark-teemaa, ja fullscreenissä palkit saa näkyviin tilapäisesti pyyhkäisemällä.
+- Home käyttää canonical compact/medium/expanded-rajoja: alle 600 dp näyttää kaksi, 600–839 dp kolme ja vähintään 840 dp neljä saraketta. Kortit eivät enää käytä kiinteää kokonaiskorkeutta, ja päätoimintojen painikkeet voivat kasvaa font scale -asetuksen mukana.
+- Route metadata- ja layout-unit-testit läpäisevät. Light/dark- ja 200 % font scale -Compose-testit kääntyvät. Yhdistetty `:app:testDebugUnitTest :app:compileDebugAndroidTestKotlin :app:lintDebug :app:assembleDebug` läpäisee. Fyysinen phone/tablet/landscape- ja back-stack-kierros odottaa laitetta, koska `adb devices -l` on tyhjä. Käyttäjän `PROJECT.md`-muutosta ei muokattu.
+
 ### 32. Complete shared loading, empty, unavailable, denied, and error presentation
 
 - **Objective:** Varmistaa, ettei mikään feature jää hiljaiseen tai epäselvään tilaan.
