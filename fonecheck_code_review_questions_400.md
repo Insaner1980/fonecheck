@@ -179,7 +179,7 @@ Review the fonecheck implementation for this specific concern: Is the Gradle wra
 
 Inspect the current repository before answering, especially `build.gradle.kts`, `app/build.gradle.kts`, `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, dependency lock files, `app/proguard-rules.pro`, manifest resources, and relevant CI configuration. Treat the current source code, resources, tests, manifest, generated configuration, and build files as authoritative if `PROJECT.md`, `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, or `CODE_REVIEW.md` differs.
 
-Verify that Gradle 8.11.1 is declared consistently, the distribution URL uses the intended binary, the SHA-256 checksum is present and correct for the selected distribution, and no script or CI path bypasses the wrapper with an unpinned system Gradle.
+Verify that Gradle 9.7.0 is declared consistently, the distribution URL uses the intended binary, the SHA-256 checksum is present and correct for the selected distribution, and no script or CI path bypasses the wrapper with an unpinned system Gradle.
 
 Trace this concern through debug and release variants, generated code, packaging, minification, resource shrinking, and installation. Consider only the lifecycle, concurrency, cancellation, permissions, API-level behavior, diagnostic evidence, status, applicability, scoring, persistence, localization, accessibility, privacy, performance, release, and test implications that genuinely apply to this concern.
 
@@ -200,10 +200,10 @@ Trace this concern through debug and release variants, generated code, packaging
 AI can hallucinate or overstate issues. Verify every claim against the actual repository, relevant official Android API behavior when needed, tests, configuration, and available runtime evidence. If there is no genuine problem, say so clearly and do not invent, force, or make an unnecessary change. If a real issue exists, implement only the smallest maintainable fix, add or update focused tests, run the narrowest relevant verification, do not refactor or reformat unrelated code, and never open a pull request.
 ```
 
-### 015. Are Kotlin 2.1.0 and AGP 8.9.1 configured compatibly?
+### 015. Are Kotlin 2.4.10 and AGP 9.3.1 configured compatibly?
 
 ```text
-Review the fonecheck implementation for this specific concern: Are Kotlin 2.1.0 and AGP 8.9.1 configured compatibly?
+Review the fonecheck implementation for this specific concern: Are Kotlin 2.4.10 and AGP 9.3.1 configured compatibly?
 
 Inspect the current repository before answering, especially `build.gradle.kts`, `app/build.gradle.kts`, `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, dependency lock files, `app/proguard-rules.pro`, manifest resources, and relevant CI configuration. Treat the current source code, resources, tests, manifest, generated configuration, and build files as authoritative if `PROJECT.md`, `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, or `CODE_REVIEW.md` differs.
 
@@ -228,10 +228,10 @@ Trace this concern through debug and release variants, generated code, packaging
 AI can hallucinate or overstate issues. Verify every claim against the actual repository, relevant official Android API behavior when needed, tests, configuration, and available runtime evidence. If there is no genuine problem, say so clearly and do not invent, force, or make an unnecessary change. If a real issue exists, implement only the smallest maintainable fix, add or update focused tests, run the narrowest relevant verification, do not refactor or reformat unrelated code, and never open a pull request.
 ```
 
-### 017. Is Hilt 2.57.1 integrated correctly through KSP?
+### 017. Is Hilt 2.60.1 integrated correctly through KSP?
 
 ```text
-Review the fonecheck implementation for this specific concern: Is Hilt 2.57.1 integrated correctly through KSP?
+Review the fonecheck implementation for this specific concern: Is Hilt 2.60.1 integrated correctly through KSP?
 
 Inspect the current repository before answering, especially `build.gradle.kts`, `app/build.gradle.kts`, `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, dependency lock files, `app/proguard-rules.pro`, manifest resources, and relevant CI configuration. Treat the current source code, resources, tests, manifest, generated configuration, and build files as authoritative if `PROJECT.md`, `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, or `CODE_REVIEW.md` differs.
 
@@ -242,10 +242,10 @@ Trace this concern through debug and release variants, generated code, packaging
 AI can hallucinate or overstate issues. Verify every claim against the actual repository, relevant official Android API behavior when needed, tests, configuration, and available runtime evidence. If there is no genuine problem, say so clearly and do not invent, force, or make an unnecessary change. If a real issue exists, implement only the smallest maintainable fix, add or update focused tests, run the narrowest relevant verification, do not refactor or reformat unrelated code, and never open a pull request.
 ```
 
-### 018. Is KSP 2.1.0-1.0.29 configured without stale generated output assumptions?
+### 018. Is KSP 2.3.11 configured without stale generated output assumptions?
 
 ```text
-Review the fonecheck implementation for this specific concern: Is KSP 2.1.0-1.0.29 configured without stale generated output assumptions?
+Review the fonecheck implementation for this specific concern: Is KSP 2.3.11 configured without stale generated output assumptions?
 
 Inspect the current repository before answering, especially `build.gradle.kts`, `app/build.gradle.kts`, `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, dependency lock files, `app/proguard-rules.pro`, manifest resources, and relevant CI configuration. Treat the current source code, resources, tests, manifest, generated configuration, and build files as authoritative if `PROJECT.md`, `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, or `CODE_REVIEW.md` differs.
 
@@ -256,10 +256,10 @@ Trace this concern through debug and release variants, generated code, packaging
 AI can hallucinate or overstate issues. Verify every claim against the actual repository, relevant official Android API behavior when needed, tests, configuration, and available runtime evidence. If there is no genuine problem, say so clearly and do not invent, force, or make an unnecessary change. If a real issue exists, implement only the smallest maintainable fix, add or update focused tests, run the narrowest relevant verification, do not refactor or reformat unrelated code, and never open a pull request.
 ```
 
-### 019. Is the Compose BOM 2026.03.00 used coherently?
+### 019. Is the Compose BOM 2026.06.01 used coherently?
 
 ```text
-Review the fonecheck implementation for this specific concern: Is the Compose BOM 2026.03.00 used coherently?
+Review the fonecheck implementation for this specific concern: Is the Compose BOM 2026.06.01 used coherently?
 
 Inspect the current repository before answering, especially `build.gradle.kts`, `app/build.gradle.kts`, `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, dependency lock files, `app/proguard-rules.pro`, manifest resources, and relevant CI configuration. Treat the current source code, resources, tests, manifest, generated configuration, and build files as authoritative if `PROJECT.md`, `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, or `CODE_REVIEW.md` differs.
 
@@ -270,10 +270,10 @@ Trace this concern through debug and release variants, generated code, packaging
 AI can hallucinate or overstate issues. Verify every claim against the actual repository, relevant official Android API behavior when needed, tests, configuration, and available runtime evidence. If there is no genuine problem, say so clearly and do not invent, force, or make an unnecessary change. If a real issue exists, implement only the smallest maintainable fix, add or update focused tests, run the narrowest relevant verification, do not refactor or reformat unrelated code, and never open a pull request.
 ```
 
-### 020. Are Compose compiler and Kotlin settings appropriate for Kotlin 2.1.0?
+### 020. Are Compose compiler and Kotlin settings appropriate for Kotlin 2.4.10?
 
 ```text
-Review the fonecheck implementation for this specific concern: Are Compose compiler and Kotlin settings appropriate for Kotlin 2.1.0?
+Review the fonecheck implementation for this specific concern: Are Compose compiler and Kotlin settings appropriate for Kotlin 2.4.10?
 
 Inspect the current repository before answering, especially `build.gradle.kts`, `app/build.gradle.kts`, `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, dependency lock files, `app/proguard-rules.pro`, manifest resources, and relevant CI configuration. Treat the current source code, resources, tests, manifest, generated configuration, and build files as authoritative if `PROJECT.md`, `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, or `CODE_REVIEW.md` differs.
 
@@ -291,7 +291,7 @@ Review the fonecheck implementation for this specific concern: Are type-safe Nav
 
 Inspect the current repository before answering, especially `build.gradle.kts`, `app/build.gradle.kts`, `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, dependency lock files, `app/proguard-rules.pro`, manifest resources, and relevant CI configuration. Treat the current source code, resources, tests, manifest, generated configuration, and build files as authoritative if `PROJECT.md`, `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, or `CODE_REVIEW.md` differs.
 
-Verify Navigation Compose 2.9.7, kotlinx.serialization plugin/application, route `@Serializable` models, and serialization runtime versions. Look for missing plugins, erased route arguments, unsupported generic route types, or minification-sensitive serializers.
+Verify Navigation Compose 2.9.8, kotlinx.serialization plugin/application, route `@Serializable` models, and serialization runtime versions. Look for missing plugins, erased route arguments, unsupported generic route types, or minification-sensitive serializers.
 
 Trace this concern through debug and release variants, generated code, packaging, minification, resource shrinking, and installation. Consider only the lifecycle, concurrency, cancellation, permissions, API-level behavior, diagnostic evidence, status, applicability, scoring, persistence, localization, accessibility, privacy, performance, release, and test implications that genuinely apply to this concern.
 
@@ -326,10 +326,10 @@ Trace this concern through debug and release variants, generated code, packaging
 AI can hallucinate or overstate issues. Verify every claim against the actual repository, relevant official Android API behavior when needed, tests, configuration, and available runtime evidence. If there is no genuine problem, say so clearly and do not invent, force, or make an unnecessary change. If a real issue exists, implement only the smallest maintainable fix, add or update focused tests, run the narrowest relevant verification, do not refactor or reformat unrelated code, and never open a pull request.
 ```
 
-### 024. Is kotlinx.serialization JSON 1.8.1 wired consistently?
+### 024. Is kotlinx.serialization JSON 1.11.0 wired consistently?
 
 ```text
-Review the fonecheck implementation for this specific concern: Is kotlinx.serialization JSON 1.8.1 wired consistently?
+Review the fonecheck implementation for this specific concern: Is kotlinx.serialization JSON 1.11.0 wired consistently?
 
 Inspect the current repository before answering, especially `build.gradle.kts`, `app/build.gradle.kts`, `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, dependency lock files, `app/proguard-rules.pro`, manifest resources, and relevant CI configuration. Treat the current source code, resources, tests, manifest, generated configuration, and build files as authoritative if `PROJECT.md`, `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, or `CODE_REVIEW.md` differs.
 
@@ -340,10 +340,10 @@ Trace this concern through debug and release variants, generated code, packaging
 AI can hallucinate or overstate issues. Verify every claim against the actual repository, relevant official Android API behavior when needed, tests, configuration, and available runtime evidence. If there is no genuine problem, say so clearly and do not invent, force, or make an unnecessary change. If a real issue exists, implement only the smallest maintainable fix, add or update focused tests, run the narrowest relevant verification, do not refactor or reformat unrelated code, and never open a pull request.
 ```
 
-### 025. Are CameraX 1.5.1 modules aligned?
+### 025. Are CameraX 1.6.1 modules aligned?
 
 ```text
-Review the fonecheck implementation for this specific concern: Are CameraX 1.5.1 modules aligned?
+Review the fonecheck implementation for this specific concern: Are CameraX 1.6.1 modules aligned?
 
 Inspect the current repository before answering, especially `build.gradle.kts`, `app/build.gradle.kts`, `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, dependency lock files, `app/proguard-rules.pro`, manifest resources, and relevant CI configuration. Treat the current source code, resources, tests, manifest, generated configuration, and build files as authoritative if `PROJECT.md`, `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, or `CODE_REVIEW.md` differs.
 
@@ -368,10 +368,10 @@ Trace this concern through debug and release variants, generated code, packaging
 AI can hallucinate or overstate issues. Verify every claim against the actual repository, relevant official Android API behavior when needed, tests, configuration, and available runtime evidence. If there is no genuine problem, say so clearly and do not invent, force, or make an unnecessary change. If a real issue exists, implement only the smallest maintainable fix, add or update focused tests, run the narrowest relevant verification, do not refactor or reformat unrelated code, and never open a pull request.
 ```
 
-### 027. Are min SDK 26 and compile/target SDK 36 assumptions enforced?
+### 027. Are min SDK 26, compile SDK 37, and target SDK 36 assumptions enforced?
 
 ```text
-Review the fonecheck implementation for this specific concern: Are min SDK 26 and compile/target SDK 36 assumptions enforced?
+Review the fonecheck implementation for this specific concern: Are min SDK 26, compile SDK 37, and target SDK 36 assumptions enforced?
 
 Inspect the current repository before answering, especially `build.gradle.kts`, `app/build.gradle.kts`, `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, dependency lock files, `app/proguard-rules.pro`, manifest resources, and relevant CI configuration. Treat the current source code, resources, tests, manifest, generated configuration, and build files as authoritative if `PROJECT.md`, `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, or `CODE_REVIEW.md` differs.
 
