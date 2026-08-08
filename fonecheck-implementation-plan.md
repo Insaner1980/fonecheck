@@ -1,6 +1,8 @@
 # FONECHECK_IMPLEMENTATION_PLAN
 
-## 1. Current-state summary
+This file is a historical planning and execution log. The current source code, resources, tests, manifest, generated configuration, and build files are authoritative. The initial-state summary below describes the pre-implementation snapshot and must not be treated as the current repository state; revalidate every proposed change and recorded result against the current checkout.
+
+## 1. Initial-state summary (historical)
 
 Plan Mode estää tässä vaiheessa repositoryyn kirjoittamisen, joten `FONECHECK_IMPLEMENTATION_PLAN.md`-tiedostoa ei ole vielä luotu. Tämä suunnitelma muodostaa sen hyväksyttävän sisällön. Mitään lähdekoodia, testiä, resurssia, Gradle-tiedostoa, manifestia, skeemaa tai dokumenttia ei muutettu.
 

@@ -72,7 +72,7 @@ Trace this concern through the repository ownership boundaries and every affecte
 AI can hallucinate or overstate issues. Verify every claim against the actual repository, relevant official Android API behavior when needed, tests, configuration, and available runtime evidence. If there is no genuine problem, say so clearly and do not invent, force, or make an unnecessary change. If a real issue exists, implement only the smallest maintainable fix, add or update focused tests, run the narrowest relevant verification, do not refactor or reformat unrelated code, and never open a pull request.
 ```
 
-### 006. Are physical-device non-claims preserved?
+### 006. Are physical-device non-claims preserved? SEURAAVA
 
 ```text
 Review the fonecheck implementation for this specific concern: Are physical-device non-claims preserved?

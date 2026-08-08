@@ -115,4 +115,5 @@ private val implementedDestinations =
             ),
     )
 
-internal val diagnosticDestinations = DiagnosticCatalog.categories.mapNotNull(implementedDestinations::get)
+internal val diagnosticDestinations =
+    DiagnosticCatalog.categories.map { category -> implementedDestinations.getValue(category) }

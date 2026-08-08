@@ -1,90 +1,151 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1254" height="1254" viewBox="0 0 1254 1254" role="img" aria-labelledby="title desc">
-  <title id="title">fonecheck logo</title>
-  <desc id="desc">Purple rounded device outline crossed by a rising cyan diagnostic band on a deep navy background.</desc>
+<!--
+  fonecheck-logo.svg
+  Vektoriversio 3D-renderoidusta logosta (fonecheck-logo.png).
 
+  Rakenne
+    * Kaksi polkua: turkoosi "f" (takana) ja violetti tarkistusmerkki (edessa).
+      Polut on jaljitetty alkuperaisesta bittikartasta; siluetti osuu 1-2 px.
+      Turkoosin alaosa jatkuu violetin alle, kuten alkuperaisessa.
+    * Perusvari on pystysuora liukuvari - ylaosa on kirkkaampi, kuten
+      alkuperaisessa renderissa.
+    * Muovimainen 3D-vaikutelma tehdaan valaistussuotimilla, ei kasin
+      piirretyilla liukuvareilla. Muodon alfakanavasta sumennetaan
+      korkeuskartta, ja siita lasketaan:
+        - feDiffuseLighting  = reunojen varjostus (valo ylavasemmalta)
+        - feComponentTransfer = hajavalon pohja kanavittain, jotta varjopuolen
+          savy vastaa alkuperaista (turkoosi sailyttaa punaista, violetti
+          menettaa sinista)
+        - feSpecularLighting  = leveampi kiiltoraita bevelilla
+        - toinen feSpecularLighting kapeammalla korkeuskartalla = reunapyoristyksen
+          kiilto heti siluetin vieressa
+      Kiiltokerroksista vahennetaan feColorMatrixilla tasaisen pinnan pohjataso,
+      jolloin raita jaa vain reunaan eika levia tasaiselle pinnalle.
+    * Valaistustulos sumennetaan kevyesti (stdDeviation 2.5), koska 8-bittisen
+      suodinketjun rampin derivaatta juovittuu ilman sita.
+    * fxAO = violetin turkoosille heittama kontaktivarjo. Se on olennainen:
+      turkoosin varsi jatkuu violetin alle, joten ilman varjoa liitoskohta
+      nayttaisi litteasti leikatulta.
+
+  Parametrit on sovitettu mittaamalla alkuperaisen kuvan varit
+  etaisyysvyohykkeittain reunasta JA reunan suunnan mukaan. Suunta ratkaisee
+  valon atsimuutin: alkuperaisessa oikealle osoittava reuna on selvasti
+  vaaleampi kuin alaspain osoittava, mika vastaa atsimuuttia ~248 astetta
+  (ei 225:ta, jota symmetrinen "ylavasen" olettaisi).
+
+  Huom: nayttaa oikealta selaimissa (Chrome/Safari/Firefox) ja Inkscapessa.
+  Kevyet SVG-rasteroijat (esim. librsvg) eivat tue valaistussuotimia,
+  jolloin muodot piirtyvat tasaisina vareina.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" width="1254" height="1254" role="img" aria-label="fonecheck">
+  <title>fonecheck</title>
   <defs>
-    <radialGradient id="background" cx="50%" cy="48%" r="76%">
-      <stop offset="0" stop-color="#03031c"/>
-      <stop offset="0.72" stop-color="#02021a"/>
-      <stop offset="1" stop-color="#010119"/>
-    </radialGradient>
-
-    <linearGradient id="violet" x1="401" y1="228" x2="852" y2="1025" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#8c55fb"/>
-      <stop offset="0.52" stop-color="#884ff7"/>
-      <stop offset="1" stop-color="#8c55fb"/>
+    <linearGradient id="gTeal" gradientUnits="userSpaceOnUse" x1="0" y1="148.0" x2="0" y2="1000.0">
+      <stop offset="0" stop-color="#35D9DF"/>
+      <stop offset="1" stop-color="#21C3CE"/>
     </linearGradient>
-
-    <linearGradient id="cyan" x1="354" y1="803" x2="896" y2="507" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#00def2"/>
-      <stop offset="0.54" stop-color="#00e1f5"/>
-      <stop offset="1" stop-color="#00ddea"/>
+    <linearGradient id="gPurple" gradientUnits="userSpaceOnUse" x1="0" y1="470.0" x2="0" y2="1108.0">
+      <stop offset="0" stop-color="#A971EA"/>
+      <stop offset="1" stop-color="#8C56CC"/>
     </linearGradient>
+    <filter id="fxTeal" x="-10%" y="-10%" width="120%" height="120%"
+            color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="23" result="h"/>
+      <feDiffuseLighting in="h" surfaceScale="23" diffuseConstant="1.1547"
+                         lighting-color="#ffffff" result="dif">
+        <feDistantLight azimuth="248" elevation="60"/>
+      </feDiffuseLighting>
+      <feGaussianBlur in="dif" stdDeviation="2.5" result="difS"/>
+      <feComponentTransfer in="difS" result="dif2">
+        <feFuncR type="linear" slope="0.8781" intercept="0.1219"/>
+        <feFuncG type="linear" slope="0.9256" intercept="0.0744"/>
+        <feFuncB type="linear" slope="0.9380" intercept="0.0620"/>
+      </feComponentTransfer>
+      <feComposite in="dif2" in2="SourceGraphic" operator="arithmetic"
+                   k1="1" k2="0" k3="0" k4="0" result="shaded"/>
+      <feSpecularLighting in="h" surfaceScale="13" specularConstant="1"
+                          specularExponent="70" lighting-color="#ffffff" result="sp">
+        <feDistantLight azimuth="248" elevation="60"/>
+      </feSpecularLighting>
+      <feGaussianBlur in="sp" stdDeviation="2.5" result="spS"/>
+      <feColorMatrix in="spS" type="matrix" result="sp2"
+                     values="0 0 0 0.9587 -0.0827
+                             0 0 0 0.8331 -0.0719
+                             0 0 0 1.0792 -0.0931
+                             0 0 0 0 1"/>
+      <feComposite in="sp2" in2="SourceAlpha" operator="in" result="spec"/>
+      <feBlend in="spec" in2="shaded" mode="screen" result="lit"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="17.0" result="hr"/>
+      <feSpecularLighting in="hr" surfaceScale="1.8" specularConstant="1"
+                          specularExponent="25.0" lighting-color="#ffffff" result="spr">
+        <feDistantLight azimuth="248" elevation="60"/>
+      </feSpecularLighting>
+      <feGaussianBlur in="spr" stdDeviation="2.5" result="sprS"/>
+      <feColorMatrix in="sprS" type="matrix" result="spr2"
+                     values="0 0 0 0.9233 -0.3259
+                             0 0 0 2.0688 -0.7302
+                             0 0 0 0.8776 -0.3097
+                             0 0 0 0 1"/>
+      <feComposite in="spr2" in2="SourceAlpha" operator="in" result="specR"/>
+      <feBlend in="specR" in2="lit" mode="screen" result="lit2"/>
+      <feComposite in="lit2" in2="SourceAlpha" operator="in"/>
+    </filter>
+    <filter id="fxPurple" x="-10%" y="-10%" width="120%" height="120%"
+            color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="23" result="h"/>
+      <feDiffuseLighting in="h" surfaceScale="19" diffuseConstant="1.1924"
+                         lighting-color="#ffffff" result="dif">
+        <feDistantLight azimuth="248" elevation="57"/>
+      </feDiffuseLighting>
+      <feGaussianBlur in="dif" stdDeviation="2.5" result="difS"/>
+      <feComponentTransfer in="difS" result="dif2">
+        <feFuncR type="linear" slope="0.9768" intercept="0.0232"/>
+        <feFuncG type="linear" slope="0.9823" intercept="0.0177"/>
+        <feFuncB type="linear" slope="0.9597" intercept="0.0403"/>
+      </feComponentTransfer>
+      <feComposite in="dif2" in2="SourceGraphic" operator="arithmetic"
+                   k1="1" k2="0" k3="0" k4="0" result="shaded"/>
+      <feSpecularLighting in="h" surfaceScale="13" specularConstant="1"
+                          specularExponent="40" lighting-color="#ffffff" result="sp">
+        <feDistantLight azimuth="248" elevation="57"/>
+      </feSpecularLighting>
+      <feGaussianBlur in="sp" stdDeviation="2.5" result="spS"/>
+      <feColorMatrix in="spS" type="matrix" result="sp2"
+                     values="0 0 0 1.1168 -0.1868
+                             0 0 0 1.0236 -0.1712
+                             0 0 0 1.1912 -0.1992
+                             0 0 0 0 1"/>
+      <feComposite in="sp2" in2="SourceAlpha" operator="in" result="spec"/>
+      <feBlend in="spec" in2="shaded" mode="screen" result="lit"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="6.0" result="hr"/>
+      <feSpecularLighting in="hr" surfaceScale="1.0" specularConstant="1"
+                          specularExponent="80.0" lighting-color="#ffffff" result="spr">
+        <feDistantLight azimuth="248" elevation="57"/>
+      </feSpecularLighting>
+      <feGaussianBlur in="spr" stdDeviation="2.5" result="sprS"/>
+      <feColorMatrix in="sprS" type="matrix" result="spr2"
+                     values="0 0 0 1.7066 -0.4528
+                             0 0 0 2.1068 -0.5590
+                             0 0 0 1.9710 -0.5230
+                             0 0 0 0 1"/>
+      <feComposite in="spr2" in2="SourceAlpha" operator="in" result="specR"/>
+      <feBlend in="specR" in2="lit" mode="screen" result="lit2"/>
+      <feComposite in="lit2" in2="SourceAlpha" operator="in"/>
+    </filter>
+    <filter id="fxAO" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="11.0" result="b"/>
+      <feFlood flood-color="#23003D" result="k"/>
+      <feComposite in="k" in2="b" operator="in"/>
+    </filter>
+    <clipPath id="clipTeal"><path d="M520.50 1069.85C479.27 1066.86 443.25 1039.89 427.88 1000.50C426.17 996.10 423.83 988.45 422.69 983.50C420.67 974.69 420.61 971.47 420.06 831.50C419.74 749.81 419.11 687.86 418.60 687.00C416.63 683.71 413.33 680.75 410.00 679.30C407.46 678.18 400.63 677.55 385.00 676.96C360.29 676.03 352.59 674.51 339.18 667.92C324.99 660.95 312.74 647.51 306.39 631.94C301.48 619.91 300.03 609.63 300.01 586.82C300.00 565.29 300.84 558.45 304.93 546.66C310.88 529.51 323.95 515.11 340.50 507.47C352.56 501.90 359.12 500.79 384.50 500.03C397.15 499.65 408.62 498.85 410.00 498.27C413.30 496.86 417.58 492.24 419.05 488.50C419.84 486.49 420.51 470.53 421.09 440.00C421.57 414.98 422.22 392.93 422.54 391.00C422.86 389.07 423.80 383.00 424.62 377.50C428.79 349.65 436.96 324.61 450.51 298.11C469.43 261.11 492.90 233.61 527.43 208.00C554.90 187.63 590.92 170.67 627.15 161.07C680.57 146.92 745.80 144.00 794.00 153.61C832.53 161.30 859.42 183.26 871.40 216.84C875.48 228.26 876.99 240.24 876.99 261.00C876.98 291.81 874.88 304.17 866.80 320.94C862.43 330.02 860.65 332.51 853.14 339.98C843.33 349.73 833.75 355.36 820.44 359.18C813.86 361.07 810.27 361.44 799.50 361.35C792.35 361.28 780.42 360.47 773.00 359.54C753.89 357.15 727.20 356.42 715.77 357.97C691.85 361.22 675.82 368.96 661.50 384.18C650.29 396.10 644.35 407.71 640.90 424.44C639.35 431.93 639.02 438.04 639.01 459.68C639.01 475.84 639.41 486.95 640.07 488.68C641.40 492.22 644.61 495.70 648.50 497.85C651.10 499.28 656.79 499.57 691.00 500.04L730.50 500.57L738.50 503.36C749.73 507.28 755.43 510.59 762.88 517.50C775.64 529.36 782.83 544.27 785.11 563.60C786.77 577.67 785.69 608.02 783.13 619.00C780.68 629.53 779.10 633.33 772.88 643.67C764.13 658.21 748.99 670.08 733.50 674.56C728.49 676.01 721.33 676.39 690.00 676.90C661.01 677.36 651.93 677.81 650.00 678.87C646.82 680.62 642.17 684.91 640.66 687.50C639.80 688.98 639.35 726.32 638.94 832.00C638.39 971.46 638.33 974.69 636.31 983.50C627.92 1020.00 604.64 1048.00 570.90 1062.18C555.88 1068.49 538.42 1071.15 520.50 1069.85Z"/></clipPath>
   </defs>
 
-  <rect width="1254" height="1254" fill="url(#background)"/>
+  <rect width="1254" height="1254" fill="#020307"/>
 
-  <path
-    fill="url(#violet)"
-    d="
-      M 409 646
-      C 404 647 401 644 401 639
-      V 325
-      C 401 271 444 228 497 228
-      H 756
-      C 809 228 852 271 852 325
-      V 481
-      C 852 488 849 493 843 496
-      L 800 514
-      C 793 517 787 513 787 506
-      V 347
-      C 787 316 763 291 732 291
-      H 521
-      C 489 291 464 316 464 347
-      V 619
-      C 464 625 461 629 455 631
-      L 409 646
-      Z
-    "/>
+  <g filter="url(#fxTeal)"><path d="M520.50 1069.85C479.27 1066.86 443.25 1039.89 427.88 1000.50C426.17 996.10 423.83 988.45 422.69 983.50C420.67 974.69 420.61 971.47 420.06 831.50C419.74 749.81 419.11 687.86 418.60 687.00C416.63 683.71 413.33 680.75 410.00 679.30C407.46 678.18 400.63 677.55 385.00 676.96C360.29 676.03 352.59 674.51 339.18 667.92C324.99 660.95 312.74 647.51 306.39 631.94C301.48 619.91 300.03 609.63 300.01 586.82C300.00 565.29 300.84 558.45 304.93 546.66C310.88 529.51 323.95 515.11 340.50 507.47C352.56 501.90 359.12 500.79 384.50 500.03C397.15 499.65 408.62 498.85 410.00 498.27C413.30 496.86 417.58 492.24 419.05 488.50C419.84 486.49 420.51 470.53 421.09 440.00C421.57 414.98 422.22 392.93 422.54 391.00C422.86 389.07 423.80 383.00 424.62 377.50C428.79 349.65 436.96 324.61 450.51 298.11C469.43 261.11 492.90 233.61 527.43 208.00C554.90 187.63 590.92 170.67 627.15 161.07C680.57 146.92 745.80 144.00 794.00 153.61C832.53 161.30 859.42 183.26 871.40 216.84C875.48 228.26 876.99 240.24 876.99 261.00C876.98 291.81 874.88 304.17 866.80 320.94C862.43 330.02 860.65 332.51 853.14 339.98C843.33 349.73 833.75 355.36 820.44 359.18C813.86 361.07 810.27 361.44 799.50 361.35C792.35 361.28 780.42 360.47 773.00 359.54C753.89 357.15 727.20 356.42 715.77 357.97C691.85 361.22 675.82 368.96 661.50 384.18C650.29 396.10 644.35 407.71 640.90 424.44C639.35 431.93 639.02 438.04 639.01 459.68C639.01 475.84 639.41 486.95 640.07 488.68C641.40 492.22 644.61 495.70 648.50 497.85C651.10 499.28 656.79 499.57 691.00 500.04L730.50 500.57L738.50 503.36C749.73 507.28 755.43 510.59 762.88 517.50C775.64 529.36 782.83 544.27 785.11 563.60C786.77 577.67 785.69 608.02 783.13 619.00C780.68 629.53 779.10 633.33 772.88 643.67C764.13 658.21 748.99 670.08 733.50 674.56C728.49 676.01 721.33 676.39 690.00 676.90C661.01 677.36 651.93 677.81 650.00 678.87C646.82 680.62 642.17 684.91 640.66 687.50C639.80 688.98 639.35 726.32 638.94 832.00C638.39 971.46 638.33 974.69 636.31 983.50C627.92 1020.00 604.64 1048.00 570.90 1062.18C555.88 1068.49 538.42 1071.15 520.50 1069.85Z" fill="url(#gTeal)"/></g>
 
-  <path
-    fill="url(#violet)"
-    d="
-      M 410 805
-      L 455 789
-      C 461 787 464 791 464 798
-      V 906
-      C 464 938 489 963 521 963
-      H 732
-      C 763 963 787 938 787 906
-      V 701
-      C 787 696 790 693 795 691
-      L 844 673
-      C 849 671 852 675 852 681
-      V 928
-      C 852 982 809 1025 756 1025
-      H 497
-      C 444 1025 401 982 401 928
-      V 819
-      C 401 813 404 808 410 805
-      Z
-    "/>
+  <g clip-path="url(#clipTeal)" opacity="0.975">
+    <path d="M558.44 1107.46C515.60 1101.21 480.20 1080.61 437.95 1037.37C390.98 989.28 278.75 858.84 268.28 840.17C263.60 831.82 259.39 818.31 258.55 809.00C257.39 796.06 261.15 780.13 268.18 768.19C273.17 759.71 285.20 748.14 293.55 743.78C306.36 737.10 321.66 734.23 335.25 735.96C351.14 737.99 366.37 744.99 377.31 755.30C383.57 761.20 417.68 797.84 423.00 804.37C424.93 806.73 429.58 812.46 433.35 817.08C457.95 847.29 516.11 908.16 527.88 916.00C538.20 922.88 547.86 926.84 558.90 928.73C567.44 930.18 569.92 930.25 576.19 929.19C580.21 928.51 586.42 926.83 590.00 925.46C610.97 917.44 630.79 890.65 636.91 862.05C638.41 855.04 638.73 854.48 642.31 852.59C646.85 850.20 653.99 841.23 684.61 799.50C723.90 745.95 753.56 702.20 815.82 606.00C825.97 590.33 835.94 574.80 837.99 571.50C841.33 566.11 854.37 545.69 878.19 508.54C891.02 488.53 901.57 478.85 917.39 472.56C926.52 468.94 939.66 468.03 949.00 470.38C960.84 473.37 969.66 478.45 978.53 487.40C984.77 493.70 987.49 497.39 990.72 504.00C1000.95 524.90 1001.37 543.78 992.18 569.64C982.25 597.57 929.11 704.61 889.23 777.00C831.09 882.54 774.82 970.28 723.14 1036.00C712.63 1049.36 690.23 1071.40 679.12 1079.29C669.77 1085.94 653.26 1094.96 643.09 1098.96C634.71 1102.27 619.50 1105.99 608.00 1107.54C595.13 1109.28 570.64 1109.24 558.44 1107.46Z" fill="#000" filter="url(#fxAO)"/>
+  </g>
 
-  <path
-    fill="url(#cyan)"
-    d="
-      M 890 507
-      C 893 506 896 510 896 514
-      V 552
-      C 896 597 872 626 828 642
-      L 421 771
-      C 395 779 376 789 362 801
-      C 359 805 354 802 354 798
-      V 749
-      C 354 716 376 692 412 680
-      L 800 557
-      C 837 545 865 530 885 510
-      C 887 508 889 507 890 507
-      Z
-    "/>
+  <g filter="url(#fxPurple)"><path d="M558.44 1107.46C515.60 1101.21 480.20 1080.61 437.95 1037.37C390.98 989.28 278.75 858.84 268.28 840.17C263.60 831.82 259.39 818.31 258.55 809.00C257.39 796.06 261.15 780.13 268.18 768.19C273.17 759.71 285.20 748.14 293.55 743.78C306.36 737.10 321.66 734.23 335.25 735.96C351.14 737.99 366.37 744.99 377.31 755.30C383.57 761.20 417.68 797.84 423.00 804.37C424.93 806.73 429.58 812.46 433.35 817.08C457.95 847.29 516.11 908.16 527.88 916.00C538.20 922.88 547.86 926.84 558.90 928.73C567.44 930.18 569.92 930.25 576.19 929.19C580.21 928.51 586.42 926.83 590.00 925.46C610.97 917.44 630.79 890.65 636.91 862.05C638.41 855.04 638.73 854.48 642.31 852.59C646.85 850.20 653.99 841.23 684.61 799.50C723.90 745.95 753.56 702.20 815.82 606.00C825.97 590.33 835.94 574.80 837.99 571.50C841.33 566.11 854.37 545.69 878.19 508.54C891.02 488.53 901.57 478.85 917.39 472.56C926.52 468.94 939.66 468.03 949.00 470.38C960.84 473.37 969.66 478.45 978.53 487.40C984.77 493.70 987.49 497.39 990.72 504.00C1000.95 524.90 1001.37 543.78 992.18 569.64C982.25 597.57 929.11 704.61 889.23 777.00C831.09 882.54 774.82 970.28 723.14 1036.00C712.63 1049.36 690.23 1071.40 679.12 1079.29C669.77 1085.94 653.26 1094.96 643.09 1098.96C634.71 1102.27 619.50 1105.99 608.00 1107.54C595.13 1109.28 570.64 1109.24 558.44 1107.46Z" fill="url(#gPurple)"/></g>
 </svg>
