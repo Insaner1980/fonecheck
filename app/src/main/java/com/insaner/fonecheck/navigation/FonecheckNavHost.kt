@@ -22,6 +22,7 @@ import com.insaner.fonecheck.ui.screens.comparison.ReportComparisonRoute
 import com.insaner.fonecheck.ui.screens.connectivity.ConnectivityTestScreen
 import com.insaner.fonecheck.ui.screens.deviceinfo.DeviceInfoScreen
 import com.insaner.fonecheck.ui.screens.display.DisplayTestScreen
+import com.insaner.fonecheck.ui.screens.export.ReportExportRoute
 import com.insaner.fonecheck.ui.screens.home.HomeScreen
 import com.insaner.fonecheck.ui.screens.history.HistoryRoute
 import com.insaner.fonecheck.ui.screens.performance.PerformanceInfoScreen
@@ -135,7 +136,7 @@ fun FonecheckNavHost(
             ReportComparisonRoute(onBack = { navController.popBackStack() })
         }
         composable<ReportExport> {
-            PlaceholderScreen(stringResource(R.string.history_export_placeholder))
+            ReportExportRoute(onBack = { navController.popBackStack() })
         }
     }
 }

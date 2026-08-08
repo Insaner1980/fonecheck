@@ -842,6 +842,14 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Fonttien upotus, sivutus, receiving app -yhteensopivuus.
 - **Decision required:** Ei PDF:lle; retention policy vahvistetaan kohdassa 1.
 
+#### Implementation/status log — 2026-08-08
+
+- `ReportPdfContentBuilder` muodostaa locale-neutralista immutable-raportista lokalisoitavan PDF-sisällön: fonecheck-branding, raportin ID ja formaattiversio, app- ja score-versiot, laite- ja Android-konteksti, paikallinen valmistumisaika, kesto, score/tila, coverage, laskurit, disclaimer sekä kaikki 14 canonical-kategoriaa ja tallennettu evidence lähde-, confidence-, reason- ja timestamp-tietoineen. Snapshotista puuttuva kategoria näkyy eksplisiittisesti `Not tested` -tilassa.
+- Puhdas `PdfLayoutEngine` rivittää pitkän sisällön tyylikohtaisilla rajoilla ja jakaa sen deterministisesti usealle A4-sivulle. `ReportPdfRenderer` omistaa `PdfDocument`-elinkaaren, viimeistelee jokaisen sivun, kirjoittaa tuloksen ja sulkee dokumentin myös virheessä; sivuilla on toistuva fonecheck-otsake ja sivunumero.
+- `AndroidReportExporter` kirjoittaa PDF:n ensin väliaikaistiedostoon, viimeistelee sen atomisesti `cache/report-exports/`-hakemistoon ja poistaa yli 24 tuntia vanhat export-cache-tiedostot. Ei-exported `FonecheckFileProvider` paljastaa vain tämän alihakemiston. Sharesheet saa `content://`-URI:n, MIME-tyypin, ClipDatan ja vain väliaikaisen read grantin; mitään ei ladata verkkoon.
+- Type-safe `ReportExport(reportId)` -reitti lataa immutable-raportin repositorylta, erottaa loading/not found/unavailable/error-tilat ja generoi PDF:n IO-dispatcherilla. Vientinäkymä kertoo paikallisesta väliaikaistiedostosta, sisällöstä ja rajoitteista; export failure voidaan yrittää uudelleen lataamatta raporttia uudestaan. EN/FI-resurssit lisättiin pareittain.
+- Sisältö- ja sivutus-unit-testit sekä export-ViewModel-testit läpäisevät. Renderer/FileProvider/cache- ja vientinäkymän instrumentaatiotestit kääntyvät. Yhdistetty `:app:testDebugUnitTest :app:compileDebugAndroidTestKotlin :app:lintDebug :app:assembleDebug` läpäisee. Fyysinen monisivuinen PDF/provider/share-ajo odottaa laitetta, koska `adb devices -l` on tyhjä. `ktlintCheck` on edelleen estynyt ennen linttausta samoista 10 dependency-verification-tietueesta; käyttäjän metadataa ja keskeneräistä `PROJECT.md`:ää ei muokattu.
+
 ### 29. Implement the approved machine-readable export
 
 - **Objective:** Tarjota vakaa automatisoitava vienti ilman uutta tietomallia.

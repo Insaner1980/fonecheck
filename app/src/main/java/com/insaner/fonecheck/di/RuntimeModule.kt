@@ -4,6 +4,8 @@ import android.content.Context
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.IdProvider
 import com.insaner.fonecheck.runtime.NanoTimeSource
+import com.insaner.fonecheck.export.AndroidReportExporter
+import com.insaner.fonecheck.export.ReportExporter
 import com.insaner.fonecheck.ui.screens.biometrics.AndroidBiometricCapabilityProvider
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricCapabilityProvider
 import com.insaner.fonecheck.ui.screens.buttons.DefaultVolumeButtonEventSource
@@ -73,6 +75,9 @@ object RuntimeModule {
     fun provideBiometricCapabilityProvider(
         provider: AndroidBiometricCapabilityProvider,
     ): BiometricCapabilityProvider = provider
+
+    @Provides
+    fun provideReportExporter(exporter: AndroidReportExporter): ReportExporter = exporter
 
     @Provides
     @IoDispatcher

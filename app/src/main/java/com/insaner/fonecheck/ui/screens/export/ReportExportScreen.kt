@@ -1,0 +1,224 @@
+package com.insaner.fonecheck.ui.screens.export
+
+import android.content.ClipData
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.insaner.fonecheck.R
+import com.insaner.fonecheck.ui.components.InfoRow
+import com.insaner.fonecheck.ui.components.StandardCard
+
+@Composable
+fun ReportExportRoute(
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: ReportExportViewModel = hiltViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val shareRequest = (state as? ReportExportState.Ready)?.shareRequest
+    val shareTitle = stringResource(R.string.export_share_title)
+    LaunchedEffect(shareRequest) {
+        shareRequest?.let { exported ->
+            val uri = Uri.parse(exported.uri)
+            val intent =
+                Intent(Intent.ACTION_SEND).apply {
+                    type = exported.mimeType
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    clipData = ClipData.newRawUri(exported.displayName, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+            context.startActivity(Intent.createChooser(intent, shareTitle))
+            viewModel.consumeShareRequest()
+        }
+    }
+    ReportExportScreen(
+        state = state,
+        onExportPdf = viewModel::exportPdf,
+        onRetryLoad = viewModel::retryLoad,
+        onBack = onBack,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun ReportExportScreen(
+    state: ReportExportState,
+    onExportPdf: () -> Unit,
+    onRetryLoad: () -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    when (state) {
+        ReportExportState.Loading ->
+            ExportMessage(
+                message = stringResource(R.string.report_loading),
+                showProgress = true,
+                onRetry = null,
+                onBack = null,
+                modifier = modifier,
+            )
+
+        is ReportExportState.Ready ->
+            ExportReady(
+                state = state,
+                onExportPdf = onExportPdf,
+                onBack = onBack,
+                modifier = modifier,
+            )
+
+        ReportExportState.NotFound ->
+            ExportMessage(
+                message = stringResource(R.string.export_not_found),
+                showProgress = false,
+                onRetry = null,
+                onBack = onBack,
+                modifier = modifier,
+            )
+
+        is ReportExportState.Unavailable ->
+            ExportMessage(
+                message = stringResource(R.string.export_unavailable),
+                showProgress = false,
+                onRetry = onRetryLoad,
+                onBack = onBack,
+                modifier = modifier,
+            )
+
+        ReportExportState.Error ->
+            ExportMessage(
+                message = stringResource(R.string.export_load_error),
+                showProgress = false,
+                onRetry = onRetryLoad,
+                onBack = onBack,
+                modifier = modifier,
+            )
+    }
+}
+
+@Composable
+private fun ExportReady(
+    state: ReportExportState.Ready,
+    onExportPdf: () -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxSize().padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.export_title),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = stringResource(R.string.export_description),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        StandardCard {
+            Column(
+                modifier = Modifier.padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                InfoRow(stringResource(R.string.report_identifier), state.report.stableId)
+                InfoRow(
+                    stringResource(R.string.pdf_report_format),
+                    state.report.schemaVersion.value.toString(),
+                )
+                Text(
+                    text = stringResource(R.string.export_local_only),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = stringResource(R.string.export_pdf_description),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        }
+        state.error?.let {
+            Text(
+                text = stringResource(R.string.export_pdf_error),
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+        Button(
+            onClick = onExportPdf,
+            enabled = !state.isGenerating,
+            modifier = Modifier.fillMaxWidth().testTag("export_pdf"),
+        ) {
+            Text(
+                stringResource(
+                    if (state.isGenerating) R.string.export_generating else R.string.export_pdf,
+                ),
+            )
+        }
+        OutlinedButton(
+            onClick = onBack,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(stringResource(R.string.report_back))
+        }
+    }
+}
+
+@Composable
+private fun ExportMessage(
+    message: String,
+    showProgress: Boolean,
+    onRetry: (() -> Unit)?,
+    onBack: (() -> Unit)?,
+    modifier: Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxSize().padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        if (showProgress) CircularProgressIndicator(modifier = Modifier.padding(bottom = 20.dp))
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+        )
+        onRetry?.let {
+            Button(
+                onClick = it,
+                modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+            ) {
+                Text(stringResource(R.string.report_retry))
+            }
+        }
+        onBack?.let {
+            OutlinedButton(
+                onClick = it,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            ) {
+                Text(stringResource(R.string.report_back))
+            }
+        }
+    }
+}
