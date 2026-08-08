@@ -1055,6 +1055,13 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Reflektio/serialization/provider-resurssit voivat rikkoutua vain minifioidussa buildissä.
 - **Decision required:** Ei, ellei dependency/security-tarkistus vaadi scope-muutosta.
 
+#### Implementation/status log — 2026-08-08
+
+- Käyttäjän nimenomaisella luvalla Codex ajoi Gradlen itse. `:app:testDebugUnitTest` suoritti 212 testiä ilman failure-, error- tai skipped-tuloksia; `:app:compileDebugAndroidTestKotlin`, `:app:lintDebug`, `:app:lintRelease`, `:app:assembleRelease` ja `:app:bundleRelease` läpäisivät samassa varmennusketjussa. Lint-raporteissa on 0 erroria ja 53 olemassa olevaa warningia.
+- R8 minifioi release-koodin ja resource shrinker ajoi ilman missing rules -tiedostoa tai blanket keep -sääntöjä. Tuloksena syntyivät 5 004 975 tavun unsigned release-APK ja 7 839 994 tavun unsigned release-AAB. Ilman yhdistettyä laitetta minifioidun buildin install/smoke-polku jää avoimeksi eikä sitä väitetä läpäistyksi.
+- OWASP Dependency-Check analysoi 259 riippuvuutta: 0 vulnerable dependencies, 0 vulnerabilities ja 0 analysis exceptions. Analyysiä varten lisätyt 91 POM-tarkistussummaa verrattiin suoraan Google Mavenin tai Maven Centralin virallisiin tavuihin; kaikki täsmäsivät.
+- Codex Securityn standardi repository-scan löysi yhden LOW-tason toimitusketjuriskin: Gradle-wrapperin jakelulta puuttui virallisen paketin SHA-256-lukitus. `gradle-wrapper.properties` lukitsee nyt Gradle 8.11.1:n viralliseen tarkistussummaan. Androidin exported/provider-, paikallisen datan, backup-, logi-, secret- ja verkkorajojen erillistarkastuksissa ei löytynyt raportoitavaa high-confidence-ongelmaa.
+
 ### 39. Complete signing, privacy, Play Store, and legal readiness
 
 - **Objective:** Valmistaa julkaistava AAB ja kaikki ulkoiset julkaisuvelvoitteet.
