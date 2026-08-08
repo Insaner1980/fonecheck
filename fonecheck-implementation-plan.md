@@ -928,6 +928,13 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Yksi liian geneerinen komponentti voi hävittää featurekohtaisen palautustoiminnon.
 - **Decision required:** Ei.
 
+#### Implementation/status log — 2026-08-08
+
+- `ScreenStateCard` ja `ScreenStateScreen` muodostavat yhden kevyen esitysmallin Loading-, Empty-, Unavailable-, Not tested-, Permission needed- ja Error-tiloille. Tyypit säilyvät erillisinä eikä error-tilaa kuvata laitteistovikana. Olemassa oleva `PermissionStatusCard` säilyttää lupakohtaiset request/retry/settings-palautukset.
+- History, saved report, comparison ja export käyttävät samaa full-screen/card-esitystä sekä omia retry/back-toimintojaan. Device-, Performance-, SIM-, Camera-, Storage-, Thermal- ja Sensor-näkymien lataus-, tyhjä-/unavailable- tai virhetilat käyttävät samaa esitystä featurekohtaisilla viesteillä ja palautustoiminnoilla.
+- Kameran capability-lataus päättää nyt myös virhepolulla `isLoading`-tilan ja tarjoaa `refreshCapabilities`-retryn. Näin alustava Camera-näkymä ei jää virheen jälkeen pysyvään lataustilaan eikä tyhjiä testikortteja näytetä latauksen aikana.
+- Semantic state title -unit-testi ja koko state matrixin action-Compose-testi läpäisevät/kääntyvät. Yhdistetty `:app:testDebugUnitTest :app:compileDebugAndroidTestKotlin :app:lintDebug :app:assembleDebug` läpäisee. Instrumentoidun state matrixin suoritus odottaa laitetta. Käyttäjän `PROJECT.md`-muutosta ei muokattu.
+
 ### 33. Complete English/Finnish localization and locale-safe formatting
 
 - **Objective:** Poistaa domainiin ja UI:hin jääneet kovakoodatut tekstit ja arvopäättelyt.

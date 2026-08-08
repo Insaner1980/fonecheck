@@ -44,6 +44,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.ui.components.DetailInfoRow
+import com.insaner.fonecheck.ui.components.ScreenStateCard
+import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.TestScreenContent
 import com.insaner.fonecheck.ui.theme.Blue400
 import com.insaner.fonecheck.ui.theme.Green400
@@ -52,7 +54,6 @@ import com.insaner.fonecheck.ui.theme.Neutral500
 import com.insaner.fonecheck.ui.theme.Neutral700
 import com.insaner.fonecheck.ui.theme.Neutral800
 import com.insaner.fonecheck.ui.theme.Neutral850
-import com.insaner.fonecheck.ui.theme.Red400
 import com.insaner.fonecheck.ui.theme.Yellow400
 
 @Composable
@@ -125,17 +126,10 @@ private fun SensorSummaryCard(state: SensorTestState) {
 
 @Composable
 private fun SensorErrorCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Red400.copy(alpha = 0.12f)),
-    ) {
-        Text(
-            text = stringResource(R.string.sensor_listener_error),
-            modifier = Modifier.padding(16.dp),
-            style = MaterialTheme.typography.bodyMedium,
-            color = Red400,
-        )
-    }
+    ScreenStateCard(
+        type = ScreenStateType.ERROR,
+        message = stringResource(R.string.sensor_listener_error),
+    )
 }
 
 @Composable

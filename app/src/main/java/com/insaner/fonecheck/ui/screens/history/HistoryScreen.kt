@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -25,7 +24,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -39,6 +37,9 @@ import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.navigation.diagnosticDestinations
 import com.insaner.fonecheck.ui.components.InfoRow
+import com.insaner.fonecheck.ui.components.ScreenStateCard
+import com.insaner.fonecheck.ui.components.ScreenStateScreen
+import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.StandardCard
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -176,30 +177,19 @@ fun HistoryScreen(
 
 @Composable
 private fun HistoryLoading(modifier: Modifier) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator()
-            Text(
-                text = stringResource(R.string.history_loading),
-                modifier = Modifier.padding(top = 16.dp),
-            )
-        }
-    }
+    ScreenStateScreen(
+        type = ScreenStateType.LOADING,
+        message = stringResource(R.string.history_loading),
+        modifier = modifier,
+    )
 }
 
 @Composable
 private fun HistoryEmpty() {
-    StandardCard {
-        Text(
-            text = stringResource(R.string.history_empty),
-            modifier = Modifier.padding(20.dp),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
+    ScreenStateCard(
+        type = ScreenStateType.EMPTY,
+        message = stringResource(R.string.history_empty),
+    )
 }
 
 @Composable
@@ -207,28 +197,19 @@ private fun HistoryErrorCard(
     error: String,
     onRetry: () -> Unit,
 ) {
-    StandardCard {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text(
-                text =
-                    stringResource(
-                        if (error == "history_delete_failed") {
-                            R.string.history_delete_error
-                        } else {
-                            R.string.history_error
-                        },
-                    ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
-            )
-            OutlinedButton(
-                onClick = onRetry,
-                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-            ) {
-                Text(stringResource(R.string.history_retry))
-            }
-        }
-    }
+    ScreenStateCard(
+        type = ScreenStateType.ERROR,
+        message =
+            stringResource(
+                if (error == "history_delete_failed") {
+                    R.string.history_delete_error
+                } else {
+                    R.string.history_error
+                },
+            ),
+        actionLabel = stringResource(R.string.history_retry),
+        onAction = onRetry,
+    )
 }
 
 @Composable

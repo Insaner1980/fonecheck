@@ -2,6 +2,12 @@
 <resources>
     <string name="app_name" translatable="false">fonecheck</string>
     <string name="navigation_back">Back</string>
+    <string name="state_loading_title">Loading</string>
+    <string name="state_empty_title">Nothing here yet</string>
+    <string name="state_unavailable_title">Unavailable</string>
+    <string name="state_not_tested_title">Not tested</string>
+    <string name="state_permission_denied_title">Permission needed</string>
+    <string name="state_error_title">Something went wrong</string>
 
     <!-- Device Info Screen -->
     <string name="device_info_title">Device</string>
@@ -31,6 +37,7 @@
     <string name="device_refresh">Refresh device information</string>
     <string name="device_capture_error_title">Device information unavailable</string>
     <string name="device_capture_error_description">fonecheck could not refresh the device snapshot. The last successful snapshot remains visible.</string>
+    <string name="device_loading">Reading device information…</string>
     <string name="label_developer_options">Developer Options</string>
     <string name="label_usb_debugging">USB Debugging</string>
 
@@ -64,6 +71,7 @@
     <string name="perf_cpu_frequency_value">%1$d MHz</string>
     <string name="perf_info_error_title">Performance information unavailable</string>
     <string name="perf_info_error_description">fonecheck could not refresh the hardware information. The last successful snapshot remains visible.</string>
+    <string name="perf_info_loading">Reading performance and hardware information…</string>
     <string name="perf_refresh_info">Refresh hardware information</string>
     <string name="perf_benchmark_title">Bounded performance check</string>
     <string name="perf_benchmark_description">Runs a short fixed CPU workload and a 64 MiB in-memory read/write workload. Results are informational, vary with device conditions, and should only be compared within the same app version.</string>
@@ -136,6 +144,7 @@
     <string name="sim_limited_mode">Limited information is shown without Phone permission. SIM identifiers are never saved.</string>
     <string name="sim_capture_error_title">Telephony information unavailable</string>
     <string name="sim_capture_error_description">Telephony information could not be read. You can try again.</string>
+    <string name="sim_loading">Reading telephony information…</string>
     <string name="sim_refresh">Refresh telephony information</string>
 
     <!-- Audio Test Screen -->
@@ -225,6 +234,8 @@
     <string name="camera_logical_count_label">Logical cameras</string>
     <string name="camera_no_public_cameras">No publicly selectable camera was reported by Android.</string>
     <string name="camera_operation_failed">The camera operation failed. Close the preview and try again.</string>
+    <string name="camera_loading">Reading camera capabilities…</string>
+    <string name="camera_retry">Try again</string>
 
     <!-- Sensor Test Screen -->
     <string name="sensor_summary_title">Sensor Overview</string>
@@ -505,6 +516,7 @@
     <string name="storage_internal_access">App-private storage</string>
     <string name="storage_accessible">Accessible</string>
     <string name="storage_info_error">Storage information could not be read.</string>
+    <string name="storage_loading">Reading app-accessible storage information…</string>
     <string name="storage_volumes_title">App-accessible shared volumes</string>
     <string name="storage_no_shared_volumes">No app-accessible shared volume is currently available.</string>
     <string name="storage_volume_primary">Primary shared volume</string>

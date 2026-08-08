@@ -100,12 +100,17 @@ class CameraTestViewModel
             loadCapabilities()
         }
 
+        fun refreshCapabilities() {
+            loadCapabilities()
+        }
+
         private fun loadCapabilities() {
+            _state.value = _state.value.copy(isLoading = true, error = null)
             viewModelScope.launch(ioDispatcher) {
                 runCameraOperation(
                     action = "load camera capabilities",
                     onFailure = { error ->
-                        _state.value = _state.value.copy(error = error.message)
+                        _state.value = _state.value.copy(isLoading = false, error = error.message)
                     },
                 ) {
                     val cameraIds = cameraManager.cameraIdList

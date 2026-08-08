@@ -1,26 +1,16 @@
 package com.insaner.fonecheck.ui.screens.report
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.data.repository.ReportReadFailure
+import com.insaner.fonecheck.ui.components.ScreenStateScreen
+import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.screens.runall.ReportResultMode
 import com.insaner.fonecheck.ui.screens.runall.ReportSaveStatus
 import com.insaner.fonecheck.ui.screens.runall.RunAllResultsScreen
@@ -53,8 +43,8 @@ fun ReportDetailScreen(
     when (state) {
         ReportDetailState.Loading ->
             ReportMessageScreen(
+                type = ScreenStateType.LOADING,
                 message = stringResource(R.string.report_loading),
-                showProgress = true,
                 onRetry = null,
                 onBack = null,
                 modifier = modifier,
@@ -73,6 +63,7 @@ fun ReportDetailScreen(
 
         ReportDetailState.NotFound ->
             ReportMessageScreen(
+                type = ScreenStateType.EMPTY,
                 message = stringResource(R.string.report_not_found),
                 onRetry = null,
                 onBack = onBack,
@@ -81,6 +72,7 @@ fun ReportDetailScreen(
 
         is ReportDetailState.Unavailable ->
             ReportMessageScreen(
+                type = ScreenStateType.UNAVAILABLE,
                 message =
                     stringResource(
                         when (state.reason) {
@@ -95,6 +87,7 @@ fun ReportDetailScreen(
 
         ReportDetailState.Error ->
             ReportMessageScreen(
+                type = ScreenStateType.ERROR,
                 message = stringResource(R.string.report_load_error),
                 onRetry = onRetry,
                 onBack = onBack,
@@ -105,50 +98,19 @@ fun ReportDetailScreen(
 
 @Composable
 private fun ReportMessageScreen(
+    type: ScreenStateType,
     message: String,
     onRetry: (() -> Unit)?,
     onBack: (() -> Unit)?,
     modifier: Modifier = Modifier,
-    showProgress: Boolean = false,
 ) {
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        if (showProgress) {
-            CircularProgressIndicator(modifier = Modifier.padding(bottom = 20.dp))
-        }
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center,
-        )
-        onRetry?.let { retry ->
-            Button(
-                onClick = retry,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = 20.dp),
-            ) {
-                Text(stringResource(R.string.report_retry))
-            }
-        }
-        onBack?.let { back ->
-            OutlinedButton(
-                onClick = back,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-            ) {
-                Text(stringResource(R.string.report_back))
-            }
-        }
-    }
+    ScreenStateScreen(
+        type = type,
+        message = message,
+        actionLabel = stringResource(R.string.report_retry).takeIf { onRetry != null },
+        onAction = onRetry,
+        secondaryActionLabel = stringResource(R.string.report_back).takeIf { onBack != null },
+        onSecondaryAction = onBack,
+        modifier = modifier,
+    )
 }

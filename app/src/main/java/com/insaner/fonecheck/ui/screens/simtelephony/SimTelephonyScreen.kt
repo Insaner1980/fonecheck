@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,9 +35,10 @@ import com.insaner.fonecheck.domain.permission.PermissionKind
 import com.insaner.fonecheck.ui.components.InfoCard
 import com.insaner.fonecheck.ui.components.InfoRow
 import com.insaner.fonecheck.ui.components.PermissionStatusCard
+import com.insaner.fonecheck.ui.components.ScreenStateCard
+import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.StatusRow
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
-import com.insaner.fonecheck.ui.theme.Red400
 
 @Composable
 fun SimTelephonyScreen(
@@ -86,7 +86,10 @@ fun SimTelephonyScreen(
         )
 
         if (state.isLoading && state.info == null) {
-            CircularProgressIndicator()
+            ScreenStateCard(
+                type = ScreenStateType.LOADING,
+                message = stringResource(R.string.sim_loading),
+            )
         }
 
         state.info?.let { info ->
@@ -115,22 +118,23 @@ fun SimTelephonyScreen(
         }
 
         state.error?.let {
-            InfoCard(title = stringResource(R.string.sim_capture_error_title)) {
-                Text(
-                    text = stringResource(R.string.sim_capture_error_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Red400,
-                )
-            }
+            ScreenStateCard(
+                type = ScreenStateType.ERROR,
+                message = stringResource(R.string.sim_capture_error_description),
+                actionLabel = stringResource(R.string.sim_refresh),
+                onAction = viewModel::refresh,
+            )
         }
 
-        Button(
-            onClick = viewModel::refresh,
-            enabled = !state.isLoading,
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium,
-        ) {
-            Text(stringResource(R.string.sim_refresh))
+        if (state.error == null) {
+            Button(
+                onClick = viewModel::refresh,
+                enabled = !state.isLoading,
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+            ) {
+                Text(stringResource(R.string.sim_refresh))
+            }
         }
     }
 }

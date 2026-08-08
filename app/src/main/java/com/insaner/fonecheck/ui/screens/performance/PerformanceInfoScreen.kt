@@ -31,9 +31,10 @@ import com.insaner.fonecheck.domain.model.PerformanceInfo
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import com.insaner.fonecheck.ui.components.InfoCard
 import com.insaner.fonecheck.ui.components.InfoRow
+import com.insaner.fonecheck.ui.components.ScreenStateCard
+import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.theme.JetBrainsMono
 import com.insaner.fonecheck.ui.theme.Neutral600
-import com.insaner.fonecheck.ui.theme.Red400
 import java.text.NumberFormat
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -55,33 +56,39 @@ fun PerformanceInfoScreen(
                 .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        if (state.isInfoLoading && state.info == null) CircularProgressIndicator()
+        if (state.isInfoLoading && state.info == null) {
+            ScreenStateCard(
+                type = ScreenStateType.LOADING,
+                message = stringResource(R.string.perf_info_loading),
+            )
+        }
         state.info?.let { info ->
             CpuInfoCard(info)
             RamInfoCard(info)
             GpuInfoCard(info)
         }
         state.infoError?.let {
-            InfoCard(title = stringResource(R.string.perf_info_error_title)) {
-                Text(
-                    text = stringResource(R.string.perf_info_error_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Red400,
-                )
-            }
+            ScreenStateCard(
+                type = ScreenStateType.ERROR,
+                message = stringResource(R.string.perf_info_error_description),
+                actionLabel = stringResource(R.string.perf_refresh_info),
+                onAction = viewModel::refreshInfo,
+            )
         }
         BenchmarkCard(
             state = state,
             onStart = viewModel::startBenchmark,
             onCancel = viewModel::cancelBenchmark,
         )
-        OutlinedButton(
-            onClick = viewModel::refreshInfo,
-            enabled = !state.isInfoLoading,
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium,
-        ) {
-            Text(stringResource(R.string.perf_refresh_info))
+        if (state.infoError == null) {
+            OutlinedButton(
+                onClick = viewModel::refreshInfo,
+                enabled = !state.isInfoLoading,
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+            ) {
+                Text(stringResource(R.string.perf_refresh_info))
+            }
         }
     }
 }

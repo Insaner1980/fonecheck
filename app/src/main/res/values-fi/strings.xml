@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="navigation_back">Takaisin</string>
+    <string name="state_loading_title">Ladataan</string>
+    <string name="state_empty_title">Ei vielä sisältöä</string>
+    <string name="state_unavailable_title">Ei saatavilla</string>
+    <string name="state_not_tested_title">Ei testattu</string>
+    <string name="state_permission_denied_title">Lupa tarvitaan</string>
+    <string name="state_error_title">Jokin meni pieleen</string>
     <!-- Device Info Screen -->
     <string name="device_info_title">Laite</string>
     <string name="os_info_title">Käyttöjärjestelmä</string>
@@ -29,6 +35,7 @@
     <string name="device_refresh">Päivitä laitetiedot</string>
     <string name="device_capture_error_title">Laitetietoja ei ole saatavilla</string>
     <string name="device_capture_error_description">fonecheck ei voinut päivittää laitteen tilannekuvaa. Viimeisin onnistunut tilannekuva pysyy näkyvissä.</string>
+    <string name="device_loading">Luetaan laitteen tietoja…</string>
     <string name="label_developer_options">Kehittäjäasetukset</string>
     <string name="label_usb_debugging">USB-virheenkorjaus</string>
 
@@ -62,6 +69,7 @@
     <string name="perf_cpu_frequency_value">%1$d MHz</string>
     <string name="perf_info_error_title">Suorituskykytietoja ei ole saatavilla</string>
     <string name="perf_info_error_description">fonecheck ei voinut päivittää laitteistotietoja. Viimeisin onnistunut tilannekuva pysyy näkyvissä.</string>
+    <string name="perf_info_loading">Luetaan suorituskyky- ja laitteistotietoja…</string>
     <string name="perf_refresh_info">Päivitä laitteistotiedot</string>
     <string name="perf_benchmark_title">Rajattu suorituskykytarkistus</string>
     <string name="perf_benchmark_description">Suorittaa lyhyen kiinteän CPU-työkuorman ja 64 MiB:n muistissa tehtävän luku- ja kirjoitustyökuorman. Tulokset ovat informatiivisia, vaihtelevat laitteen olosuhteiden mukaan ja ovat vertailukelpoisia vain saman sovellusversion sisällä.</string>
@@ -134,6 +142,7 @@
     <string name="sim_limited_mode">Ilman Puhelin-käyttöoikeutta näytetään rajatut tiedot. SIM-tunnisteita ei koskaan tallenneta.</string>
     <string name="sim_capture_error_title">Puhelinverkkotietoja ei saatavilla</string>
     <string name="sim_capture_error_description">Puhelinverkkotietoja ei voitu lukea. Voit yrittää uudelleen.</string>
+    <string name="sim_loading">Luetaan puhelinverkkotietoja…</string>
     <string name="sim_refresh">Päivitä puhelinverkkotiedot</string>
 
     <!-- Audio Test Screen -->
@@ -223,6 +232,8 @@
     <string name="camera_logical_count_label">Loogiset kamerat</string>
     <string name="camera_no_public_cameras">Android ei ilmoittanut yhtään julkisesti valittavaa kameraa.</string>
     <string name="camera_operation_failed">Kameratoiminto epäonnistui. Sulje esikatselu ja yritä uudelleen.</string>
+    <string name="camera_loading">Luetaan kameran ominaisuuksia…</string>
+    <string name="camera_retry">Yritä uudelleen</string>
 
     <!-- Sensor Test Screen -->
     <string name="sensor_summary_title">Anturien yhteenveto</string>
@@ -499,6 +510,7 @@
     <string name="storage_internal_access">Sovelluksen yksityinen tallennustila</string>
     <string name="storage_accessible">Käytettävissä</string>
     <string name="storage_info_error">Tallennustilan tietoja ei voitu lukea.</string>
+    <string name="storage_loading">Luetaan sovelluksen käytettävissä olevan tallennustilan tietoja…</string>
     <string name="storage_volumes_title">Sovelluksen käytettävissä olevat jaetut taltiot</string>
     <string name="storage_no_shared_volumes">Sovelluksen käytettävissä ei ole tällä hetkellä jaettua taltiota.</string>
     <string name="storage_volume_primary">Ensisijainen jaettu taltio</string>

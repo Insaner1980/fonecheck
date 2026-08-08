@@ -20,8 +20,9 @@ import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.ui.components.InfoCard
 import com.insaner.fonecheck.ui.components.InfoRow
+import com.insaner.fonecheck.ui.components.ScreenStateCard
+import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.TestScreenContent
-import com.insaner.fonecheck.ui.theme.Red400
 import java.text.NumberFormat
 
 @Composable
@@ -32,8 +33,28 @@ fun StorageTestScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     TestScreenContent(modifier = modifier) {
-        item { StorageOverviewCard(state) }
-        item { StorageVolumesCard(state.info?.appAccessibleVolumes.orEmpty()) }
+        if (state.isInfoLoading && state.info == null) {
+            item {
+                ScreenStateCard(
+                    type = ScreenStateType.LOADING,
+                    message = stringResource(R.string.storage_loading),
+                )
+            }
+        }
+        state.info?.let { info ->
+            item { StorageOverviewCard(info) }
+            item { StorageVolumesCard(info.appAccessibleVolumes) }
+        }
+        state.infoError?.let {
+            item {
+                ScreenStateCard(
+                    type = ScreenStateType.ERROR,
+                    message = stringResource(R.string.storage_info_error),
+                    actionLabel = stringResource(R.string.storage_refresh),
+                    onAction = viewModel::refreshInfo,
+                )
+            }
+        }
         item {
             StorageBenchmarkCard(
                 state = state,
@@ -51,56 +72,47 @@ fun StorageTestScreen(
                 )
             }
         }
-        item {
-            OutlinedButton(
-                onClick = viewModel::refreshInfo,
-                enabled = !state.isInfoLoading,
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.medium,
-            ) {
-                Text(stringResource(R.string.storage_refresh))
+        if (state.infoError == null) {
+            item {
+                OutlinedButton(
+                    onClick = viewModel::refreshInfo,
+                    enabled = !state.isInfoLoading,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    Text(stringResource(R.string.storage_refresh))
+                }
             }
         }
     }
 }
 
 @Composable
-private fun StorageOverviewCard(state: StorageTestState) {
+private fun StorageOverviewCard(info: StorageInfo) {
     val context = LocalContext.current
     InfoCard(
         title = stringResource(R.string.storage_overview_title),
-        confidence = state.info?.let { Confidence.HIGH } ?: Confidence.UNAVAILABLE,
+        confidence = Confidence.HIGH,
     ) {
-        if (state.isInfoLoading && state.info == null) CircularProgressIndicator()
-        state.info?.let { info ->
-            InfoRow(stringResource(R.string.storage_total), Formatter.formatFileSize(context, info.totalBytes))
-            InfoRow(stringResource(R.string.storage_used), Formatter.formatFileSize(context, info.usedBytes))
-            InfoRow(stringResource(R.string.storage_available), Formatter.formatFileSize(context, info.availableBytes))
-            InfoRow(
-                stringResource(R.string.storage_usage),
-                info.usagePercent?.let {
-                    stringResource(R.string.storage_percent_value, numberFormat().format(it))
-                } ?: stringResource(R.string.device_value_unavailable),
-            )
-            InfoRow(
-                stringResource(R.string.storage_internal_access),
-                stringResource(
-                    if (info.internalStorageAccessible) {
-                        R.string.storage_accessible
-                    } else {
-                        R.string.device_value_unavailable
-                    },
-                ),
-            )
-        }
-        state.infoError?.let {
-            Text(
-                text = stringResource(R.string.storage_info_error),
-                style = MaterialTheme.typography.bodySmall,
-                color = Red400,
-                modifier = Modifier.padding(top = 8.dp),
-            )
-        }
+        InfoRow(stringResource(R.string.storage_total), Formatter.formatFileSize(context, info.totalBytes))
+        InfoRow(stringResource(R.string.storage_used), Formatter.formatFileSize(context, info.usedBytes))
+        InfoRow(stringResource(R.string.storage_available), Formatter.formatFileSize(context, info.availableBytes))
+        InfoRow(
+            stringResource(R.string.storage_usage),
+            info.usagePercent?.let {
+                stringResource(R.string.storage_percent_value, numberFormat().format(it))
+            } ?: stringResource(R.string.device_value_unavailable),
+        )
+        InfoRow(
+            stringResource(R.string.storage_internal_access),
+            stringResource(
+                if (info.internalStorageAccessible) {
+                    R.string.storage_accessible
+                } else {
+                    R.string.device_value_unavailable
+                },
+            ),
+        )
     }
 }
 

@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -19,13 +17,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -39,6 +35,8 @@ import com.insaner.fonecheck.domain.comparison.ScoreComparison
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.navigation.diagnosticDestinations
 import com.insaner.fonecheck.ui.components.InfoRow
+import com.insaner.fonecheck.ui.components.ScreenStateScreen
+import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.SectionBox
 import com.insaner.fonecheck.ui.components.StandardCard
 import com.insaner.fonecheck.ui.components.TestSectionCard
@@ -76,8 +74,8 @@ fun ReportComparisonScreen(
     when (state) {
         ReportComparisonState.Loading ->
             ComparisonMessage(
+                type = ScreenStateType.LOADING,
                 message = stringResource(R.string.comparison_loading),
-                showProgress = true,
                 onRetry = null,
                 onBack = null,
                 modifier = modifier,
@@ -88,8 +86,8 @@ fun ReportComparisonScreen(
 
         ReportComparisonState.NotFound ->
             ComparisonMessage(
+                type = ScreenStateType.EMPTY,
                 message = stringResource(R.string.comparison_not_found),
-                showProgress = false,
                 onRetry = null,
                 onBack = onBack,
                 modifier = modifier,
@@ -97,8 +95,8 @@ fun ReportComparisonScreen(
 
         is ReportComparisonState.Unavailable ->
             ComparisonMessage(
+                type = ScreenStateType.UNAVAILABLE,
                 message = stringResource(R.string.comparison_unavailable),
-                showProgress = false,
                 onRetry = onRetry,
                 onBack = onBack,
                 modifier = modifier,
@@ -106,8 +104,8 @@ fun ReportComparisonScreen(
 
         ReportComparisonState.Error ->
             ComparisonMessage(
+                type = ScreenStateType.ERROR,
                 message = stringResource(R.string.comparison_error),
-                showProgress = false,
                 onRetry = onRetry,
                 onBack = onBack,
                 modifier = modifier,
@@ -400,38 +398,19 @@ private fun attentionLabel(change: AttentionChange): Int =
 
 @Composable
 private fun ComparisonMessage(
+    type: ScreenStateType,
     message: String,
-    showProgress: Boolean,
     onRetry: (() -> Unit)?,
     onBack: (() -> Unit)?,
     modifier: Modifier,
 ) {
-    Column(
-        modifier = modifier.fillMaxSize().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        if (showProgress) CircularProgressIndicator(modifier = Modifier.padding(bottom = 20.dp))
-        Text(
-            text = message,
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.bodyLarge,
-        )
-        onRetry?.let {
-            Button(
-                onClick = it,
-                modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
-            ) {
-                Text(stringResource(R.string.report_retry))
-            }
-        }
-        onBack?.let {
-            OutlinedButton(
-                onClick = it,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            ) {
-                Text(stringResource(R.string.report_back))
-            }
-        }
-    }
+    ScreenStateScreen(
+        type = type,
+        message = message,
+        actionLabel = stringResource(R.string.report_retry).takeIf { onRetry != null },
+        onAction = onRetry,
+        secondaryActionLabel = stringResource(R.string.report_back).takeIf { onBack != null },
+        onSecondaryAction = onBack,
+        modifier = modifier,
+    )
 }

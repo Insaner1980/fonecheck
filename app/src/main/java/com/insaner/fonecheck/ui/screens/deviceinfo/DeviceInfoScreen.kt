@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,8 +21,9 @@ import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.DeviceInfo
 import com.insaner.fonecheck.ui.components.InfoCard
 import com.insaner.fonecheck.ui.components.InfoRow
+import com.insaner.fonecheck.ui.components.ScreenStateCard
+import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.StatusRow
-import com.insaner.fonecheck.ui.theme.Red400
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -46,7 +46,10 @@ fun DeviceInfoScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         if (state.isLoading && state.info == null) {
-            CircularProgressIndicator()
+            ScreenStateCard(
+                type = ScreenStateType.LOADING,
+                message = stringResource(R.string.device_loading),
+            )
         }
 
         state.info?.let { info ->
@@ -118,22 +121,23 @@ fun DeviceInfoScreen(
         }
 
         state.error?.let {
-            InfoCard(title = stringResource(R.string.device_capture_error_title)) {
-                Text(
-                    text = stringResource(R.string.device_capture_error_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Red400,
-                )
-            }
+            ScreenStateCard(
+                type = ScreenStateType.ERROR,
+                message = stringResource(R.string.device_capture_error_description),
+                actionLabel = stringResource(R.string.device_refresh),
+                onAction = viewModel::refresh,
+            )
         }
 
-        Button(
-            onClick = viewModel::refresh,
-            enabled = !state.isLoading,
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium,
-        ) {
-            Text(stringResource(R.string.device_refresh))
+        if (state.error == null) {
+            Button(
+                onClick = viewModel::refresh,
+                enabled = !state.isLoading,
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+            ) {
+                Text(stringResource(R.string.device_refresh))
+            }
         }
     }
 }

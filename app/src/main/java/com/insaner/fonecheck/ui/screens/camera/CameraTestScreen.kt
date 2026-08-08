@@ -55,6 +55,8 @@ import com.insaner.fonecheck.domain.permission.PermissionState
 import com.insaner.fonecheck.ui.components.InfoCard
 import com.insaner.fonecheck.ui.components.InfoRow
 import com.insaner.fonecheck.ui.components.PermissionStatusCard
+import com.insaner.fonecheck.ui.components.ScreenStateCard
+import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.StatusBadge
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
 import com.insaner.fonecheck.ui.theme.Green400
@@ -120,39 +122,43 @@ fun CameraTestScreen(
             onOpenSettings = cameraPermission::openSettings,
         )
         if (state.isLoading) {
-            CircularProgressIndicator()
-        }
-        CameraPreviewCard(
-            state = state,
-            viewModel = viewModel,
-            hasPermission = cameraPermission.state == PermissionState.GRANTED,
-        )
-        FlashTestCard(
-            state = state,
-            viewModel = viewModel,
-            hasPermission = cameraPermission.state == PermissionState.GRANTED,
-        )
-        state.cameras.forEach { caps ->
-            CapabilitiesCard(
-                title = stringResource(R.string.camera_capabilities_title, caps.cameraId),
-                capabilities = caps,
+            ScreenStateCard(
+                type = ScreenStateType.LOADING,
+                message = stringResource(R.string.camera_loading),
             )
         }
-        state.error?.let { error ->
-            InfoCard(title = stringResource(R.string.camera_error_title)) {
-                Text(
-                    text =
-                        stringResource(
-                            if (error == "camera_no_public_cameras") {
-                                R.string.camera_no_public_cameras
-                            } else {
-                                R.string.camera_operation_failed
-                            },
-                        ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Red400,
+        if (!state.isLoading) {
+            CameraPreviewCard(
+                state = state,
+                viewModel = viewModel,
+                hasPermission = cameraPermission.state == PermissionState.GRANTED,
+            )
+            FlashTestCard(
+                state = state,
+                viewModel = viewModel,
+                hasPermission = cameraPermission.state == PermissionState.GRANTED,
+            )
+            state.cameras.forEach { caps ->
+                CapabilitiesCard(
+                    title = stringResource(R.string.camera_capabilities_title, caps.cameraId),
+                    capabilities = caps,
                 )
             }
+        }
+        state.error?.let { error ->
+            ScreenStateCard(
+                type = ScreenStateType.ERROR,
+                message =
+                    stringResource(
+                        if (error == "camera_no_public_cameras") {
+                            R.string.camera_no_public_cameras
+                        } else {
+                            R.string.camera_operation_failed
+                        },
+                    ),
+                actionLabel = stringResource(R.string.camera_retry),
+                onAction = viewModel::refreshCapabilities,
+            )
         }
     }
 }

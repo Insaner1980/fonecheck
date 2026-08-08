@@ -18,6 +18,8 @@ import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import com.insaner.fonecheck.ui.components.InfoCard
 import com.insaner.fonecheck.ui.components.InfoRow
+import com.insaner.fonecheck.ui.components.ScreenStateCard
+import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.TestScreenContent
 import com.insaner.fonecheck.ui.theme.Green400
 import com.insaner.fonecheck.ui.theme.Neutral500
@@ -72,14 +74,17 @@ fun ThermalTestScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 8.dp),
                 )
-                state.error?.let { error ->
-                    Text(
-                        text = thermalErrorLabel(error),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Red400,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
+            }
+        }
+
+        state.error?.let { error ->
+            item {
+                ScreenStateCard(
+                    type = ScreenStateType.UNAVAILABLE,
+                    message = thermalErrorLabel(error),
+                    actionLabel = stringResource(R.string.thermal_refresh),
+                    onAction = viewModel::refresh,
+                )
             }
         }
 

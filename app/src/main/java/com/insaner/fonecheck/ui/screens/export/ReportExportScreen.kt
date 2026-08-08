@@ -9,25 +9,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.ui.components.InfoRow
+import com.insaner.fonecheck.ui.components.ScreenStateScreen
+import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.StandardCard
 
 @Composable
@@ -76,8 +75,8 @@ fun ReportExportScreen(
     when (state) {
         ReportExportState.Loading ->
             ExportMessage(
+                type = ScreenStateType.LOADING,
                 message = stringResource(R.string.report_loading),
-                showProgress = true,
                 onRetry = null,
                 onBack = null,
                 modifier = modifier,
@@ -94,8 +93,8 @@ fun ReportExportScreen(
 
         ReportExportState.NotFound ->
             ExportMessage(
+                type = ScreenStateType.EMPTY,
                 message = stringResource(R.string.export_not_found),
-                showProgress = false,
                 onRetry = null,
                 onBack = onBack,
                 modifier = modifier,
@@ -103,8 +102,8 @@ fun ReportExportScreen(
 
         is ReportExportState.Unavailable ->
             ExportMessage(
+                type = ScreenStateType.UNAVAILABLE,
                 message = stringResource(R.string.export_unavailable),
-                showProgress = false,
                 onRetry = onRetryLoad,
                 onBack = onBack,
                 modifier = modifier,
@@ -112,8 +111,8 @@ fun ReportExportScreen(
 
         ReportExportState.Error ->
             ExportMessage(
+                type = ScreenStateType.ERROR,
                 message = stringResource(R.string.export_load_error),
-                showProgress = false,
                 onRetry = onRetryLoad,
                 onBack = onBack,
                 modifier = modifier,
@@ -209,38 +208,19 @@ private fun ExportReady(
 
 @Composable
 private fun ExportMessage(
+    type: ScreenStateType,
     message: String,
-    showProgress: Boolean,
     onRetry: (() -> Unit)?,
     onBack: (() -> Unit)?,
     modifier: Modifier,
 ) {
-    Column(
-        modifier = modifier.fillMaxSize().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        if (showProgress) CircularProgressIndicator(modifier = Modifier.padding(bottom = 20.dp))
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
-        )
-        onRetry?.let {
-            Button(
-                onClick = it,
-                modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
-            ) {
-                Text(stringResource(R.string.report_retry))
-            }
-        }
-        onBack?.let {
-            OutlinedButton(
-                onClick = it,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            ) {
-                Text(stringResource(R.string.report_back))
-            }
-        }
-    }
+    ScreenStateScreen(
+        type = type,
+        message = message,
+        actionLabel = stringResource(R.string.report_retry).takeIf { onRetry != null },
+        onAction = onRetry,
+        secondaryActionLabel = stringResource(R.string.report_back).takeIf { onBack != null },
+        onSecondaryAction = onBack,
+        modifier = modifier,
+    )
 }
