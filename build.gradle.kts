@@ -3,6 +3,7 @@ buildscript {
     val protobufVersion = "3.25.5"
     val nettyVersion = "4.1.136.Final"
     val bouncyCastleVersion = "1.84"
+    val jsoupVersion = "1.23.1"
 
     configurations.classpath {
         resolutionStrategy {
@@ -31,6 +32,7 @@ buildscript {
                 "org.bouncycastle:bcprov-jdk18on:$bouncyCastleVersion",
                 "org.bouncycastle:bcutil-jdk18on:$bouncyCastleVersion",
                 "org.jdom:jdom2:2.0.6.1",
+                "org.jsoup:jsoup:$jsoupVersion",
             )
             activateDependencyLocking()
         }
