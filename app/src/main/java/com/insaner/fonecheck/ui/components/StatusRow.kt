@@ -8,6 +8,7 @@ import androidx.compose.ui.text.font.FontWeight
 import com.insaner.fonecheck.ui.theme.Green400
 import com.insaner.fonecheck.ui.theme.JetBrainsMono
 import com.insaner.fonecheck.ui.theme.Yellow400
+import com.insaner.fonecheck.ui.theme.readableStatusColor
 
 @Composable
 fun StatusRow(
@@ -30,7 +31,7 @@ fun StatusRow(
                     fontFamily = JetBrainsMono,
                     fontWeight = FontWeight.Medium,
                 ),
-            color = if (isHighlighted) Yellow400 else Green400,
+            color = readableStatusColor(if (isHighlighted) Yellow400 else Green400),
         )
     }
 }

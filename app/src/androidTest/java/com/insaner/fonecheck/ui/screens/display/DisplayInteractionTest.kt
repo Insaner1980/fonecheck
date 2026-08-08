@@ -1,6 +1,10 @@
 package com.insaner.fonecheck.ui.screens.display
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -32,6 +36,14 @@ class DisplayInteractionTest {
                 )
             }
         }
+
+        composeRule
+            .onNodeWithTag(DISPLAY_TOUCH_GRID_TAG)
+            .assertHasClickAction()
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.StateDescription))
+            .performClick()
+
+        composeRule.runOnIdle { assertTrue(0 in touchedCells) }
 
         composeRule
             .onNodeWithTag(DISPLAY_TOUCH_GRID_TAG)

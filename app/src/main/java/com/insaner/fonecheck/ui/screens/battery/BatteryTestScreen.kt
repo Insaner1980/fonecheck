@@ -32,6 +32,7 @@ import com.insaner.fonecheck.ui.theme.JetBrainsMono
 import com.insaner.fonecheck.ui.theme.Neutral500
 import com.insaner.fonecheck.ui.theme.Red400
 import com.insaner.fonecheck.ui.theme.Yellow400
+import com.insaner.fonecheck.ui.theme.readableStatusColor
 
 @Composable
 @Suppress("ViewModelForwarding", "ktlint:compose:vm-forwarding-check")
@@ -152,7 +153,7 @@ private fun InfoRowWithConfidence(
                         fontFamily = JetBrainsMono,
                         fontWeight = FontWeight.Medium,
                     ),
-                color = valueColor ?: MaterialTheme.colorScheme.onSurface,
+                color = readableStatusColor(valueColor ?: MaterialTheme.colorScheme.onSurface),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )

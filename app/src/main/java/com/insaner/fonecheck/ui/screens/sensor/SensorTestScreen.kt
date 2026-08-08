@@ -8,7 +8,6 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +35,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -53,6 +55,7 @@ import com.insaner.fonecheck.ui.theme.JetBrainsMono
 import com.insaner.fonecheck.ui.theme.Neutral500
 import com.insaner.fonecheck.ui.theme.Neutral700
 import com.insaner.fonecheck.ui.theme.Neutral800
+import com.insaner.fonecheck.ui.theme.readableStatusColor
 import com.insaner.fonecheck.ui.theme.Neutral850
 import com.insaner.fonecheck.ui.theme.Yellow400
 
@@ -182,8 +185,18 @@ private fun GuidedSensorCard(
     onChallenge: (InteractiveChallenge) -> Unit,
     onSkip: () -> Unit,
 ) {
+    val statusText = test.status.displayName()
+    val expansionState =
+        stringResource(
+            if (isExpanded) R.string.accessibility_expanded else R.string.accessibility_collapsed,
+        )
     Card(
-        modifier = Modifier.fillMaxWidth().animateContentSize().clickable(onClick = onToggle),
+        onClick = onToggle,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .animateContentSize()
+                .semantics { stateDescription = "$statusText, $expansionState" },
         colors =
             CardDefaults.cardColors(
                 containerColor = if (isExpanded) Neutral800 else MaterialTheme.colorScheme.surfaceVariant,
@@ -212,11 +225,12 @@ private fun GuidedSensorCard(
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.semantics { heading() },
                     )
                     Text(
-                        text = test.status.displayName(),
+                        text = statusText,
                         style = MaterialTheme.typography.bodySmall,
-                        color = test.status.color(),
+                        color = readableStatusColor(test.status.color()),
                     )
                 }
             }

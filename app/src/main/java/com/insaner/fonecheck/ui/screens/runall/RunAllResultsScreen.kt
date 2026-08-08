@@ -35,6 +35,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -66,6 +71,7 @@ import com.insaner.fonecheck.ui.theme.Green400
 import com.insaner.fonecheck.ui.theme.Neutral400
 import com.insaner.fonecheck.ui.theme.Red400
 import com.insaner.fonecheck.ui.theme.Yellow400
+import com.insaner.fonecheck.ui.theme.readableStatusColor
 import java.text.NumberFormat
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -277,7 +283,7 @@ private fun ResultsSummaryCard(
                     Text(
                         text = score?.toString() ?: "—",
                         style = MaterialTheme.typography.displayMedium,
-                        color = scoreColor,
+                        color = readableStatusColor(scoreColor),
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
@@ -725,7 +731,7 @@ private fun SummaryCount(
     Text(
         text = text,
         style = MaterialTheme.typography.labelLarge,
-        color = color,
+        color = readableStatusColor(color),
     )
 }
 
@@ -832,11 +838,20 @@ private fun CompactResultRow(
     onOpen: () -> Unit,
     mode: ReportResultMode,
 ) {
+    val statusText = statusLabel(result.status)
+    val expansionState =
+        stringResource(
+            if (isExpanded) R.string.accessibility_expanded else R.string.accessibility_collapsed,
+        )
     Column(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .testTag("report_category_${result.category.stableId}")
+                .semantics {
+                    role = Role.Button
+                    stateDescription = "$statusText, $expansionState"
+                }
                 .clickable(onClick = onToggle)
                 .padding(14.dp),
     ) {
@@ -863,8 +878,16 @@ private fun CategoryResultCard(
     onOpen: () -> Unit,
     mode: ReportResultMode,
 ) {
+    val statusText = statusLabel(result.status)
+    val expansionState =
+        stringResource(
+            if (isExpanded) R.string.accessibility_expanded else R.string.accessibility_collapsed,
+        )
     StandardCard(
-        modifier = Modifier.testTag("report_category_${result.category.stableId}"),
+        modifier =
+            Modifier
+                .testTag("report_category_${result.category.stableId}")
+                .semantics { stateDescription = "$statusText, $expansionState" },
         onClick = onToggle,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -922,6 +945,7 @@ private fun ResultHeader(
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
+                modifier = Modifier.semantics { heading() },
             )
             if (showSummary) {
                 Text(

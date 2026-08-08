@@ -970,6 +970,14 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Nopeat sensor/audio/thermal-päivitykset tarvitsevat harkitun announcement-throttlingin.
 - **Decision required:** Ei.
 
+#### Implementation/status log — 2026-08-08
+
+- Yhteiset info-, tila- ja laajennuskortit tarjoavat nyt semanttiset heading-, stateDescription- ja liveRegion-tiedot. Virhe ja käyttöoikeuden epääminen ilmoitetaan assertive-tilassa, muut hitaasti vaihtuvat screen-state-tilat polite-tilassa. Nopeasti päivittyviä sensori-, audio- ja thermal-arvoja ei asetettu live-alueiksi, jotta ruudunlukija ei tulvi ilmoituksia.
+- Laajennettavat diagnostiikka- ja raporttikortit kertovat statuksen sekä expanded/collapsed-tilan. Koristeelliset acronym-kuvakkeet ja category-kuvat pysyvät ruudunlukijalta piilossa, koska viereinen otsikko nimeää saman kohteen. Materiaalikomponenttien ulkopuoliset click-pinnat ovat vähintään 48 dp korkeita kortteja/rivejä tai koko kosketusruudukko.
+- Fullscreen-kosketustestillä on aina näkyvä Exit-toiminto sekä ruudunlukijalle nimetty semanttinen aktivointi, joka tallentaa yhden saavutettavan kosketusnäytteen väärentämättä koko ruudukon kattavuutta. Full Checkin vaiheotsikot ovat heading-elementtejä ja vaiheprogressi ilmoitetaan polite-liveRegionina.
+- Splashin oma exit-animaatio ohitetaan, kun Androidin animator-asetus on pois käytöstä. Compose-animaatiot käyttävät järjestelmän motion duration scalea. Vaalean teeman status- ja mittausvärien tekstivariantit vaihtuvat vähintään 4.5:1-kontrastin tarjoaviin sävyihin; tumma teema säilyttää hyväksytyn Graphite/Aqua-paletin.
+- Reduced motion- ja värikontrasti-unit-testit läpäisevät. Heading-, status-, liveRegion-, 48dp- ja touch-grid-action-semantics-testit kääntyvät. Yhdistetty `:app:testDebugUnitTest :app:compileDebugAndroidTestKotlin :app:lintDebug :app:assembleDebug` läpäisee. Fyysinen TalkBack/Switch Access/200 % font/light-dark-kierros odottaa laitetta, koska `adb devices -l` on tyhjä; käyttäjän keskeneräistä `PROJECT.md`:ää ei muokattu.
+
 ### 35. Implement first-run onboarding after the primary flows stabilize
 
 - **Objective:** Selittää tuote, yksityisyys ja rajoitteet ilman permission wallia.

@@ -11,6 +11,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.insaner.fonecheck.ui.theme.JetBrainsMono
+import com.insaner.fonecheck.ui.theme.readableStatusColor
 
 @Composable
 fun InfoRow(
@@ -30,7 +31,7 @@ fun InfoRow(
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium.copy(fontFamily = JetBrainsMono),
-            color = valueColor,
+            color = readableStatusColor(valueColor),
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.End,
             modifier = Modifier.weight(1.1f),

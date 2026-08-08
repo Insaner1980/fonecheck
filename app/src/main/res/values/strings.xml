@@ -1070,4 +1070,8 @@
     <string name="permission_rationale_location">Location access is required by Android to read nearby Wi-Fi and GPS diagnostic data.</string>
     <string name="permission_rationale_phone">Phone access is used to read SIM and mobile-network diagnostic data.</string>
     <string name="permission_rationale_bluetooth">Nearby devices access is used to read Bluetooth diagnostic data on Android 12 and newer.</string>
+    <!-- Accessibility -->
+    <string name="accessibility_expanded">Expanded</string>
+    <string name="accessibility_collapsed">Collapsed</string>
+    <string name="display_touch_accessible_action">Record an accessible touch sample</string>
 </resources>

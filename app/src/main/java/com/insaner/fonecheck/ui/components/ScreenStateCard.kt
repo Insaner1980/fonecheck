@@ -19,6 +19,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.insaner.fonecheck.R
@@ -42,7 +46,17 @@ fun ScreenStateCard(
     secondaryActionLabel: String? = null,
     onSecondaryAction: (() -> Unit)? = null,
 ) {
-    StandardCard(modifier = modifier.testTag("screen_state_${type.name.lowercase()}")) {
+    val liveRegionMode =
+        when (type) {
+            ScreenStateType.ERROR, ScreenStateType.PERMISSION_DENIED -> LiveRegionMode.Assertive
+            else -> LiveRegionMode.Polite
+        }
+    StandardCard(
+        modifier =
+            modifier
+                .testTag("screen_state_${type.name.lowercase()}")
+                .semantics { liveRegion = liveRegionMode },
+    ) {
         Column(
             modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -59,6 +73,7 @@ fun ScreenStateCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = screenStateColor(type),
+                    modifier = Modifier.semantics { heading() },
                 )
             }
             Text(

@@ -37,8 +37,13 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -362,6 +367,15 @@ internal fun TouchTestOverlay(
     onExit: () -> Unit,
 ) {
     val gridDescription = stringResource(R.string.display_touch_grid_description)
+    val gridActionLabel = stringResource(R.string.display_touch_accessible_action)
+    val progressDescription =
+        stringResource(
+            R.string.display_touch_progress,
+            state.touchedCells.size,
+            touchCellCount(),
+            state.activePointers.size,
+            state.maxPointerCount,
+        )
     Column(
         modifier =
             Modifier
@@ -378,6 +392,7 @@ internal fun TouchTestOverlay(
         ) {
             Text(
                 text = stringResource(R.string.display_touch_title),
+                modifier = Modifier.semantics { heading() },
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
             )
@@ -389,14 +404,7 @@ internal fun TouchTestOverlay(
             }
         }
         Text(
-            text =
-                stringResource(
-                    R.string.display_touch_progress,
-                    state.touchedCells.size,
-                    touchCellCount(),
-                    state.activePointers.size,
-                    state.maxPointerCount,
-                ),
+            text = progressDescription,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -406,7 +414,15 @@ internal fun TouchTestOverlay(
                     .fillMaxWidth()
                     .weight(1f)
                     .testTag(DISPLAY_TOUCH_GRID_TAG)
-                    .semantics { contentDescription = gridDescription }
+                    .semantics {
+                        contentDescription = gridDescription
+                        stateDescription = progressDescription
+                        role = Role.Button
+                        onClick(label = gridActionLabel) {
+                            onCellsTouched(setOf(0))
+                            true
+                        }
+                    }
                     .pointerInput(onCellsTouched, onPointersChanged) {
                         awaitEachGesture {
                             do {

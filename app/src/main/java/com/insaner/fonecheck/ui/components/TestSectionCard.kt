@@ -19,9 +19,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.insaner.fonecheck.R
 import com.insaner.fonecheck.ui.theme.JetBrainsMono
 
 @Composable
@@ -35,9 +40,16 @@ fun TestSectionCard(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
+    val expansionState =
+        stringResource(
+            if (isExpanded) R.string.accessibility_expanded else R.string.accessibility_collapsed,
+        )
     StandardCard(
         onClick = onClick,
-        modifier = modifier.animateContentSize(),
+        modifier =
+            modifier
+                .animateContentSize()
+                .semantics { stateDescription = "$statusText, $expansionState" },
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
@@ -71,6 +83,7 @@ fun TestSectionCard(
                         text = title,
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                         color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.semantics { heading() },
                     )
                 }
                 StatusBadge(text = statusText, color = statusColor)

@@ -14,6 +14,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.insaner.fonecheck.ui.theme.JetBrainsMono
+import com.insaner.fonecheck.ui.theme.readableStatusColor
 
 @Composable
 fun DetailInfoRow(
@@ -42,7 +43,7 @@ fun DetailInfoRow(
                     fontFamily = JetBrainsMono,
                     fontWeight = FontWeight.Medium,
                 ),
-            color = valueColor ?: MaterialTheme.colorScheme.onSurface,
+            color = readableStatusColor(valueColor ?: MaterialTheme.colorScheme.onSurface),
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1.5f),

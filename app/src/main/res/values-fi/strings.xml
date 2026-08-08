@@ -1064,4 +1064,8 @@
     <string name="permission_rationale_location">Android vaatii sijainnin käyttöoikeuden lähellä olevien Wi-Fi- ja GPS-diagnostiikkatietojen lukemiseen.</string>
     <string name="permission_rationale_phone">Puhelimen käyttöoikeutta käytetään SIM- ja mobiiliverkon diagnostiikkatietojen lukemiseen.</string>
     <string name="permission_rationale_bluetooth">Lähellä olevien laitteiden käyttöoikeutta käytetään Bluetooth-diagnostiikkatietojen lukemiseen Android 12:ssa ja sitä uudemmissa.</string>
+    <!-- Saavutettavuus -->
+    <string name="accessibility_expanded">Laajennettu</string>
+    <string name="accessibility_collapsed">Tiivistetty</string>
+    <string name="display_touch_accessible_action">Tallenna saavutettava kosketusnäyte</string>
 </resources>

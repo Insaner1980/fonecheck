@@ -59,6 +59,7 @@ import com.insaner.fonecheck.ui.theme.Neutral600
 import com.insaner.fonecheck.ui.theme.Neutral700
 import com.insaner.fonecheck.ui.theme.Red400
 import com.insaner.fonecheck.ui.theme.Yellow400
+import com.insaner.fonecheck.ui.theme.readableStatusColor
 import kotlinx.coroutines.delay
 
 @Composable
@@ -332,11 +333,13 @@ private fun MicrophoneTestCard(
                                 fontWeight = FontWeight.Medium,
                             ),
                         color =
-                            when {
-                                state.relativeInputLevel > 0.75f -> Red400
-                                state.relativeInputLevel > 0.4f -> Yellow400
-                                else -> Green400
-                            },
+                            readableStatusColor(
+                                when {
+                                    state.relativeInputLevel > 0.75f -> Red400
+                                    state.relativeInputLevel > 0.4f -> Yellow400
+                                    else -> Green400
+                                },
+                            ),
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
@@ -650,7 +653,12 @@ private fun VolumeIndicator(
         Text(
             text = label,
             style = MaterialTheme.typography.labelLarge,
-            color = if (pressed) Green400 else MaterialTheme.colorScheme.onSurfaceVariant,
+            color =
+                if (pressed) {
+                    readableStatusColor(Green400)
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
@@ -660,7 +668,7 @@ private fun VolumeIndicator(
                     fontFamily = JetBrainsMono,
                     fontWeight = FontWeight.Bold,
                 ),
-            color = if (count > 0) Green400 else Neutral500,
+            color = if (count > 0) readableStatusColor(Green400) else Neutral500,
         )
     }
 }

@@ -32,6 +32,7 @@ import com.insaner.fonecheck.ui.theme.Green400
 import com.insaner.fonecheck.ui.theme.Neutral500
 import com.insaner.fonecheck.ui.theme.Red400
 import com.insaner.fonecheck.ui.theme.Yellow400
+import com.insaner.fonecheck.ui.theme.readableStatusColor
 
 @Composable
 fun BiometricTestScreen(
@@ -160,7 +161,7 @@ private fun AuthTestSection(
             Text(
                 text = authResultDescription(state),
                 style = MaterialTheme.typography.bodyMedium,
-                color = authResultColor(state.authResult),
+                color = readableStatusColor(authResultColor(state.authResult)),
             )
             Spacer(modifier = Modifier.height(8.dp))
         }

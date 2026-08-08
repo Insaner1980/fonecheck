@@ -1,5 +1,6 @@
 package com.insaner.fonecheck.ui
 
+import android.animation.ValueAnimator
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
@@ -28,6 +29,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -74,12 +77,21 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
 
         val hasAnimatedSystemSplash = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+        val shouldAnimateSplash =
+            shouldAnimateSplash(
+                systemSupportsAnimatedSplash = hasAnimatedSystemSplash,
+                animatorsEnabled = ValueAnimator.areAnimatorsEnabled(),
+            )
         splashScreen.setKeepOnScreenCondition {
-            hasAnimatedSystemSplash &&
+            shouldAnimateSplash &&
                 SystemClock.uptimeMillis() - splashStartedAt < SPLASH_MIN_DURATION_MS
         }
 
         splashScreen.setOnExitAnimationListener { splashScreenView ->
+            if (!shouldAnimateSplash) {
+                splashScreenView.remove()
+                return@setOnExitAnimationListener
+            }
             splashScreenView.iconView
                 .animate()
                 .scaleX(SPLASH_EXIT_SCALE)
@@ -141,7 +153,12 @@ class MainActivity : FragmentActivity() {
                     topBar = {
                         if (!isDisplayFullscreen) {
                             TopAppBar(
-                                title = { Text(stringResource(navigationChrome.titleResId)) },
+                                title = {
+                                    Text(
+                                        text = stringResource(navigationChrome.titleResId),
+                                        modifier = Modifier.semantics { heading() },
+                                    )
+                                },
                                 navigationIcon = {
                                     if (navigationChrome.showBackAction) {
                                         IconButton(onClick = { navController.popBackStack() }) {
@@ -183,3 +200,8 @@ class MainActivity : FragmentActivity() {
         const val SPLASH_EXIT_SCALE = 0.92f
     }
 }
+
+internal fun shouldAnimateSplash(
+    systemSupportsAnimatedSplash: Boolean,
+    animatorsEnabled: Boolean,
+): Boolean = systemSupportsAnimatedSplash && animatorsEnabled
