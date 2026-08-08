@@ -1097,6 +1097,13 @@ Checked against `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, the `AGENTS.md` instructio
 - **Risks:** Viime hetken korjaukset voivat mitätöidä aiemman RC-testauksen; uusi build vaatii kohdistetun regressiokierroksen.
 - **Decision required:** Kyllä, lopullinen julkaisu on käyttäjän päätös.
 
+#### Implementation/status log — 2026-08-08
+
+- Version `1.0.0 (1)` -RC:n lähdekoodi on yksilöity commitilla `3e55b583ef4355625f445865e5a13efed14fa219`. `docs/release-notes-1.0.0.md` ja `docs/release-readiness.md` kirjaavat scopet, artifact-hashit ja portit; käyttäjän keskeneräistä `PROJECT.md`-muutosta ei muokattu.
+- Yksi lopullinen Gradle-ketju läpäisi `:app:ktlintCheck`, `:app:detekt`, `:app:testDebugUnitTest`, `:app:compileDebugAndroidTestKotlin`, `:app:lintDebug`, `:app:lintRelease`, `:app:stabilityCheck`, `:app:assembleDebug`, `:app:assembleRelease` ja `:app:bundleRelease`: 212 JVM-testiä, 0 failurea/erroria/skippediä, 0 detekt-löydöstä sekä debug- ja release-lintissä 0 erroria ja 51 warningia.
+- `:app:connectedDebugAndroidTest` rakennutti lopullisesta RC:stä app- ja test-APK:t, mutta ei suorittanut testimetodeja, koska ADB-lista oli tyhjä (`No connected devices!`). Tätä, fyysistä hardware/OEM/API/lifecycle-matriisia tai Play-delivered clean-install/update-smokea ei merkitä läpäistyksi.
+- Debug-APK, minifioitu unsigned release-APK ja unsigned release-AAB syntyivät. AAB:ssa on 0 allekirjoitusmerkintää. Julkinen release on siksi `NO-GO`, kunnes omistajan upload key/Play App Signing, julkaistu fonecheck privacy -osio, Play-lomakkeet/test track/pre-launch report, aidot store-kuvat ja dokumentoitu laitematriisi ovat valmiit. Repositoryn automaattisesti ajettavissa olevissa porteissa ei ole avointa blocker- tai high-severity-löydöstä.
+
 ## 5. Recommended first implementation item
 
 **Recommended first implementation item: Item 2 — Define the canonical diagnostic, evidence, score, and coverage contract.**

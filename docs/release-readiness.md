@@ -118,6 +118,9 @@ Finnish full description:
 
 ## Repository release gates
 
+- [x] RC source is identified as version `1.0.0 (1)`, commit `3e55b583ef4355625f445865e5a13efed14fa219`.
+- [x] `ktlintCheck`, `detekt`, Compose `stabilityCheck`, debug/release lint, debug/release packaging and release bundle generation pass in one RC chain.
+- [x] `testDebugUnitTest` passes 212 tests with 0 failures, errors or skipped tests; Android instrumentation sources and APKs compile and package.
 - [x] R8 minification and resource shrinking enabled.
 - [x] Minified release APK builds without project-specific blanket keep rules.
 - [x] Launcher is the only app-exported component; FileProvider is non-exported and path-scoped.
@@ -130,5 +133,15 @@ Finnish full description:
 - [ ] Signed AAB is created with the owner-controlled upload key.
 - [ ] Play test-track install and update pass.
 - [ ] Physical-device and accessibility matrix passes on the required device/API profiles.
+
+The final RC artifacts produced on 2026-08-08 are:
+
+| Artifact | Size | SHA-256 | Status |
+|---|---:|---|---|
+| `app/build/outputs/apk/debug/app-debug.apk` | 19,339,151 bytes | `b5e893ac616c4557b7661052d28525d9a6c938a31de087b946cada27195383d8` | Debug-signed |
+| `app/build/outputs/apk/release/app-release-unsigned.apk` | 5,021,347 bytes | `4f034bb9bc35f7a69ce900ff135bfb34b3120b8027fc6475898a6a4dfe1dd811` | Unsigned |
+| `app/build/outputs/bundle/release/app-release.aab` | 7,844,905 bytes | `c3b29a0808b501555b835d77b75c91cc6e43aa6e8791553a501a83423f19c2e1` | Unsigned; 0 signature entries |
+
+Both debug and release lint reports contain 0 errors and 51 warnings. Detekt contains 0 findings. `connectedDebugAndroidTest` built the application and instrumentation APKs but stopped before test execution with `No connected devices!`; ADB listed no devices. These device-dependent tests are not counted as passed.
 
 The final GO decision belongs to the project owner only after every unchecked gate has evidence.
