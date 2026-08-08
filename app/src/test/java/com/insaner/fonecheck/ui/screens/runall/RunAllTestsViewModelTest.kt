@@ -76,6 +76,7 @@ class RunAllTestsViewModelTest {
         val state = viewModel.state.value
         assertEquals(RunAllStage.AUTOMATIC, state.stage)
         assertEquals(selections, state.selections)
+        assertEquals(DiagnosticCatalog.categories, state.plan.categories.map { it.categoryId })
         assertFalse(RunAllStage.CAMERA in state.plan.stages)
         assertFalse(RunAllStage.SENSORS in state.plan.stages)
         assertFalse(RunAllStage.VIBRATION in state.plan.stages)

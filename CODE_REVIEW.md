@@ -1,19 +1,22 @@
 # fonecheck — Code Review Questionnaire
 
-Systematic code quality checklist for the fonecheck Android app.
-Mark items as you review: `- [x]` = reviewed / OK, leave unchecked for issues to address.
+Systematic historical code-review register for the fonecheck Android app.
+
+The current source code, resources, tests, manifest, generated configuration, and build files are authoritative. Entries in this file are review prompts from the snapshot in which they were written: `- [x]` records a past review outcome, while `- [ ]` means the claim still needs revalidation against the current checkout. An unchecked entry is not, by itself, evidence of a current defect or missing feature.
 
 ## Timing Guide
 
 Each item is tagged with when to address it:
 
+Timing tags indicate when to revalidate a still-relevant item. They do not override current implementation evidence.
+
 | Tag | Meaning | When |
 |-----|---------|------|
-| `NOW` | Fix before writing new features | Prevents debt from multiplying with each new screen |
-| `NEXT TOUCH` | Fix when you next edit that file | Piggyback on existing work — no separate effort needed |
-| `PRE-PHASE 4` | Fix before starting scoring/reports | Phase 4 builds on all test screens — these must be solid first |
-| `PRE-RELEASE` | Fix before any public release | Production quality, not blocking development |
-| `DECIDE` | Architectural decision needed now | Affects how new code is written |
+| `NOW` | Revalidate before writing new features | Fix only a defect confirmed in the current checkout |
+| `NEXT TOUCH` | Revalidate when you next edit that file | Fix only if the current implementation still has the issue |
+| `PRE-PHASE 4` | Historical pre-scoring/report trigger | Revalidate if affected scoring or report code changes |
+| `PRE-RELEASE` | Revalidate before any public release | Production-quality review trigger |
+| `DECIDE` | Historical architecture decision trigger | Revalidate if the decision affects new code |
 
 ---
 
@@ -170,19 +173,15 @@ Each item is tagged with when to address it:
 
 ## Summary
 
-| Tag | Count | Done | Remaining | Action |
+| Tag | Count | Checked | Unchecked | Historical trigger |
 |-----|-------|------|-----------|--------|
-| `NOW` | 13 | 11 | 2 | Remaining immediate consistency work |
-| `DECIDE` | 3 | 3 | 0 | Resolved by the approved master plan |
-| `NEXT TOUCH` | 35 | 0 | 35 | Fix when editing that file anyway |
-| `PRE-PHASE 4` | 8 | 0 | 8 | Must be done before scoring/reports |
-| `PRE-RELEASE` | 32 | 0 | 32 | Production quality gates |
-| **Total** | **91** | **11** | **80** | |
+| `NOW` | 12 | 11 | 1 | Revalidate before new feature work |
+| `DECIDE` | 3 | 3 | 0 | Revalidate when making an affected architecture decision |
+| `NEXT TOUCH` | 41 | 1 | 40 | Revalidate when editing the named file |
+| `PRE-PHASE 4` | 8 | 0 | 8 | Revalidate for affected scoring/report changes |
+| `PRE-RELEASE` | 27 | 4 | 23 | Revalidate before release work |
+| **Total** | **91** | **19** | **72** | |
 
-### Recommended order
+### Recommended handling
 
-1. **NOW** items (13) — shared components, Home screen, consistency standards
-2. **DECIDE** items (3) — repository pattern, use case layer, Phase 1 priority
-3. Build Phase 1 screens (picking up **NEXT TOUCH** items in files you edit)
-4. **PRE-PHASE 4** items (8) — before starting scoring & persistence
-5. **PRE-RELEASE** items (32) — final quality pass
+Use the timing order only after current source and configuration confirm that an entry still applies. Do not resume historical phase work or implement a proposed fix from this file alone.

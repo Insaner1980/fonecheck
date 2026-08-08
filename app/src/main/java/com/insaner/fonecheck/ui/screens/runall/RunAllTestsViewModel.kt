@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.insaner.fonecheck.data.repository.ReportLoadResult
 import com.insaner.fonecheck.data.repository.ReportRepository
+import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticCategorySnapshot
 import com.insaner.fonecheck.domain.model.DiagnosticReport
@@ -205,7 +206,7 @@ class RunAllTestsViewModel
                     hardware = current.hardware,
                     permissions = permissions,
                     selections = current.selections,
-                    categories = current.targetCategory?.let(::listOf) ?: DiagnosticCategoryId.entries,
+                    categories = current.targetCategory?.let(::listOf) ?: DiagnosticCatalog.categories,
                 )
             enterStage(
                 plan.stages.firstOrNull() ?: RunAllStage.RESULTS,
