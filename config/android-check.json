@@ -16,7 +16,7 @@
   "testTasks": [":app:testDebugUnitTest"],
   "includedBuilds": [],
   "checks": {
-    "dependabotEnabled": false,
+    "dependabotEnabled": true,
     "ktlintTasks": [":app:ktlintCheck"],
     "detektTasks": [":app:detekt"],
     "lintTasks": [":app:lintDebug"],
