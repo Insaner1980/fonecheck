@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -39,7 +40,6 @@ import java.text.NumberFormat
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.util.Locale
 
 @Composable
 fun PerformanceInfoScreen(
@@ -244,7 +244,7 @@ private fun BenchmarkResultRows(result: PerformanceBenchmarkResult) {
         stringResource(R.string.device_captured_at),
         DateTimeFormatter
             .ofLocalizedDateTime(FormatStyle.MEDIUM)
-            .withLocale(Locale.getDefault())
+            .withLocale(LocalLocale.current.platformLocale)
             .withZone(ZoneId.systemDefault())
             .format(result.capturedAt),
     )

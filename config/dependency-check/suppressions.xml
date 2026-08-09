@@ -7,7 +7,7 @@
         Virheellinen CPE-osuma: AndroidX Camera Lifecycle ei ole Camera Life
         -kuvagalleriasovellus, jota CVE-2007-4234 koskee.
         ]]></notes>
-        <packageUrl>pkg:maven/androidx.camera/camera-lifecycle@1.5.1</packageUrl>
+        <packageUrl>pkg:maven/androidx.camera/camera-lifecycle@1.6.1</packageUrl>
         <cpe>cpe:/a:camera_life:camera_life</cpe>
     </suppress>
     <suppress until="2026-10-31Z">
@@ -15,7 +15,7 @@
         Virheellinen CPE-osuma: AndroidX Camera Video ei ole Drupalin Video-moduuli,
         jota CVE-2015-3362 koskee.
         ]]></notes>
-        <packageUrl>pkg:maven/androidx.camera/camera-video@1.5.1</packageUrl>
+        <packageUrl>pkg:maven/androidx.camera/camera-video@1.6.1</packageUrl>
         <cpe>cpe:/a:video_project:video</cpe>
     </suppress>
     <suppress until="2026-10-31Z">
@@ -41,7 +41,7 @@
         Virheellinen CPE-osuma: Skydovesin Compose Stability Runtime -kirjasto
         ei ole GitHub Enterprise Server, jota raportoidut GitHub-CVE:t koskevat.
         ]]></notes>
-        <packageUrl>pkg:maven/com.github.skydoves/compose-stability-runtime-android@0.2.20</packageUrl>
+        <packageUrl>pkg:maven/com.github.skydoves/compose-stability-runtime-android@0.12.0</packageUrl>
         <cpe>cpe:/a:github:github</cpe>
     </suppress>
     <suppress until="2026-09-30Z">
@@ -50,10 +50,9 @@
         ei kotlin-stdlib-ajonaikaiskirjastoa, johon Dependency-Check liitti
         löydöksen. Projektissa Gradlen build cache ja Kotlin-tehtävien caching
         on poistettu käytöstä gradle.properties-tiedostossa. Poikkeus on
-        arvioitava uudelleen ja poistettava korjattuun vakaaseen Kotliniin
-        päivitettäessä.
+        arvioitava uudelleen jokaisen Kotlin-päivityksen yhteydessä.
         ]]></notes>
-        <packageUrl>pkg:maven/org.jetbrains.kotlin/kotlin-stdlib@2.1.21</packageUrl>
+        <packageUrl>pkg:maven/org.jetbrains.kotlin/kotlin-stdlib@2.4.10</packageUrl>
         <cve>CVE-2026-53914</cve>
     </suppress>
 </suppressions>

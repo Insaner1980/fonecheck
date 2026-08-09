@@ -6,21 +6,21 @@
 ## SDK Targets
 - minSdk: 26
 - targetSdk: 36
-- compileSdk: 36
+- compileSdk: 37
 
 ## Build System
 - Kotlin DSL (`build.gradle.kts`)
 - Version catalog (`gradle/libs.versions.toml`)
-- Kotlin 2.1.0, AGP 8.9.1, Gradle 8.11.1
+- Kotlin 2.4.10, AGP 9.3.1, Gradle 9.7.0
 
 ## Key Dependencies
-- Compose BOM 2026.03.00
+- Compose BOM 2026.06.01
 - Material 3 (+ explicit material-icons-core)
-- Hilt 2.57.1 (KSP)
+- Hilt 2.60.1 (KSP 2.3.11)
 - Room 2.8.4 (room-ktx merged into room-runtime)
-- Navigation Compose 2.9.7
-- CameraX 1.5.1
-- Lifecycle 2.9.1
+- Navigation Compose 2.9.8
+- CameraX 1.6.1
+- Lifecycle 2.11.0
 
 ## Architecture
 - Jetpack Compose + Material 3
