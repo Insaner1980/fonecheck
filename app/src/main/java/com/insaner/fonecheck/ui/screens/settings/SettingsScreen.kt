@@ -1,7 +1,6 @@
 package com.insaner.fonecheck.ui.screens.settings
 
 import android.content.Intent
-import android.net.Uri
 import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -35,7 +34,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.PackageInfoCompat
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.core.net.toUri
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -74,16 +74,16 @@ fun SettingsRoute(
             context.startActivity(
                 Intent(
                     Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                    Uri.parse("package:${context.packageName}"),
+                    "package:${context.packageName}".toUri(),
                 ),
             )
         },
         onDeleteAll = viewModel::deleteAllReports,
         onOpenPrivacy = {
-            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_URL)))
+            context.startActivity(Intent(Intent.ACTION_VIEW, PRIVACY_URL.toUri()))
         },
         onOpenSupport = {
-            context.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse(SUPPORT_EMAIL)))
+            context.startActivity(Intent(Intent.ACTION_SENDTO, SUPPORT_EMAIL.toUri()))
         },
         onOpenLicenses = onOpenLicenses,
         onReopenOnboarding = viewModel::reopenOnboarding,
@@ -92,6 +92,7 @@ fun SettingsRoute(
 }
 
 @Composable
+@Suppress("kotlin:S107") // Explicit settings actions avoid an untyped callback bag.
 fun SettingsScreen(
     state: SettingsState,
     appVersion: String,

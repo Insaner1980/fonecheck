@@ -1,28 +1,10 @@
 package com.insaner.fonecheck.export
 
-import com.insaner.fonecheck.domain.model.Applicability
-import com.insaner.fonecheck.domain.model.Confidence
-import com.insaner.fonecheck.domain.model.CoverageSummary
-import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
-import com.insaner.fonecheck.domain.model.DiagnosticCategoryResult
-import com.insaner.fonecheck.domain.model.DiagnosticCheckId
-import com.insaner.fonecheck.domain.model.DiagnosticEvidence
-import com.insaner.fonecheck.domain.model.DiagnosticReport
-import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
-import com.insaner.fonecheck.domain.model.EvidenceSource
-import com.insaner.fonecheck.domain.model.EvidenceValue
-import com.insaner.fonecheck.domain.model.ReportAppContext
-import com.insaner.fonecheck.domain.model.ReportDeviceContext
-import com.insaner.fonecheck.domain.model.ReportKind
-import com.insaner.fonecheck.domain.model.ReportSchemaVersion
-import com.insaner.fonecheck.domain.model.ScoreState
-import com.insaner.fonecheck.domain.model.ScoreSummary
-import com.insaner.fonecheck.domain.model.ScoreVersion
+import com.insaner.fonecheck.testing.batteryReport
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.time.Instant
 
 class ReportPdfContentTest {
     @Test
@@ -75,35 +57,9 @@ class ReportPdfContentTest {
     }
 
     private fun report() =
-        DiagnosticReport(
-            stableId = "report-123",
-            kind = ReportKind.FULL_CHECK,
-            startedAt = Instant.parse("2026-08-08T10:00:00Z"),
-            completedAt = Instant.parse("2026-08-08T10:01:00Z"),
-            device = ReportDeviceContext("Finnvek", "Test Device", "Fonecheck", "test", "16", 36, null),
-            app = ReportAppContext("1.0.0", 1L),
-            categories =
-                listOf(
-                    DiagnosticCategoryResult(
-                        DiagnosticCategoryId.BATTERY,
-                        DiagnosticStatus.PASS,
-                        listOf(
-                            DiagnosticEvidence(
-                                categoryId = DiagnosticCategoryId.BATTERY,
-                                checkId = DiagnosticCheckId(DiagnosticCategoryId.BATTERY, "battery.level"),
-                                status = DiagnosticStatus.PASS,
-                                confidence = Confidence.HIGH,
-                                source = EvidenceSource.ANDROID_API,
-                                applicability = Applicability.APPLICABLE,
-                                value = EvidenceValue.IntValue(80),
-                                reason = EvidenceReasonCode.PERMISSION_DENIED,
-                                capturedAt = Instant.parse("2026-08-08T10:00:30Z"),
-                            ),
-                        ),
-                    ),
-                ),
-            score = ScoreSummary(ScoreVersion.CURRENT, 92, ScoreState.PARTIAL),
-            coverage = CoverageSummary(4, 3, 1, 0, 75),
-            schemaVersion = ReportSchemaVersion.CURRENT,
+        batteryReport(
+            id = "report-123",
+            deviceModel = "Test Device",
+            reason = EvidenceReasonCode.PERMISSION_DENIED,
         )
 }

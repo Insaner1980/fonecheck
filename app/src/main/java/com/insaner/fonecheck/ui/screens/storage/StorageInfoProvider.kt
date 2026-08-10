@@ -55,6 +55,8 @@ class AndroidStorageInfoProvider
             )
         }
 
+        // This reads capacity metadata from app-scoped directories; it does not store report data externally.
+        @Suppress("kotlin:S5324")
         private fun appAccessibleVolumes(): List<AppStorageVolumeInfo> =
             context.getExternalFilesDirs(null).mapIndexedNotNull { index, directory ->
                 directory?.let { externalVolume(it, index == 0) }

@@ -23,6 +23,7 @@ import com.insaner.fonecheck.domain.model.ReportSchemaVersion
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -56,7 +57,7 @@ class ReportPdfExporterTest {
                     writeText("stale")
                     setLastModified(0L)
                 }
-            val exporter = AndroidReportExporter(context, ReportPdfRenderer(context))
+            val exporter = AndroidReportExporter(context, ReportPdfRenderer(context), Dispatchers.IO)
 
             val exported = exporter.exportPdf(report())
 
@@ -82,7 +83,8 @@ class ReportPdfExporterTest {
     fun jsonExportUsesTheSameRestrictedProviderWithJsonMimeType() =
         runBlocking {
             val context = InstrumentationRegistry.getInstrumentation().targetContext
-            val exported = AndroidReportExporter(context, ReportPdfRenderer(context)).exportJson(report())
+            val exported =
+                AndroidReportExporter(context, ReportPdfRenderer(context), Dispatchers.IO).exportJson(report())
             val uri = Uri.parse(exported.uri)
 
             assertEquals("application/json", exported.mimeType)

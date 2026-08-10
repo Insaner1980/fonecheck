@@ -38,6 +38,13 @@ enum class ScreenStateType {
     ERROR,
 }
 
+data class ScreenStateActions(
+    val actionLabel: String? = null,
+    val onAction: (() -> Unit)? = null,
+    val secondaryActionLabel: String? = null,
+    val onSecondaryAction: (() -> Unit)? = null,
+)
+
 @Composable
 fun ScreenStateCard(
     type: ScreenStateType,
@@ -108,10 +115,7 @@ fun ScreenStateScreen(
     type: ScreenStateType,
     message: String,
     modifier: Modifier = Modifier,
-    actionLabel: String? = null,
-    onAction: (() -> Unit)? = null,
-    secondaryActionLabel: String? = null,
-    onSecondaryAction: (() -> Unit)? = null,
+    actions: ScreenStateActions = ScreenStateActions(),
 ) {
     Box(
         modifier = modifier.fillMaxSize().padding(24.dp),
@@ -120,12 +124,34 @@ fun ScreenStateScreen(
         ScreenStateCard(
             type = type,
             message = message,
-            actionLabel = actionLabel,
-            onAction = onAction,
-            secondaryActionLabel = secondaryActionLabel,
-            onSecondaryAction = onSecondaryAction,
+            actionLabel = actions.actionLabel,
+            onAction = actions.onAction,
+            secondaryActionLabel = actions.secondaryActionLabel,
+            onSecondaryAction = actions.onSecondaryAction,
         )
     }
+}
+
+@Composable
+fun ReportStateScreen(
+    type: ScreenStateType,
+    message: String,
+    onRetry: (() -> Unit)?,
+    onBack: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    ScreenStateScreen(
+        type = type,
+        message = message,
+        modifier = modifier,
+        actions =
+            ScreenStateActions(
+                actionLabel = stringResource(R.string.report_retry).takeIf { onRetry != null },
+                onAction = onRetry,
+                secondaryActionLabel = stringResource(R.string.report_back).takeIf { onBack != null },
+                onSecondaryAction = onBack,
+            ),
+    )
 }
 
 @StringRes

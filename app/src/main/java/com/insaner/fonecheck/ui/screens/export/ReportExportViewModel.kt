@@ -6,19 +6,16 @@ import androidx.lifecycle.viewModelScope
 import com.insaner.fonecheck.data.repository.ReportLoadResult
 import com.insaner.fonecheck.data.repository.ReportReadFailure
 import com.insaner.fonecheck.data.repository.ReportRepository
-import com.insaner.fonecheck.di.IoDispatcher
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.export.ExportedReport
 import com.insaner.fonecheck.export.ReportExporter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 sealed interface ReportExportState {
@@ -47,7 +44,6 @@ class ReportExportViewModel
         savedStateHandle: SavedStateHandle,
         private val reportRepository: ReportRepository,
         private val reportExporter: ReportExporter,
-        @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : ViewModel() {
         private val reportId = savedStateHandle.get<String>(REPORT_ID_ARGUMENT).orEmpty()
         private val _state = MutableStateFlow<ReportExportState>(ReportExportState.Loading)
@@ -81,7 +77,7 @@ class ReportExportViewModel
             exportJob =
                 viewModelScope.launch {
                     try {
-                        val exported = withContext(ioDispatcher) { operation(ready.report) }
+                        val exported = operation(ready.report)
                         _state.value = ready.copy(shareRequest = exported)
                     } catch (error: CancellationException) {
                         throw error
@@ -108,7 +104,7 @@ class ReportExportViewModel
                 viewModelScope.launch {
                     try {
                         _state.value =
-                            when (val result = withContext(ioDispatcher) { reportRepository.getById(reportId) }) {
+                            when (val result = reportRepository.getById(reportId)) {
                                 is ReportLoadResult.Available -> ReportExportState.Ready(result.report)
                                 ReportLoadResult.NotFound -> ReportExportState.NotFound
                                 is ReportLoadResult.Unavailable -> ReportExportState.Unavailable(result.reason)

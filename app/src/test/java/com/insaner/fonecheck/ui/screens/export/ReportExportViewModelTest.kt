@@ -4,17 +4,10 @@ import androidx.lifecycle.SavedStateHandle
 import com.insaner.fonecheck.data.repository.FakeReportRepository
 import com.insaner.fonecheck.data.repository.ReportLoadResult
 import com.insaner.fonecheck.data.repository.ReportReadFailure
-import com.insaner.fonecheck.domain.model.CoverageSummary
 import com.insaner.fonecheck.domain.model.DiagnosticReport
-import com.insaner.fonecheck.domain.model.ReportAppContext
-import com.insaner.fonecheck.domain.model.ReportDeviceContext
-import com.insaner.fonecheck.domain.model.ReportKind
-import com.insaner.fonecheck.domain.model.ReportSchemaVersion
-import com.insaner.fonecheck.domain.model.ScoreState
-import com.insaner.fonecheck.domain.model.ScoreSummary
-import com.insaner.fonecheck.domain.model.ScoreVersion
 import com.insaner.fonecheck.export.ExportedReport
 import com.insaner.fonecheck.export.ReportExporter
+import com.insaner.fonecheck.testing.testReport
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -27,7 +20,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
-import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReportExportViewModelTest {
@@ -47,9 +39,8 @@ class ReportExportViewModelTest {
     fun availableReportExportsPdfAndEmitsOneShareRequest() =
         runTest(dispatcher.scheduler) {
             val report = report()
-            val repository = FakeReportRepository(getByIdOverride = ReportLoadResult.Available(report))
             val exporter = FakeExporter()
-            val viewModel = viewModel(repository, exporter)
+            val viewModel = loadedViewModel(report, exporter)
             advanceUntilIdle()
 
             viewModel.exportPdf()
@@ -82,9 +73,8 @@ class ReportExportViewModelTest {
     fun jsonExportUsesTheSameLoadedImmutableReport() =
         runTest(dispatcher.scheduler) {
             val report = report()
-            val repository = FakeReportRepository(getByIdOverride = ReportLoadResult.Available(report))
             val exporter = FakeExporter()
-            val viewModel = viewModel(repository, exporter)
+            val viewModel = loadedViewModel(report, exporter)
             advanceUntilIdle()
 
             viewModel.exportJson()
@@ -119,7 +109,14 @@ class ReportExportViewModelTest {
         savedStateHandle = SavedStateHandle(mapOf("reportId" to "saved-report")),
         reportRepository = repository,
         reportExporter = exporter,
-        ioDispatcher = dispatcher,
+    )
+
+    private fun loadedViewModel(
+        report: DiagnosticReport,
+        exporter: ReportExporter,
+    ) = viewModel(
+        FakeReportRepository(getByIdOverride = ReportLoadResult.Available(report)),
+        exporter,
     )
 
     private class FakeExporter(
@@ -145,17 +142,5 @@ class ReportExportViewModelTest {
         }
     }
 
-    private fun report() =
-        DiagnosticReport(
-            stableId = "saved-report",
-            kind = ReportKind.FULL_CHECK,
-            startedAt = Instant.parse("2026-08-08T10:00:00Z"),
-            completedAt = Instant.parse("2026-08-08T10:01:00Z"),
-            device = ReportDeviceContext("Finnvek", "Test", "Fonecheck", "test", "16", 36, null),
-            app = ReportAppContext("1.0.0", 1L),
-            categories = emptyList(),
-            score = ScoreSummary(ScoreVersion.CURRENT, 90, ScoreState.PARTIAL),
-            coverage = CoverageSummary(4, 3, 1, 0, 75),
-            schemaVersion = ReportSchemaVersion.CURRENT,
-        )
+    private fun report() = testReport()
 }

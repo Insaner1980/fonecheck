@@ -85,15 +85,15 @@ class ReportExportScreenTest {
 
     private fun report() =
         DiagnosticReport(
-            stableId = "saved-report",
-            kind = ReportKind.FULL_CHECK,
-            startedAt = Instant.parse("2026-08-08T10:00:00Z"),
-            completedAt = Instant.parse("2026-08-08T10:01:00Z"),
-            device = ReportDeviceContext("Finnvek", "Test", "Fonecheck", "test", "16", 36, null),
-            app = ReportAppContext("1.0.0", 1L),
-            categories = emptyList(),
-            score = ScoreSummary(ScoreVersion.CURRENT, 90, ScoreState.PARTIAL),
-            coverage = CoverageSummary(4, 3, 1, 0, 75),
-            schemaVersion = ReportSchemaVersion.CURRENT,
+            "saved-report",
+            ReportKind.FULL_CHECK,
+            Instant.parse("2026-08-08T10:00:00Z"),
+            Instant.parse("2026-08-08T10:01:00Z"),
+            ReportDeviceContext("Finnvek", "Test", "Fonecheck", "test", "16", 36, null),
+            ReportAppContext("1.0.0", 1L),
+            emptyList(),
+            ScoreSummary(ScoreVersion.CURRENT, 90, ScoreState.PARTIAL),
+            CoverageSummary(4, 3, 1, 0, 75),
+            ReportSchemaVersion.CURRENT,
         )
 }

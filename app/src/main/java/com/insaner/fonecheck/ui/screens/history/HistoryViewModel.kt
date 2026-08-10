@@ -4,17 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.insaner.fonecheck.data.repository.ReportRepository
 import com.insaner.fonecheck.data.repository.SavedReportSummary
-import com.insaner.fonecheck.di.IoDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 data class HistoryState(
@@ -29,7 +26,6 @@ class HistoryViewModel
     @Inject
     constructor(
         private val reportRepository: ReportRepository,
-        @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : ViewModel() {
         private val _state = MutableStateFlow(HistoryState())
         val state: StateFlow<HistoryState> = _state.asStateFlow()
@@ -53,7 +49,7 @@ class HistoryViewModel
             }
             viewModelScope.launch {
                 try {
-                    withContext(ioDispatcher) { reportRepository.delete(reportId) }
+                    reportRepository.delete(reportId)
                 } catch (error: CancellationException) {
                     throw error
                 } catch (_: Exception) {

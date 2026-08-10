@@ -7,14 +7,14 @@ This reference is grounded in the live Android/Kotlin source, resources, Room sc
 
 | Item | Value |
 |---|---|
-| Verified source snapshot | 2026-08-09 |
-| Verified Git revision | `a847be318bf7547854e314875b72b92fbce11d20` on `codex/splash-animation` before this documentation edit |
+| Verified source snapshot | 2026-08-10 |
+| Verified Git baseline | `9319e6cd92b005a764749c8348c03d9e96bd04f7` on `codex/android-toolchain-update`; the documented checkout also contains extensive uncommitted implementation, test, build, localization, and tooling changes, which are part of this snapshot |
 | Application ID / namespace | com.insaner.fonecheck |
 | Android module | :app |
 | Version | versionCode = 1; versionName = "1.0.0" |
 | SDK range | min 26; compile 37; target 36 |
-| Source inventory | 140 production Kotlin files, 55 JVM-test Kotlin files, 19 instrumented-test Kotlin files |
-| This update | Live source, resources, schemas, tests, CI, security configuration, and Git inspection. This one-time toolchain migration also ran the documented dependency-resolution commands under explicit user permission; normal Codex Gradle builds remain prohibited. |
+| Source inventory | 142 production Kotlin files, 60 JVM-test Kotlin files, 19 instrumented-test Kotlin files |
+| This update | Live working-tree source, resources, schemas, tests, CI, build/security configuration, local checker wrappers, and Git inspection. No Gradle task, Sonar upload, external-AI scan, emulator, or physical-device test was run for this documentation update. |
 | Ownership | This documentation update changes only PROJECT.md. |
 
 The current code is authoritative if it differs from this file. FONECHECK_COMPLETE_PRODUCT_SPEC.md is a planning/specification artifact, not proof of implemented functionality.
@@ -40,21 +40,38 @@ fonecheck is a local, single-activity phone diagnostics app. It provides fourtee
 | Kotlin / AGP | Kotlin 2.4.10; Android Gradle Plugin 9.3.1; JVM 17 |
 | UI | Jetpack Compose, Material 3, Compose BOM 2026.06.01 |
 | Navigation | Navigation Compose 2.9.8 and type-safe Serializable routes |
-| DI | Hilt 2.60.1 via KSP 2.3.11 |
+| DI | Hilt 2.60.1 via KSP 2.3.11; AndroidX Hilt lifecycle ViewModel Compose 1.4.0 provides `hiltViewModel()` integration |
 | Data | Room 2.8.4; DataStore Preferences 1.2.1; kotlinx.serialization JSON 1.11.0 |
 | Device APIs | CameraX 1.6.1 and AndroidX Biometric 1.1.0 plus framework services |
 | Release | R8 minification and resource shrinking enabled; no project-specific ProGuard rules |
-| Static checks | ktlint, Detekt, Compose Rules, Compose Stability Analyzer, Android Security Lints, OWASP Dependency-Check |
-| Tests | JUnit 4.13.2, kotlinx-coroutines-test 1.11.0, AndroidX Test Runner 1.7.0, AndroidX Test Ext JUnit 1.3.0, Compose UI test through the BOM, Room testing 2.8.4 |
+| Static checks | ktlint, Detekt, Compose Rules, Compose Stability Analyzer, Android Security Lints, OWASP Dependency-Check, SonarQube Gradle plugin 7.4.0.8496 |
+| Tests | JUnit 4.13.2, kotlinx-coroutines-test 1.11.0, AndroidX Test Runner 1.7.0, AndroidX Test Ext JUnit 1.3.0, Compose UI test through the BOM, Room testing 2.8.4; debug unit-test coverage is enabled for JaCoCo/Sonar import |
 | Security automation | CodeQL 4.37.5, Semgrep 1.171.0, OSV-Scanner 2.4.0, project-local DeepSec 2.2.9, dependency verification metadata/keyring, buildscript dependency locking |
 
 The wrapper pins Gradle 9.7.0 with `distributionSha256Sum`, validates the distribution URL, and uses a 10-second network timeout. `gradle.properties` disables Gradle build caching and Kotlin task caching, enables AndroidX, official Kotlin style, and non-transitive R classes, and gives Gradle a 2 GiB heap. These are build-behavior facts, not performance recommendations.
 
-The root build forces selected buildscript transitives to patched versions: Jackson 2.21.5, protobuf 3.25.5, Netty 4.1.136.Final, jose4j 0.9.6, Bouncy Castle 1.84, JDOM 2.0.6.1, and jsoup 1.23.1. It also enables buildscript dependency locking. `gradle/verification-metadata.xml`, `gradle/verification-keyring.keys`, and `buildscript-gradle.lockfile` are supply-chain inputs and must move with intentional dependency/plugin updates.
+The root build forces selected buildscript transitives to patched versions: Jackson 2.21.5, protobuf 3.25.5, Netty 4.1.136.Final, jose4j 0.9.6, Bouncy Castle 1.84, JDOM 2.0.6.1, and jsoup 1.23.1. It also enables buildscript dependency locking. `gradle/verification-metadata.xml`, `gradle/verification-keyring.keys`, `buildscript-gradle.lockfile`, and the generated `settings-gradle.lockfile` are supply-chain inputs and must move with intentional dependency/plugin or catalog-resolution updates.
+
+The app intentionally compiles with SDK 37 while targeting SDK 36. Android Lint's `OldTargetApi` check is disabled with an explicit comment that Android 17 targeting requires a separate compatibility pass; this suppression does not prove target-SDK compatibility or authorize leaving the target unchanged indefinitely. ktlint color output is disabled for stable machine-readable reports. The AndroidX Hilt dependency is `hilt-lifecycle-viewmodel-compose`, not the older navigation-compose artifact.
 
 Debug and release currently share version name `1.0.0`; no debug suffix is configured. Release enables R8 and resource shrinking and uses the optimized default ProGuard file plus an otherwise empty `app/proguard-rules.pro`. No signing configuration is defined in source, so this repository does not establish a signed publishable artifact. Signing/upload-key handling is an external release gate.
 
 OWASP Dependency-Check scans debug and release runtime classpaths, defaults to CVSS 7 failure, disables OSS Index, and can be tuned with the documented `DEPENDENCY_CHECK_*` and `NVD_*` environment variables. Its suppression file contains six time-bounded entries: five false-positive CPE mappings expire 2026-10-31, while the Kotlin cache-metadata CVE exception expires 2026-09-30 and relies on the disabled-cache configuration. Expiry or dependency changes require revalidation; a suppression is not a vulnerability fix.
+
+### SonarQube and coverage path
+
+`sonar-project.properties` identifies SonarCloud project `Insaner1980_fonecheck`, organization `insaner1980`, and host `https://sonarcloud.io`. Build/generated files are excluded from normal and duplication analysis, `.webp` and `.ttf` are excluded from secret analysis, and SCM blame uses the native Git algorithm. The root Gradle build loads these properties, applies Sonar to `:app`, and makes the root `sonar` task depend on `:app:assembleDebug` plus `:app:createDebugUnitTestCoverageReport`. The imported JaCoCo XML path is `app/build/reports/coverage/test/debug/report.xml`.
+
+That coverage report is deliberately JVM-unit-test coverage only. Sonar coverage exclusions name Android entry points, shared Compose components, the NavHost/theme, every `*Screen.kt`, Full Check manual UI, platform/lifecycle adapters, hardware-backed ViewModels/providers/controllers, `PermissionController`, PDF/export Android implementations, and Hilt modules. An excluded file is not tested by implication: instrumented tests and physical-device validation remain separate evidence.
+
+`tools/sonar.ps1` is the consent gate and report wrapper:
+
+- `-PlanOnly` prints the project, host, output paths, token requirement, Gradle task dependencies, and external-upload requirement without calling Sonar or Gradle.
+- A real scan requires the explicit `-AllowExternalUpload` switch and either `SONAR_TOKEN` or `systemProp.sonar.token`; the script writes the managed Gradle output to `reports/sonar.txt`.
+- The wrapper uses `C:\Dev\Android-check\tools\CheckRuntime.psm1` for the timeout-controlled Gradle process. If SonarQube CLI is installed, it then uses `SonarProjectChecks.psm1` to export open/confirmed issues to `reports/sonar-issues.json`; absence of the CLI makes only that issue-export step not applicable.
+- CLI passthrough arguments also require `-AllowExternalUpload`. `reports/` and `.scannerwork/` are ignored local outputs.
+
+No Sonar task or external upload was performed for this document. Configuration presence and a PlanOnly-capable wrapper are not a current clean quality-gate result.
 
 ## Architecture and ownership
 
@@ -93,10 +110,10 @@ All Hilt modules install into `SingletonComponent`; scope is explicit per bindin
 |---|---|
 | `DatabaseModule` | Singleton `fonecheck.db`, unscoped `ReportDao`, singleton `ReportRepository -> RoomReportRepository`; there is no destructive migration fallback. |
 | `PreferencesModule` | Singleton Preferences DataStore file `fonecheck.preferences_pb`, singleton `AppPreferencesRepository`, unscoped settings permission provider. |
-| `DeviceInfoModule` | Singleton `DeviceInfoProvider -> AndroidDeviceInfoProvider`. |
-| `PerformanceModule` | Singleton performance-info provider; unscoped benchmark runner and thermal-status reader. |
-| `SimTelephonyModule` | Singleton `SimTelephonyProvider -> AndroidSimTelephonyProvider`. |
-| `RuntimeModule` | Wall clock, UUID provider, monotonic nano-time source, thermal/vibration/storage/biometric adapters, singleton volume-button event source, report exporter, and `@IoDispatcher Dispatchers.IO`. |
+| `DeviceInfoModule` | Object module with a singleton `@Provides` binding from injected `AndroidDeviceInfoProvider` to `DeviceInfoProvider`. |
+| `PerformanceModule` | Interface module with `@Binds`: singleton performance-info provider plus unscoped benchmark runner and thermal-status reader. |
+| `SimTelephonyModule` | Object module with a singleton `@Provides` binding from injected `AndroidSimTelephonyProvider` to `SimTelephonyProvider`. |
+| `RuntimeModule` | Wall clock, UUID provider, monotonic nano-time source, thermal/vibration/storage/biometric adapters, singleton volume-button event source, `AndroidReportExporter -> ReportExporter`, and `@IoDispatcher Dispatchers.IO`. |
 
 Audio, camera, connectivity, battery, display, sensors, and several other category ViewModels deliberately own Android services or category-local adapters directly. Do not add a generic repository/use-case layer merely for symmetry; introduce a seam only where it creates a real test, ownership, or cross-screen boundary.
 
@@ -166,7 +183,10 @@ Use the shared UI components rather than creating local equivalents:
 | `TestSectionCard` | One clickable expandable card, 40 dp decorative code box, semantic heading/status/expanded state, animated vertical content. |
 | `SectionBox` | Full-width surface, medium (16 dp) shape, 1 dp outline, 12 dp padding. |
 | `PermissionStatusCard` | Explicit permission badge, rationale where actionable, and exactly the valid request/retry/Settings action for the state. |
-| `ScreenStateCard` / `ScreenStateScreen` | Loading, empty, unavailable, not-tested, permission-denied, and error variants; loading includes progress, actions are state-specific. |
+| `ScreenStateCard` / `ScreenStateScreen` | Loading, empty, unavailable, not-tested, permission-denied, and error variants; `ScreenStateActions` carries optional primary/secondary actions without widening the screen function further. |
+| `ReportStateScreen` | Shared saved-report loading/not-found/unavailable/error shell with localized Retry and Back actions; detail, comparison, and export use the same contract. |
+| `ManualResultButtons` | Full-width two-column user-confirmation row: outlined problem/fail action first, emphasized pass action second. Audio and Display reuse it. |
+| `RefreshButton` | Full-width medium-shape refresh action with explicit enabled state; shared by Device and SIM information screens. |
 
 `ScreenStateCard` uses assertive live regions for error and permission denial and polite live regions for all other state types. `PermissionStatusCard` makes granted/denied/partial/Settings recovery visible rather than treating permissions as a background detail.
 
@@ -281,21 +301,23 @@ The planner de-duplicates stages and always appends Results. A category-only ret
 
 RunAllResourceOwner.stopAll() is idempotent and owns stopping performance, microphone, GPS, storage, display, audio, camera, sensors, vibration, buttons, biometrics, and thermal work. Interruption state distinguishes user cancellation, backgrounding, configuration change, and screen disposal. Review all callback races and lifecycle changes on real devices.
 
-At Results, RunAllSnapshotMapper converts automatic and manual data to stable snapshots. ReportAssembler creates the report with injected clock/ID providers. Save status is IDLE, SAVING, SAVED, or FAILED; failed persistence can be retried. A saved report proves local write success only, not measurement correctness.
+At Results, RunAllSnapshotMapper converts automatic and manual data to stable snapshots. ReportAssembler creates the report with injected clock/ID providers. Save status is IDLE, SAVING, SAVED, or FAILED; failed persistence can be retried through the shared `insertOrConfirm` contract. The biometric bridge records `true` only for a successful prompt and otherwise leaves the Boolean result absent while preserving the terminal outcome, avoiding a false value that could be misread as a measured biometric failure. A saved report proves local write success only, not measurement correctness.
 
 ## Persistence, history, comparison, and export
 
 Room version 1 has one `reports` table, an index on `completedAtEpochMillis`, and a matching exported schema at `app/schemas/com.insaner.fonecheck.data.local.FonecheckDatabase/1.json`. `ReportEntity` stores ID, report kind/optional category, start/completion times, report/score versions, nullable score and score state, coverage/applicable/completed/not-tested/unavailable counts, warning/failure counts, and the full JSON payload. Its invariants reject invalid kind/category combinations, timestamps, score state/value pairs, count relationships, IDs, and blank payloads. The DAO inserts with conflict abort, streams newest-first projection summaries, reads by ID, and deletes one/all.
 
-RoomReportRepository serializes on insert and validates both metadata and reconstructed entity on read. Unsupported schema or corrupt data is surfaced as unavailable data, not a trusted report. DataStore separately stores only theme mode, test-warning preference, and onboarding completion; I/O read failures fall back to defaults.
+RoomReportRepository serializes on insert and validates both metadata and reconstructed entity on read. Unsupported schema or corrupt data is surfaced as unavailable data, not a trusted report. Room DAO methods are suspending/Flow APIs, so report ViewModels call the repository directly instead of wrapping every operation in another `withContext`. DataStore separately stores only theme mode, test-warning preference, and onboarding completion; I/O read failures fall back to defaults and preference writes are called directly from lifecycle-aware ViewModel coroutines.
+
+`ReportRepository.insertOrConfirm` is the shared ambiguous-insert recovery contract used by both Full Check and category retest. It rethrows coroutine cancellation, but after any other insert exception it reads the same stable ID and reports success only if the fully reconstructed stored report equals the report being saved. This handles the case where persistence committed before an exception was observed without converting an unrelated collision or mismatched payload into success.
 
 - History observes summaries and supports empty/loading/content, selection for comparison, deletion, opening detail, and export navigation.
 - Detail presents stored report evidence/score and begins a category-only retest.
 - Category retest produces a new category-only immutable report; it does not mutate the old full report.
 - Comparison classifies added/removed/status/value/availability/not-run evidence changes and warning/fail attention changes; score only compares compatible score versions.
-- Export writes JSON or PDF first to a `.tmp` file, finalizes it by rename after replacing any same-name output, removes temporary files in `finally`, then shares through Android's URI-granting FileProvider.
+- Export writes JSON or PDF first to a `.tmp` file, finalizes it by rename after replacing any same-name output, removes temporary files in `finally`, then shares through Android's URI-granting FileProvider. `AndroidReportExporter`, not the export ViewModel, owns the injected IO dispatcher, keeping its blocking file/PDF work off the caller context.
 
-The provider is non-exported and restricted to `cache/report-exports/`. Each export starts by deleting files in that directory older than 24 hours. Filenames are `fonecheck-<sanitized-report-id>.pdf|json`; MIME types are `application/pdf` and `application/json`. Export is explicit user disclosure: an export can contain device, OS, security patch, diagnostic, and coarse connectivity capability/result facts. Nothing uploads automatically.
+The provider is non-exported and restricted to `cache/report-exports/`. Each export starts by attempting to delete files in that directory older than 24 hours. Filenames are `fonecheck-<sanitized-report-id>.pdf|json`; MIME types are `application/pdf` and `application/json`. Replacement, final rename, and temporary-file deletion are checked operations: a failure is surfaced to the export state instead of silently reporting a shareable result. Export is explicit user disclosure: an export can contain device, OS, security patch, diagnostic, and coarse connectivity capability/result facts. Nothing uploads automatically.
 
 ### Local-only and sensitive-data boundary
 
@@ -314,11 +336,13 @@ Adding any transient sensitive field to `DiagnosticEvidence`, `ReportDeviceConte
 
 ## Permissions and hardware declarations
 
-The manifest declares 13 permissions: `READ_PHONE_STATE`, `RECORD_AUDIO`, `MODIFY_AUDIO_SETTINGS`, `CAMERA`, fine/coarse location, `ACCESS_WIFI_STATE`, `ACCESS_NETWORK_STATE`, legacy `BLUETOOTH` through API 30, `BLUETOOTH_CONNECT`, `NFC`, `VIBRATE`, and `USE_BIOMETRIC`. It deliberately does not declare `INTERNET`, external-storage, contacts, SMS, call-log, advertising, notification, or background-location access.
+The manifest declares 13 permissions: `READ_PHONE_STATE`, `RECORD_AUDIO`, `MODIFY_AUDIO_SETTINGS`, `CAMERA`, fine/coarse location, `ACCESS_WIFI_STATE`, `ACCESS_NETWORK_STATE`, legacy `BLUETOOTH` through API 30, `BLUETOOTH_CONNECT`, `NFC`, `VIBRATE`, and `USE_BIOMETRIC`. It deliberately does not declare `INTERNET`, external-storage, contacts, SMS, call-log, advertising, notification, or background-location access. The application also sets `android:usesCleartextTraffic="false"` explicitly.
 
 The 11 declared hardware features—camera, front camera, flash, Wi-Fi, Bluetooth, BLE, NFC, GPS, telephony, fingerprint, and face biometrics—are all `required=false`, so absence must be handled in state/evidence rather than Play filtering or a crash.
 
 PermissionPolicy centralizes runtime decisions for microphone, camera, location, phone, and Bluetooth. Its states are NOT_REQUESTED, GRANTED, DENIED, SETTINGS_RECOVERY, NOT_REQUIRED, HARDWARE_ABSENT, and PARTIAL. Bluetooth requires BLUETOOTH_CONNECT only from API 31. PermissionController tracks whether the app requested a permission, refreshes at lifecycle resume, and opens application Settings for recovery.
+
+Sticky system battery reads in Home, Battery, and Thermal use `ContextCompat.registerReceiver` with an explicit exported-receiver flag because the broadcast originates outside the app. Registered non-sticky listeners still require symmetric unregister handling. These flags describe dynamic receiver visibility; they do not make the manifest FileProvider or another app component exported.
 
 | Capability | Runtime permission boundary |
 |---|---|
@@ -334,9 +358,9 @@ Manifest declarations and source guards do not establish fresh-install, denied, 
 
 ## Localization
 
-English is in `app/src/main/res/values/strings.xml`; Finnish is in `values-fi/strings.xml`. There are 999 translatable keys in each locale. English also contains exactly five `translatable="false"` values that are intentionally absent from Finnish: `app_name` plus the four battery icon codes `BAT`, `CHG`, `HLT`, and `MFR`. Route titles, screens, permission states, report statuses, evidence labels, stable text/reason values, and PDF labels are resource-backed.
+English is in `app/src/main/res/values/strings.xml`; Finnish is in `values-fi/strings.xml`. There are 961 translatable resource keys in each locale with no key-only difference. English also contains exactly five `translatable="false"` values that are intentionally absent from Finnish: `app_name` plus the four battery icon codes `BAT`, `CHG`, `HLT`, and `MFR`. Route titles, screens, permission states, report statuses, evidence labels, stable text/reason values, and PDF labels are resource-backed. A small number of deliberately non-plural count formats use targeted `tools:ignore="PluralsCandidate"`; this is lint metadata, not a blanket plural exemption.
 
-`EvidenceLocalization` maps check IDs, reason codes, and stable text codes at display/export time; unknown stable text receives a readable fallback rather than being stored in a locale-specific form. PDF content uses locale-aware number and date/time formatting and localizes evidence source, confidence, status, score state, categories, units, and reasons.
+`EvidenceLocalization` maps all 76 check IDs, reason codes, stable text codes, and shared thermal-status labels at display/export time; unknown stable text receives a readable fallback rather than being stored in a locale-specific form. Performance and Thermal screens call the same `thermalStatusStringRes` mapping rather than maintaining local duplicates. PDF content uses locale-aware number and date/time formatting and localizes evidence source, confidence, status, score state, categories, units, and reasons.
 
 ResourceParityTest exists, but this documentation update did not execute it. Review rendered text, dynamic units, overflow and accessibility in both languages after copy or formatting changes.
 
@@ -344,18 +368,18 @@ ResourceParityTest exists, but this documentation update did not execute it. Rev
 
 - Manifest backup is disabled (allowBackup=false, fullBackupContent=false) and data extraction excludes app data from cloud/device transfer.
 - The launcher activity is exported; the report provider is non-exported and grant-only.
-- No INTERNET permission or global cleartext opt-in is present.
+- No INTERNET permission is present, and the manifest explicitly disables cleartext traffic.
 - Semgrep rules reject WebView JavaScript interfaces, universal file-URL access, and global cleartext traffic.
 - config/check-exceptions.json contains one MobSF target-SDK inference exception expiring 2026-10-31; it is not permanent approval.
 - Release enables R8/resource shrinking, but app/proguard-rules.pro contains no app-specific keep rules. Test actual Hilt, Room, serialization, CameraX, reflection and export paths in a minified artifact.
-- Dependabot is disabled in `config/android-check.json`; dependency freshness is not automatically guaranteed by repository configuration.
+- Dependabot is enabled in `config/android-check.json`. `.github/dependabot.yml` schedules weekly Gradle and GitHub Actions updates; configuration presence still does not prove that repository security settings are enabled, alerts are clear, or proposed updates are merged.
 - Project-local DeepSec is pinned to 2.2.9 under `.deepsec/`. Its external-AI processing is separate from normal checks and requires explicit provider, data-scope, cost, and retention approval for each run.
 
 GitHub Actions triggers on pushes and pull requests to `main`, grants read-only contents by default, and pins every action by full commit SHA. Both Android-building jobs use Java 17 and install exactly `platform-tools`, `platforms;android-37.0`, and `build-tools;37.0.0`; `build-test-lint` runs `:app:assembleDebug :app:testDebugUnitTest :app:lintDebug`. The manual-build CodeQL 4.37.5 job builds debug sources before Java/Kotlin analysis. The Semgrep/OSV job installs Semgrep 1.171.0, downloads OSV-Scanner 2.4.0 with an expected SHA-256, and scans `.deepsec` plus `buildscript-gradle.lockfile`. The workflow does not run instrumented tests or assemble/install release.
 
 `config/android-check.json` declares both debug/release variants and `main`, `test`, and `androidTest` source sets; it additionally names ktlint, Detekt, stability, dependency-check, debug/release dependency configurations, and the Semgrep configuration. Its ordinary test task is still only `:app:testDebugUnitTest`; listing `androidTest` as a source set does not execute device tests. Configuration proves intended automation, not a passing current revision.
 
-The unit-test source set contains 55 Kotlin files: 54 files contain `@Test`, and `app/src/test/java/com/insaner/fonecheck/data/repository/FakeReportRepository.kt` is test support. The instrumented-test source set contains 19 Kotlin files, all with `@Test`. They cover domain scoring/assembly/comparison, permissions, DataStore, category policies, storage benchmarking, navigation, Room schema/repository, JSON/PDF export, localization, Full Check state/planning/snapshots, history/detail/comparison/export/settings/onboarding, Compose semantics, Home responsive breakpoints, and display interaction. No test or build was run for this documentation change; hardware/device coverage remains required for camera, audio, GPS/GNSS, sensors, Bluetooth, biometrics, vibration, volume keys, storage conditions, API-26 behavior, and release R8/signing.
+The unit-test source set contains 60 Kotlin files: 56 contain `@Test`; `FakeReportRepository.kt`, `FakeAppPreferencesRepository.kt`, `testing/ReportFixtures.kt`, and `testing/SequenceNanoTimeSource.kt` are support code. The instrumented-test source set contains 19 Kotlin files, all with `@Test`. They cover domain scoring/assembly/comparison, report insert/confirm and Room reconstruction, permissions, DataStore, category policies/probes, storage/performance benchmarking, navigation, Room schema/DAO/repository, JSON/PDF export, localization, Full Check state/planning/snapshots, history/detail/comparison/export/settings/onboarding, Compose semantics, Home responsive breakpoints, and display interaction. No test, coverage report, build, or Sonar scan was run for this documentation change; hardware/device coverage remains required for camera, audio, GPS/GNSS, sensors, Bluetooth, biometrics, vibration, volume keys, storage conditions, API-26 behavior, and release R8/signing.
 
 ## Review triggers and concrete questions
 
@@ -376,7 +400,7 @@ Use these current questions in reviews:
 
 | Concern | Verified paths |
 |---|---|
-| Build/version | `build.gradle.kts`, `app/build.gradle.kts`, `gradle.properties`, `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, `buildscript-gradle.lockfile`, `gradle/verification-metadata.xml` |
+| Build/version | `settings.gradle.kts`, `build.gradle.kts`, `app/build.gradle.kts`, `gradle.properties`, `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, `buildscript-gradle.lockfile`, `settings-gradle.lockfile`, `gradle/verification-metadata.xml`, `gradle/verification-keyring.keys` |
 | Manifest/privacy | `app/src/main/AndroidManifest.xml`, `app/src/main/res/xml/data_extraction_rules.xml`, `app/src/main/res/xml/file_paths.xml`, `app/src/main/java/com/insaner/fonecheck/export/ReportExporter.kt` |
 | Launch/theme | `app/src/main/res/values/themes.xml`, `app/src/main/res/values/drawables.xml`, `app/src/main/res/values-v31/drawables.xml`, `app/src/main/res/drawable/splash_logo_vector.xml`, `app/src/main/res/drawable-v31/splash_logo_animated.xml`, `app/src/main/res/animator/`, `app/src/main/java/com/insaner/fonecheck/ui/MainActivity.kt` |
 | App/navigation | `app/src/main/java/com/insaner/fonecheck/FonecheckApp.kt`, `app/src/main/java/com/insaner/fonecheck/ui/MainActivity.kt`, `app/src/main/java/com/insaner/fonecheck/navigation/Routes.kt`, `app/src/main/java/com/insaner/fonecheck/navigation/DiagnosticDestination.kt`, `app/src/main/java/com/insaner/fonecheck/navigation/FonecheckNavHost.kt`, `app/src/main/java/com/insaner/fonecheck/navigation/NavigationChrome.kt` |
@@ -386,7 +410,7 @@ Use these current questions in reviews:
 | Diagnostic features | `app/src/main/java/com/insaner/fonecheck/ui/screens/` subdirectories `deviceinfo`, `performance`, `simtelephony`, `display`, `audio`, `camera`, `sensor`, `connectivity`, `battery`, `thermal`, `storage`, `vibration`, `buttons`, and `biometrics` |
 | Saved report flows | `app/src/main/java/com/insaner/fonecheck/ui/screens/history/`, `app/src/main/java/com/insaner/fonecheck/ui/screens/report/`, `app/src/main/java/com/insaner/fonecheck/ui/screens/comparison/`, `app/src/main/java/com/insaner/fonecheck/ui/screens/export/`, `app/src/main/java/com/insaner/fonecheck/export/ReportPdfContent.kt`, `app/src/main/java/com/insaner/fonecheck/export/ReportPdfRenderer.kt` |
 | UI/localization | `app/src/main/java/com/insaner/fonecheck/ui/components/`, `app/src/main/java/com/insaner/fonecheck/ui/theme/`, `app/src/main/java/com/insaner/fonecheck/localization/EvidenceLocalization.kt`, `app/src/main/res/values/strings.xml`, `app/src/main/res/values-fi/strings.xml` |
-| Tests/automation | `app/src/test/`, `app/src/androidTest/`, `.github/workflows/android.yml`, `config/android-check.json`, `config/check-exceptions.json`, `config/detekt/detekt.yml`, `config/dependency-check/suppressions.xml`, `config/semgrep/fonecheck-security.yml`, `.deepsec/` |
+| Tests/automation | `app/src/test/`, `app/src/androidTest/`, `.github/workflows/android.yml`, `.github/dependabot.yml`, `config/android-check.json`, `config/check-exceptions.json`, `config/detekt/detekt.yml`, `config/dependency-check/suppressions.xml`, `config/semgrep/fonecheck-security.yml`, `sonar-project.properties`, `tools/sonar.ps1`, `.deepsec/` |
 
 ## Screen and workflow matrix
 
@@ -408,7 +432,7 @@ All routes are declared in `C:\Dev\fonecheck\app\src\main\java\com\insaner\fonec
 
 ### Screen-state rules
 
-`C:\Dev\fonecheck\app\src\main\java\com\insaner\fonecheck\ui\components\ScreenStateCard.kt` is the canonical state presentation for loading, empty, unavailable, not-tested, permission-denied, and error conditions. Error and permission-denied cards use assertive live regions; other state cards use polite live regions. New screen state should use this contract unless it is embedded in an existing specialized diagnostic test. The state must name the situation and offer only actions the current state can perform (retry, request, Settings recovery, or back), rather than showing a disabled-looking primary action with no outcome.
+`C:\Dev\fonecheck\app\src\main\java\com\insaner\fonecheck\ui\components\ScreenStateCard.kt` is the canonical state presentation for loading, empty, unavailable, not-tested, permission-denied, and error conditions. Error and permission-denied cards use assertive live regions; other state cards use polite live regions. `ScreenStateActions` bundles the optional action pairs, and `ReportStateScreen` standardizes report Retry/Back behavior across detail, comparison, and export. New screen state should use these contracts unless it is embedded in an existing specialized diagnostic test. The state must name the situation and offer only actions the current state can perform (retry, request, Settings recovery, or back), rather than showing a disabled-looking primary action with no outcome.
 
 ## Diagnostic implementation matrix
 
@@ -418,13 +442,13 @@ The following is the implementation-level seam map. “Full Check” describes h
 |---|---|---|---|---|
 | Device | `app/src/main/java/com/insaner/fonecheck/ui/screens/deviceinfo/DeviceInfoScreen.kt` and `app/src/main/java/com/insaner/fonecheck/ui/screens/deviceinfo/DeviceInfoViewModel.kt`; `DeviceInfoState` | `DeviceInfoProbe` and `DeviceInfoProvider` | Snapshot mapper records device evidence during automatic work. | OS/build/device values are system facts; root indicators remain informational. |
 | Performance | `app/src/main/java/com/insaner/fonecheck/ui/screens/performance/PerformanceInfoScreen.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/performance/PerformanceInfoViewModel.kt`; `PerformanceInfoState`, `BenchmarkPhase` | `PerformanceInfoProbe`, `PerformanceInfoProvider`, `PerformanceBenchmark`, `AndroidThermalStatusReader` | Automatic stage can collect information/selected benchmark data before manual stages. | CPU/GPU probes and benchmark values are device/environment dependent; missing frequency/GPU values are not a pass. |
-| SIM | `app/src/main/java/com/insaner/fonecheck/ui/screens/simtelephony/SimTelephonyScreen.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/simtelephony/SimTelephonyViewModel.kt`; `SimTelephonyState` | `SimTelephonyProbe` and `SimTelephonyProvider` | Automatic snapshot marks permission/hardware-limited items truthfully. | Multi-SIM/operator/network data are subject to `READ_PHONE_STATE` and OS restrictions. |
-| Display | `app/src/main/java/com/insaner/fonecheck/ui/screens/display/DisplayTestScreen.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/display/DisplayTestViewModel.kt`; `DisplayInfoState`, `TouchTestState`, `VisualTestState`, `DisplaySection` | Compose pointer interaction plus display/window APIs in `app/src/main/java/com/insaner/fonecheck/ui/screens/display/DisplayInteraction.kt` | Guided Display stage cycles visual states and awaits human confirmation; it may request fullscreen chrome. | A 6×10 touch grid confirms only touched cells in the app’s content window. Color/dead-pixel observations are user confirmation. |
-| Audio | `app/src/main/java/com/insaner/fonecheck/ui/screens/audio/AudioTestScreen.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/audio/AudioTestViewModel.kt`; `AudioTestState`, `AudioTestType`, `AudioManualCheck`, `StereoChannel` | `AndroidAudioRouteController`, `AudioRuntimePolicy`, Android audio record/track APIs | Optional speaker/microphone selection controls whether the planner includes manual audio work. | Tone audibility and playback are human confirmation; microphone recording needs permission and is not calibrated acoustics. |
+| SIM | `app/src/main/java/com/insaner/fonecheck/ui/screens/simtelephony/SimTelephonyScreen.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/simtelephony/SimTelephonyViewModel.kt`; `SimTelephonyState` | `SimTelephonyProbe` and `SimTelephonyProvider`; refresh cancels the previous job and publishes a new snapshot only after a successful IO capture | Automatic snapshot marks permission/hardware-limited items truthfully. | Multi-SIM/operator/network data are subject to `READ_PHONE_STATE` and OS restrictions. |
+| Display | `app/src/main/java/com/insaner/fonecheck/ui/screens/display/DisplayTestScreen.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/display/DisplayTestViewModel.kt`; `DisplayInfoState`, `TouchTestState`, `VisualTestState`, `DisplaySection` | Compose pointer interaction plus display/window APIs in `app/src/main/java/com/insaner/fonecheck/ui/screens/display/DisplayInteraction.kt`; HDR uses `Display.isHdr` | Guided Display stage cycles visual states and awaits human confirmation; it may request fullscreen chrome. | A 6×10 touch grid confirms only touched cells in the app’s content window. Color/dead-pixel observations are user confirmation. |
+| Audio | `app/src/main/java/com/insaner/fonecheck/ui/screens/audio/AudioTestScreen.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/audio/AudioTestViewModel.kt`; `AudioTestState`, `AudioTestType`, `AudioManualCheck`, `StereoChannel` | `AndroidAudioRouteController`, `AudioRuntimePolicy`, Android audio record/track APIs; one generated-tone loop handles mono and left/right/both stereo buffers while route/track owners release in `finally` | Optional speaker/microphone selection controls whether the planner includes manual audio work. | Tone audibility and playback are human confirmation; microphone recording needs permission and is not calibrated acoustics. |
 | Camera | `app/src/main/java/com/insaner/fonecheck/ui/screens/camera/CameraTestScreen.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/camera/CameraTestViewModel.kt`; `CameraCapabilities`, `CaptureResult`, `CameraTestState`, `FlashTestResult` | CameraX, Camera2 capability/torch API, `CameraRuntimePolicy` | Optional camera stage obtains camera IDs, previews/checks selected hardware, and maps manual result/timeout/error. | Preview/torch/capture success depends on permission, provider lifecycle, camera hardware and API level. |
-| Sensors | `app/src/main/java/com/insaner/fonecheck/ui/screens/sensor/SensorTestScreen.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/sensor/SensorTestViewModel.kt`; `SensorInfo`, `SensorLiveData`, `ChallengeState`, `InteractiveChallenge`, `SensorTestState` | Android `SensorManager`; `SensorRuntimePolicy` | Guided sensor stage awaits challenge completion/outcome and converts it to evidence. | Sensor availability/readings and challenge thresholds are not comparable across devices; listener stop/callback ordering is a review surface. |
-| Connectivity | `app/src/main/java/com/insaner/fonecheck/ui/screens/connectivity/ConnectivityTestScreen.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/connectivity/ConnectivityTestViewModel.kt`; nested Wi-Fi/Bluetooth/NFC/GPS/mobile states and `ConnectivitySection` | Wi-Fi, Bluetooth, NFC, location/GNSS, connectivity and telephony managers; `ConnectivityRuntimePolicy` | Automatic stage gathers safe observations; permission/hardware profile determines planned unavailable or partial evidence. | GPS fix, bonded-device/name, SSID, and mobile details are permission/API sensitive; no throughput test is implemented. |
-| Battery | `app/src/main/java/com/insaner/fonecheck/ui/screens/battery/BatteryTestScreen.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/battery/BatteryTestViewModel.kt`; Basic/Charging/Health/Manufacturer nested states and `BatterySection` | Sticky battery broadcast, `BatteryManager`, `BatteryRuntimePolicy`, hidden `PowerProfile` reflection fallback | Automatic snapshot maps charging/health/current/capacity/cycle fields where available. | Design capacity can be unavailable; current direction and battery health semantics vary by manufacturer. |
+| Sensors | `app/src/main/java/com/insaner/fonecheck/ui/screens/sensor/SensorTestScreen.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/sensor/SensorTestViewModel.kt`; `SensorInfo`, `SensorLiveData`, `ChallengeState`, `InteractiveChallenge`, `SensorTestState` | Android `SensorManager`; `SensorRuntimePolicy`; discovery copies the platform sensor list before mapping and derives a distinct guided-test type set | Guided sensor stage awaits challenge completion/outcome and converts it to evidence. | Sensor availability/readings and challenge thresholds are not comparable across devices; listener stop/callback ordering is a review surface. |
+| Connectivity | `app/src/main/java/com/insaner/fonecheck/ui/screens/connectivity/ConnectivityTestScreen.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/connectivity/ConnectivityTestViewModel.kt`; nested Wi-Fi/Bluetooth/NFC/GPS/mobile states and `ConnectivitySection` | Wi-Fi, Bluetooth, NFC, location/GNSS, connectivity and telephony managers; `ConnectivityRuntimePolicy`; Wi-Fi details are accepted only from active-network Wi-Fi capabilities and GPS completion is token-gated | Automatic stage gathers safe observations; permission/hardware profile determines planned unavailable or partial evidence. | GPS fix, bonded-device/name, SSID, and mobile details are permission/API sensitive; no throughput test is implemented. |
+| Battery | `app/src/main/java/com/insaner/fonecheck/ui/screens/battery/BatteryTestScreen.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/battery/BatteryTestViewModel.kt`; Basic/Charging/Health/Manufacturer nested states and `BatterySection` | Explicitly registered sticky battery receiver, `BatteryManager`, `BatteryRuntimePolicy`, hidden `PowerProfile` reflection fallback | Automatic snapshot maps charging/health/current/capacity/cycle fields where available. | Design capacity can be unavailable; current direction and battery health semantics vary by manufacturer. |
 | Thermal | `app/src/main/java/com/insaner/fonecheck/ui/screens/thermal/ThermalTestScreen.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/thermal/ThermalTestViewModel.kt`; `ThermalTestState`, `ThermalErrorCode` | `ThermalPlatform`, `AndroidThermalPlatform`, `ThermalMonitoringEffect`, `ThermalRuntimePolicy` | Automatic report evidence observes thermal platform state; resource owner stops thermal work. | It reports platform status/monitoring, not an induced-load diagnosis. |
 | Storage | `app/src/main/java/com/insaner/fonecheck/ui/screens/storage/StorageTestScreen.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/storage/StorageTestViewModel.kt`; `StorageTestState`, `StorageBenchmarkPhase` | `StorageInfoProvider`, `StorageBenchmarkStore`, `StorageBenchmarkRunner`, `StorageRuntimePolicy` | Preflight’s storage option enables benchmark work; automatic state maps success, insufficient space, cancellation and cleanup. | Benchmark uses app cache and must report verification/cleanup; it is not a storage-health or full-device speed certification. |
 | Vibration | `app/src/main/java/com/insaner/fonecheck/ui/screens/vibration/VibrationTestScreen.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/vibration/VibrationTestViewModel.kt`; `MotorTestState`, `VibrationMotorResult`, `VibrationSection` | `VibrationPlatform`, `AndroidVibrationPlatform`, capability/lifecycle policy | Guided stage starts/stops a pattern and maps user result or unavailable state. | The user confirms perceived vibration; hardware/API capability is distinct from a failed motor. |
@@ -455,6 +479,9 @@ For a new or changed category, update and review all of these together:
 | Collapsible diagnostics section | `TestSectionCard` with the screen’s `expandedSection` state | Multiple uncoordinated local expand states. |
 | Permission explanation/recovery | `PermissionStatusCard` plus contextual request launcher | A raw permission string with no denied or Settings path. |
 | Whole-screen or list-state outcome | `ScreenStateScreen` / `ScreenStateCard` | Empty content or a generic toast that loses state. |
+| Saved-report load/error outcome | `ReportStateScreen` | A screen-local Retry/Back wrapper. |
+| Binary human confirmation | `ManualResultButtons` | Reversed emphasis, duplicated two-button rows, or a Boolean action with unclear problem/pass wording. |
+| Information refresh | `RefreshButton` | A screen-local full-width refresh button with different shape/enabled behavior. |
 
 ### Explicit UI-decision rules
 
@@ -485,7 +512,7 @@ Most ViewModels use a private MutableStateFlow exposed as StateFlow. Hilt ViewMo
 - A platform adapter or ViewModel that starts a preview, recorder/player, sensor/GNSS listener, broadcast receiver, network callback, vibration, storage job, benchmark, or biometric prompt must expose a symmetric stop/cancel path.
 - `RunAllResourceOwner` is the orchestration-level cleanup authority for a Full Check. Standalone screens retain their own lifecycle effects/ViewModel cleanup and must still stop resources when Full Check is not involved.
 - Timeout, user skip, user cancel, Back, activity recreation, screen disposal and a late callback are distinct paths. Review that each is idempotent and cannot overwrite a newer stage token.
-- Blocking storage/export/database work uses the injected IO dispatcher where the owning implementation requires it. Do not move Android UI/window work to background dispatchers without verifying the API contract.
+- Blocking storage/performance/export work uses the injected IO dispatcher at the implementation that actually performs blocking work. Room DAO suspend/Flow operations and DataStore suspend writes already own their library execution behavior; their ViewModels do not add redundant dispatcher hops. Do not move Android UI/window work to background dispatchers without verifying the API contract.
 - Avoid updating a broad screen state at sensor/GPS/audio callback frequency when a narrower or throttled representation would preserve UI responsiveness; profile real hardware before refactoring.
 
 ## Test and CI detail
@@ -499,9 +526,9 @@ Most ViewModels use a private MutableStateFlow exposed as StateFlow. Hilt ViewMo
 | Data | DataStore preferences, Room entity/DAO/schema/repository tests | Local persistence/validation and report reconstruction paths | Migration from a prior production DB version; none exists yet. |
 | Compose/unit UI | Navigation chrome, onboarding navigation, responsive Home breakpoints, screen-state/theme/localization helpers | Pure UI decisions and route behavior | Pixel-perfect layouts on actual devices. |
 | Instrumented UI | Home, onboarding, settings/licenses, permission/state cards, Full Check preflight/results, history/detail/comparison/export, display interaction, PDF exporter, Room tests | Android runtime/Compose semantics for selected flows | Complete API-level, form-factor, TalkBack and hardware coverage. |
-| CI/security | Debug assemble/test/lint; CodeQL; Semgrep/OSV; configured static tasks | Intended gates and source scanning | A fresh passing result for this revision, release/R8 installation, signed artifact review. |
+| CI/security | Debug assemble/test/lint; CodeQL; Semgrep/OSV; configured local static tasks; Sonar/JaCoCo configuration | Intended gates, source scanning, and the coverage-import boundary | A fresh passing result for this revision, Sonar quality-gate status, excluded Android/UI coverage, release/R8 installation, signed artifact review. |
 
-The exact source-set correction is deliberate: `C:\Dev\fonecheck\app\src\test\java` has 55 Kotlin files, 54 with `@Test`; `app/src/test/java/com/insaner/fonecheck/data/repository/FakeReportRepository.kt` is support code. `C:\Dev\fonecheck\app\src\androidTest\java` has 19 Kotlin files, all with `@Test`. Do not turn those counts into a test-pass claim without an actual run.
+The exact source-set correction is deliberate: `C:\Dev\fonecheck\app\src\test\java` has 60 Kotlin files, 56 with `@Test`; the other four are the fake repositories and shared test fixtures/time source named above. `C:\Dev\fonecheck\app\src\androidTest\java` has 19 Kotlin files, all with `@Test`. Do not turn file counts, JaCoCo configuration, or Sonar exclusions into a test-pass or coverage-quality claim without an actual run and report inspection.
 
 ### Required non-automated validation before release
 
@@ -547,6 +574,14 @@ The exact source-set correction is deliberate: `C:\Dev\fonecheck\app\src\test\ja
 5. Are new strings present in both resource sets and are numbers/dates/units formatted as values rather than concatenated English?
 6. Does the UI show an explicit loading, empty, unavailable, not-tested, denied or error state where applicable?
 
+### Build, analysis, and supply chain
+
+1. Does a dependency or plugin change update the version catalog, applicable Gradle lockfiles, verification metadata/keyring, stability baselines, and time-bounded suppression evidence together?
+2. Is `targetSdk = 36` still an intentional, reviewed compatibility boundary, and has the separately required Android 17/SDK 37 target pass been completed before changing or retaining the `OldTargetApi` suppression?
+3. Does a Sonar coverage exclusion correspond to code that is genuinely exercised through instrumented/device evidence, or is it merely hidden from the JVM coverage denominator?
+4. Was any Sonar or external-AI upload explicitly approved with scope/token/data-retention awareness, and is a local PlanOnly/configuration check being kept distinct from an uploaded clean result?
+5. Are Dependabot configuration, repository enablement, alerts, generated PRs, and actual merges reported as separate states rather than one “enabled and clean” claim?
+
 ## Implemented, scaffolded, planned, and non-claim boundaries
 
 | Boundary | Current repository evidence |
@@ -565,3 +600,4 @@ The exact source-set correction is deliberate: `C:\Dev\fonecheck\app\src\test\ja
 4. Full Check resource cleanup and late-callback races need lifecycle/rotation/timeout testing with real camera, audio, sensor, GNSS and biometric hardware.
 5. Report export is deliberately shareable device diagnostic data; privacy wording, 24-hour cache cleanup, URI grants, receiving-app behavior, and FileProvider paths require signed-artifact verification.
 6. Dependency-Check and MobSF exceptions expire in September/October 2026 and must be revalidated or removed rather than allowed to become permanent bypasses.
+7. Sonar's configured JaCoCo input covers JVM tests and explicitly excludes broad Android/UI/platform surfaces; a future quality-gate pass must be interpreted alongside instrumented and physical-device evidence, not as whole-app behavioral coverage.

@@ -23,13 +23,13 @@ import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.CpuCoreFrequency
 import com.insaner.fonecheck.domain.model.PerformanceBenchmarkResult
 import com.insaner.fonecheck.domain.model.PerformanceInfo
-import com.insaner.fonecheck.domain.model.ThermalStatusCode
+import com.insaner.fonecheck.localization.thermalStatusStringRes
 import com.insaner.fonecheck.ui.components.InfoCard
 import com.insaner.fonecheck.ui.components.InfoRow
 import com.insaner.fonecheck.ui.components.ScreenStateCard
@@ -47,12 +47,13 @@ fun PerformanceInfoScreen(
     viewModel: PerformanceInfoViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val scrollState = rememberScrollState()
 
     Column(
         modifier =
             modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -238,8 +239,14 @@ private fun BenchmarkResultRows(result: PerformanceBenchmarkResult) {
         stringResource(R.string.perf_benchmark_duration),
         stringResource(R.string.perf_benchmark_duration_value, result.durationMillis),
     )
-    InfoRow(stringResource(R.string.perf_benchmark_thermal_before), thermalStatusLabel(result.thermalBefore))
-    InfoRow(stringResource(R.string.perf_benchmark_thermal_after), thermalStatusLabel(result.thermalAfter))
+    InfoRow(
+        stringResource(R.string.perf_benchmark_thermal_before),
+        stringResource(thermalStatusStringRes(result.thermalBefore)),
+    )
+    InfoRow(
+        stringResource(R.string.perf_benchmark_thermal_after),
+        stringResource(thermalStatusStringRes(result.thermalAfter)),
+    )
     InfoRow(
         stringResource(R.string.device_captured_at),
         DateTimeFormatter
@@ -295,18 +302,3 @@ private fun performanceValue(value: String): String =
 
 @Composable
 private fun performanceUnavailable(): String = stringResource(R.string.device_value_unavailable)
-
-@Composable
-private fun thermalStatusLabel(status: ThermalStatusCode): String =
-    stringResource(
-        when (status) {
-            ThermalStatusCode.NONE -> R.string.perf_thermal_none
-            ThermalStatusCode.LIGHT -> R.string.perf_thermal_light
-            ThermalStatusCode.MODERATE -> R.string.perf_thermal_moderate
-            ThermalStatusCode.SEVERE -> R.string.perf_thermal_severe
-            ThermalStatusCode.CRITICAL -> R.string.perf_thermal_critical
-            ThermalStatusCode.EMERGENCY -> R.string.perf_thermal_emergency
-            ThermalStatusCode.SHUTDOWN -> R.string.perf_thermal_shutdown
-            ThermalStatusCode.UNAVAILABLE -> R.string.device_value_unavailable
-        },
-    )

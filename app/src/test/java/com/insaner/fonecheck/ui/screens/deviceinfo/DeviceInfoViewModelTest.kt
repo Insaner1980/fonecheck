@@ -1,6 +1,6 @@
 package com.insaner.fonecheck.ui.screens.deviceinfo
 
-import com.insaner.fonecheck.domain.model.DeviceInfo
+import com.insaner.fonecheck.testing.testDeviceInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -15,7 +15,6 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
-import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DeviceInfoViewModelTest {
@@ -97,23 +96,5 @@ class DeviceInfoViewModelTest {
             assertNotNull(viewModel.state.value.error)
         }
 
-    private fun device(model: String) =
-        DeviceInfo(
-            model = model,
-            manufacturer = "manufacturer",
-            brand = "brand",
-            product = "product",
-            androidVersion = "16",
-            apiLevel = 36,
-            securityPatch = "2026-08-01",
-            buildNumber = "build",
-            kernelVersion = "kernel",
-            basebandVersion = "baseband",
-            bootloaderVersion = "bootloader",
-            widevineLevel = "L1",
-            rootArtifactDetected = false,
-            developerOptionsEnabled = false,
-            usbDebuggingEnabled = false,
-            capturedAt = Instant.parse("2026-08-07T12:00:00Z"),
-        )
+    private fun device(model: String) = testDeviceInfo(model = model)
 }

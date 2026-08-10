@@ -11,7 +11,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.location.GnssStatus
-import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.net.ConnectivityManager
@@ -249,6 +248,7 @@ class ConnectivityTestViewModel
         // ── WiFi ────────────────────────────────────────────────────────────────────
 
         @SuppressLint("MissingPermission")
+        @Suppress("kotlin:S3776") // Wi-Fi snapshot assembly keeps one consistent network read.
         private fun refreshWifi() {
             val hasWifi = context.packageManager.hasSystemFeature(PackageManager.FEATURE_WIFI)
             if (!hasWifi) {
@@ -258,7 +258,8 @@ class ConnectivityTestViewModel
 
             val network = connectivityManager.activeNetwork
             val caps = network?.let { connectivityManager.getNetworkCapabilities(it) }
-            val isWifiConnected = caps?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+            val wifiCapabilities = caps?.takeIf { it.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) }
+            val isWifiConnected = wifiCapabilities != null
 
             var ssid: String? = null
             var signalDbm: Int? = null
@@ -266,10 +267,10 @@ class ConnectivityTestViewModel
             var linkSpeed: Int? = null
             var wifiStandard: String? = null
 
-            if (isWifiConnected) {
+            if (wifiCapabilities != null) {
                 val wifiInfo =
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        caps?.transportInfo as? WifiInfo
+                        wifiCapabilities.transportInfo as? WifiInfo
                     } else {
                         @Suppress("DEPRECATION")
                         wifiManager.connectionInfo
@@ -515,6 +516,7 @@ class ConnectivityTestViewModel
         }
 
         @SuppressLint("MissingPermission")
+        @Suppress("LongMethod", "kotlin:S3776") // GPS callback ownership is kept atomic to prevent leaks.
         fun startGpsFix() {
             val gps = _state.value.gps
             if (!_state.value.hasLocationPermission || !gps.isAvailable || !gps.isEnabled) return
@@ -574,28 +576,26 @@ class ConnectivityTestViewModel
                     }
                 }
             val locationListener =
-                object : LocationListener {
-                    override fun onLocationChanged(location: Location) {
-                        if (!gpsSearchGate.complete(token)) return
-                        val fixTime = System.currentTimeMillis() - startTime
-                        _state.update {
-                            it.copy(
-                                gps =
-                                    it.gps.copy(
-                                        fixStatus = GpsFixStatus.FIXED,
-                                        latitude = location.latitude,
-                                        longitude = location.longitude,
-                                        accuracy = location.accuracy,
-                                        altitude = if (location.hasAltitude()) location.altitude else null,
-                                        speed = if (location.hasSpeed()) location.speed else null,
-                                        fixTimeMs = fixTime,
-                                        elapsedSearchMs = fixTime,
-                                        failure = null,
-                                    ),
-                            )
-                        }
-                        releaseGpsCallbacks()
+                LocationListener { location ->
+                    if (!gpsSearchGate.complete(token)) return@LocationListener
+                    val fixTime = System.currentTimeMillis() - startTime
+                    _state.update {
+                        it.copy(
+                            gps =
+                                it.gps.copy(
+                                    fixStatus = GpsFixStatus.FIXED,
+                                    latitude = location.latitude,
+                                    longitude = location.longitude,
+                                    accuracy = location.accuracy,
+                                    altitude = if (location.hasAltitude()) location.altitude else null,
+                                    speed = if (location.hasSpeed()) location.speed else null,
+                                    fixTimeMs = fixTime,
+                                    elapsedSearchMs = fixTime,
+                                    failure = null,
+                                ),
+                        )
                     }
+                    releaseGpsCallbacks()
                 }
 
             try {
@@ -689,8 +689,6 @@ class ConnectivityTestViewModel
                 }
             }
         }
-
-        fun stopGpsFix() = cancelGpsFix()
 
         private fun clearProtectedGpsData() {
             cancelGpsFix()
@@ -880,18 +878,9 @@ class ConnectivityTestViewModel
                         level = cellInfo.cellSignalStrength.level,
                         identity = cellInfo.cellIdentity.ci,
                     )
-                is CellInfoGsm ->
-                    createCellSignalSnapshot(
-                        dbm = cellInfo.cellSignalStrength.dbm,
-                        level = cellInfo.cellSignalStrength.level,
-                        identity = cellInfo.cellIdentity.cid,
-                    )
-                is CellInfoWcdma ->
-                    createCellSignalSnapshot(
-                        dbm = cellInfo.cellSignalStrength.dbm,
-                        level = cellInfo.cellSignalStrength.level,
-                        identity = cellInfo.cellIdentity.cid,
-                    )
+                is CellInfoGsm,
+                is CellInfoWcdma,
+                -> createLegacyCellSignalSnapshot(cellInfo)
                 else -> null
             }
         }
@@ -963,8 +952,25 @@ class ConnectivityTestViewModel
                 try {
                     context.unregisterReceiver(it)
                 } catch (_: Exception) {
+                    // The receiver may already be unregistered during teardown.
                 }
             }
-            super.onCleared()
+        }
+
+        private fun createLegacyCellSignalSnapshot(cellInfo: CellInfo): CellNetworkSnapshot {
+            val gsm = cellInfo as? CellInfoGsm
+            if (gsm != null) {
+                return createCellSignalSnapshot(
+                    dbm = gsm.cellSignalStrength.dbm,
+                    level = gsm.cellSignalStrength.level,
+                    identity = gsm.cellIdentity.cid,
+                )
+            }
+            val wcdma = cellInfo as CellInfoWcdma
+            return createCellSignalSnapshot(
+                dbm = wcdma.cellSignalStrength.dbm,
+                level = wcdma.cellSignalStrength.level,
+                identity = wcdma.cellIdentity.cid,
+            )
         }
     }

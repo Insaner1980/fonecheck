@@ -2,7 +2,6 @@ package com.insaner.fonecheck.ui.screens.export
 
 import android.content.ClipData
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,11 +20,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.core.net.toUri
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.ui.components.InfoRow
-import com.insaner.fonecheck.ui.components.ScreenStateScreen
+import com.insaner.fonecheck.ui.components.ReportStateScreen
 import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.StandardCard
 
@@ -41,7 +41,7 @@ fun ReportExportRoute(
     val shareTitle = stringResource(R.string.export_share_title)
     LaunchedEffect(shareRequest) {
         shareRequest?.let { exported ->
-            val uri = Uri.parse(exported.uri)
+            val uri = exported.uri.toUri()
             val intent =
                 Intent(Intent.ACTION_SEND).apply {
                     type = exported.mimeType
@@ -74,7 +74,7 @@ fun ReportExportScreen(
 ) {
     when (state) {
         ReportExportState.Loading ->
-            ExportMessage(
+            ReportStateScreen(
                 type = ScreenStateType.LOADING,
                 message = stringResource(R.string.report_loading),
                 onRetry = null,
@@ -92,7 +92,7 @@ fun ReportExportScreen(
             )
 
         ReportExportState.NotFound ->
-            ExportMessage(
+            ReportStateScreen(
                 type = ScreenStateType.EMPTY,
                 message = stringResource(R.string.export_not_found),
                 onRetry = null,
@@ -101,7 +101,7 @@ fun ReportExportScreen(
             )
 
         is ReportExportState.Unavailable ->
-            ExportMessage(
+            ReportStateScreen(
                 type = ScreenStateType.UNAVAILABLE,
                 message = stringResource(R.string.export_unavailable),
                 onRetry = onRetryLoad,
@@ -110,7 +110,7 @@ fun ReportExportScreen(
             )
 
         ReportExportState.Error ->
-            ExportMessage(
+            ReportStateScreen(
                 type = ScreenStateType.ERROR,
                 message = stringResource(R.string.export_load_error),
                 onRetry = onRetryLoad,
@@ -205,23 +205,4 @@ private fun ExportReady(
             Text(stringResource(R.string.report_back))
         }
     }
-}
-
-@Composable
-private fun ExportMessage(
-    type: ScreenStateType,
-    message: String,
-    onRetry: (() -> Unit)?,
-    onBack: (() -> Unit)?,
-    modifier: Modifier = Modifier,
-) {
-    ScreenStateScreen(
-        type = type,
-        message = message,
-        actionLabel = stringResource(R.string.report_retry).takeIf { onRetry != null },
-        onAction = onRetry,
-        secondaryActionLabel = stringResource(R.string.report_back).takeIf { onBack != null },
-        onSecondaryAction = onBack,
-        modifier = modifier,
-    )
 }

@@ -3,7 +3,7 @@ package com.insaner.fonecheck.ui.screens.performance
 import com.insaner.fonecheck.domain.model.BenchmarkErrorCode
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import com.insaner.fonecheck.runtime.EpochMillisClock
-import com.insaner.fonecheck.runtime.NanoTimeSource
+import com.insaner.fonecheck.testing.SequenceNanoTimeSource
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -72,14 +72,6 @@ class PerformanceBenchmarkTest {
         assertThrows(IllegalArgumentException::class.java) {
             PerformanceBenchmarkConfig(memoryPasses = 1_001)
         }
-    }
-
-    private class SequenceNanoTimeSource(
-        vararg values: Long,
-    ) : NanoTimeSource {
-        private val values = ArrayDeque(values.toList())
-
-        override fun nanoTime(): Long = values.removeFirst()
     }
 
     private companion object {

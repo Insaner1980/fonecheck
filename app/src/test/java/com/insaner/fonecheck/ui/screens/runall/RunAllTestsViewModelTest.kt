@@ -86,16 +86,7 @@ class RunAllTestsViewModelTest {
     @Test
     fun completionAdvancesThroughOnlyThePlannedInteractiveStages() {
         val viewModel = runAllViewModel()
-        viewModel.onPreflightAccepted(
-            selections = RunAllSelections(includeSpeaker = false, includeCamera = false),
-            hardware = RunAllHardwareProfile(),
-        )
-        viewModel.onPermissionsResolved(RunAllPermissions())
-
-        val automaticToken = viewModel.state.value.stageToken
-        assertTrue(viewModel.claimStage(automaticToken))
-        viewModel.onAutomaticChecksComplete(automaticToken)
-        assertEquals(RunAllStage.DISPLAY, viewModel.state.value.stage)
+        enterFirstInteractiveStage(viewModel)
         assertEquals(RunAllProgress(position = 1, total = 2), viewModel.state.value.progress)
 
         val displayToken = viewModel.state.value.stageToken

@@ -11,10 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
-import com.insaner.fonecheck.domain.model.ThermalStatusCode
+import com.insaner.fonecheck.localization.thermalStatusStringRes
 import com.insaner.fonecheck.ui.components.InfoCard
 import com.insaner.fonecheck.ui.components.InfoRow
 import com.insaner.fonecheck.ui.components.ScreenStateCard
@@ -44,7 +44,7 @@ fun ThermalTestScreen(
             ) {
                 InfoRow(
                     label = stringResource(R.string.thermal_status_label),
-                    value = thermalStatusLabel(state.status),
+                    value = stringResource(thermalStatusStringRes(state.status)),
                     valueColor = thermalStatusColor(state.severity),
                 )
                 InfoRow(
@@ -158,21 +158,6 @@ fun ThermalTestScreen(
         }
     }
 }
-
-@Composable
-private fun thermalStatusLabel(status: ThermalStatusCode): String =
-    stringResource(
-        when (status) {
-            ThermalStatusCode.NONE -> R.string.perf_thermal_none
-            ThermalStatusCode.LIGHT -> R.string.perf_thermal_light
-            ThermalStatusCode.MODERATE -> R.string.perf_thermal_moderate
-            ThermalStatusCode.SEVERE -> R.string.perf_thermal_severe
-            ThermalStatusCode.CRITICAL -> R.string.perf_thermal_critical
-            ThermalStatusCode.EMERGENCY -> R.string.perf_thermal_emergency
-            ThermalStatusCode.SHUTDOWN -> R.string.perf_thermal_shutdown
-            ThermalStatusCode.UNAVAILABLE -> R.string.device_value_unavailable
-        },
-    )
 
 @Composable
 private fun thermalSeverityLabel(severity: ThermalSeverityCode): String =

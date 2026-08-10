@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
 import android.os.Build
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import com.insaner.fonecheck.ui.screens.battery.BatteryLevelNormalizer
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,7 +35,13 @@ class HomeViewModel
 
         private fun loadSummary() {
             val context = getApplication<Application>()
-            val batteryIntent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+            val batteryIntent =
+                ContextCompat.registerReceiver(
+                    context,
+                    null,
+                    IntentFilter(Intent.ACTION_BATTERY_CHANGED),
+                    ContextCompat.RECEIVER_EXPORTED,
+                )
             val level =
                 batteryIntent
                     ?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)

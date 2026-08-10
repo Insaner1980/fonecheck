@@ -75,7 +75,7 @@ class ReportPdfRenderer
             var baseline = CONTENT_TOP
             lines.forEach { line ->
                 baseline += line.style.lineHeight
-                canvas.drawText(line.text, MARGIN, baseline.toFloat(), paint(line.style))
+                canvas.drawText(line.text, MARGIN, baseline, paint(line.style))
             }
             val footerPaint = paint(PdfTextStyle.BODY).apply { color = Color.DKGRAY }
             canvas.drawText(

@@ -5,15 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.data.preferences.AppPreferencesRepository
-import com.insaner.fonecheck.di.IoDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 enum class OnboardingPage(
@@ -40,7 +37,6 @@ class OnboardingViewModel
     @Inject
     constructor(
         private val preferencesRepository: AppPreferencesRepository,
-        @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : ViewModel() {
         private val _state = MutableStateFlow(OnboardingState())
         val state: StateFlow<OnboardingState> = _state.asStateFlow()
@@ -61,7 +57,7 @@ class OnboardingViewModel
             _state.value = _state.value.copy(isSaving = true, saveFailed = false)
             viewModelScope.launch {
                 try {
-                    withContext(ioDispatcher) { preferencesRepository.setOnboardingComplete(true) }
+                    preferencesRepository.setOnboardingComplete(true)
                     _state.value = _state.value.copy(isSaving = false, finished = true)
                 } catch (error: CancellationException) {
                     throw error

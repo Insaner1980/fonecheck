@@ -26,7 +26,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.permission.PermissionKind
@@ -46,7 +46,7 @@ import com.insaner.fonecheck.ui.theme.Red400
 import com.insaner.fonecheck.ui.theme.Yellow400
 
 @Composable
-@Suppress("ViewModelForwarding", "ktlint:compose:vm-forwarding-check")
+@Suppress("ViewModelForwarding", "ktlint:compose:vm-forwarding-check", "kotlin:S3776")
 fun ConnectivityTestScreen(
     modifier: Modifier = Modifier,
     viewModel: ConnectivityTestViewModel = hiltViewModel(),
@@ -95,7 +95,7 @@ fun ConnectivityTestScreen(
         phonePermission.state,
     ) {
         if (locationPermission.state != PermissionState.GRANTED) {
-            viewModel.stopGpsFix()
+            viewModel.cancelGpsFix()
         }
         viewModel.onPermissionsGranted()
     }
@@ -345,6 +345,7 @@ private fun WifiDetails(wifi: WifiState) {
 // ── Bluetooth Details ───────────────────────────────────────────────────────────
 
 @Composable
+@Suppress("kotlin:S3776") // The card renders mutually exclusive Bluetooth states.
 private fun BluetoothDetails(
     bluetooth: BluetoothState,
     permissionState: PermissionState,
@@ -445,6 +446,7 @@ private fun NfcDetails(nfc: NfcState) {
 // ── GPS Details ─────────────────────────────────────────────────────────────────
 
 @Composable
+@Suppress("kotlin:S3776") // The card renders mutually exclusive GPS states.
 private fun GpsDetails(
     gps: GpsState,
     permissionState: PermissionState,
@@ -480,7 +482,7 @@ private fun GpsDetails(
             )
 
             when (gps.fixStatus) {
-                GpsFixStatus.NOT_STARTED -> {}
+                GpsFixStatus.NOT_STARTED -> Unit
                 GpsFixStatus.SEARCHING -> {
                     DetailInfoRow(
                         stringResource(R.string.conn_gps_status),
@@ -742,6 +744,7 @@ private fun GpsDetails(
 // ── Mobile Network Details ──────────────────────────────────────────────────────
 
 @Composable
+@Suppress("kotlin:S3776") // The card renders mutually exclusive mobile-network states.
 private fun MobileNetworkDetails(
     mobile: MobileNetworkState,
     permissionState: PermissionState,

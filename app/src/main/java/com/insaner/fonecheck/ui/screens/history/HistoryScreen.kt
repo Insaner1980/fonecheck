@@ -27,7 +27,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.data.repository.SavedReportSummary
@@ -65,6 +65,7 @@ fun HistoryRoute(
 }
 
 @Composable
+@Suppress("kotlin:S3776") // The list owns its loading, empty, selection, and dialog states.
 fun HistoryScreen(
     state: HistoryState,
     onRetry: () -> Unit,
@@ -77,7 +78,7 @@ fun HistoryScreen(
     var compareBaseId by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingDeleteId by rememberSaveable { mutableStateOf<String?>(null) }
     LaunchedEffect(state.reports) {
-        val reportIds = state.reports.mapTo(mutableSetOf(), SavedReportSummary::stableId)
+        val reportIds = state.reports.map(SavedReportSummary::stableId).toSet()
         if (compareBaseId !in reportIds) compareBaseId = null
         if (pendingDeleteId !in reportIds) pendingDeleteId = null
     }

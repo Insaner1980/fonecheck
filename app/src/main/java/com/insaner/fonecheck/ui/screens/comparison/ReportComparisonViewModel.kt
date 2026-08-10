@@ -6,18 +6,15 @@ import androidx.lifecycle.viewModelScope
 import com.insaner.fonecheck.data.repository.ReportLoadResult
 import com.insaner.fonecheck.data.repository.ReportReadFailure
 import com.insaner.fonecheck.data.repository.ReportRepository
-import com.insaner.fonecheck.di.IoDispatcher
 import com.insaner.fonecheck.domain.comparison.ReportComparison
 import com.insaner.fonecheck.domain.comparison.ReportComparisonEngine
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 sealed interface ReportComparisonState {
@@ -42,7 +39,6 @@ class ReportComparisonViewModel
     constructor(
         savedStateHandle: SavedStateHandle,
         private val reportRepository: ReportRepository,
-        @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : ViewModel() {
         private val firstReportId = savedStateHandle.get<String>(FIRST_REPORT_ID_ARGUMENT).orEmpty()
         private val secondReportId = savedStateHandle.get<String>(SECOND_REPORT_ID_ARGUMENT).orEmpty()
@@ -68,10 +64,7 @@ class ReportComparisonViewModel
             loadJob =
                 viewModelScope.launch {
                     try {
-                        val result =
-                            withContext(ioDispatcher) {
-                                reportRepository.getForComparison(firstReportId, secondReportId)
-                            }
+                        val result = reportRepository.getForComparison(firstReportId, secondReportId)
                         val first = result.first
                         val second = result.second
                         _state.value =

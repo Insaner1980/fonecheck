@@ -5,6 +5,8 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.insaner.fonecheck.R
 
+// This prompt diagnoses the authenticator and does not unlock data or authorize an operation.
+@Suppress("kotlin:S6293")
 internal fun showBiometricPrompt(
     activity: FragmentActivity,
     onSuccess: () -> Unit,

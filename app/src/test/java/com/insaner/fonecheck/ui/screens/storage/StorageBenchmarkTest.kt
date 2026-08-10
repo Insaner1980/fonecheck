@@ -1,7 +1,7 @@
 package com.insaner.fonecheck.ui.screens.storage
 
 import com.insaner.fonecheck.runtime.EpochMillisClock
-import com.insaner.fonecheck.runtime.NanoTimeSource
+import com.insaner.fonecheck.testing.SequenceNanoTimeSource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -174,14 +174,6 @@ class StorageBenchmarkTest {
             deleted = true
             return deleteSucceeds
         }
-    }
-
-    private class SequenceNanoTimeSource(
-        vararg values: Long,
-    ) : NanoTimeSource {
-        private val values = ArrayDeque(values.toList())
-
-        override fun nanoTime(): Long = values.removeFirst()
     }
 
     private companion object {

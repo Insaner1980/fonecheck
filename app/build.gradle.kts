@@ -26,6 +26,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            enableUnitTestCoverage = true
+        }
+
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -48,6 +52,11 @@ android {
     room {
         schemaDirectory("$projectDir/schemas")
     }
+
+    lint {
+        // Android 17 targeting requires a dedicated compatibility pass; targetSdk 36 is intentional.
+        disable += "OldTargetApi"
+    }
 }
 
 detekt {
@@ -58,6 +67,7 @@ detekt {
 
 ktlint {
     android.set(true)
+    coloredOutput.set(false)
     filter {
         exclude("**/build/**")
         exclude("**/generated/**")
@@ -151,7 +161,7 @@ dependencies {
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
-    implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
 
     // Room
     implementation(libs.androidx.room.runtime)

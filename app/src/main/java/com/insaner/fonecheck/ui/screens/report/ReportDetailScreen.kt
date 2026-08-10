@@ -5,11 +5,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.data.repository.ReportReadFailure
-import com.insaner.fonecheck.ui.components.ScreenStateScreen
+import com.insaner.fonecheck.ui.components.ReportStateScreen
 import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.screens.runall.ReportResultMode
 import com.insaner.fonecheck.ui.screens.runall.ReportSaveStatus
@@ -42,7 +42,7 @@ fun ReportDetailScreen(
 ) {
     when (state) {
         ReportDetailState.Loading ->
-            ReportMessageScreen(
+            ReportStateScreen(
                 type = ScreenStateType.LOADING,
                 message = stringResource(R.string.report_loading),
                 onRetry = null,
@@ -62,7 +62,7 @@ fun ReportDetailScreen(
             )
 
         ReportDetailState.NotFound ->
-            ReportMessageScreen(
+            ReportStateScreen(
                 type = ScreenStateType.EMPTY,
                 message = stringResource(R.string.report_not_found),
                 onRetry = null,
@@ -71,7 +71,7 @@ fun ReportDetailScreen(
             )
 
         is ReportDetailState.Unavailable ->
-            ReportMessageScreen(
+            ReportStateScreen(
                 type = ScreenStateType.UNAVAILABLE,
                 message =
                     stringResource(
@@ -86,7 +86,7 @@ fun ReportDetailScreen(
             )
 
         ReportDetailState.Error ->
-            ReportMessageScreen(
+            ReportStateScreen(
                 type = ScreenStateType.ERROR,
                 message = stringResource(R.string.report_load_error),
                 onRetry = onRetry,
@@ -94,23 +94,4 @@ fun ReportDetailScreen(
                 modifier = modifier,
             )
     }
-}
-
-@Composable
-private fun ReportMessageScreen(
-    type: ScreenStateType,
-    message: String,
-    onRetry: (() -> Unit)?,
-    onBack: (() -> Unit)?,
-    modifier: Modifier = Modifier,
-) {
-    ScreenStateScreen(
-        type = type,
-        message = message,
-        actionLabel = stringResource(R.string.report_retry).takeIf { onRetry != null },
-        onAction = onRetry,
-        secondaryActionLabel = stringResource(R.string.report_back).takeIf { onBack != null },
-        onSecondaryAction = onBack,
-        modifier = modifier,
-    )
 }

@@ -1,7 +1,7 @@
 package com.insaner.fonecheck.ui.screens.report
 
-import com.insaner.fonecheck.data.repository.ReportLoadResult
 import com.insaner.fonecheck.data.repository.ReportRepository
+import com.insaner.fonecheck.data.repository.insertOrConfirm
 import com.insaner.fonecheck.domain.model.DiagnosticCategorySnapshot
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.ReportAppContext
@@ -11,7 +11,6 @@ import com.insaner.fonecheck.domain.model.ReportDeviceContext
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.IdProvider
-import kotlinx.coroutines.CancellationException
 import java.time.Instant
 import javax.inject.Inject
 
@@ -42,14 +41,6 @@ class CategoryRetestFinalizer
 
         suspend fun save(report: DiagnosticReport): Boolean {
             require(report.kind == ReportKind.CATEGORY_ONLY)
-            return try {
-                reportRepository.insert(report)
-                true
-            } catch (error: CancellationException) {
-                throw error
-            } catch (_: Exception) {
-                val existing = runCatching { reportRepository.getById(report.stableId) }.getOrNull()
-                existing is ReportLoadResult.Available && existing.report == report
-            }
+            return reportRepository.insertOrConfirm(report)
         }
     }

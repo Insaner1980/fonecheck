@@ -7,6 +7,7 @@ import android.os.BatteryManager
 import android.os.Build
 import android.os.PowerManager
 import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
 
 fun interface ThermalStatusRegistration {
@@ -69,7 +70,12 @@ class AndroidThermalPlatform(
     override fun readBatteryTemperatureCelsius(): Float? {
         val intent =
             try {
-                context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+                ContextCompat.registerReceiver(
+                    context,
+                    null,
+                    IntentFilter(Intent.ACTION_BATTERY_CHANGED),
+                    ContextCompat.RECEIVER_EXPORTED,
+                )
             } catch (_: RuntimeException) {
                 null
             }
@@ -104,6 +110,7 @@ class AndroidThermalPlatform(
                 try {
                     manager.removeThermalStatusListener(platformListener)
                 } catch (_: RuntimeException) {
+                    // Listener removal is best-effort after the platform has released it.
                 }
             }
         }

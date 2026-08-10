@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -43,7 +44,7 @@ class PermissionController internal constructor(
         private set
 
     fun onRequestLaunched() {
-        requestHistory.edit().putBoolean(kind.name, true).apply()
+        requestHistory.edit { putBoolean(kind.name, true) }
         refresh()
     }
 
@@ -128,7 +129,7 @@ private val AppPermission.manifestName: String
             AppPermission.COARSE_LOCATION -> android.Manifest.permission.ACCESS_COARSE_LOCATION
             AppPermission.FINE_LOCATION -> android.Manifest.permission.ACCESS_FINE_LOCATION
             AppPermission.PHONE -> android.Manifest.permission.READ_PHONE_STATE
-            AppPermission.BLUETOOTH_CONNECT -> android.Manifest.permission.BLUETOOTH_CONNECT
+            AppPermission.BLUETOOTH_CONNECT -> "android.permission.BLUETOOTH_CONNECT"
         }
 
 private tailrec fun Context.findActivity(): Activity? =

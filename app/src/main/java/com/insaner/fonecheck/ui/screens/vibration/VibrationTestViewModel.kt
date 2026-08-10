@@ -96,7 +96,6 @@ class VibrationTestViewModel
 
         override fun onCleared() {
             cancelVibration()
-            super.onCleared()
         }
 
         private fun play(pattern: VibrationPattern) {

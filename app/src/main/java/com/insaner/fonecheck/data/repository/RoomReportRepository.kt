@@ -118,14 +118,12 @@ private fun ReportSummary.toDomain(): SavedReportSummary {
             when (domainKind) {
                 ReportKind.FULL_CHECK -> categoryId == null
                 ReportKind.CATEGORY_ONLY -> categoryId != null && domainCategoryId != null
-                null -> false
             } &&
             when (domainScoreState) {
                 ScoreState.INCOMPLETE -> scoreValue == null
                 ScoreState.PARTIAL,
                 ScoreState.COMPLETE,
                 -> scoreValue != null && scoreValue in 0..100
-                null -> false
             }
     val unavailableReason =
         when {

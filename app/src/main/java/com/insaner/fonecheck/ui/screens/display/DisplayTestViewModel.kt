@@ -180,7 +180,7 @@ class DisplayTestViewModel
                             resolutionSource = resolution.source,
                             densityDpi = context.resources.displayMetrics.densityDpi,
                             refreshRate = display?.refreshRate ?: 0f,
-                            hdrSupported = display?.hdrCapabilities?.supportedHdrTypes?.isNotEmpty() == true,
+                            hdrSupported = display?.isHdr == true,
                             wideColorGamut = display?.isWideColorGamut == true,
                             currentBrightness = brightness,
                             autoBrightness = autoBrightness,

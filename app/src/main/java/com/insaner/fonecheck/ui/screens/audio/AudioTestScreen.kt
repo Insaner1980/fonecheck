@@ -43,11 +43,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.permission.PermissionKind
 import com.insaner.fonecheck.domain.permission.PermissionState
 import com.insaner.fonecheck.ui.components.InfoRow
+import com.insaner.fonecheck.ui.components.ManualResultButtons
 import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.StatusBadge
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
@@ -285,6 +286,7 @@ private fun EarpieceTestCard(
 }
 
 @Composable
+@Suppress("kotlin:S3776") // Declarative branches render independent microphone states.
 private fun MicrophoneTestCard(
     state: AudioTestState,
     viewModel: AudioTestViewModel,
@@ -447,23 +449,11 @@ private fun AudioManualResultButtons(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            OutlinedButton(
-                onClick = { onResult(false) },
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(stringResource(R.string.audio_manual_problem))
-            }
-            Button(
-                onClick = { onResult(true) },
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(stringResource(R.string.audio_manual_pass))
-            }
-        }
+        ManualResultButtons(
+            problemLabel = stringResource(R.string.audio_manual_problem),
+            passLabel = stringResource(R.string.audio_manual_pass),
+            onResult = onResult,
+        )
         result?.let {
             Text(
                 text = stringResource(if (it) R.string.audio_manual_passed else R.string.audio_manual_issue_saved),

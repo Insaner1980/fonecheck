@@ -4,15 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.insaner.fonecheck.data.repository.FakeReportRepository
 import com.insaner.fonecheck.data.repository.ReportLoadResult
 import com.insaner.fonecheck.data.repository.ReportReadFailure
-import com.insaner.fonecheck.domain.model.CoverageSummary
-import com.insaner.fonecheck.domain.model.DiagnosticReport
-import com.insaner.fonecheck.domain.model.ReportAppContext
-import com.insaner.fonecheck.domain.model.ReportDeviceContext
-import com.insaner.fonecheck.domain.model.ReportKind
-import com.insaner.fonecheck.domain.model.ReportSchemaVersion
-import com.insaner.fonecheck.domain.model.ScoreState
-import com.insaner.fonecheck.domain.model.ScoreSummary
-import com.insaner.fonecheck.domain.model.ScoreVersion
+import com.insaner.fonecheck.testing.testReport
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -24,7 +16,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReportComparisonViewModelTest {
@@ -43,9 +34,7 @@ class ReportComparisonViewModelTest {
     @Test
     fun twoAvailableReportsAreComparedInRequestedOrder() =
         runTest(dispatcher.scheduler) {
-            val repository = FakeReportRepository()
-            repository.getByIdOverrides["before"] = ReportLoadResult.Available(report("before", 80))
-            repository.getByIdOverrides["after"] = ReportLoadResult.Available(report("after", 86))
+            val repository = repositoryWithReports()
 
             val viewModel = viewModel(repository)
             advanceUntilIdle()
@@ -78,9 +67,7 @@ class ReportComparisonViewModelTest {
     @Test
     fun repositoryFailureCanBeRetried() =
         runTest(dispatcher.scheduler) {
-            val repository = FakeReportRepository(getByIdFailuresRemaining = 1)
-            repository.getByIdOverrides["before"] = ReportLoadResult.Available(report("before", 80))
-            repository.getByIdOverrides["after"] = ReportLoadResult.Available(report("after", 86))
+            val repository = repositoryWithReports(failuresRemaining = 1)
             val viewModel = viewModel(repository)
             advanceUntilIdle()
             assertEquals(ReportComparisonState.Error, viewModel.state.value)
@@ -97,22 +84,16 @@ class ReportComparisonViewModelTest {
                     mapOf("firstReportId" to "before", "secondReportId" to "after"),
                 ),
             reportRepository = repository,
-            ioDispatcher = dispatcher,
         )
+
+    private fun repositoryWithReports(failuresRemaining: Int = 0) =
+        FakeReportRepository(getByIdFailuresRemaining = failuresRemaining).apply {
+            getByIdOverrides["before"] = ReportLoadResult.Available(report("before", 80))
+            getByIdOverrides["after"] = ReportLoadResult.Available(report("after", 86))
+        }
 
     private fun report(
         id: String,
         score: Int,
-    ) = DiagnosticReport(
-        stableId = id,
-        kind = ReportKind.FULL_CHECK,
-        startedAt = Instant.parse("2026-08-08T10:00:00Z"),
-        completedAt = Instant.parse("2026-08-08T10:01:00Z"),
-        device = ReportDeviceContext("Finnvek", "Test", "Fonecheck", "test", "16", 36, null),
-        app = ReportAppContext("1.0.0", 1L),
-        categories = emptyList(),
-        score = ScoreSummary(ScoreVersion.CURRENT, score, ScoreState.PARTIAL),
-        coverage = CoverageSummary(4, 3, 1, 0, 75),
-        schemaVersion = ReportSchemaVersion.CURRENT,
-    )
+    ) = testReport(id = id, scoreValue = score)
 }

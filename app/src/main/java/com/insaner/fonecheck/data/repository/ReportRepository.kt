@@ -4,6 +4,7 @@ import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.ScoreState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 
@@ -23,6 +24,17 @@ interface ReportRepository {
 
     suspend fun deleteAll()
 }
+
+suspend fun ReportRepository.insertOrConfirm(report: DiagnosticReport): Boolean =
+    try {
+        insert(report)
+        true
+    } catch (error: CancellationException) {
+        throw error
+    } catch (_: Exception) {
+        val existing = runCatching { getById(report.stableId) }.getOrNull()
+        existing is ReportLoadResult.Available && existing.report == report
+    }
 
 data class SavedReportSummary(
     val stableId: String,
