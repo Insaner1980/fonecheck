@@ -1,5 +1,5 @@
 buildscript {
-    val jacksonVersion = "2.21.5"
+    val jacksonVersion = "2.22.1"
     val protobufVersion = "3.25.5"
     val nettyVersion = "4.2.16.Final"
     val bouncyCastleVersion = "1.84"
