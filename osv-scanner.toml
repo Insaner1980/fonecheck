@@ -1,0 +1,4 @@
+[[IgnoredVulns]]
+id = "GHSA-r937-wjx7-w2jp"
+ignoreUntil = 2026-09-30
+reason = "The vulnerable KAPT incremental cache is not used; fonecheck uses KSP. Remove when stable Kotlin 2.4.20 is available."
