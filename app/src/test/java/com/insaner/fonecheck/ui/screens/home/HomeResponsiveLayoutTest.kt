@@ -21,4 +21,16 @@ class HomeResponsiveLayoutTest {
         assertEquals(4, homeGridColumnCount(840f))
         assertEquals(4, homeGridColumnCount(1_280f))
     }
+
+    @Test
+    fun `latest report keeps reference composition on a normal phone`() {
+        assertEquals(false, latestReportUsesStackedLayout(328f, 1f))
+        assertEquals(false, latestReportUsesStackedLayout(480f, 1f))
+    }
+
+    @Test
+    fun `latest report stacks only when width or font scale requires it`() {
+        assertEquals(true, latestReportUsesStackedLayout(311f, 1f))
+        assertEquals(true, latestReportUsesStackedLayout(480f, 1.5f))
+    }
 }

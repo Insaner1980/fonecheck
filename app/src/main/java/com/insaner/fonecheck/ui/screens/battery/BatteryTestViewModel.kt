@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
 import android.os.Build
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.Confidence
@@ -118,7 +119,13 @@ class BatteryTestViewModel
                 }
             batteryReceiver = receiver
             val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
-            val stickyIntent = context.registerReceiver(receiver, filter)
+            val stickyIntent =
+                ContextCompat.registerReceiver(
+                    context,
+                    receiver,
+                    filter,
+                    ContextCompat.RECEIVER_EXPORTED,
+                )
             stickyIntent?.let { parseBatteryIntent(it) }
         }
 
@@ -302,10 +309,10 @@ class BatteryTestViewModel
                 try {
                     context.unregisterReceiver(it)
                 } catch (_: IllegalArgumentException) {
+                    // The receiver was already unregistered.
                 }
             }
             batteryReceiver = null
-            super.onCleared()
         }
 
         private fun Int.toBatteryFlowStatus(): BatteryFlowStatus =

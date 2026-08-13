@@ -6,6 +6,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -74,12 +75,9 @@ data class PermissionPrompt(
 )
 
 @Composable
-fun FullCheckPreflightScreen(
-    selections: RunAllSelections,
-    onSelectionsChange: (RunAllSelections) -> Unit,
-    onContinue: () -> Unit,
+private fun ScrollableStepContent(
     modifier: Modifier = Modifier,
-    showWarnings: Boolean = true,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
         modifier =
@@ -88,7 +86,19 @@ fun FullCheckPreflightScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+        content = content,
+    )
+}
+
+@Composable
+fun FullCheckPreflightScreen(
+    selections: RunAllSelections,
+    onSelectionsChange: (RunAllSelections) -> Unit,
+    onContinue: () -> Unit,
+    modifier: Modifier = Modifier,
+    showWarnings: Boolean = true,
+) {
+    ScrollableStepContent(modifier) {
         Text(
             text = stringResource(R.string.run_all_preflight_title),
             style = MaterialTheme.typography.headlineSmall,
@@ -203,14 +213,7 @@ fun PermissionReviewScreen(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    ScrollableStepContent(modifier) {
         Text(
             text = stringResource(R.string.run_all_preparing_title),
             style = MaterialTheme.typography.headlineSmall,
@@ -461,6 +464,7 @@ fun AudioCheckStep(
 }
 
 @Composable
+@Suppress("kotlin:S107") // Explicit camera state and action slots keep the step contract type-safe.
 fun CameraCheckStep(
     previewView: PreviewView,
     state: CameraTestState,

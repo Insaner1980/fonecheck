@@ -119,7 +119,137 @@ class SensorRuntimePolicyTest {
     @Test
     fun accuracyMappingUsesStableCodesIncludingUnknownValues() {
         assertEquals(SensorAccuracyCode.HIGH, SensorAccuracyCode.fromAndroid(3))
+        assertEquals(SensorAccuracyCode.MEDIUM, SensorAccuracyCode.fromAndroid(2))
+        assertEquals(SensorAccuracyCode.LOW, SensorAccuracyCode.fromAndroid(1))
         assertEquals(SensorAccuracyCode.UNRELIABLE, SensorAccuracyCode.fromAndroid(0))
         assertEquals(SensorAccuracyCode.UNKNOWN, SensorAccuracyCode.fromAndroid(99))
+    }
+
+    @Test
+    fun allAvailableSensorTypesResolveToTestableCatalogEntries() {
+        val availableTypes =
+            setOf(
+                SensorType.ACCELEROMETER,
+                SensorType.MAGNETIC_FIELD,
+                SensorType.GYROSCOPE,
+                SensorType.LIGHT,
+                SensorType.PRESSURE,
+                SensorType.PROXIMITY,
+                SensorType.GRAVITY,
+                SensorType.STEP_COUNTER,
+            )
+
+        val tests = GuidedSensorCatalog.create(availableTypes)
+
+        assertTrue(tests.all { it.status == GuidedSensorStatus.NOT_TESTED })
+        assertTrue(tests.all { it.sensorType != null })
+    }
+
+    @Test
+    fun samplerCoversDetectorAndVectorSensorThresholds() {
+        val detector = GuidedSensorSampler(GuidedSensorCode.STEP, SensorType.STEP_DETECTOR)
+        assertFalse(detector.accept(floatArrayOf(0f)).passed)
+        assertTrue(detector.accept(floatArrayOf(1f)).passed)
+
+        listOf(
+            GuidedSensorCode.GYROSCOPE to floatArrayOf(1f, 0f, 0f),
+            GuidedSensorCode.GRAVITY to floatArrayOf(2f, 0f, 0f),
+            GuidedSensorCode.MAGNETOMETER to floatArrayOf(4f, 0f, 0f),
+        ).forEach { (code, changed) ->
+            val sampler = GuidedSensorSampler(code)
+            assertFalse(sampler.accept(floatArrayOf(0f, 0f, 0f)).passed)
+            assertTrue(sampler.accept(changed).passed)
+        }
+
+        val shortVector = GuidedSensorSampler(GuidedSensorCode.ACCELEROMETER)
+        assertFalse(shortVector.accept(floatArrayOf(0f)).passed)
+        assertFalse(shortVector.accept(floatArrayOf(2f)).passed)
+    }
+
+    @Test
+    fun invalidAndOutOfRangeSamplesNeverPass() {
+        val invalid = GuidedSensorSampler(GuidedSensorCode.LIGHT)
+        assertEquals(0, invalid.accept(floatArrayOf()).sampleCount)
+        assertEquals(0, invalid.accept(floatArrayOf(Float.POSITIVE_INFINITY)).sampleCount)
+
+        val lowPressure = GuidedSensorSampler(GuidedSensorCode.BAROMETER)
+        repeat(GuidedSensorSampler.REQUIRED_SAMPLE_COUNT) { lowPressure.accept(floatArrayOf(299f)) }
+        assertFalse(lowPressure.accept(floatArrayOf(299f)).passed)
+
+        val highPressure = GuidedSensorSampler(GuidedSensorCode.BAROMETER)
+        repeat(GuidedSensorSampler.REQUIRED_SAMPLE_COUNT) { highPressure.accept(floatArrayOf(1_101f)) }
+        assertFalse(highPressure.accept(floatArrayOf(1_101f)).passed)
+    }
+
+    @Test
+    fun `every interactive challenge uses its directional threshold`() {
+        val runtime = SensorChallengeRuntime()
+        val passingValues =
+            mapOf(
+                InteractiveChallenge.TILT_LEFT to floatArrayOf(7f),
+                InteractiveChallenge.TILT_RIGHT to floatArrayOf(-7f),
+                InteractiveChallenge.FACE_DOWN to floatArrayOf(0f, 0f, -9f),
+                InteractiveChallenge.FACE_UP to floatArrayOf(0f, 0f, 9f),
+                InteractiveChallenge.ROTATE to floatArrayOf(0f, 0f, 4f),
+            )
+
+        passingValues.forEach { (challenge, values) ->
+            val evaluation = SensorChallengeEvaluator.evaluate(challenge, values, 0L, runtime)
+            assertTrue("$challenge should complete", evaluation.completed)
+            assertEquals(1f, evaluation.progress)
+        }
+
+        assertFalse(
+            SensorChallengeEvaluator
+                .evaluate(InteractiveChallenge.ROTATE, floatArrayOf(4f), 0L, runtime)
+                .completed,
+        )
+        assertFalse(
+            SensorChallengeEvaluator
+                .evaluate(InteractiveChallenge.TILT_RIGHT, floatArrayOf(1f), 0L, runtime)
+                .completed,
+        )
+    }
+
+    @Test
+    fun invalidWeakAndDebouncedChallengeSamplesKeepRuntimeUnchanged() {
+        val runtime = SensorChallengeRuntime(lastShakeTimeMillis = 1_000L, shakeCount = 2)
+        listOf(floatArrayOf(), floatArrayOf(Float.NaN)).forEach { values ->
+            val result = SensorChallengeEvaluator.evaluate(InteractiveChallenge.SHAKE, values, 1_500L, runtime)
+            assertEquals(0f, result.progress)
+            assertEquals(runtime, result.runtime)
+        }
+
+        val weak =
+            SensorChallengeEvaluator.evaluate(
+                InteractiveChallenge.SHAKE,
+                floatArrayOf(1f, 1f, 1f),
+                1_500L,
+                runtime,
+            )
+        assertEquals(runtime, weak.runtime)
+
+        val debounced =
+            SensorChallengeEvaluator.evaluate(
+                InteractiveChallenge.SHAKE,
+                floatArrayOf(21f, 0f, 0f),
+                1_100L,
+                runtime,
+            )
+        assertEquals(runtime, debounced.runtime)
+    }
+
+    @Test
+    fun replacingAListenerWithTheSameInstanceDoesNotUnregisterIt() {
+        val stopped = mutableListOf<Any>()
+        val owner = SensorListenerOwner<String, Any> { stopped += it }
+        val listener = Any()
+
+        owner.replace("sensor", listener)
+        owner.replace("sensor", listener)
+
+        assertTrue(stopped.isEmpty())
+        owner.clear()
+        assertEquals(listOf(listener), stopped)
     }
 }

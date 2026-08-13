@@ -1,5 +1,6 @@
 package com.insaner.fonecheck.ui.screens.storage
 
+import com.insaner.fonecheck.testing.testStorageBenchmarkResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
@@ -117,20 +118,7 @@ class StorageTestViewModelTest {
         )
 
     private fun benchmarkResult(error: StorageBenchmarkErrorCode? = null) =
-        StorageBenchmarkResult(
-            writeMebibytesPerSecond = 100.0.takeIf { error == null },
-            readMebibytesPerSecond = 200.0.takeIf { error == null },
-            bytesWritten = if (error == null) 64L * MEBIBYTE else 0L,
-            bytesRead = if (error == null) 64L * MEBIBYTE else 0L,
-            checksumCrc32 = if (error == null) 42L else 0L,
-            durationMillis = 1_000L,
-            dataSizeBytes = 64L * MEBIBYTE,
-            bufferSizeBytes = 64 * 1_024,
-            availableBeforeBytes = 256L * MEBIBYTE,
-            cleanupSucceeded = true,
-            capturedAt = CAPTURED_AT,
-            error = error,
-        )
+        testStorageBenchmarkResult(100.0, 200.0, 256L * MEBIBYTE, CAPTURED_AT, error)
 
     private companion object {
         const val MEBIBYTE = 1_048_576

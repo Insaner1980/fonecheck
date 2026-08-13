@@ -16,6 +16,7 @@ import androidx.lifecycle.viewModelScope
 import com.insaner.fonecheck.di.IoDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -127,43 +128,23 @@ class AudioTestViewModel
 
             toneJob =
                 viewModelScope.launch(ioDispatcher) {
-                    var track: AudioTrack? = null
-                    try {
-                        val created =
-                            createAudioTrack(
-                                channelMask = AudioFormat.CHANNEL_OUT_MONO,
-                                usage =
-                                    if (streamType == AudioManager.STREAM_VOICE_CALL) {
-                                        AudioAttributes.USAGE_VOICE_COMMUNICATION
-                                    } else {
-                                        AudioAttributes.USAGE_MEDIA
-                                    },
-                                contentType =
-                                    if (streamType == AudioManager.STREAM_VOICE_CALL) {
-                                        AudioAttributes.CONTENT_TYPE_SPEECH
-                                    } else {
-                                        AudioAttributes.CONTENT_TYPE_MUSIC
-                                    },
-                            )
-                        track = created.first
-                        toneOwner.replace(created.first)
-                        created.first.play()
-                        val bufferSize = created.second
-                        val buffer = ShortArray(bufferSize / 2)
-                        var phase = 0.0
-                        val phaseIncrement = 2.0 * PI * frequencyHz / sampleRate
-                        while (isActive) {
-                            for (i in buffer.indices) {
-                                buffer[i] = (sin(phase) * Short.MAX_VALUE).toInt().toShort()
-                                phase += phaseIncrement
-                            }
-                            created.first.write(buffer, 0, buffer.size)
-                        }
-                    } finally {
-                        track?.let(toneOwner::release)
-                        routeOwner.release(routeSession)
-                        _state.value = _state.value.copy(isPlaying = false)
-                    }
+                    playGeneratedTone(
+                        routeSession = routeSession,
+                        frequencyHz = frequencyHz,
+                        channelMask = AudioFormat.CHANNEL_OUT_MONO,
+                        usage =
+                            if (streamType == AudioManager.STREAM_VOICE_CALL) {
+                                AudioAttributes.USAGE_VOICE_COMMUNICATION
+                            } else {
+                                AudioAttributes.USAGE_MEDIA
+                            },
+                        contentType =
+                            if (streamType == AudioManager.STREAM_VOICE_CALL) {
+                                AudioAttributes.CONTENT_TYPE_SPEECH
+                            } else {
+                                AudioAttributes.CONTENT_TYPE_MUSIC
+                            },
+                    )
                 }
         }
 
@@ -176,50 +157,68 @@ class AudioTestViewModel
 
             toneJob =
                 viewModelScope.launch(ioDispatcher) {
-                    var track: AudioTrack? = null
-                    try {
-                        val created =
-                            createAudioTrack(
-                                channelMask = AudioFormat.CHANNEL_OUT_STEREO,
-                                usage = AudioAttributes.USAGE_MEDIA,
-                                contentType = AudioAttributes.CONTENT_TYPE_MUSIC,
-                            )
-                        track = created.first
-                        toneOwner.replace(created.first)
-                        created.first.play()
-                        val bufferSize = created.second
-                        val buffer = ShortArray(bufferSize / 2)
-                        var phase = 0.0
-                        val phaseIncrement = 2.0 * PI * frequencyHz / sampleRate
-                        while (isActive) {
-                            var i = 0
-                            while (i < buffer.size - 1) {
-                                val sample = (sin(phase) * Short.MAX_VALUE).toInt().toShort()
-                                when (channel) {
-                                    StereoChannel.LEFT -> {
-                                        buffer[i] = sample
-                                        buffer[i + 1] = 0
-                                    }
-                                    StereoChannel.RIGHT -> {
-                                        buffer[i] = 0
-                                        buffer[i + 1] = sample
-                                    }
-                                    StereoChannel.BOTH -> {
-                                        buffer[i] = sample
-                                        buffer[i + 1] = sample
-                                    }
-                                }
-                                phase += phaseIncrement
-                                i += 2
-                            }
-                            created.first.write(buffer, 0, buffer.size)
-                        }
-                    } finally {
-                        track?.let(toneOwner::release)
-                        routeOwner.release(routeSession)
-                        _state.value = _state.value.copy(isPlaying = false)
-                    }
+                    playGeneratedTone(
+                        routeSession = routeSession,
+                        frequencyHz = frequencyHz,
+                        channelMask = AudioFormat.CHANNEL_OUT_STEREO,
+                        usage = AudioAttributes.USAGE_MEDIA,
+                        contentType = AudioAttributes.CONTENT_TYPE_MUSIC,
+                        stereoChannel = channel,
+                    )
                 }
+        }
+
+        private fun CoroutineScope.playGeneratedTone(
+            routeSession: AudioRouteSession,
+            frequencyHz: Int,
+            channelMask: Int,
+            usage: Int,
+            contentType: Int,
+            stereoChannel: StereoChannel? = null,
+        ) {
+            var track: AudioTrack? = null
+            try {
+                val created = createAudioTrack(channelMask, usage, contentType)
+                track = created.first
+                toneOwner.replace(created.first)
+                created.first.play()
+                val buffer = ShortArray(created.second / 2)
+                var phase = 0.0
+                val phaseIncrement = 2.0 * PI * frequencyHz / sampleRate
+                while (isActive) {
+                    phase = fillToneBuffer(buffer, phase, phaseIncrement, stereoChannel)
+                    created.first.write(buffer, 0, buffer.size)
+                }
+            } finally {
+                track?.let(toneOwner::release)
+                routeOwner.release(routeSession)
+                _state.value = _state.value.copy(isPlaying = false)
+            }
+        }
+
+        private fun fillToneBuffer(
+            buffer: ShortArray,
+            initialPhase: Double,
+            phaseIncrement: Double,
+            stereoChannel: StereoChannel?,
+        ): Double {
+            var phase = initialPhase
+            if (stereoChannel == null) {
+                for (index in buffer.indices) {
+                    buffer[index] = (sin(phase) * Short.MAX_VALUE).toInt().toShort()
+                    phase += phaseIncrement
+                }
+                return phase
+            }
+            var index = 0
+            while (index < buffer.size - 1) {
+                val sample = (sin(phase) * Short.MAX_VALUE).toInt().toShort()
+                buffer[index] = if (stereoChannel == StereoChannel.RIGHT) 0 else sample
+                buffer[index + 1] = if (stereoChannel == StereoChannel.LEFT) 0 else sample
+                phase += phaseIncrement
+                index += 2
+            }
+            return phase
         }
 
         fun playEarpieceTone() {
@@ -438,7 +437,6 @@ class AudioTestViewModel
         }
 
         override fun onCleared() {
-            super.onCleared()
             stopTone()
             stopRecording()
             stopPlayback()

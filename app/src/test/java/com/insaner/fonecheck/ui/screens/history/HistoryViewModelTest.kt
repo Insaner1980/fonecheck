@@ -2,14 +2,8 @@ package com.insaner.fonecheck.ui.screens.history
 
 import com.insaner.fonecheck.data.repository.FakeReportRepository
 import com.insaner.fonecheck.domain.model.CoverageSummary
-import com.insaner.fonecheck.domain.model.DiagnosticReport
-import com.insaner.fonecheck.domain.model.ReportAppContext
-import com.insaner.fonecheck.domain.model.ReportDeviceContext
-import com.insaner.fonecheck.domain.model.ReportKind
-import com.insaner.fonecheck.domain.model.ReportSchemaVersion
 import com.insaner.fonecheck.domain.model.ScoreState
-import com.insaner.fonecheck.domain.model.ScoreSummary
-import com.insaner.fonecheck.domain.model.ScoreVersion
+import com.insaner.fonecheck.testing.testReport
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -46,7 +40,7 @@ class HistoryViewModelTest {
         runTest(dispatcher.scheduler) {
             val repository = FakeReportRepository()
             repository.insert(report("older", "2026-08-08T10:00:00Z"))
-            val viewModel = HistoryViewModel(repository, dispatcher)
+            val viewModel = HistoryViewModel(repository)
             advanceUntilIdle()
 
             assertEquals(
@@ -84,7 +78,7 @@ class HistoryViewModelTest {
                     emit(saved.first())
                     error("history_failed")
                 }
-            val viewModel = HistoryViewModel(repository, dispatcher)
+            val viewModel = HistoryViewModel(repository)
             advanceUntilIdle()
 
             assertEquals(
@@ -110,7 +104,7 @@ class HistoryViewModelTest {
         runTest(dispatcher.scheduler) {
             val repository = FakeReportRepository(deleteFailuresRemaining = 1)
             repository.insert(report("saved", "2026-08-08T10:00:00Z"))
-            val viewModel = HistoryViewModel(repository, dispatcher)
+            val viewModel = HistoryViewModel(repository)
             advanceUntilIdle()
 
             viewModel.delete("saved")
@@ -131,16 +125,10 @@ class HistoryViewModelTest {
     private fun report(
         id: String,
         completedAt: String,
-    ) = DiagnosticReport(
-        stableId = id,
-        kind = ReportKind.FULL_CHECK,
-        startedAt = Instant.parse(completedAt).minusSeconds(60),
+    ) = testReport(
+        id = id,
         completedAt = Instant.parse(completedAt),
-        device = ReportDeviceContext("Finnvek", "Test", "Fonecheck", "test", "16", 36, null),
-        app = ReportAppContext("1.0.0", 1L),
-        categories = emptyList(),
-        score = ScoreSummary(ScoreVersion.CURRENT, 90, ScoreState.COMPLETE),
+        scoreState = ScoreState.COMPLETE,
         coverage = CoverageSummary(1, 1, 0, 0, 100),
-        schemaVersion = ReportSchemaVersion.CURRENT,
     )
 }

@@ -26,6 +26,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            enableUnitTestCoverage = true
+        }
+
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -48,7 +52,34 @@ android {
     room {
         schemaDirectory("$projectDir/schemas")
     }
+
+    lint {
+        // Android 17 targeting requires a dedicated compatibility pass; targetSdk 36 is intentional.
+        disable += "OldTargetApi"
+    }
 }
+
+val composeStabilityConfig = rootProject.layout.projectDirectory.file("config/compose-stability.conf")
+
+composeCompiler {
+    stabilityConfigurationFiles.add(composeStabilityConfig)
+}
+
+composeStabilityAnalyzer {
+    stabilityConfigurationFiles.add(composeStabilityConfig)
+    stabilityValidation {
+        // The checked-in baseline may still describe a type as unstable after the contract makes it stable.
+        ignoreNonRegressiveChanges.set(true)
+    }
+}
+
+// Compose Stability Analyzer 0.12.0 does not invalidate AGP's built-in Kotlin tasks when this
+// compiler-plugin input is introduced, so make the shared contract an explicit task input.
+tasks
+    .matching { it.name == "compileDebugKotlin" || it.name == "compileReleaseKotlin" }
+    .configureEach {
+        inputs.file(composeStabilityConfig).withPropertyName("composeStabilityConfig")
+    }
 
 detekt {
     buildUponDefaultConfig = true
@@ -58,6 +89,7 @@ detekt {
 
 ktlint {
     android.set(true)
+    coloredOutput.set(false)
     filter {
         exclude("**/build/**")
         exclude("**/generated/**")
@@ -151,7 +183,7 @@ dependencies {
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
-    implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
 
     // Room
     implementation(libs.androidx.room.runtime)

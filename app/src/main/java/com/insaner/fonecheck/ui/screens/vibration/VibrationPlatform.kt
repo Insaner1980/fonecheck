@@ -68,12 +68,9 @@ class AndroidVibrationPlatform
             val currentVibrator = vibrator ?: return
             val effect =
                 when (pattern) {
-                    VibrationPattern.SHORT ->
-                        VibrationEffect.createOneShot(
-                            pattern.durationMillis,
-                            VibrationEffect.DEFAULT_AMPLITUDE,
-                        )
-                    VibrationPattern.LONG ->
+                    VibrationPattern.SHORT,
+                    VibrationPattern.LONG,
+                    ->
                         VibrationEffect.createOneShot(
                             pattern.durationMillis,
                             VibrationEffect.DEFAULT_AMPLITUDE,

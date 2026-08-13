@@ -59,17 +59,21 @@ class StorageTestViewModel
             _state.value = _state.value.copy(isInfoLoading = true, infoError = null)
             infoJob =
                 viewModelScope.launch {
-                    try {
-                        val info = withContext(ioDispatcher) { infoProvider.capture() }
-                        _state.value = _state.value.copy(info = info, isInfoLoading = false)
-                    } catch (error: CancellationException) {
-                        throw error
-                    } catch (_: Exception) {
-                        _state.value = _state.value.copy(isInfoLoading = false, infoError = INFO_CAPTURE_FAILED)
-                    }
+                    val info =
+                        try {
+                            withContext(ioDispatcher) { infoProvider.capture() }
+                        } catch (error: CancellationException) {
+                            throw error
+                        } catch (_: Exception) {
+                            _state.value = _state.value.copy(isInfoLoading = false, infoError = INFO_CAPTURE_FAILED)
+                            return@launch
+                        }
+                    _state.value = _state.value.copy(info = info, isInfoLoading = false)
                 }
         }
 
+        // The runner performs blocking file I/O and intentionally inherits this background context.
+        @Suppress("kotlin:S3776", "kotlin:S6311")
         fun startBenchmark() {
             if (_state.value.benchmarkPhase == StorageBenchmarkPhase.RUNNING) return
             skipRequested = false
@@ -146,7 +150,6 @@ class StorageTestViewModel
         override fun onCleared() {
             benchmarkJob?.cancel()
             infoJob?.cancel()
-            super.onCleared()
         }
 
         private fun phaseFor(result: StorageBenchmarkResult): StorageBenchmarkPhase =

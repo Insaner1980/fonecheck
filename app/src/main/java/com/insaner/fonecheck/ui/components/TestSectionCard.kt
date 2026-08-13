@@ -30,6 +30,7 @@ import com.insaner.fonecheck.R
 import com.insaner.fonecheck.ui.theme.JetBrainsMono
 
 @Composable
+@Suppress("kotlin:S107") // Explicit visual slots and Modifier form the shared card API.
 fun TestSectionCard(
     icon: String,
     title: String,

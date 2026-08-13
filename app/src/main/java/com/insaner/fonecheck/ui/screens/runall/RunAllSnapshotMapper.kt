@@ -332,29 +332,28 @@ object RunAllSnapshotMapper {
         capturedAt: Instant,
     ): List<DiagnosticEvidence> {
         val microphone =
-            if (!selections.includeMicrophone) {
-                notTested(
-                    DiagnosticCategoryId.AUDIO,
-                    "microphone",
-                    capturedAt,
-                    EvidenceReasonCode.SKIPPED,
-                )
-            } else if (!hardware.microphoneAvailable) {
-                unavailable(
-                    DiagnosticCategoryId.AUDIO,
-                    "microphone",
-                    capturedAt,
-                )
-            } else if (!permissions.microphone) {
-                notTested(
-                    DiagnosticCategoryId.AUDIO,
-                    "microphone",
-                    capturedAt,
-                    EvidenceReasonCode.PERMISSION_DENIED,
-                )
-            } else {
-                val recorded = snapshots.audio.hasRecordedAudio
-                if (recorded) {
+            when {
+                !selections.includeMicrophone ->
+                    notTested(
+                        DiagnosticCategoryId.AUDIO,
+                        "microphone",
+                        capturedAt,
+                        EvidenceReasonCode.SKIPPED,
+                    )
+                !hardware.microphoneAvailable ->
+                    unavailable(
+                        DiagnosticCategoryId.AUDIO,
+                        "microphone",
+                        capturedAt,
+                    )
+                !permissions.microphone ->
+                    notTested(
+                        DiagnosticCategoryId.AUDIO,
+                        "microphone",
+                        capturedAt,
+                        EvidenceReasonCode.PERMISSION_DENIED,
+                    )
+                snapshots.audio.hasRecordedAudio ->
                     evidence(
                         categoryId = DiagnosticCategoryId.AUDIO,
                         id = "microphone",
@@ -362,14 +361,13 @@ object RunAllSnapshotMapper {
                         value = EvidenceValue.BooleanValue(true),
                         capturedAt = capturedAt,
                     )
-                } else {
+                else ->
                     notTested(
                         categoryId = DiagnosticCategoryId.AUDIO,
                         id = "microphone",
                         capturedAt = capturedAt,
                         reason = EvidenceReasonCode.ERROR,
                     )
-                }
             }
         return listOf(
             if (selections.includeSpeaker) {
@@ -422,37 +420,38 @@ object RunAllSnapshotMapper {
                 snapshots.camera.frontCapabilities != null,
                 capturedAt,
             ),
-            if (!selections.includeCamera) {
-                notTested(
-                    DiagnosticCategoryId.CAMERA,
-                    "capture",
-                    capturedAt,
-                    EvidenceReasonCode.SKIPPED,
-                    EvidenceSource.USER_CONFIRMATION,
-                )
-            } else if (!hardware.cameraAvailable) {
-                unavailable(
-                    DiagnosticCategoryId.CAMERA,
-                    "capture",
-                    capturedAt,
-                    source = EvidenceSource.USER_CONFIRMATION,
-                )
-            } else if (permissions.camera) {
-                manualEvidence(
-                    DiagnosticCategoryId.CAMERA,
-                    "capture",
-                    manual.camera,
-                    manual.outcomes[RunAllStage.CAMERA],
-                    capturedAt,
-                )
-            } else {
-                notTested(
-                    DiagnosticCategoryId.CAMERA,
-                    "capture",
-                    capturedAt,
-                    EvidenceReasonCode.PERMISSION_DENIED,
-                    EvidenceSource.USER_CONFIRMATION,
-                )
+            when {
+                !selections.includeCamera ->
+                    notTested(
+                        DiagnosticCategoryId.CAMERA,
+                        "capture",
+                        capturedAt,
+                        EvidenceReasonCode.SKIPPED,
+                        EvidenceSource.USER_CONFIRMATION,
+                    )
+                !hardware.cameraAvailable ->
+                    unavailable(
+                        DiagnosticCategoryId.CAMERA,
+                        "capture",
+                        capturedAt,
+                        source = EvidenceSource.USER_CONFIRMATION,
+                    )
+                permissions.camera ->
+                    manualEvidence(
+                        DiagnosticCategoryId.CAMERA,
+                        "capture",
+                        manual.camera,
+                        manual.outcomes[RunAllStage.CAMERA],
+                        capturedAt,
+                    )
+                else ->
+                    notTested(
+                        DiagnosticCategoryId.CAMERA,
+                        "capture",
+                        capturedAt,
+                        EvidenceReasonCode.PERMISSION_DENIED,
+                        EvidenceSource.USER_CONFIRMATION,
+                    )
             },
             evidence(
                 categoryId = DiagnosticCategoryId.CAMERA,
@@ -788,7 +787,7 @@ object RunAllSnapshotMapper {
             unavailable(DiagnosticCategoryId.CONNECTIVITY, id, capturedAt)
         }
 
-    @Suppress("LongMethod") // Keeps the battery category's related evidence mapping atomic.
+    @Suppress("LongMethod", "kotlin:S3776") // Keeps the battery category's evidence mapping atomic.
     private fun batteryEvidence(
         snapshots: DiagnosticSnapshots,
         capturedAt: Instant,
@@ -1204,28 +1203,31 @@ object RunAllSnapshotMapper {
         return infoEvidence + storageBenchmarkEvidence(state, selections.includeStorageBenchmark, capturedAt)
     }
 
+    @Suppress("kotlin:S3776") // Benchmark validity and failure reasons form one evidence decision.
     private fun storageBenchmarkEvidence(
         state: StorageTestState,
         included: Boolean,
         capturedAt: Instant,
     ): List<DiagnosticEvidence> {
         val result = state.benchmarkResult
-        val ratesAreUsable =
-            result?.writeMebibytesPerSecond != null &&
-                result.readMebibytesPerSecond != null &&
-                (result.error == null || result.error == StorageBenchmarkErrorCode.CLEANUP_FAILED)
+        val writeRate = result?.writeMebibytesPerSecond
+        val readRate = result?.readMebibytesPerSecond
+        val benchmarkCapturedAt = result?.capturedAt
+        val resultError = result?.error
+        val hasRates = writeRate != null && readRate != null
+        val allowsRates = resultError == null || resultError == StorageBenchmarkErrorCode.CLEANUP_FAILED
         val rateEvidence =
-            if (ratesAreUsable) {
+            if (hasRates && benchmarkCapturedAt != null && allowsRates) {
                 listOf(
                     storageRateEvidence(
                         "sequential_write",
-                        requireNotNull(result.writeMebibytesPerSecond),
-                        result.capturedAt,
+                        writeRate,
+                        benchmarkCapturedAt,
                     ),
                     storageRateEvidence(
                         "sequential_read",
-                        requireNotNull(result.readMebibytesPerSecond),
-                        result.capturedAt,
+                        readRate,
+                        benchmarkCapturedAt,
                     ),
                 )
             } else {
@@ -1765,6 +1767,7 @@ object RunAllSnapshotMapper {
             capturedAt = capturedAt,
         )
 
+    @Suppress("kotlin:S107") // Central factory exposes the complete immutable evidence schema.
     private fun evidence(
         categoryId: DiagnosticCategoryId,
         id: String,

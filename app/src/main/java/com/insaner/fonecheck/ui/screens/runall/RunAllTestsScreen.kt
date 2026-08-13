@@ -27,7 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.fragment.app.FragmentActivity
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -78,6 +78,10 @@ private const val PERFORMANCE_TIMEOUT_MS = 7_000L
 private const val STORAGE_TIMEOUT_MS = 45_000L
 
 @Composable
+@Suppress(
+    "kotlin:S107", // ViewModel parameters are explicit test seams with Hilt defaults.
+    "kotlin:S3776", // Exhaustive stage coordination mirrors the finite run-all state machine.
+)
 fun RunAllTestsScreen(
     onDone: () -> Unit,
     onOpenCategory: (Any) -> Unit,
@@ -522,7 +526,7 @@ fun RunAllTestsScreen(
 
                 else -> return@LaunchedEffect
             }
-        sessionViewModel.recordBiometrics(sessionState.stageToken, if (succeeded) true else null, outcome)
+        sessionViewModel.recordBiometrics(sessionState.stageToken, succeeded.takeIf { it }, outcome)
     }
 
     DisposableEffect(sessionState.stageToken) {

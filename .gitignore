@@ -7,6 +7,8 @@
 /build
 /captures
 /reports
+.scannerwork/
 .externalNativeBuild
 .cxx
+.codex-remote-attachments/
 local.properties

@@ -2,7 +2,6 @@ package com.insaner.fonecheck.ui.screens.runall
 
 import com.insaner.fonecheck.domain.model.Applicability
 import com.insaner.fonecheck.domain.model.Confidence
-import com.insaner.fonecheck.domain.model.DeviceInfo
 import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticCheckId
@@ -20,6 +19,8 @@ import com.insaner.fonecheck.domain.model.SimInventoryCode
 import com.insaner.fonecheck.domain.model.SimTelephonyInfo
 import com.insaner.fonecheck.domain.model.TelephonyHardwareCode
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
+import com.insaner.fonecheck.testing.testDeviceInfo
+import com.insaner.fonecheck.testing.testStorageBenchmarkResult
 import com.insaner.fonecheck.ui.screens.audio.AudioTestState
 import com.insaner.fonecheck.ui.screens.battery.BasicBatteryState
 import com.insaner.fonecheck.ui.screens.battery.BatteryCurrentDirection
@@ -54,7 +55,6 @@ import com.insaner.fonecheck.ui.screens.sensor.SensorType
 import com.insaner.fonecheck.ui.screens.storage.AppStorageVolumeInfo
 import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkErrorCode
 import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkPhase
-import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkResult
 import com.insaner.fonecheck.ui.screens.storage.StorageInfo
 import com.insaner.fonecheck.ui.screens.storage.StorageTestState
 import com.insaner.fonecheck.ui.screens.thermal.ThermalSeverityCode
@@ -152,15 +152,10 @@ class RunAllSnapshotMapperTest {
     @Test
     fun rootArtifactHeuristicRemainsInformationalWhenNothingIsDetected() {
         val evidence =
-            RunAllSnapshotMapper
-                .map(
-                    snapshots = diagnosticSnapshotsWithSensitiveConnectivity(),
-                    manual = ManualCheckResults(),
-                    permissions = RunAllPermissions(),
-                    capturedAt = Instant.parse("2026-08-07T12:00:30Z"),
-                ).flatMap { it.evidence }
-                .associateBy { it.checkId.value }
-                .getValue("device.security")
+            mappedEvidence(
+                snapshots = diagnosticSnapshotsWithSensitiveConnectivity(),
+                capturedAt = Instant.parse("2026-08-07T12:00:30Z"),
+            ).getValue("device.security")
 
         assertEquals(DiagnosticStatus.INFO, evidence.status)
         assertEquals(Confidence.LOW, evidence.confidence)
@@ -173,15 +168,10 @@ class RunAllSnapshotMapperTest {
     fun detectedRootArtifactProducesLowConfidenceWarning() {
         val snapshots = diagnosticSnapshotsWithSensitiveConnectivity()
         val evidence =
-            RunAllSnapshotMapper
-                .map(
-                    snapshots = snapshots.copy(device = deviceInfo(rootArtifactDetected = true)),
-                    manual = ManualCheckResults(),
-                    permissions = RunAllPermissions(),
-                    capturedAt = Instant.parse("2026-08-07T12:00:30Z"),
-                ).flatMap { it.evidence }
-                .associateBy { it.checkId.value }
-                .getValue("device.security")
+            mappedEvidence(
+                snapshots = snapshots.copy(device = deviceInfo(rootArtifactDetected = true)),
+                capturedAt = Instant.parse("2026-08-07T12:00:30Z"),
+            ).getValue("device.security")
 
         assertEquals(DiagnosticStatus.WARNING, evidence.status)
         assertEquals(Confidence.LOW, evidence.confidence)
@@ -735,17 +725,12 @@ class RunAllSnapshotMapperTest {
     @Test
     fun buttonTimeoutIsNotReportedAsPhysicalFailure() {
         val evidence =
-            RunAllSnapshotMapper
-                .map(
-                    snapshots =
-                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
-                            buttons = ButtonTestState(phase = ButtonTestPhase.TIMED_OUT),
-                        ),
-                    manual = ManualCheckResults(),
-                    permissions = RunAllPermissions(),
-                    capturedAt = Instant.parse("2026-08-08T12:00:00Z"),
-                ).flatMap { it.evidence }
-                .associateBy { it.checkId.value }
+            mappedEvidence(
+                snapshots =
+                    diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                        buttons = ButtonTestState(phase = ButtonTestPhase.TIMED_OUT),
+                    ),
+            )
 
         assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue("buttons.volume").status)
         assertEquals(EvidenceReasonCode.TIMEOUT, evidence.getValue("buttons.volume").reason)
@@ -787,25 +772,20 @@ class RunAllSnapshotMapperTest {
     @Test
     fun biometricLockoutDoesNotBecomeSensorFailure() {
         val evidence =
-            RunAllSnapshotMapper
-                .map(
-                    snapshots =
-                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
-                            biometrics =
-                                BiometricTestState(
-                                    capability =
-                                        BiometricCapability(
-                                            fingerprintHardware = true,
-                                            weakStatus = BiometricAvailability.AVAILABLE,
-                                        ),
-                                    authResult = AuthResult.LOCKED_OUT,
-                                ),
-                        ),
-                    manual = ManualCheckResults(),
-                    permissions = RunAllPermissions(),
-                    capturedAt = Instant.parse("2026-08-08T12:00:00Z"),
-                ).flatMap { it.evidence }
-                .associateBy { it.checkId.value }
+            mappedEvidence(
+                snapshots =
+                    diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                        biometrics =
+                            BiometricTestState(
+                                capability =
+                                    BiometricCapability(
+                                        fingerprintHardware = true,
+                                        weakStatus = BiometricAvailability.AVAILABLE,
+                                    ),
+                                authResult = AuthResult.LOCKED_OUT,
+                            ),
+                    ),
+            )
 
         assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue("biometrics.authentication").status)
         assertEquals(EvidenceReasonCode.BIOMETRIC_LOCKOUT, evidence.getValue("biometrics.authentication").reason)
@@ -945,20 +925,22 @@ class RunAllSnapshotMapperTest {
     private fun storageBenchmarkResult(
         capturedAt: Instant,
         error: StorageBenchmarkErrorCode? = null,
-    ) = StorageBenchmarkResult(
-        writeMebibytesPerSecond = 120.0.takeIf { error == null },
-        readMebibytesPerSecond = 240.0.takeIf { error == null },
-        bytesWritten = if (error == null) 64L * MEBIBYTE else 0L,
-        bytesRead = if (error == null) 64L * MEBIBYTE else 0L,
-        checksumCrc32 = if (error == null) 42L else 0L,
-        durationMillis = 1_000L,
-        dataSizeBytes = 64L * MEBIBYTE,
-        bufferSizeBytes = 64 * 1_024,
-        availableBeforeBytes = 128L * MEBIBYTE,
-        cleanupSucceeded = true,
-        capturedAt = capturedAt,
-        error = error,
-    )
+    ) = testStorageBenchmarkResult(120.0, 240.0, 128L * MEBIBYTE, capturedAt, error)
+
+    private fun mappedEvidence(
+        snapshots: DiagnosticSnapshots,
+        manual: ManualCheckResults = ManualCheckResults(),
+        permissions: RunAllPermissions = RunAllPermissions(),
+        capturedAt: Instant = Instant.parse("2026-08-08T12:00:00Z"),
+    ): Map<String, DiagnosticEvidence> =
+        RunAllSnapshotMapper
+            .map(
+                snapshots = snapshots,
+                manual = manual,
+                permissions = permissions,
+                capturedAt = capturedAt,
+            ).flatMap { it.evidence }
+            .associateBy { it.checkId.value }
 
     private companion object {
         const val MEBIBYTE = 1_048_576
@@ -981,24 +963,7 @@ class RunAllSnapshotMapperTest {
         )
 
     private fun deviceInfo(rootArtifactDetected: Boolean = false) =
-        DeviceInfo(
-            model = "model",
-            manufacturer = "manufacturer",
-            brand = "brand",
-            product = "product",
-            androidVersion = "16",
-            apiLevel = 36,
-            securityPatch = "2026-08-01",
-            buildNumber = "build",
-            kernelVersion = "kernel",
-            basebandVersion = "baseband",
-            bootloaderVersion = "bootloader",
-            widevineLevel = "L1",
-            rootArtifactDetected = rootArtifactDetected,
-            developerOptionsEnabled = false,
-            usbDebuggingEnabled = false,
-            capturedAt = Instant.parse("2026-08-07T12:00:00Z"),
-        )
+        testDeviceInfo(rootArtifactDetected = rootArtifactDetected)
 
     private fun performanceInfo() =
         PerformanceInfo(

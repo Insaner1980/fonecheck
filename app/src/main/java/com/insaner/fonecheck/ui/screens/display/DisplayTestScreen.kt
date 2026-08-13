@@ -47,9 +47,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.ui.components.DetailInfoRow
+import com.insaner.fonecheck.ui.components.ManualResultButtons
 import com.insaner.fonecheck.ui.components.SectionBox
 import com.insaner.fonecheck.ui.components.TestScreenContent
 import com.insaner.fonecheck.ui.components.TestSectionCard
@@ -322,23 +323,11 @@ private fun VisualTestOverlay(
                         text = stringResource(R.string.display_visual_question),
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        OutlinedButton(
-                            onClick = { onResult(false) },
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text(stringResource(R.string.display_found_problem))
-                        }
-                        Button(
-                            onClick = { onResult(true) },
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text(stringResource(R.string.display_looks_good))
-                        }
-                    }
+                    ManualResultButtons(
+                        problemLabel = stringResource(R.string.display_found_problem),
+                        passLabel = stringResource(R.string.display_looks_good),
+                        onResult = onResult,
+                    )
                 } else {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -444,7 +433,7 @@ internal fun TouchTestOverlay(
                                 val cells =
                                     event.changes
                                         .filter { it.pressed || it.previousPressed }
-                                        .flatMapTo(mutableSetOf()) { change ->
+                                        .flatMap { change ->
                                             TouchGridGeometry.cellsAlongSegment(
                                                 start =
                                                     if (change.previousPressed) {
@@ -456,7 +445,7 @@ internal fun TouchTestOverlay(
                                                 columns = DisplayTestViewModel.TOUCH_GRID_COLS,
                                                 rows = DisplayTestViewModel.TOUCH_GRID_ROWS,
                                             )
-                                        }
+                                        }.toSet()
                                 if (cells.isNotEmpty()) onTouchCells(cells)
                                 event.changes.forEach { it.consume() }
                             } while (event.changes.any { it.pressed })

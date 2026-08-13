@@ -59,17 +59,22 @@ jobs:
   semgrep-osv:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    container:
+      image: semgrep/semgrep:1.171.0@sha256:bdf7013b2c3634a487671158da77c554f531742326b543a9464d2adf6c433ac8
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: '3.13'
-      - name: Install Semgrep
-        run: python -m pip install --disable-pip-version-check semgrep==1.171.0
       - name: Run Semgrep
         run: semgrep scan --error --strict --metrics=off --disable-version-check --config config/semgrep/fonecheck-security.yml .
+
+  osv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Install verified OSV-Scanner
         shell: bash
         run: |

@@ -1,6 +1,8 @@
 package com.insaner.fonecheck.localization
 
+import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
+import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -37,6 +39,8 @@ class EvidenceLocalizationTest {
 
         assertNull(evidenceReasonStringRes(futureReason))
         assertEquals("Future vendor reason", stableCodeDisplayText(futureReason.value))
+        assertEquals("Plain", stableCodeDisplayText("plain"))
+        assertEquals("", stableCodeDisplayText(""))
     }
 
     @Test
@@ -45,5 +49,24 @@ class EvidenceLocalizationTest {
         assertNotNull(stableTextStringRes("app_cache"))
         assertNull(evidenceLabelStringRes("future.vendor_check"))
         assertNull(stableTextStringRes("future_vendor_value"))
+    }
+
+    @Test
+    fun `every thermal status resolves to its own localized resource`() {
+        val expectedResources =
+            mapOf(
+                ThermalStatusCode.NONE to R.string.perf_thermal_none,
+                ThermalStatusCode.LIGHT to R.string.perf_thermal_light,
+                ThermalStatusCode.MODERATE to R.string.perf_thermal_moderate,
+                ThermalStatusCode.SEVERE to R.string.perf_thermal_severe,
+                ThermalStatusCode.CRITICAL to R.string.perf_thermal_critical,
+                ThermalStatusCode.EMERGENCY to R.string.perf_thermal_emergency,
+                ThermalStatusCode.SHUTDOWN to R.string.perf_thermal_shutdown,
+                ThermalStatusCode.UNAVAILABLE to R.string.device_value_unavailable,
+            )
+
+        expectedResources.forEach { (status, expectedResource) ->
+            assertEquals(expectedResource, thermalStatusStringRes(status))
+        }
     }
 }

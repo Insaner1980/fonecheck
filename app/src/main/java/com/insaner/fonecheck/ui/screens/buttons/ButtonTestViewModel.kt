@@ -92,7 +92,6 @@ class ButtonTestViewModel
 
         override fun onCleared() {
             stopTest()
-            super.onCleared()
         }
 
         private fun recordDirection(direction: VolumeButtonDirection) {

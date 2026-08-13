@@ -21,6 +21,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -74,19 +75,12 @@ class MainActivity : FragmentActivity() {
         return super.onKeyDown(keyCode, event)
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Suppress("LongMethod") // Activity-level window, theme, and navigation wiring is kept together.
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashStartedAt = SystemClock.uptimeMillis()
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        val hasAnimatedSystemSplash = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-        val shouldAnimateSplash =
-            shouldAnimateSplash(
-                systemSupportsAnimatedSplash = hasAnimatedSystemSplash,
-                animatorsEnabled = ValueAnimator.areAnimatorsEnabled(),
-            )
+        val shouldAnimateSplash = shouldAnimateSplash()
         splashScreen.setKeepOnScreenCondition {
             shouldAnimateSplash &&
                 SystemClock.uptimeMillis() - splashStartedAt < SPLASH_MIN_DURATION_MS
@@ -114,106 +108,118 @@ class MainActivity : FragmentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            val preferenceFlow =
-                remember(appPreferencesRepository) {
-                    appPreferencesRepository.preferences.map<AppPreferences, AppPreferences?> { it }
-                }
-            val preferences by
-                preferenceFlow.collectAsStateWithLifecycle(
-                    initialValue = null,
-                )
-            val darkTheme =
-                (preferences?.themeMode ?: AppThemeMode.SYSTEM).resolveDarkTheme(isSystemInDarkTheme())
-            FonecheckTheme(
-                darkTheme = darkTheme,
-            ) {
-                val loadedPreferences = preferences
-                if (loadedPreferences == null) {
-                    Surface(modifier = Modifier.fillMaxSize()) {}
-                    return@FonecheckTheme
-                }
-                val navController = rememberNavController()
-                val backStackEntry by navController.currentBackStackEntryAsState()
-                val currentRoute = backStackEntry?.destination?.route
-                var isDisplayFullscreen by remember { mutableStateOf(false) }
-                val navigationChrome = navigationChromeFor(currentRoute)
+            FonecheckContent()
+        }
+    }
 
-                LaunchedEffect(currentRoute) {
-                    isDisplayFullscreen = false
-                }
+    private fun shouldAnimateSplash(): Boolean =
+        shouldAnimateSplash(
+            systemSupportsAnimatedSplash = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
+            animatorsEnabled = ValueAnimator.areAnimatorsEnabled(),
+        )
 
-                SideEffect {
-                    WindowCompat.getInsetsController(window, window.decorView).apply {
-                        isAppearanceLightStatusBars = !darkTheme
-                        isAppearanceLightNavigationBars = !darkTheme
-                    }
-                }
+    @Composable
+    private fun FonecheckContent() {
+        val preferenceFlow =
+            remember(appPreferencesRepository) {
+                appPreferencesRepository.preferences.map<AppPreferences, AppPreferences?> { it }
+            }
+        val preferences by preferenceFlow.collectAsStateWithLifecycle(initialValue = null)
+        val darkTheme =
+            (preferences?.themeMode ?: AppThemeMode.SYSTEM).resolveDarkTheme(isSystemInDarkTheme())
+        FonecheckTheme(darkTheme = darkTheme) {
+            val loadedPreferences = preferences
+            if (loadedPreferences == null) {
+                Surface(modifier = Modifier.fillMaxSize()) {}
+            } else {
+                LoadedFonecheckContent(loadedPreferences, darkTheme)
+            }
+        }
+    }
 
-                DisposableEffect(isDisplayFullscreen) {
-                    val controller = WindowCompat.getInsetsController(window, window.decorView)
-                    if (isDisplayFullscreen) {
-                        controller.systemBarsBehavior =
-                            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                        controller.hide(WindowInsetsCompat.Type.systemBars())
-                    } else {
-                        controller.show(WindowInsetsCompat.Type.systemBars())
-                    }
-                    onDispose {
-                        if (isDisplayFullscreen) controller.show(WindowInsetsCompat.Type.systemBars())
-                    }
-                }
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    private fun LoadedFonecheckContent(
+        preferences: AppPreferences,
+        darkTheme: Boolean,
+    ) {
+        val navController = rememberNavController()
+        val backStackEntry by navController.currentBackStackEntryAsState()
+        val currentRoute = backStackEntry?.destination?.route
+        var isDisplayFullscreen by remember { mutableStateOf(false) }
+        val navigationChrome = navigationChromeFor(currentRoute)
 
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    topBar = {
-                        if (!isDisplayFullscreen) {
-                            TopAppBar(
-                                title = {
-                                    Text(
-                                        text = stringResource(navigationChrome.titleResId),
-                                        modifier = Modifier.semantics { heading() },
-                                    )
-                                },
-                                navigationIcon = {
-                                    if (
-                                        navigationChrome.showBackAction &&
-                                        navController.previousBackStackEntry != null
-                                    ) {
-                                        IconButton(onClick = { navController.popBackStack() }) {
-                                            Icon(
-                                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                                contentDescription = stringResource(R.string.navigation_back),
-                                            )
-                                        }
-                                    }
-                                },
-                                colors =
-                                    TopAppBarDefaults.topAppBarColors(
-                                        containerColor = MaterialTheme.colorScheme.surface,
-                                        titleContentColor = MaterialTheme.colorScheme.onSurface,
-                                    ),
+        LaunchedEffect(currentRoute) { isDisplayFullscreen = false }
+        ConfigureSystemBars(darkTheme, isDisplayFullscreen)
+
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = {
+                if (!isDisplayFullscreen && navigationChrome.showTopBar) {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                text = stringResource(navigationChrome.titleResId),
+                                modifier = Modifier.semantics { heading() },
                             )
-                        }
-                    },
-                ) { innerPadding ->
-                    FonecheckNavHost(
-                        navController = navController,
-                        appPreferences = loadedPreferences,
-                        modifier =
-                            if (isDisplayFullscreen) {
-                                Modifier.fillMaxSize()
-                            } else {
-                                Modifier.padding(innerPadding)
-                            },
-                        onDisplayFullscreenChange = { isDisplayFullscreen = it },
+                        },
+                        navigationIcon = {
+                            if (navigationChrome.showBackAction && navController.previousBackStackEntry != null) {
+                                IconButton(onClick = { navController.popBackStack() }) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = stringResource(R.string.navigation_back),
+                                    )
+                                }
+                            }
+                        },
+                        colors =
+                            TopAppBarDefaults.topAppBarColors(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                titleContentColor = MaterialTheme.colorScheme.onSurface,
+                            ),
                     )
                 }
+            },
+        ) { innerPadding ->
+            FonecheckNavHost(
+                navController = navController,
+                appPreferences = preferences,
+                modifier =
+                    if (isDisplayFullscreen) Modifier.fillMaxSize() else Modifier.padding(innerPadding),
+                onDisplayFullscreenChange = { isDisplayFullscreen = it },
+            )
+        }
+    }
+
+    @Composable
+    private fun ConfigureSystemBars(
+        darkTheme: Boolean,
+        isDisplayFullscreen: Boolean,
+    ) {
+        SideEffect {
+            WindowCompat.getInsetsController(window, window.decorView).apply {
+                isAppearanceLightStatusBars = !darkTheme
+                isAppearanceLightNavigationBars = !darkTheme
+            }
+        }
+        DisposableEffect(isDisplayFullscreen) {
+            val controller = WindowCompat.getInsetsController(window, window.decorView)
+            if (isDisplayFullscreen) {
+                controller.systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                controller.hide(WindowInsetsCompat.Type.systemBars())
+            } else {
+                controller.show(WindowInsetsCompat.Type.systemBars())
+            }
+            onDispose {
+                if (isDisplayFullscreen) controller.show(WindowInsetsCompat.Type.systemBars())
             }
         }
     }
 
     private companion object {
-        const val SPLASH_MIN_DURATION_MS = 1_500L
+        const val SPLASH_MIN_DURATION_MS = 1_000L
         const val SPLASH_EXIT_DURATION_MS = 180L
         const val SPLASH_EXIT_SCALE = 0.92f
     }

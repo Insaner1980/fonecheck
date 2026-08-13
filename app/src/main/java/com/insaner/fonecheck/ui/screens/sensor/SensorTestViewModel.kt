@@ -101,7 +101,7 @@ class SensorTestViewModel
         }
 
         private fun discoverSensors() {
-            val sensorList = sensorManager.getSensorList(Sensor.TYPE_ALL)
+            val sensorList = sensorManager.getSensorList(Sensor.TYPE_ALL).toList()
             val infos =
                 sensorList
                     .map { sensor ->
@@ -121,7 +121,7 @@ class SensorTestViewModel
             _state.update {
                 it.copy(
                     sensors = infos,
-                    guidedTests = GuidedSensorCatalog.create(infos.mapTo(mutableSetOf()) { info -> info.type }),
+                    guidedTests = GuidedSensorCatalog.create(infos.map { info -> info.type }.toSet()),
                     sensorCount = infos.size,
                 )
             }
@@ -314,9 +314,10 @@ class SensorTestViewModel
             values: FloatArray,
             accuracy: SensorAccuracyCode,
         ) {
+            val activeChallenge = requireNotNull(challenge.challenge)
             val evaluation =
                 SensorChallengeEvaluator.evaluate(
-                    challenge = requireNotNull(challenge.challenge),
+                    challenge = activeChallenge,
                     values = values,
                     nowMillis = System.currentTimeMillis(),
                     runtime = challengeRuntime,
@@ -333,7 +334,7 @@ class SensorTestViewModel
                         ),
                     completedChallenges =
                         if (evaluation.completed) {
-                            current.completedChallenges + requireNotNull(challenge.challenge)
+                            current.completedChallenges + activeChallenge
                         } else {
                             current.completedChallenges
                         },
@@ -426,7 +427,6 @@ class SensorTestViewModel
 
         override fun onCleared() {
             stopAllTests()
-            super.onCleared()
         }
 
         companion object {

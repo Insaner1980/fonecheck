@@ -23,7 +23,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.comparison.AttentionChange
@@ -35,7 +35,7 @@ import com.insaner.fonecheck.domain.comparison.ScoreComparison
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.navigation.diagnosticDestinations
 import com.insaner.fonecheck.ui.components.InfoRow
-import com.insaner.fonecheck.ui.components.ScreenStateScreen
+import com.insaner.fonecheck.ui.components.ReportStateScreen
 import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.SectionBox
 import com.insaner.fonecheck.ui.components.StandardCard
@@ -73,7 +73,7 @@ fun ReportComparisonScreen(
 ) {
     when (state) {
         ReportComparisonState.Loading ->
-            ComparisonMessage(
+            ReportStateScreen(
                 type = ScreenStateType.LOADING,
                 message = stringResource(R.string.comparison_loading),
                 onRetry = null,
@@ -85,7 +85,7 @@ fun ReportComparisonScreen(
             ComparisonContent(state.comparison, onBack, modifier)
 
         ReportComparisonState.NotFound ->
-            ComparisonMessage(
+            ReportStateScreen(
                 type = ScreenStateType.EMPTY,
                 message = stringResource(R.string.comparison_not_found),
                 onRetry = null,
@@ -94,7 +94,7 @@ fun ReportComparisonScreen(
             )
 
         is ReportComparisonState.Unavailable ->
-            ComparisonMessage(
+            ReportStateScreen(
                 type = ScreenStateType.UNAVAILABLE,
                 message = stringResource(R.string.comparison_unavailable),
                 onRetry = onRetry,
@@ -103,7 +103,7 @@ fun ReportComparisonScreen(
             )
 
         ReportComparisonState.Error ->
-            ComparisonMessage(
+            ReportStateScreen(
                 type = ScreenStateType.ERROR,
                 message = stringResource(R.string.comparison_error),
                 onRetry = onRetry,
@@ -398,22 +398,3 @@ private fun attentionLabel(change: AttentionChange): Int =
         AttentionChange.CHANGED -> R.string.comparison_attention_changed
         AttentionChange.NONE -> error("No label for unchanged attention state")
     }
-
-@Composable
-private fun ComparisonMessage(
-    type: ScreenStateType,
-    message: String,
-    onRetry: (() -> Unit)?,
-    onBack: (() -> Unit)?,
-    modifier: Modifier = Modifier,
-) {
-    ScreenStateScreen(
-        type = type,
-        message = message,
-        actionLabel = stringResource(R.string.report_retry).takeIf { onRetry != null },
-        onAction = onRetry,
-        secondaryActionLabel = stringResource(R.string.report_back).takeIf { onBack != null },
-        onSecondaryAction = onBack,
-        modifier = modifier,
-    )
-}

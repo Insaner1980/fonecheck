@@ -33,26 +33,28 @@ class SimTelephonyViewModel
         private var refreshJob: Job? = null
 
         init {
-            refresh()
+            beginRefresh()
         }
 
         fun refresh() {
+            beginRefresh()
+        }
+
+        private fun beginRefresh() {
             refreshJob?.cancel()
             _state.value = _state.value.copy(isLoading = true, error = null)
             refreshJob =
                 viewModelScope.launch {
-                    try {
-                        val info = withContext(ioDispatcher) { provider.capture() }
-                        _state.value = SimTelephonyState(info = info)
-                    } catch (error: CancellationException) {
-                        throw error
-                    } catch (_: Exception) {
-                        _state.value =
-                            _state.value.copy(
-                                isLoading = false,
-                                error = CAPTURE_ERROR,
-                            )
-                    }
+                    val info =
+                        try {
+                            withContext(ioDispatcher) { provider.capture() }
+                        } catch (error: CancellationException) {
+                            throw error
+                        } catch (_: Exception) {
+                            _state.value = _state.value.copy(isLoading = false, error = CAPTURE_ERROR)
+                            return@launch
+                        }
+                    _state.value = SimTelephonyState(info = info)
                 }
         }
 

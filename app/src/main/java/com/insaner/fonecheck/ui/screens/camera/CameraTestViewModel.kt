@@ -176,7 +176,7 @@ class CameraTestViewModel
                     ?: emptyList()
 
             val zoomRange =
-                if (android.os.Build.VERSION.SDK_INT >= 30) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
                     val range = chars.get(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE)
                     if (range != null) {
                         String.format(Locale.getDefault(), "%.1f× – %.1f×", range.lower, range.upper)
@@ -448,7 +448,6 @@ class CameraTestViewModel
         }
 
         override fun onCleared() {
-            super.onCleared()
             turnOffFlash()
             stopPreview()
             cameraExecutor.shutdown()

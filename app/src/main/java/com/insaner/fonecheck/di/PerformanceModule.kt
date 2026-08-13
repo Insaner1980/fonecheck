@@ -14,16 +14,14 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class PerformanceModule {
+interface PerformanceModule {
     @Binds
     @Singleton
-    abstract fun bindPerformanceInfoProvider(implementation: AndroidPerformanceInfoProvider): PerformanceInfoProvider
+    fun bindPerformanceInfoProvider(implementation: AndroidPerformanceInfoProvider): PerformanceInfoProvider
 
     @Binds
-    abstract fun bindPerformanceBenchmarkRunner(
-        implementation: DefaultPerformanceBenchmarkRunner,
-    ): PerformanceBenchmarkRunner
+    fun bindPerformanceBenchmarkRunner(implementation: DefaultPerformanceBenchmarkRunner): PerformanceBenchmarkRunner
 
     @Binds
-    abstract fun bindThermalStatusReader(implementation: AndroidThermalStatusReader): ThermalStatusReader
+    fun bindThermalStatusReader(implementation: AndroidThermalStatusReader): ThermalStatusReader
 }

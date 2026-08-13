@@ -6,17 +6,14 @@ import androidx.lifecycle.viewModelScope
 import com.insaner.fonecheck.data.repository.ReportLoadResult
 import com.insaner.fonecheck.data.repository.ReportReadFailure
 import com.insaner.fonecheck.data.repository.ReportRepository
-import com.insaner.fonecheck.di.IoDispatcher
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 sealed interface ReportDetailState {
@@ -41,7 +38,6 @@ class ReportDetailViewModel
     constructor(
         savedStateHandle: SavedStateHandle,
         private val reportRepository: ReportRepository,
-        @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : ViewModel() {
         private val reportId = savedStateHandle.get<String>(REPORT_ID_ARGUMENT).orEmpty()
         private val _state = MutableStateFlow<ReportDetailState>(ReportDetailState.Loading)
@@ -67,7 +63,7 @@ class ReportDetailViewModel
                 viewModelScope.launch {
                     try {
                         _state.value =
-                            when (val result = withContext(ioDispatcher) { reportRepository.getById(reportId) }) {
+                            when (val result = reportRepository.getById(reportId)) {
                                 is ReportLoadResult.Available -> ReportDetailState.Content(result.report)
                                 ReportLoadResult.NotFound -> ReportDetailState.NotFound
                                 is ReportLoadResult.Unavailable -> ReportDetailState.Unavailable(result.reason)

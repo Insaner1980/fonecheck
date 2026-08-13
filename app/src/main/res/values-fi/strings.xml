@@ -25,7 +25,6 @@
     <string name="label_baseband">Kantataajuus</string>
     <string name="label_bootloader">Käynnistyslatain</string>
     <string name="label_widevine">Widevine-taso</string>
-    <string name="label_root_detected">Root havaittu</string>
     <string name="label_root_artifact">Tunnettu root-jälki</string>
     <string name="device_root_artifact_detected">Havaittu</string>
     <string name="device_root_artifact_not_detected">Ei havaittu</string>
@@ -33,7 +32,6 @@
     <string name="device_value_unavailable">Ei saatavilla</string>
     <string name="device_captured_at">Kerätty</string>
     <string name="device_refresh">Päivitä laitetiedot</string>
-    <string name="device_capture_error_title">Laitetietoja ei ole saatavilla</string>
     <string name="device_capture_error_description">fonecheck ei voinut päivittää laitteen tilannekuvaa. Viimeisin onnistunut tilannekuva pysyy näkyvissä.</string>
     <string name="device_loading">Luetaan laitteen tietoja…</string>
     <string name="label_developer_options">Kehittäjäasetukset</string>
@@ -64,10 +62,8 @@
     <string name="perf_gpu_gles_version">OpenGL ES</string>
     <string name="perf_gpu_renderer">Renderöijä</string>
     <string name="perf_gpu_vendor">Valmistaja</string>
-    <string name="perf_gpu_vulkan">Vulkan</string>
     <string name="perf_gpu_vulkan_feature">Vulkan-ominaisuus ilmoitettu</string>
     <string name="perf_cpu_frequency_value">%1$d MHz</string>
-    <string name="perf_info_error_title">Suorituskykytietoja ei ole saatavilla</string>
     <string name="perf_info_error_description">fonecheck ei voinut päivittää laitteistotietoja. Viimeisin onnistunut tilannekuva pysyy näkyvissä.</string>
     <string name="perf_info_loading">Luetaan suorituskyky- ja laitteistotietoja…</string>
     <string name="perf_refresh_info">Päivitä laitteistotiedot</string>
@@ -103,7 +99,6 @@
     <string name="sim_slot_title">SIM-paikka %1$d</string>
     <string name="label_phone_type">Puhelintyyppi</string>
     <string name="label_phone_count">Puhelinten määrä</string>
-    <string name="label_dual_sim">Kaksi SIM-korttia</string>
     <string name="label_data_network">Dataverkko</string>
     <string name="label_sim_status">Tila</string>
     <string name="label_operator">Operaattori</string>
@@ -140,7 +135,6 @@
     <string name="sim_network_5g">5G</string>
     <string name="sim_value_unknown">Tuntematon</string>
     <string name="sim_limited_mode">Ilman Puhelin-käyttöoikeutta näytetään rajatut tiedot. SIM-tunnisteita ei koskaan tallenneta.</string>
-    <string name="sim_capture_error_title">Puhelinverkkotietoja ei saatavilla</string>
     <string name="sim_capture_error_description">Puhelinverkkotietoja ei voitu lukea. Voit yrittää uudelleen.</string>
     <string name="sim_loading">Luetaan puhelinverkkotietoja…</string>
     <string name="sim_refresh">Päivitä puhelinverkkotiedot</string>
@@ -208,9 +202,6 @@
     <string name="camera_flash_turn_off">Pois päältä</string>
     <string name="camera_no_flash">Tässä laitteessa ei ole salamaa.</string>
 
-    <string name="camera_rear_caps_title">Takakameran ominaisuudet</string>
-    <string name="camera_front_caps_title">Etukameran ominaisuudet</string>
-    <string name="camera_error_title">Virhe</string>
     <string name="camera_max_resolution">Enimmäisresoluutio</string>
     <string name="camera_sensor_size">Kennon koko</string>
     <string name="camera_zoom">Zoomausalue</string>
@@ -404,7 +395,6 @@
     </plurals>
     <string name="conn_gps_start_fix">Aloita GPS-lukitus</string>
     <string name="conn_gps_retest">Testaa uudelleen</string>
-    <string name="conn_grant_location">Myönnä sijaintioikeus</string>
 
     <!-- Mobile Network -->
     <string name="conn_mobile_title">Mobiiliverkko</string>
@@ -423,7 +413,6 @@
     <string name="conn_mobile_roaming">Verkkovierailu</string>
     <string name="conn_mobile_cell_id">Solun tunnus</string>
     <string name="conn_mobile_mcc_mnc">MCC / MNC</string>
-    <string name="conn_grant_phone">Myönnä puhelinoikeus</string>
 
     <!-- Battery Test Screen -->
     <string name="batt_basic_title">Perustiedot</string>
@@ -571,8 +560,43 @@
     <string name="storage_refresh">Päivitä tallennustilan tiedot</string>
 
     <!-- Home Screen -->
-    <string name="home_device_summary">Laitteen yhteenveto</string>
     <string name="home_run_all">Aja kaikki testit</string>
+    <string name="home_history_content_description">Avaa raporttihistoria</string>
+    <string name="home_settings_content_description">Avaa asetukset</string>
+    <string name="home_latest_title">Viimeisin Full Check</string>
+    <string name="home_latest_loading">Viimeisintä Full Check -raporttia ladataan…</string>
+    <string name="home_latest_empty_title">Ei vielä Full Check -raporttia</string>
+    <string name="home_latest_empty_message">Luo ensimmäinen tallennettu yhteenveto suorittamalla Full Check.</string>
+    <string name="home_latest_unavailable_title">Viimeisin Full Check ei ole saatavilla</string>
+    <string name="home_latest_error_title">Viimeisintä Full Check -raporttia ei voitu ladata</string>
+    <string name="home_latest_error_message">Tallennetun raportin yhteenvetoa ei voitu päivittää.</string>
+    <string name="home_latest_retry">Yritä uudelleen</string>
+    <string name="home_latest_status_good">Hyvä</string>
+    <string name="home_latest_status_warning">Vaatii huomiota</string>
+    <string name="home_latest_status_fail">Ongelmia havaittu</string>
+    <string name="home_latest_status_info">Valmis, lisätietoja</string>
+    <string name="home_latest_status_unavailable">Osa tarkistuksista ei ole saatavilla</string>
+    <string name="home_latest_status_not_tested">Osa tarkistuksista jäi testaamatta</string>
+    <string name="home_latest_no_attention">Ei huomiota vaativia kohteita</string>
+    <plurals name="home_latest_attention_summary">
+        <item quantity="one">%1$d kohde vaatii huomiota</item>
+        <item quantity="other">%1$d kohdetta vaatii huomiota</item>
+    </plurals>
+    <plurals name="home_latest_attention_count">
+        <item quantity="one">%1$d kohde</item>
+        <item quantity="other">%1$d kohdetta</item>
+    </plurals>
+    <string name="home_latest_completed_at">Valmistui %1$s</string>
+    <string name="home_latest_categories">Kategoriat</string>
+    <string name="home_latest_coverage">Kattavuus</string>
+    <string name="home_latest_needs_attention">Vaatii huomiota</string>
+    <string name="home_latest_categories_value">%1$s / %2$s</string>
+    <string name="home_latest_no_score">Ei pisteitä</string>
+    <string name="home_latest_score_description">Pisteet %1$s / 100</string>
+    <string name="home_latest_no_score_description">Pisteitä ei ole. Tila: %1$s</string>
+    <string name="home_latest_category_statuses">Kategorioiden tilat: läpäisty %1$s, varoitus %2$s, hylätty %3$s, tieto %4$s, ei saatavilla %5$s, ei testattu %6$s.</string>
+    <string name="home_latest_state_description">%1$s. %2$s. %3$s. %4$s</string>
+    <string name="home_latest_metric_state_description">%1$s: %2$s</string>
     <string name="run_all_preflight_title">Ennen koko tarkistusta</string>
     <string name="run_all_preflight_description">Tarkista, mitä fonecheck tekee, ennen kuin yhtään lupapyyntöä näytetään.</string>
     <string name="run_all_preflight_interactions">Tarkistat näytön ja käytät tuettuja kamera-, liike-, äänenvoimakkuuspainike-, värinä-, kaiutin- ja biometriikkatarkistuksia.</string>
@@ -625,10 +649,6 @@
     <string name="run_all_results_title">Puhelimesi raportti</string>
     <string name="run_all_results_description">Automaattiset ja vuorovaikutteiset tarkistukset on ryhmitelty alle kategorioittain.</string>
     <string name="run_all_overall_score">Kokonaispisteet</string>
-    <plurals name="run_all_passed_count">
-        <item quantity="one">%1$d läpäisty</item>
-        <item quantity="other">%1$d läpäisty</item>
-    </plurals>
     <plurals name="run_all_warning_count">
         <item quantity="one">%1$d varoitus</item>
         <item quantity="other">%1$d varoitusta</item>
@@ -665,12 +685,11 @@
     <string name="report_duration">Kesto</string>
     <string name="report_duration_value">%1$d min %2$d s</string>
     <string name="report_identifier">Raportin tunniste</string>
-    <string name="report_score_state">Pisteiden tila</string>
     <string name="report_score_complete">Täydellinen</string>
     <string name="report_score_partial">Osittainen</string>
     <string name="report_score_incomplete">Keskeneräinen</string>
     <string name="report_coverage">Kattavuus</string>
-    <string name="report_coverage_value">%1$d%% · %2$d/%3$d tarkistusta</string>
+    <string name="report_coverage_value">%1$d%% · Tarkistukset: %2$d/%3$d</string>
     <string name="report_completed_count">%1$d valmista</string>
     <string name="report_not_tested_count">%1$d ei testattu</string>
     <string name="report_view_saved_evidence">Näytä tallennettu evidenssi</string>
@@ -695,8 +714,6 @@
     <string name="report_unsupported">Raportti on luotu muodossa, jota tämä versio ei tue.</string>
     <string name="report_load_error">Tallennettua raporttia ei voitu ladata.</string>
     <string name="report_retry">Yritä uudelleen</string>
-    <string name="home_history">Raporttihistoria</string>
-    <string name="home_settings">Asetukset</string>
     <string name="settings_title">Asetukset</string>
     <string name="settings_appearance">Ulkoasu</string>
     <string name="settings_theme">Teema</string>
@@ -733,7 +750,6 @@
     <string name="settings_disclaimer">fonecheck raportoi Androidin tarjoamia havaintoja ja käyttäjän vahvistuksia. Se ei todista fyysistä kuntoa, turvallisuutta tai korjattavuutta.</string>
     <string name="settings_error">Asetuksia ei voitu päivittää. Yritä uudelleen.</string>
     <string name="settings_delete_error">Tallennettuja raportteja ei voitu poistaa.</string>
-    <string name="settings_loading">Ladataan asetuksia…</string>
     <string name="licenses_title">Avoimen lähdekoodin lisenssit</string>
     <string name="licenses_description">fonecheck sisältää avoimen lähdekoodin kirjastoja. Komponenttiluettelo ja sovellettavat lisenssiehdot on pakattu alle sekä julkaisuversioon.</string>
     <string name="licenses_notices_heading">Kolmannen osapuolen ilmoitukset</string>
@@ -774,7 +790,7 @@
     <string name="history_unavailable_report">Raportti ei ole käytettävissä</string>
     <string name="history_score">Pisteet</string>
     <string name="history_coverage">Kattavuus</string>
-    <string name="history_issue_summary">%1$d varoitusta · %2$d ongelmaa</string>
+    <string name="history_issue_summary">Varoitukset: %1$d · Ongelmat: %2$d</string>
     <string name="history_open">Avaa</string>
     <string name="history_compare">Vertaa</string>
     <string name="history_compare_selected">Valittu</string>
@@ -785,8 +801,6 @@
     <string name="history_delete_message">Raportti %1$s poistetaan pysyvästi tältä laitteelta.</string>
     <string name="history_delete_confirm">Poista</string>
     <string name="history_delete_cancel">Peruuta</string>
-    <string name="history_comparison_placeholder">Raporttien vertailu</string>
-    <string name="history_export_placeholder">Raportin vienti</string>
     <string name="pdf_title">fonecheck-diagnostiikkaraportti</string>
     <string name="pdf_report_format">Raporttimuoto</string>
     <string name="pdf_score_version">Pisteversio</string>
@@ -806,7 +820,7 @@
     <string name="pdf_captured">Tallennettu</string>
     <string name="pdf_disclaimer">Erot ja mittaukset eivät todista laitteen fyysistä kuntoa.</string>
     <string name="pdf_unit_samples">näytettä</string>
-    <string name="pdf_counts_value">%1$d valmista, %2$d ei testattu, %3$d ei saatavilla, %4$d varoitusta, %5$d ongelmaa</string>
+    <string name="pdf_counts_value">Valmiit: %1$d, ei testattu: %2$d, ei saatavilla: %3$d, varoitukset: %4$d, ongelmat: %5$d</string>
     <string name="pdf_page">Sivu %1$d / %2$d</string>
     <string name="export_title">Vie raportti</string>
     <string name="export_description">Luo paikallinen kopio tästä muuttumattomasta tallennetusta raportista.</string>
@@ -867,37 +881,14 @@
     <string name="run_all_summary_fail">Ongelma havaittiin</string>
     <string name="run_all_summary_unavailable">Laitteistoa ei ole saatavilla</string>
     <string name="run_all_summary_not_tested">Tarkistusta ei suoritettu</string>
-    <string name="run_all_check_security">Suojaustila</string>
     <string name="run_all_check_visual_display">Pikseli- ja burn-in-tarkistus</string>
     <string name="run_all_check_speaker">Kaiuttimen ääni</string>
     <string name="run_all_check_microphone">Mikrofonin ääni</string>
     <string name="run_all_check_headphones">Liitetyt kuulokkeet</string>
     <string name="run_all_check_motion_sensor">Liikevaste</string>
     <string name="run_all_check_volume_buttons">Äänenvoimakkuuspainikkeet</string>
-    <string name="run_all_detail_security">Root: %1$s, kehittäjäasetukset: %2$s, USB-virheenkorjaus: %3$s</string>
-    <plurals name="run_all_detail_cpu">
-        <item quantity="one">%1$d ydin, %2$s</item>
-        <item quantity="other">%1$d ydintä, %2$s</item>
-    </plurals>
-    <string name="run_all_detail_ram">Yhteensä %1$s, vapaana %2$s</string>
-    <string name="run_all_detail_gpu">%1$s, Vulkan: %2$s</string>
-    <string name="run_all_detail_sim">%1$s, %2$s, %3$s</string>
-    <string name="run_all_detail_display">%1$d × %2$d, %3$.0f Hz</string>
-    <plurals name="run_all_detail_sensor_count">
-        <item quantity="one">%1$d anturi havaittu</item>
-        <item quantity="other">%1$d anturia havaittu</item>
-    </plurals>
     <string name="run_all_detail_temperature">%1$.1f °C</string>
-    <plurals name="run_all_detail_haptics">
-        <item quantity="one">Amplitudin hallinta: %1$s, %2$d efekti</item>
-        <item quantity="other">Amplitudin hallinta: %1$s, %2$d efektiä</item>
-    </plurals>
-    <string name="run_all_detail_buttons">Ääni ylös: %1$s, ääni alas: %2$s</string>
     <string name="run_all_permission_missing">Oikeutta ei myönnetty</string>
-    <string name="run_all_audio_recorded">Mikrofoni tuotti äänidataa</string>
-    <string name="run_all_no_audio_data">Mikrofonista ei havaittu äänidataa</string>
-    <string name="run_all_no_headphones">Langallisia tai USB-kuulokkeita ei ole liitetty</string>
-    <string name="run_all_manual_confirmed">Käyttäjä vahvisti tarkistuksen</string>
     <string name="run_all_manual_failed">Käyttäjä ilmoitti ongelmasta</string>
     <string name="run_all_manual_skipped">Vuorovaikutteinen tarkistus ohitettiin</string>
     <string name="home_categories_title">Testikategoriat</string>
@@ -919,14 +910,9 @@
     <string name="home_cat_biometrics">Biometriikka</string>
 
     <!-- Display Test Screen -->
-    <string name="display_dead_pixel_title">Kuollut pikseli -testi</string>
-    <string name="display_dead_pixel_desc">Napauta vaihtaaksesi värejä (R/G/B/W/B). Etsi juuttuneita tai kuolleita pikseleitä. Pitkä painallus poistuu.</string>
     <string name="display_touch_title">Kosketusnäyttötesti</string>
     <string name="display_touch_desc">Piirrä ruudukkoon varmistaaksesi kosketusvasteen koko näytöllä.</string>
-    <string name="display_touch_points">Kosketuspisteet</string>
     <string name="display_touch_reset">Tyhjennä ruudukko</string>
-    <string name="display_burnin_title">Burn-in-tarkistus</string>
-    <string name="display_burnin_desc">Näytä harmaa näyttö burn-in- tai kuvanpidätystarkistusta varten. Pitkä painallus poistuu.</string>
     <string name="display_info_title">Näytön tiedot</string>
     <string name="display_resolution">Resoluutio</string>
     <string name="display_density">Tiheys</string>
@@ -936,8 +922,6 @@
     <string name="display_brightness">Kirkkaus</string>
     <string name="display_auto_brightness">Automaattinen kirkkaus</string>
     <string name="display_start_test">Aloita testi</string>
-    <string name="display_tap_to_cycle">Napauta vaihtaaksesi värejä, pitkä painallus poistuu</string>
-    <string name="display_long_press_exit">Pitkä painallus poistuu</string>
     <string name="display_visual_title">Pikseli- ja tasaisuustesti</string>
     <string name="display_visual_description">Tarkista punainen, vihreä, sininen, valkoinen, musta ja harmaaliukuväri kuolleiden tai juuttuneiden pikseleiden, varjojen ja kuvanpidätyksen varalta.</string>
     <string name="display_visual_question">Näyttivätkö kaikki kentät tasaisilta ja puhtailta?</string>
@@ -1020,7 +1004,6 @@
     <string name="button_volume_up">Ääni ylös</string>
     <string name="button_volume_down">Ääni alas</string>
     <string name="button_power">Virtapainike</string>
-    <string name="button_press_now">Paina nyt!</string>
     <string name="button_detected">Havaittu</string>
     <string name="button_not_detected">Ei havaittu</string>
     <string name="button_power_note">Android-sovellus ei voi testata virtapainiketta luotettavasti, joten se ei sisälly tähän testiin.</string>

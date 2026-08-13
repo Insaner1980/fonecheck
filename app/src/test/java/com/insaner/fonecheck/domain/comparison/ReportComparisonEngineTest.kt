@@ -8,17 +8,12 @@ import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryResult
 import com.insaner.fonecheck.domain.model.DiagnosticCheckId
 import com.insaner.fonecheck.domain.model.DiagnosticEvidence
-import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.EvidenceValue
-import com.insaner.fonecheck.domain.model.ReportAppContext
-import com.insaner.fonecheck.domain.model.ReportDeviceContext
-import com.insaner.fonecheck.domain.model.ReportKind
-import com.insaner.fonecheck.domain.model.ReportSchemaVersion
 import com.insaner.fonecheck.domain.model.ScoreState
-import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
+import com.insaner.fonecheck.testing.testReport
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -188,16 +183,11 @@ class ReportComparisonEngineTest {
         score: Int = 80,
         coverage: Int = 75,
         scoreVersion: ScoreVersion = ScoreVersion.CURRENT,
-    ) = DiagnosticReport(
-        stableId = id,
-        kind = ReportKind.FULL_CHECK,
-        startedAt = Instant.parse("2026-08-08T10:00:00Z"),
-        completedAt = Instant.parse("2026-08-08T10:01:00Z"),
-        device = ReportDeviceContext("Finnvek", "Test", "Fonecheck", "test", "16", 36, null),
-        app = ReportAppContext("1.0.0", 1L),
+    ) = testReport(
+        id = id,
         categories = categories,
-        score = ScoreSummary(scoreVersion, score, ScoreState.PARTIAL),
+        scoreValue = score,
+        scoreVersion = scoreVersion,
         coverage = CoverageSummary(4, 3, 1, 0, coverage),
-        schemaVersion = ReportSchemaVersion.CURRENT,
     )
 }

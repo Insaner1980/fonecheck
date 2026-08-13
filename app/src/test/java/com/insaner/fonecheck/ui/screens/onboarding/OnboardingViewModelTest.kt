@@ -1,12 +1,8 @@
 package com.insaner.fonecheck.ui.screens.onboarding
 
-import com.insaner.fonecheck.data.preferences.AppPreferences
-import com.insaner.fonecheck.data.preferences.AppPreferencesRepository
-import com.insaner.fonecheck.data.preferences.AppThemeMode
+import com.insaner.fonecheck.data.preferences.FakeAppPreferencesRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -35,7 +31,7 @@ class OnboardingViewModelTest {
 
     @Test
     fun `pages move within bounds`() {
-        val viewModel = OnboardingViewModel(FakePreferences(), dispatcher)
+        val viewModel = OnboardingViewModel(FakeAppPreferencesRepository())
 
         viewModel.previousPage()
         assertEquals(0, viewModel.state.value.pageIndex)
@@ -48,8 +44,8 @@ class OnboardingViewModelTest {
     @Test
     fun `skip and complete persist completion before finishing`() =
         runTest(dispatcher.scheduler) {
-            val preferences = FakePreferences()
-            val viewModel = OnboardingViewModel(preferences, dispatcher)
+            val preferences = FakeAppPreferencesRepository()
+            val viewModel = OnboardingViewModel(preferences)
 
             viewModel.completeOnboarding()
             assertTrue(viewModel.state.value.isSaving)
@@ -60,21 +56,4 @@ class OnboardingViewModelTest {
             assertTrue(viewModel.state.value.finished)
             assertFalse(viewModel.state.value.isSaving)
         }
-
-    private class FakePreferences : AppPreferencesRepository {
-        val values = MutableStateFlow(AppPreferences())
-        override val preferences = values
-
-        override suspend fun setThemeMode(mode: AppThemeMode) {
-            values.update { it.copy(themeMode = mode) }
-        }
-
-        override suspend fun setTestWarningsEnabled(enabled: Boolean) {
-            values.update { it.copy(testWarningsEnabled = enabled) }
-        }
-
-        override suspend fun setOnboardingComplete(complete: Boolean) {
-            values.update { it.copy(onboardingComplete = complete) }
-        }
-    }
 }

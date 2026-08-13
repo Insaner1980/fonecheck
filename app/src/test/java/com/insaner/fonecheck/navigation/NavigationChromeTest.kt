@@ -8,11 +8,12 @@ import org.junit.Test
 
 class NavigationChromeTest {
     @Test
-    fun `home has app title without back action`() {
+    fun `home owns its header without the shared top bar`() {
         val chrome = navigationChromeFor(Home::class.qualifiedName)
 
         assertEquals(R.string.app_name, chrome.titleResId)
         assertFalse(chrome.showBackAction)
+        assertFalse(chrome.showTopBar)
     }
 
     @Test
@@ -44,6 +45,7 @@ class NavigationChromeTest {
             val chrome = navigationChromeFor(route)
             assertEquals(titleResId, chrome.titleResId)
             assertTrue(chrome.showBackAction)
+            assertTrue(chrome.showTopBar)
         }
     }
 

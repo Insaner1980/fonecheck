@@ -46,7 +46,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.permission.PermissionKind
@@ -165,6 +165,7 @@ fun CameraTestScreen(
 
 @Composable
 @ExperimentalOptIn(markerClass = [ExperimentalCamera2Interop::class])
+@Suppress("kotlin:S3776") // Declarative branches render independent preview states.
 private fun CameraPreviewCard(
     state: CameraTestState,
     viewModel: CameraTestViewModel,
@@ -351,6 +352,7 @@ private fun cameraButtonLabel(camera: CameraCapabilities): String {
 }
 
 @Composable
+@Suppress("kotlin:S3776") // Declarative branches render flash capability and test states.
 private fun FlashTestCard(
     state: CameraTestState,
     viewModel: CameraTestViewModel,
@@ -420,6 +422,7 @@ private fun FlashTestCard(
 }
 
 @Composable
+@Suppress("kotlin:S3776") // Capability rows intentionally stay grouped in one card.
 private fun CapabilitiesCard(
     title: String,
     capabilities: CameraCapabilities,

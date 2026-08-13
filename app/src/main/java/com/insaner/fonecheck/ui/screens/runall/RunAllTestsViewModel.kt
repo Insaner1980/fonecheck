@@ -2,8 +2,8 @@ package com.insaner.fonecheck.ui.screens.runall
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.insaner.fonecheck.data.repository.ReportLoadResult
 import com.insaner.fonecheck.data.repository.ReportRepository
+import com.insaner.fonecheck.data.repository.insertOrConfirm
 import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticCategorySnapshot
@@ -16,7 +16,6 @@ import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.IdProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -533,16 +532,7 @@ class RunAllTestsViewModel
             if (reportSaveJob?.isActive == true) return
             reportSaveJob =
                 viewModelScope.launch {
-                    val saved =
-                        try {
-                            reportRepository.insert(report)
-                            true
-                        } catch (error: CancellationException) {
-                            throw error
-                        } catch (_: Exception) {
-                            val existing = runCatching { reportRepository.getById(report.stableId) }.getOrNull()
-                            existing is ReportLoadResult.Available && existing.report == report
-                        }
+                    val saved = reportRepository.insertOrConfirm(report)
                     if (_state.value.report?.stableId == report.stableId) {
                         _state.value =
                             _state.value.copy(
@@ -562,7 +552,6 @@ class RunAllTestsViewModel
         override fun onCleared() {
             cancelStageTimeout()
             reportSaveJob?.cancel()
-            super.onCleared()
         }
 
         companion object {

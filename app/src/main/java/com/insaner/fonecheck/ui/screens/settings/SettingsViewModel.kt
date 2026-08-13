@@ -11,18 +11,15 @@ import com.insaner.fonecheck.data.preferences.AppPreferences
 import com.insaner.fonecheck.data.preferences.AppPreferencesRepository
 import com.insaner.fonecheck.data.preferences.AppThemeMode
 import com.insaner.fonecheck.data.repository.ReportRepository
-import com.insaner.fonecheck.di.IoDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 data class SettingsPermissionSnapshot(
@@ -33,7 +30,7 @@ data class SettingsPermissionSnapshot(
     val bluetooth: Boolean = false,
 )
 
-interface SettingsPermissionProvider {
+fun interface SettingsPermissionProvider {
     fun current(): SettingsPermissionSnapshot
 }
 
@@ -74,7 +71,6 @@ class SettingsViewModel
         private val preferencesRepository: AppPreferencesRepository,
         private val reportRepository: ReportRepository,
         private val permissionProvider: SettingsPermissionProvider,
-        @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : ViewModel() {
         private val _state = MutableStateFlow(SettingsState(permissions = permissionProvider.current()))
         val state: StateFlow<SettingsState> = _state.asStateFlow()
@@ -117,7 +113,7 @@ class SettingsViewModel
             _state.value = _state.value.copy(isDeletingReports = true, error = null)
             viewModelScope.launch {
                 try {
-                    withContext(ioDispatcher) { reportRepository.deleteAll() }
+                    reportRepository.deleteAll()
                     _state.value = _state.value.copy(isDeletingReports = false)
                 } catch (error: CancellationException) {
                     throw error
@@ -146,7 +142,7 @@ class SettingsViewModel
         private fun updatePreference(update: suspend () -> Unit) {
             viewModelScope.launch {
                 try {
-                    withContext(ioDispatcher) { update() }
+                    update()
                 } catch (error: CancellationException) {
                     throw error
                 } catch (_: Exception) {

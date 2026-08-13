@@ -32,7 +32,7 @@ data class BiometricCapability(
     val weakAvailable: Boolean get() = weakStatus == BiometricAvailability.AVAILABLE
 }
 
-interface BiometricCapabilityProvider {
+fun interface BiometricCapabilityProvider {
     fun read(): BiometricCapability
 }
 

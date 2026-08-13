@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.ui.components.DetailInfoRow
@@ -93,6 +93,7 @@ fun VibrationTestScreen(
 }
 
 @Composable
+@Suppress("kotlin:S107") // Explicit motor controls keep each hardware action independently testable.
 private fun MotorTestDetails(
     state: VibrationTestState,
     onShort: () -> Unit,

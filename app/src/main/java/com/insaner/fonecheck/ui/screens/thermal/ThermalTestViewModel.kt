@@ -143,7 +143,6 @@ class ThermalTestViewModel
 
         override fun onCleared() {
             stopMonitoring()
-            super.onCleared()
         }
 
         private companion object {

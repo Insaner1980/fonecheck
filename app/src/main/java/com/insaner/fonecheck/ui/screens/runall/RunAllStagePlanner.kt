@@ -93,6 +93,7 @@ object RunAllStagePlanner {
         return RunAllPlan(categories = categoryPlans, stages = stages)
     }
 
+    @Suppress("kotlin:S3776") // Exhaustive category policy is clearest as one decision table.
     private fun categoryPlan(
         categoryId: DiagnosticCategoryId,
         hardware: RunAllHardwareProfile,

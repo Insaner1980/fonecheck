@@ -49,4 +49,75 @@ plugins {
     alias(libs.plugins.ktlint) apply false
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.owasp.dependency.check) apply false
+    alias(libs.plugins.sonarqube)
+}
+
+val sonarProjectProperties =
+    java.util.Properties().apply {
+        val propertiesFile = rootProject.file("sonar-project.properties")
+        if (propertiesFile.isFile) {
+            propertiesFile.inputStream().use(::load)
+        }
+    }
+
+sonar {
+    properties {
+        sonarProjectProperties.forEach { key, value ->
+            property(key.toString(), value.toString())
+        }
+    }
+}
+
+project(":app") {
+    sonar {
+        properties {
+            property(
+                "sonar.coverage.jacoco.xmlReportPaths",
+                layout.buildDirectory
+                    .file("reports/coverage/test/debug/report.xml")
+                    .get()
+                    .asFile
+                    .absolutePath,
+            )
+            // The imported JaCoCo report contains local JVM tests. Android framework entry points
+            // and Compose UI require instrumented tests and are outside that report's coverage scope.
+            property(
+                "sonar.coverage.exclusions",
+                listOf(
+                    "src/main/java/com/insaner/fonecheck/ui/MainActivity.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/components/**",
+                    "src/main/java/com/insaner/fonecheck/navigation/FonecheckNavHost.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/theme/Theme.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/theme/Type.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/screens/**/*Screen.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/screens/runall/RunAllManualSteps.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/screens/**/*Platform.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/screens/**/*LifecycleEffect.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/screens/audio/AndroidAudioRouteController.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/screens/audio/AudioTestViewModel.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/screens/battery/BatteryTestViewModel.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/screens/biometrics/BiometricPromptLauncher.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/screens/camera/CameraTestViewModel.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/screens/connectivity/ConnectivityTestViewModel.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/screens/deviceinfo/DeviceInfoProvider.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/screens/display/DisplayTestViewModel.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/screens/home/HomeViewModel.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/screens/performance/AndroidThermalStatusReader.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/screens/performance/PerformanceInfoProvider.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/screens/sensor/SensorTestViewModel.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/screens/simtelephony/SimTelephonyProvider.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/screens/storage/StorageInfoProvider.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/screens/thermal/ThermalMonitoringEffect.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/permissions/PermissionController.kt",
+                    "src/main/java/com/insaner/fonecheck/export/ReportExporter.kt",
+                    "src/main/java/com/insaner/fonecheck/export/ReportPdfRenderer.kt",
+                    "src/main/java/com/insaner/fonecheck/di/*Module.kt",
+                ),
+            )
+        }
+    }
+}
+
+tasks.named("sonar") {
+    dependsOn(":app:assembleDebug", ":app:createDebugUnitTestCoverageReport")
 }

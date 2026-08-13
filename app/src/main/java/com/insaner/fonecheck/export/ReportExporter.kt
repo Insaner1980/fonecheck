@@ -3,8 +3,11 @@ package com.insaner.fonecheck.export
 import android.content.Context
 import androidx.core.content.FileProvider
 import com.insaner.fonecheck.data.repository.ReportPayloadCodec
+import com.insaner.fonecheck.di.IoDispatcher
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
 
@@ -25,49 +28,68 @@ class AndroidReportExporter
     constructor(
         @ApplicationContext private val context: Context,
         private val pdfRenderer: ReportPdfRenderer,
+        @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : ReportExporter {
-        override suspend fun exportPdf(report: DiagnosticReport): ExportedReport {
+        override suspend fun exportPdf(report: DiagnosticReport): ExportedReport =
+            withContext(ioDispatcher) {
+                val target = prepareTarget(report, "pdf")
+                try {
+                    target.temporaryFile
+                        .outputStream()
+                        .buffered()
+                        .use { pdfRenderer.render(report, it) }
+                    finalizeExport(target, "PDF")
+                } finally {
+                    target.deleteTemporaryFile()
+                }
+                target.toExportedReport(PDF_MIME_TYPE)
+            }
+
+        override suspend fun exportJson(report: DiagnosticReport): ExportedReport =
+            withContext(ioDispatcher) {
+                val target = prepareTarget(report, "json")
+                try {
+                    target.temporaryFile.writeText(ReportPayloadCodec.encode(report), Charsets.UTF_8)
+                    finalizeExport(target, "JSON")
+                } finally {
+                    target.deleteTemporaryFile()
+                }
+                target.toExportedReport(JSON_MIME_TYPE)
+            }
+
+        private fun prepareTarget(
+            report: DiagnosticReport,
+            extension: String,
+        ): ExportTarget {
             val exportRoot = File(context.cacheDir, EXPORT_DIRECTORY).apply { mkdirs() }
             cleanupOldExports(exportRoot)
             val safeId = report.stableId.replace(Regex("[^A-Za-z0-9._-]"), "_")
-            val displayName = "fonecheck-$safeId.pdf"
-            val outputFile = File(exportRoot, displayName)
-            val temporaryFile = File(exportRoot, "$displayName.tmp")
-            try {
-                temporaryFile.outputStream().buffered().use { pdfRenderer.render(report, it) }
-                if (outputFile.exists()) check(outputFile.delete()) { "Could not replace PDF export." }
-                check(temporaryFile.renameTo(outputFile)) { "Could not finalize PDF export." }
-            } finally {
-                if (temporaryFile.exists()) temporaryFile.delete()
-            }
-            return ExportedReport(
-                uri =
-                    FileProvider
-                        .getUriForFile(
-                            context,
-                            "${context.packageName}.fileprovider",
-                            outputFile,
-                        ).toString(),
-                mimeType = PDF_MIME_TYPE,
+            val displayName = "fonecheck-$safeId.$extension"
+            return ExportTarget(
                 displayName = displayName,
+                outputFile = File(exportRoot, displayName),
+                temporaryFile = File(exportRoot, "$displayName.tmp"),
             )
         }
 
-        override suspend fun exportJson(report: DiagnosticReport): ExportedReport {
-            val exportRoot = File(context.cacheDir, EXPORT_DIRECTORY).apply { mkdirs() }
-            cleanupOldExports(exportRoot)
-            val safeId = report.stableId.replace(Regex("[^A-Za-z0-9._-]"), "_")
-            val displayName = "fonecheck-$safeId.json"
-            val outputFile = File(exportRoot, displayName)
-            val temporaryFile = File(exportRoot, "$displayName.tmp")
-            try {
-                temporaryFile.writeText(ReportPayloadCodec.encode(report), Charsets.UTF_8)
-                if (outputFile.exists()) check(outputFile.delete()) { "Could not replace JSON export." }
-                check(temporaryFile.renameTo(outputFile)) { "Could not finalize JSON export." }
-            } finally {
-                if (temporaryFile.exists()) temporaryFile.delete()
+        private fun finalizeExport(
+            target: ExportTarget,
+            format: String,
+        ) {
+            if (target.outputFile.exists()) {
+                check(target.outputFile.delete()) { "Could not replace $format export." }
             }
-            return ExportedReport(
+            check(target.temporaryFile.renameTo(target.outputFile)) { "Could not finalize $format export." }
+        }
+
+        private fun ExportTarget.deleteTemporaryFile() {
+            if (temporaryFile.exists()) {
+                check(temporaryFile.delete()) { "Could not delete temporary export." }
+            }
+        }
+
+        private fun ExportTarget.toExportedReport(mimeType: String): ExportedReport =
+            ExportedReport(
                 uri =
                     FileProvider
                         .getUriForFile(
@@ -75,10 +97,9 @@ class AndroidReportExporter
                             "${context.packageName}.fileprovider",
                             outputFile,
                         ).toString(),
-                mimeType = JSON_MIME_TYPE,
+                mimeType = mimeType,
                 displayName = displayName,
             )
-        }
 
         private fun cleanupOldExports(exportRoot: File) {
             val cutoff = System.currentTimeMillis() - EXPORT_RETENTION_MILLIS
@@ -95,6 +116,12 @@ class AndroidReportExporter
             const val JSON_MIME_TYPE = "application/json"
             const val EXPORT_RETENTION_MILLIS = 24L * 60L * 60L * 1000L
         }
+
+        private data class ExportTarget(
+            val displayName: String,
+            val outputFile: File,
+            val temporaryFile: File,
+        )
     }
 
 class FonecheckFileProvider : FileProvider()

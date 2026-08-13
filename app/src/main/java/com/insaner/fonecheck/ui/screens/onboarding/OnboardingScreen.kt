@@ -29,7 +29,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.ui.components.ScreenStateCard
@@ -61,6 +61,7 @@ fun OnboardingRoute(
 }
 
 @Composable
+@Suppress("kotlin:S3776") // Page-specific controls are mutually exclusive declarative states.
 fun OnboardingScreen(
     state: OnboardingState,
     onPrevious: () -> Unit,
