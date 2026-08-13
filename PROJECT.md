@@ -7,17 +7,32 @@ This reference is grounded in the live Android/Kotlin source, resources, Room sc
 
 | Item | Value |
 |---|---|
-| Verified source snapshot | 2026-08-10 |
-| Verified Git baseline | `9319e6cd92b005a764749c8348c03d9e96bd04f7` on `codex/android-toolchain-update`; the documented checkout also contains extensive uncommitted implementation, test, build, localization, and tooling changes, which are part of this snapshot |
+| Verified source snapshot | 2026-08-13 |
+| Verified Git baseline | `0aefaf78a16932e44a7b26539f3d5ba04887de74` on `codex/android-toolchain-update`; the documented checkout also contains uncommitted Home, navigation-chrome, splash/launcher-branding, theme, localization, and test changes, which are part of this snapshot |
 | Application ID / namespace | com.insaner.fonecheck |
 | Android module | :app |
 | Version | versionCode = 1; versionName = "1.0.0" |
 | SDK range | min 26; compile 37; target 36 |
-| Source inventory | 142 production Kotlin files, 60 JVM-test Kotlin files, 19 instrumented-test Kotlin files |
+| Source inventory | 142 production Kotlin files; 61 JVM-test Kotlin files (57 files and 234 annotations with `@Test`); 19 instrumented-test Kotlin files (all 19 files, 52 annotations with `@Test`) |
+| UI/navigation inventory | 24 `*Screen.kt` files, 24 serializable route declarations, 15 shared component files, 14 diagnostic category artwork files |
+| Durable/config inventory | 14 catalog categories, 76 localized durable evidence IDs, 13 manifest permissions, 11 optional manifest features |
+| Localization inventory | English: 985 strings + 8 plurals; Finnish: 980 strings + 8 plurals; both contain the same 988 translatable resource names, with five English-only non-translatable values |
 | This update | Live working-tree source, resources, schemas, tests, CI, build/security configuration, local checker wrappers, and Git inspection. No Gradle task, Sonar upload, external-AI scan, emulator, or physical-device test was run for this documentation update. |
 | Ownership | This documentation update changes only PROJECT.md. |
 
 The current code is authoritative if it differs from this file. FONECHECK_COMPLETE_PRODUCT_SPEC.md is a planning/specification artifact, not proof of implemented functionality.
+
+### Authority and document roles
+
+Use evidence in this order when this reference is used for reviews or implementation decisions:
+
+1. The current working-tree source, resources, manifest, generated Room schema, Gradle configuration, test sources, and CI files are the implementation authority.
+2. `PROJECT.md` is a derived index of those sources. It is intentionally detailed, but a later source change wins until this file is refreshed.
+3. `AGENTS.md` and `CLAUDE.md` are working rules and project conventions. They constrain how work is performed; they do not prove a runtime behavior or passing verification result.
+4. `CODE_REVIEW.md`, `design-qa.md`, and `fonecheck_code_review_questions_400.md` are review inputs. Their claims must be reproduced against the current checkout before being treated as defects.
+5. `FONECHECK_COMPLETE_PRODUCT_SPEC.md`, `fonecheck-implementation-plan.md`, `TASKS.md`, and `diagnostic-app-features.md` describe requirements, ideas, or historical planning. A feature exists only when the live implementation path supports it.
+
+Generated build outputs under `build/`, local reports under `reports/`, IDE/Gradle state, `local.properties`, attachments, and loose review images are not product source. They may provide run-specific evidence, but they are not stable architecture contracts and must not be committed merely to make this reference complete.
 
 ## Product state
 
@@ -25,7 +40,7 @@ fonecheck is a local, single-activity phone diagnostics app. It provides fourtee
 
 | Surface | Implemented now | Limit / non-claim |
 |---|---|---|
-| Diagnostics | 14 catalog categories, Home cards, typed routes, Full Check snapshot mapping, localized report/export labels | Source inspection cannot prove hardware measurements on every device. |
+| Diagnostics | 14 catalog categories, responsive Home cards, latest saved Full Check summary, typed routes, Full Check snapshot mapping, localized report/export labels | Source inspection cannot prove hardware measurements on every device. |
 | Full Check | Preflight, permission resolution, automatic probes, guided stages, timeouts, interruption/resource handling, report save/retry state | Passing code/tests are not physical-device evidence. |
 | Reports | Room database, immutable payload, history/detail/retest/comparison/delete/export | Database is schema version 1; no migrations exist yet. |
 | Settings | Theme preference, test-warning toggle, reopen onboarding, licenses | No account, privacy-sync, or cloud setting exists. |
@@ -53,6 +68,12 @@ The wrapper pins Gradle 9.7.0 with `distributionSha256Sum`, validates the distri
 The root build forces selected buildscript transitives to patched versions: Jackson 2.21.5, protobuf 3.25.5, Netty 4.1.136.Final, jose4j 0.9.6, Bouncy Castle 1.84, JDOM 2.0.6.1, and jsoup 1.23.1. It also enables buildscript dependency locking. `gradle/verification-metadata.xml`, `gradle/verification-keyring.keys`, `buildscript-gradle.lockfile`, and the generated `settings-gradle.lockfile` are supply-chain inputs and must move with intentional dependency/plugin or catalog-resolution updates.
 
 The app intentionally compiles with SDK 37 while targeting SDK 36. Android Lint's `OldTargetApi` check is disabled with an explicit comment that Android 17 targeting requires a separate compatibility pass; this suppression does not prove target-SDK compatibility or authorize leaving the target unchanged indefinitely. ktlint color output is disabled for stable machine-readable reports. The AndroidX Hilt dependency is `hilt-lifecycle-viewmodel-compose`, not the older navigation-compose artifact.
+
+### Compose stability contract
+
+Compose Stability Analyzer 0.12.0 and the Kotlin Compose compiler consume the same checked-in `config/compose-stability.conf`. It currently declares selected framework owners, immutable report/comparison/performance/sensor/storage values, export ready state, and ViewModels stable for Compose purposes. This is a compiler/recomposition contract, not a statement that every mutable field inside those types is intrinsically immutable.
+
+`app/stability/app-debug.stability` and `app/stability/app-release.stability` are variant baselines. Validation is configured to ignore non-regressive changes, and `compileDebugKotlin`/`compileReleaseKotlin` explicitly declare the shared config as an input because the analyzer plugin does not otherwise invalidate AGP's built-in Kotlin tasks when that file changes. `config/android-check.json` names `:app:stabilityCheck`, but the GitHub `build-test-lint` job does not currently invoke it. Any stability-config or baseline update therefore needs a deliberate local/manual stability run and diff review; a baseline change is not automatically an optimization.
 
 Debug and release currently share version name `1.0.0`; no debug suffix is configured. Release enables R8 and resource shrinking and uses the optimized default ProGuard file plus an otherwise empty `app/proguard-rules.pro`. No signing configuration is defined in source, so this repository does not establish a signed publishable artifact. Signing/upload-key handling is an external release gate.
 
@@ -88,7 +109,7 @@ FonecheckApp (@HiltAndroidApp)
 
 The architecture is pragmatic, screen-oriented MVVM. Category ViewModels generally own their diagnostic state and interact with Android APIs directly or through narrow category-specific seams. Hilt supplies the database, preferences, exporter, selected platform adapters, clock/ID abstractions, IO dispatcher, and a singleton volume-button event source. There is no generic hardware repository or general use-case layer.
 
-`DiagnosticCatalog.categories` is the sole ordered catalog of fourteen `DiagnosticCategoryId` values. `navigation/DiagnosticDestination.kt` maps the catalog with `getValue`, so a missing route/label/artwork mapping fails immediately instead of silently dropping a category. `RunAllTestsViewModel` passes the same catalog to the planner, and `ReportAssembler` requires a Full Check to contain each catalog category exactly once and restores catalog order. Never introduce another category ordering/list without replacing these ownership points together.
+`DiagnosticCatalog.categories` is the sole ordered catalog of fourteen `DiagnosticCategoryId` values. `app/src/main/java/com/insaner/fonecheck/navigation/DiagnosticDestination.kt` maps the catalog with `getValue`, so a missing route/label/artwork mapping fails immediately instead of silently dropping a category. `RunAllTestsViewModel` passes the same catalog to the planner, and `ReportAssembler` requires a Full Check to contain each catalog category exactly once and restores catalog order. Never introduce another category ordering/list without replacing these ownership points together.
 
 | Area | Principal responsibility |
 |---|---|
@@ -125,10 +146,12 @@ The launch visual has two platform paths:
 
 | Launch condition | Source-defined behavior |
 |---|---|
-| API 31+ and system animators enabled | `@drawable/splash_logo_animated` targets named vector groups/paths; the theme requests 1,400 ms vector animation, `MainActivity` keeps the splash up to 1,500 ms, then fades the splash view for 180 ms while scaling its icon to 0.92. |
+| API 31+ and system animators enabled | `@drawable/splash_logo_animated` targets named F, check, and wordmark vector groups/paths; the theme requests a 1,000 ms animation, `MainActivity` keeps the splash up to 1,000 ms, then fades the splash view for 180 ms while scaling its icon to 0.92. |
 | API 26-30, or animators disabled | Static `@drawable/splash_logo_vector` is used on pre-31; `shouldAnimateSplash` disables the artificial keep/exit animation whenever API 31 animation support or animators are absent. |
 
-The vector contains upper/lower purple body groups, a cyan path/highlight, three wordmark groups, and a brand pulse. Resource edits must preserve target names used by `drawable-v31/splash_logo_animated.xml`; duration/easing edits must be checked with animator scale 0, normal scale, cold/warm launch, light/dark system bars, and API 26/31+ devices.
+The 1,254 x 1,254 viewport is scaled into a 432 dp vector. It contains an aqua-gradient F path, lavender-gradient check path, and three white wordmark paths. On API 31+, `splash_f_motion` and `splash_check_motion` enter from opposing translated/rotated positions, settle after 660 ms, and share the early logo fade; the wordmark stays offset until 640 ms, moves and scales into place, and finishes by 980 ms. Resource edits must preserve `f_group`, `f_path`, `check_group`, `check_path`, `wordmark_group`, and the three `wordmark_*_path` names used by `app/src/main/res/drawable-v31/splash_logo_animated.xml`. Duration/easing edits require animator-scale 0, normal-scale, cold/warm-launch, light/dark-system-bar, API 26, and API 31+ validation.
+
+Adaptive launcher icons in both `app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml` and `app/src/main/res/mipmap-anydpi-v33/ic_launcher.xml` use the near-black `#020307` background, `app/src/main/res/drawable-nodpi/fonecheck_logo.webp` foreground, and `app/src/main/res/drawable/ic_launcher_monochrome.xml` F-plus-check vector for themed icons. The Home header uses the separate `app/src/main/res/drawable-nodpi/fonecheck_mark.webp`. The deleted root PNG/SVG logo exports and replaced animator/vector resources are working-tree changes, not runtime fallbacks.
 
 MainActivity forwards non-repeated volume-key-down events to VolumeButtonEventSource. The Buttons diagnostic consumes this application-wide stream; volume keys otherwise still pass to the super implementation.
 
@@ -141,7 +164,7 @@ The start destination is `Onboarding(reopened = false)` unless DataStore says on
 | Saved data | History, report detail carrying report ID, comparison carrying two IDs, export carrying report ID |
 | Support | Settings, licenses, onboarding |
 
-NavigationChrome centrally provides localized title/back state. Fullscreen display work signals the activity to hide/restore system bars. Test this boundary across Back, cancellation, rotation, and interrupted navigation.
+NavigationChrome centrally provides localized title/back state and whether the shared top bar is shown. Home sets `showTopBar = false` because `HomeContent` owns its brand/header/actions; all mapped diagnostic, Full Check, report, history, comparison, export, onboarding, Settings, and Licenses routes retain the shared top bar. Fullscreen display work independently signals the activity to hide/restore system bars. Test these boundaries across Back, cancellation, rotation, interrupted navigation, and direct route restoration.
 
 Settings privacy and support actions leave the app through `ACTION_VIEW` to `https://finnvek.com/privacy/` and `ACTION_SENDTO` to `mailto:contact@finnvek.com`. They do not give fonecheck an in-process network client or require `INTERNET`, but the receiving browser/mail app is outside the local-only runtime boundary.
 
@@ -152,11 +175,29 @@ The Material 3 theme supports system, forced-light, and forced-dark modes.
 | Token | Current role |
 |---|---|
 | Aqua80 #48D8D2 / Aqua40 #00716D | Dark/light primary and secondary accent |
+| Lavender80 #C9B2FF / Lavender40 #6846A5 | Home report/brand accents. Current Home code references these constants directly; `brandLavenderColor()` exists in `SemanticColor.kt` but currently has no call site. |
 | Coral80 / Coral40 | Dark/light tertiary accent |
 | Neutral950 … Neutral50 | Graphite neutral scale; dark background is Neutral950, surface Neutral900, standard card surface Neutral850 |
 | Green400, Yellow400, Red400 | Pass/good, warning/caution, fail/error; readableStatusColor darkens these for light surfaces |
 | Shapes | 8 dp small, 16 dp medium, 20 dp large |
 | Typography | DM Sans for Material roles; JetBrains Mono for technical measurements/values |
+
+The Material roles resolve as follows; direct token use should be exceptional when a semantic `MaterialTheme.colorScheme` role already expresses the intent.
+
+| Material role | Dark theme | Light theme |
+|---|---|---|
+| primary / secondary | Aqua80 `#48D8D2` | Aqua40 `#00716D` |
+| onPrimary / onSecondary | `#00201E` | white |
+| primaryContainer | `#143C3B` | `#B7F3EF` |
+| secondaryContainer | `#143C3B` | `#9FF2E8` |
+| onPrimaryContainer / onSecondaryContainer | `#A5F2ED` | `#00201E` |
+| tertiary | Coral80 `#FFB4A9` | Coral40 `#9C4237` |
+| tertiaryContainer | `#7E2A22` | `#FFDAD4` |
+| background / onBackground | Neutral950 `#0D0F14` / Neutral100 `#F4F6FA` | `#F6F8FA` / `#171A20` |
+| surface / onSurface | Neutral900 `#15181F` / Neutral100 `#F4F6FA` | white / `#171A20` |
+| surfaceVariant / onSurfaceVariant | Neutral850 `#1C2028` / Neutral300 `#AEB6C4` | `#ECEFF3` / `#4B5563` |
+| outline / outlineVariant | Neutral600 `#48515F` / Neutral700 `#343B48` | `#737D8C` / `#D5DAE2` |
+| error / onError | Red400 `#FF7474` / Neutral950 | `#BA1A1A` / white |
 
 The complete Material type scale is explicit rather than inherited from platform defaults:
 
@@ -178,7 +219,8 @@ Use the shared UI components rather than creating local equivalents:
 | `StandardCard` | Full-width, optional click behavior, `surfaceVariant` container, 1 dp `outlineVariant` border, large (20 dp) shape. |
 | `TestScreenContent` | Full-size `LazyColumn`, 16 dp horizontal padding, 16 dp vertical content padding, 8 dp item spacing. |
 | `InfoCard` | 16 dp inner padding, semantic heading, optional `ConfidenceBadge`; pair with the shared label/value rows. |
-| `InfoRow` / `DetailInfoRow` | Muted label plus right-aligned monospace value; `DetailInfoRow` allows two lines with ellipsis. |
+| `InfoRow` / `DetailInfoRow` / `LabeledValueRow` | Shared label/value presentations; values use the technical/monospace hierarchy where appropriate, and `DetailInfoRow` allows two lines with ellipsis. |
+| `ConfidenceBadge` | HIGH/LOW/UNAVAILABLE reliability label; use it only when confidence changes how the measurement should be interpreted. |
 | `StatusRow` / `StatusBadge` | Textual state plus theme-readable semantic color; `StatusBadge` replaces child semantics with `stateDescription`. |
 | `TestSectionCard` | One clickable expandable card, 40 dp decorative code box, semantic heading/status/expanded state, animated vertical content. |
 | `SectionBox` | Full-width surface, medium (16 dp) shape, 1 dp outline, 12 dp padding. |
@@ -190,7 +232,25 @@ Use the shared UI components rather than creating local equivalents:
 
 `ScreenStateCard` uses assertive live regions for error and permission denial and polite live regions for all other state types. `PermissionStatusCard` makes granted/denied/partial/Settings recovery visible rather than treating permissions as a background detail.
 
-Home is explicitly responsive: 2 columns below 600 dp, 3 between 600 and 839 dp, and 4 at 840 dp or wider; horizontal padding changes from 16 to 24 dp and grid spacing from 12 to 16 dp at 600 dp. It presents a sticky-broadcast-derived device summary, a minimum-56 dp Full Check action, minimum-52 dp History and Settings actions, then the fourteen-card grid. The fourteen `drawable-nodpi/category_*.webp` images are decorative because adjacent visible text names them.
+Home is explicitly responsive: 2 columns below 600 dp, 3 between 600 and 839 dp, and 4 at 840 dp or wider; horizontal padding changes from 16 to 24 dp and grid spacing from 12 to 16 dp at 600 dp. The single `LazyVerticalGrid` places a full-width owned header, latest Full Check surface, minimum-56 dp Full Check action, section heading, and then the fourteen-card catalog grid. The fourteen `drawable-nodpi/category_*.webp` images are decorative because adjacent visible text names them.
+
+### Home dashboard contract
+
+`HomeScreen` observes `HomeViewModel.latestFullCheck` with `collectAsStateWithLifecycle`. `HomeViewModel` cancels any previous observation job before retrying, consumes `ReportRepository.observeSummaries()` with `collectLatest`, selects the newest Full Check candidate, and resolves that summary through `getById`. A candidate is an explicit `ReportKind.FULL_CHECK`, or a legacy summary whose `kind` and `categoryId` are both null. A newer `CATEGORY_ONLY` retest must not replace the latest Full Check. A loaded payload whose kind is not Full Check is treated as an error rather than being displayed under a misleading label.
+
+| `LatestFullCheckState` | Home behavior |
+|---|---|
+| `Loading` | Polite live-region layered surface with a 24 dp aqua progress indicator. |
+| `Empty` | Truthful “no Full Check yet” message; no score or device summary is invented. |
+| `Available(report)` | Clickable report surface opening typed `Report(report.stableId)`. |
+| `Unavailable(reason)` | Distinguishes corrupt data from unsupported schema using the existing report-read failure labels. |
+| `Error` | Assertive live-region error surface with a Retry action that restarts observation. |
+
+The Home header replaces the shared app bar only on the Home route. It uses a 56 dp decorative `app/src/main/res/drawable-nodpi/fonecheck_mark.webp`, splits the visible app name into aqua first four characters and normal on-background remainder, and exposes 52 dp history/settings controls with localized content descriptions and button roles. The controls stay in one row normally; when width is below 480 dp and font scale exceeds 1.3 they move below the brand. History uses a custom Canvas glyph, Settings uses the Material rounded icon, and both navigate through the existing typed route objects.
+
+The latest-report card computes presentation from immutable report data. Category metrics count category aggregate statuses; the “needs attention” number counts individual warning/failure evidence items. Status precedence is incomplete score, failure evidence, warning evidence, partial score, not-tested category, unavailable category, info-only result, then good. The card shows locale-formatted score/no-score state, completion time in the system zone, completed/total categories, coverage percentage, attention count, and a complete category-status accessibility description. It never derives or rescales the stored score.
+
+The report card stacks its score gauge and summary only below 312 dp or above font scale 1.3. Otherwise it uses a row; gauge size is 132 dp below 400 dp, 172 dp from 400–599 dp, and 220 dp from 600 dp, while the stacked gauge is capped at 240 dp. The card uses a responsive 28/34 dp shape, 20/32 dp horizontal padding, 26/34 dp vertical padding, lavender outline, graphite gradient, and a 270-degree aqua score arc. Category/coverage/attention metrics use vertical separators in the regular row and horizontal separators in the stacked column. Tests cover 2/3/4-column boundaries, the 312 dp/1.3 stacking threshold, explicit load states, real score/status/attention rendering, no-score behavior, typed navigation, 48 dp action targets, dark/light themes, 200% font-scale scrolling, and RTL availability.
 
 The rest of the UI is primarily scrollable phone-first Compose. Current source/test presence does not prove large font, landscape, foldable/tablet, RTL, TalkBack, keyboard/switch access, or physical display behavior. These remain release/device-review responsibilities.
 
@@ -297,7 +357,11 @@ That diagram is the full-catalog shape, not a hard-coded route list. The stage p
 
 The planner de-duplicates stages and always appends Results. A category-only retest can therefore skip the general Automatic stage entirely unless its own plan needs it; UI and cleanup logic must follow `RunAllPlan`, never assume the full sequence.
 
+All four preflight selections default to enabled: speaker, microphone, camera, and storage benchmark. A category retest derives its selection deterministically: Audio enables speaker and microphone, Camera enables camera, Storage enables the storage benchmark, and other category retests disable those optional operations. The hardware profile tracks only microphone, camera, motion sensor, vibrator, and biometric availability; other optional-capability decisions remain inside their category state/mapping.
+
 `RunAllTestsState` records stage, monotonic token, run status, interruption reason, permissions, selection/hardware profile, plan, manual outcomes, display/camera selection, stage issue, frozen report, save status, and optional target category. `claimStage` plus token checks protect against stale/recomposed stage effects. Timeouts are 70 seconds for Automatic, 30 seconds for Display, and 12 seconds for Camera; camera timeout remains a retryable stage issue while the other timed stages advance with a timed-out outcome. Outcomes include COMPLETED, PASSED, FAILED, SKIPPED, UNAVAILABLE, TIMED_OUT, and ERROR.
+
+The Automatic stage also has narrower operation ceilings: device and SIM information each 3 seconds, camera capability discovery 3 seconds, performance 7 seconds, storage 45 seconds, and microphone capture 3 seconds for a requested 1.5-second sample. The speaker test uses a 1,000 Hz tone for 1.5 seconds. These inner ceilings prevent one probe from consuming the entire 70-second stage budget; changing one timeout requires checking both the resulting evidence reason and the enclosing stage behavior.
 
 RunAllResourceOwner.stopAll() is idempotent and owns stopping performance, microphone, GPS, storage, display, audio, camera, sensors, vibration, buttons, biometrics, and thermal work. Interruption state distinguishes user cancellation, backgrounding, configuration change, and screen disposal. Review all callback races and lifecycle changes on real devices.
 
@@ -308,6 +372,15 @@ At Results, RunAllSnapshotMapper converts automatic and manual data to stable sn
 Room version 1 has one `reports` table, an index on `completedAtEpochMillis`, and a matching exported schema at `app/schemas/com.insaner.fonecheck.data.local.FonecheckDatabase/1.json`. `ReportEntity` stores ID, report kind/optional category, start/completion times, report/score versions, nullable score and score state, coverage/applicable/completed/not-tested/unavailable counts, warning/failure counts, and the full JSON payload. Its invariants reject invalid kind/category combinations, timestamps, score state/value pairs, count relationships, IDs, and blank payloads. The DAO inserts with conflict abort, streams newest-first projection summaries, reads by ID, and deletes one/all.
 
 RoomReportRepository serializes on insert and validates both metadata and reconstructed entity on read. Unsupported schema or corrupt data is surfaced as unavailable data, not a trusted report. Room DAO methods are suspending/Flow APIs, so report ViewModels call the repository directly instead of wrapping every operation in another `withContext`. DataStore separately stores only theme mode, test-warning preference, and onboarding completion; I/O read failures fall back to defaults and preference writes are called directly from lifecycle-aware ViewModel coroutines.
+
+| Local preference | Storage/key | Default | Consumer contract |
+|---|---|---|---|
+| Theme mode | DataStore `fonecheck.preferences_pb`, `theme_mode` | `SYSTEM` | Resolves against the current system theme; LIGHT and DARK override it. |
+| Test warnings | DataStore, `test_warnings_enabled` | `true` | Passed into Full Check to control warning presentation. |
+| Onboarding complete | DataStore, `onboarding_complete` | `false` | Selects first-run Onboarding versus Home and is set by skip/final completion. |
+| Permission request history | private SharedPreferences `permission_request_history`, one Boolean under each `PermissionKind.name` | absent/false | Distinguishes first request from denied versus Settings-recovery state; it stores request history, not the Android grant itself. |
+
+Only an `IOException` while reading DataStore is converted to empty/default preferences; other read failures propagate. Permission grants are always re-read from Android, and `PermissionController` refreshes on lifecycle resume, so the private request-history Boolean cannot by itself manufacture a granted state.
 
 `ReportRepository.insertOrConfirm` is the shared ambiguous-insert recovery contract used by both Full Check and category retest. It rethrows coroutine cancellation, but after any other insert exception it reads the same stable ID and reports success only if the fully reconstructed stored report equals the report being saved. This handles the case where persistence committed before an exception was observed without converting an unrelated collision or mismatched payload into success.
 
@@ -330,6 +403,7 @@ The standalone Connectivity UI may hold sensitive values transiently in its View
 | SSID, IP/gateway/DNS, GPS coordinates, operator/cell identifiers, Bluetooth name | May be observed on the standalone Connectivity screen while permissions allow | Intentionally excluded from snapshots, Room payloads, PDF, and JSON. |
 | Camera preview/capture pixels and microphone samples | Used only by the active diagnostic interaction | Not placed in report evidence or export payload; no media-history store exists. |
 | Preferences | Theme, warning toggle, onboarding completion | Stored only in app-private DataStore, not in reports/exports. |
+| Permission request history | Whether each permission kind has previously launched a request | Stored in app-private `permission_request_history` SharedPreferences; no grant value or sensitive diagnostic payload is stored. |
 | Export files | Created only after the user selects a format | Cache-only, shareable by temporary URI grant, and eligible for 24-hour cleanup. |
 
 Adding any transient sensitive field to `DiagnosticEvidence`, `ReportDeviceContext`, or raw-text payloads expands the product's stored/exported data scope and must update privacy copy, schema/version reasoning, localization, tests, and release review.
@@ -358,7 +432,7 @@ Manifest declarations and source guards do not establish fresh-install, denied, 
 
 ## Localization
 
-English is in `app/src/main/res/values/strings.xml`; Finnish is in `values-fi/strings.xml`. There are 961 translatable resource keys in each locale with no key-only difference. English also contains exactly five `translatable="false"` values that are intentionally absent from Finnish: `app_name` plus the four battery icon codes `BAT`, `CHG`, `HLT`, and `MFR`. Route titles, screens, permission states, report statuses, evidence labels, stable text/reason values, and PDF labels are resource-backed. A small number of deliberately non-plural count formats use targeted `tools:ignore="PluralsCandidate"`; this is lint metadata, not a blanket plural exemption.
+English is in `app/src/main/res/values/strings.xml`; Finnish is in `app/src/main/res/values-fi/strings.xml`. The current files contain 988 translatable resource keys in each locale with no key-only difference: English has 993 total resources (985 strings and 8 plurals), Finnish has 988 (980 strings and 8 plurals). English's five extra resources are exactly the `translatable="false"` values intentionally absent from Finnish: `app_name` plus the four battery icon codes `BAT`, `CHG`, `HLT`, and `MFR`. Route titles, Home states and accessibility summaries, screens, permission states, report statuses, evidence labels, stable text/reason values, and PDF labels are resource-backed. A small number of deliberately non-plural count formats use targeted `tools:ignore="PluralsCandidate"`; this is lint metadata, not a blanket plural exemption.
 
 `EvidenceLocalization` maps all 76 check IDs, reason codes, stable text codes, and shared thermal-status labels at display/export time; unknown stable text receives a readable fallback rather than being stored in a locale-specific form. Performance and Thermal screens call the same `thermalStatusStringRes` mapping rather than maintaining local duplicates. PDF content uses locale-aware number and date/time formatting and localizes evidence source, confidence, status, score state, categories, units, and reasons.
 
@@ -375,11 +449,30 @@ ResourceParityTest exists, but this documentation update did not execute it. Rev
 - Dependabot is enabled in `config/android-check.json`. `.github/dependabot.yml` schedules weekly Gradle and GitHub Actions updates; configuration presence still does not prove that repository security settings are enabled, alerts are clear, or proposed updates are merged.
 - Project-local DeepSec is pinned to 2.2.9 under `.deepsec/`. Its external-AI processing is separate from normal checks and requires explicit provider, data-scope, cost, and retention approval for each run.
 
-GitHub Actions triggers on pushes and pull requests to `main`, grants read-only contents by default, and pins every action by full commit SHA. Both Android-building jobs use Java 17 and install exactly `platform-tools`, `platforms;android-37.0`, and `build-tools;37.0.0`; `build-test-lint` runs `:app:assembleDebug :app:testDebugUnitTest :app:lintDebug`. The manual-build CodeQL 4.37.5 job builds debug sources before Java/Kotlin analysis. The Semgrep/OSV job installs Semgrep 1.171.0, downloads OSV-Scanner 2.4.0 with an expected SHA-256, and scans `.deepsec` plus `buildscript-gradle.lockfile`. The workflow does not run instrumented tests or assemble/install release.
+GitHub Actions triggers on pushes and pull requests to `main`, grants read-only contents by default, and pins every action by full commit SHA. Both Android-building jobs use Java 17 and install exactly `platform-tools`, `platforms;android-37.0`, and `build-tools;37.0.0`; `build-test-lint` runs `:app:assembleDebug :app:testDebugUnitTest :app:lintDebug`. The manual-build CodeQL 4.37.5 job builds debug sources before Java/Kotlin analysis. The separately named `semgrep-osv` job currently runs only Semgrep: it uses the digest-pinned `semgrep/semgrep:1.171.0` image and scans the repository with `config/semgrep/fonecheck-security.yml`. The fourth job, `osv`, downloads OSV-Scanner 2.4.0, verifies its expected SHA-256, then scans `.deepsec` recursively and `buildscript-gradle.lockfile` as a lockfile. The workflow does not run ktlint, Detekt, Compose stability, Dependency-Check, instrumented tests, release assembly/installation, or Sonar.
 
 `config/android-check.json` declares both debug/release variants and `main`, `test`, and `androidTest` source sets; it additionally names ktlint, Detekt, stability, dependency-check, debug/release dependency configurations, and the Semgrep configuration. Its ordinary test task is still only `:app:testDebugUnitTest`; listing `androidTest` as a source set does not execute device tests. Configuration proves intended automation, not a passing current revision.
 
-The unit-test source set contains 60 Kotlin files: 56 contain `@Test`; `FakeReportRepository.kt`, `FakeAppPreferencesRepository.kt`, `testing/ReportFixtures.kt`, and `testing/SequenceNanoTimeSource.kt` are support code. The instrumented-test source set contains 19 Kotlin files, all with `@Test`. They cover domain scoring/assembly/comparison, report insert/confirm and Room reconstruction, permissions, DataStore, category policies/probes, storage/performance benchmarking, navigation, Room schema/DAO/repository, JSON/PDF export, localization, Full Check state/planning/snapshots, history/detail/comparison/export/settings/onboarding, Compose semantics, Home responsive breakpoints, and display interaction. No test, coverage report, build, or Sonar scan was run for this documentation change; hardware/device coverage remains required for camera, audio, GPS/GNSS, sensors, Bluetooth, biometrics, vibration, volume keys, storage conditions, API-26 behavior, and release R8/signing.
+### Local checker entry points and execution boundary
+
+Most root `tools/*.ps1` files are versioned thin wrappers around `C:\Dev\Android-check\tools\InvokeProjectCheck.ps1`; they select one shared command and forward the remaining arguments. The shared runtime, not this repository, owns their implementation. `os.ps1` additionally resolves and passes the repository root. `sonar.ps1` is the exception: it is a project-local consent gate and Sonar report wrapper.
+
+| Wrapper | Shared command |
+|---|---|
+| `ac.ps1` | `android-check` |
+| `bc.ps1` / `tc.ps1` | `build-check` / `test-check` |
+| `lc.ps1` / `cr.ps1` / `cs.ps1` | `lint-check` / `compose-rules` / `compose-stability` |
+| `dc.ps1` / `db.ps1` | `dependency-check` / `dependabot-check` |
+| `ga.ps1` / `ql.ps1` / `pc.ps1` | `google-android-security` / `codeql-check` / `pmd-check` |
+| `ms.ps1` / `os.ps1` / `ss.ps1` | `mobsf-scan` / `osv-scan` / `secret-scan` |
+| `sc.ps1` / `ds.ps1` | combined `security-check` / separate `deep-sec` |
+| `sentry.ps1` | `sentry` |
+
+For this checkout, Codex must not run Gradle unless the user gives fresh explicit authorization. `-PlanOnly` validates only command planning/configuration; it does not run Gradle or establish a clean result. DeepSec processing/revalidation is an external-AI boundary and requires per-run approval of provider, data scope, cost, and retention. Sonar requires `-AllowExternalUpload` plus a token for a real upload. Scanner summaries must be interpreted with their raw reports, exact suppressions/exceptions, manifest/configuration, and coverage scope.
+
+Manual Gradle command references are `./gradlew assembleDebug`, `./gradlew assembleRelease`, and `./gradlew test`; the repository/CI uses the more specific `:app:assembleDebug`, `:app:testDebugUnitTest`, and `:app:lintDebug` tasks. Relevant configured local gates additionally include `:app:ktlintCheck`, `:app:detekt`, `:app:stabilityCheck`, and `:app:dependencyCheckAnalyze`. These are references, not evidence that the current dirty checkout passed them.
+
+The unit-test source set contains 61 Kotlin files: 57 contain 234 `@Test` annotations; `app/src/test/java/com/insaner/fonecheck/data/repository/FakeReportRepository.kt`, `app/src/test/java/com/insaner/fonecheck/data/preferences/FakeAppPreferencesRepository.kt`, `app/src/test/java/com/insaner/fonecheck/testing/ReportFixtures.kt`, and `app/src/test/java/com/insaner/fonecheck/testing/SequenceNanoTimeSource.kt` are support code. The instrumented-test source set contains 19 Kotlin files, all with tests, for 52 `@Test` annotations. They cover domain scoring/assembly/comparison, report insert/confirm and Room reconstruction, permissions, DataStore, category policies/probes, storage/performance benchmarking, navigation, Room schema/DAO/repository, JSON/PDF export, localization, Full Check state/planning/snapshots, history/detail/comparison/export/settings/onboarding, Compose semantics, Home responsive/report-state behavior, and display interaction. `HomeViewModelTest` specifically protects empty state, latest-Full-Check selection against newer category retests, and summary-flow failure. File and annotation counts describe source inventory, not distinct runtime scenarios or a pass result. No test, coverage report, build, or Sonar scan was run for this documentation change; hardware/device coverage remains required for camera, audio, GPS/GNSS, sensors, Bluetooth, biometrics, vibration, volume keys, storage conditions, API-26 behavior, and release R8/signing.
 
 ## Review triggers and concrete questions
 
@@ -400,17 +493,18 @@ Use these current questions in reviews:
 
 | Concern | Verified paths |
 |---|---|
-| Build/version | `settings.gradle.kts`, `build.gradle.kts`, `app/build.gradle.kts`, `gradle.properties`, `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, `buildscript-gradle.lockfile`, `settings-gradle.lockfile`, `gradle/verification-metadata.xml`, `gradle/verification-keyring.keys` |
+| Build/version/stability | `settings.gradle.kts`, `build.gradle.kts`, `app/build.gradle.kts`, `gradle.properties`, `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, `buildscript-gradle.lockfile`, `settings-gradle.lockfile`, `gradle/verification-metadata.xml`, `gradle/verification-keyring.keys`, `config/compose-stability.conf`, `app/stability/app-debug.stability`, `app/stability/app-release.stability` |
 | Manifest/privacy | `app/src/main/AndroidManifest.xml`, `app/src/main/res/xml/data_extraction_rules.xml`, `app/src/main/res/xml/file_paths.xml`, `app/src/main/java/com/insaner/fonecheck/export/ReportExporter.kt` |
 | Launch/theme | `app/src/main/res/values/themes.xml`, `app/src/main/res/values/drawables.xml`, `app/src/main/res/values-v31/drawables.xml`, `app/src/main/res/drawable/splash_logo_vector.xml`, `app/src/main/res/drawable-v31/splash_logo_animated.xml`, `app/src/main/res/animator/`, `app/src/main/java/com/insaner/fonecheck/ui/MainActivity.kt` |
+| Launcher/brand assets | `app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml`, `app/src/main/res/mipmap-anydpi-v33/ic_launcher.xml`, `app/src/main/res/drawable/ic_launcher_monochrome.xml`, `app/src/main/res/drawable-nodpi/fonecheck_logo.webp`, `app/src/main/res/drawable-nodpi/fonecheck_mark.webp` |
 | App/navigation | `app/src/main/java/com/insaner/fonecheck/FonecheckApp.kt`, `app/src/main/java/com/insaner/fonecheck/ui/MainActivity.kt`, `app/src/main/java/com/insaner/fonecheck/navigation/Routes.kt`, `app/src/main/java/com/insaner/fonecheck/navigation/DiagnosticDestination.kt`, `app/src/main/java/com/insaner/fonecheck/navigation/FonecheckNavHost.kt`, `app/src/main/java/com/insaner/fonecheck/navigation/NavigationChrome.kt` |
 | Domain | `app/src/main/java/com/insaner/fonecheck/domain/model/DiagnosticEvidence.kt`, `app/src/main/java/com/insaner/fonecheck/domain/model/DiagnosticReport.kt`, `app/src/main/java/com/insaner/fonecheck/domain/model/ReportAssembler.kt`, `app/src/main/java/com/insaner/fonecheck/domain/model/ScoreCalculator.kt`, `app/src/main/java/com/insaner/fonecheck/domain/comparison/ReportComparisonEngine.kt` |
 | Local data | `app/src/main/java/com/insaner/fonecheck/data/local/FonecheckDatabase.kt`, `app/src/main/java/com/insaner/fonecheck/data/local/ReportEntity.kt`, `app/src/main/java/com/insaner/fonecheck/data/local/ReportDao.kt`, `app/src/main/java/com/insaner/fonecheck/data/repository/RoomReportRepository.kt`, `app/src/main/java/com/insaner/fonecheck/data/repository/ReportPayloadCodec.kt`, `app/src/main/java/com/insaner/fonecheck/data/preferences/AppPreferencesRepository.kt`, `app/schemas/com.insaner.fonecheck.data.local.FonecheckDatabase/1.json` |
 | Full Check | `app/src/main/java/com/insaner/fonecheck/ui/screens/runall/RunAllTestsViewModel.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/runall/RunAllTestsScreen.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/runall/RunAllStagePlanner.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/runall/RunAllSnapshotMapper.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/runall/RunAllResourceOwner.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/runall/RunAllResultsScreen.kt` |
 | Diagnostic features | `app/src/main/java/com/insaner/fonecheck/ui/screens/` subdirectories `deviceinfo`, `performance`, `simtelephony`, `display`, `audio`, `camera`, `sensor`, `connectivity`, `battery`, `thermal`, `storage`, `vibration`, `buttons`, and `biometrics` |
 | Saved report flows | `app/src/main/java/com/insaner/fonecheck/ui/screens/history/`, `app/src/main/java/com/insaner/fonecheck/ui/screens/report/`, `app/src/main/java/com/insaner/fonecheck/ui/screens/comparison/`, `app/src/main/java/com/insaner/fonecheck/ui/screens/export/`, `app/src/main/java/com/insaner/fonecheck/export/ReportPdfContent.kt`, `app/src/main/java/com/insaner/fonecheck/export/ReportPdfRenderer.kt` |
-| UI/localization | `app/src/main/java/com/insaner/fonecheck/ui/components/`, `app/src/main/java/com/insaner/fonecheck/ui/theme/`, `app/src/main/java/com/insaner/fonecheck/localization/EvidenceLocalization.kt`, `app/src/main/res/values/strings.xml`, `app/src/main/res/values-fi/strings.xml` |
-| Tests/automation | `app/src/test/`, `app/src/androidTest/`, `.github/workflows/android.yml`, `.github/dependabot.yml`, `config/android-check.json`, `config/check-exceptions.json`, `config/detekt/detekt.yml`, `config/dependency-check/suppressions.xml`, `config/semgrep/fonecheck-security.yml`, `sonar-project.properties`, `tools/sonar.ps1`, `.deepsec/` |
+| Home/UI/localization | `app/src/main/java/com/insaner/fonecheck/ui/screens/home/HomeScreen.kt`, `app/src/main/java/com/insaner/fonecheck/ui/screens/home/HomeViewModel.kt`, `app/src/main/java/com/insaner/fonecheck/ui/components/`, `app/src/main/java/com/insaner/fonecheck/ui/theme/`, `app/src/main/java/com/insaner/fonecheck/localization/EvidenceLocalization.kt`, `app/src/main/res/values/strings.xml`, `app/src/main/res/values-fi/strings.xml` |
+| Tests/automation | `app/src/test/`, `app/src/androidTest/`, `.github/workflows/android.yml`, `.github/dependabot.yml`, `config/android-check.json`, `config/check-exceptions.json`, `config/detekt/detekt.yml`, `config/dependency-check/suppressions.xml`, `config/semgrep/fonecheck-security.yml`, `sonar-project.properties`, `tools/`, `.deepsec/` |
 
 ## Screen and workflow matrix
 
@@ -419,7 +513,7 @@ All routes are declared in `C:\Dev\fonecheck\app\src\main\java\com\insaner\fonec
 | Screen / route | Purpose and primary actions | State and exceptional behavior | Layout / navigation ownership |
 |---|---|---|---|
 | Onboarding | Six pages cover welcome, testing, privacy, permissions, reports, and readiness; skip/final action marks onboarding complete. Reopened onboarding is reachable from Settings. | `OnboardingState` tracks page index, save-in-progress, one-shot finish, and save failure; retry preserves the page. | First completion clears the graph to Home; reopened flow pops back. It is a normal app-bar destination after entry. |
-| Home | Shows device summary, starts Full Check, opens History/Settings, and opens any catalog destination. | Summary is collected from `HomeViewModel`; an unavailable battery level renders the generic unavailable label rather than a fabricated percentage. | `BoxWithConstraints` grid: 2/3/4 columns at the documented breakpoints; cards navigate using the centralized destination route. |
+| Home | Owns the brand header, starts Full Check, opens History/Settings, opens the latest saved Full Check, and opens every catalog destination. | `LatestFullCheckState` explicitly represents loading, empty, available, corrupt/unsupported, and observation/load error; retry restarts summary observation. Only a real stored Full Check can populate the dashboard score/metrics. | Shared top bar is hidden only for Home. `BoxWithConstraints` grid uses 2/3/4 columns at the documented breakpoints; latest-report composition also responds to width/font scale; all actions use existing typed routes. |
 | Full Check preflight and stages | Selects optional work, resolves runtime permission results, performs automatic work, then renders one focused manual stage at a time. | Stage/permission/timeout/interruption/save states are all in `RunAllTestsState`; disabled or missing hardware becomes planned unavailable/not-tested evidence instead of an omitted category. | `app/src/main/java/com/insaner/fonecheck/ui/screens/runall/RunAllTestsScreen.kt` owns stage-specific content and reports display fullscreen through the NavHost callback. It returns by pop or opens a regular category route. |
 | Full Check results | Presents the frozen report, score/coverage, grouped category evidence, save status, retry, and category opening actions. | `ReportSaveStatus.SAVING`, `SAVED`, and `FAILED` remain visible; category actions should not imply an unsaved report is durable. | `app/src/main/java/com/insaner/fonecheck/ui/screens/runall/RunAllResultsScreen.kt` is reached only from the Full Check Results stage. |
 | History | Streams newest-first report summaries; opens detail, starts compare selection, deletes, and opens export. | `HistoryState` has loading/content/error semantics; an empty store is intentional, not an error. | `app/src/main/java/com/insaner/fonecheck/ui/screens/history/HistoryScreen.kt` uses message/loading/empty components plus report cards; navigation callbacks are supplied by `HistoryRoute`. |
@@ -499,7 +593,8 @@ For a new or changed category, update and review all of these together:
 
 | Pattern | Current examples | Review expectation |
 |---|---|---|
-| Simple immutable snapshot/state | Device, Performance, SIM, Home | A one-time/system snapshot must have a clear unavailable representation and should not retain callbacks it cannot clean up. |
+| Simple immutable snapshot/state | Device, Performance, SIM | A one-time/system snapshot must have a clear unavailable representation and should not retain callbacks it cannot clean up. |
+| Sealed observable dashboard state | Home | Summary observation, payload resolution, legacy candidate handling, retry, corrupt/unsupported data, and repository errors must remain distinguishable. |
 | Nested state plus selected expanded section | Battery, Connectivity, Display, Vibration, Biometrics | Keep related substate together and ensure a single state owner decides expansion. |
 | Flat interactive state | Audio, Camera, Sensor, Buttons, Thermal, Storage | Keep operation phase/error/resource facts in one immutable state and avoid parallel booleans that can disagree. |
 | Sealed workflow/load state | Detail, Comparison, Export | Render loading, available, not-found/unavailable and failure explicitly; never treat decode failure as a report. |
@@ -524,11 +619,11 @@ Most ViewModels use a private MutableStateFlow exposed as StateFlow. Hilt ViewMo
 | Pure domain | Score calculator, report assembler, comparison engine, evidence/report entity invariants | Deterministic status, coverage, scoring, schema and comparison contracts under test cases | Physical diagnostic truth or real Android service behavior. |
 | Policies/adapters | Permission, audio, battery, camera, connectivity, sensor, storage, thermal, vibration and button policy tests | Branching/API-policy expectations and fakeable boundary behavior | Vendor implementations, permissions UI, real hardware callbacks. |
 | Data | DataStore preferences, Room entity/DAO/schema/repository tests | Local persistence/validation and report reconstruction paths | Migration from a prior production DB version; none exists yet. |
-| Compose/unit UI | Navigation chrome, onboarding navigation, responsive Home breakpoints, screen-state/theme/localization helpers | Pure UI decisions and route behavior | Pixel-perfect layouts on actual devices. |
-| Instrumented UI | Home, onboarding, settings/licenses, permission/state cards, Full Check preflight/results, history/detail/comparison/export, display interaction, PDF exporter, Room tests | Android runtime/Compose semantics for selected flows | Complete API-level, form-factor, TalkBack and hardware coverage. |
+| Compose/unit UI | Navigation chrome, onboarding navigation, Home ViewModel/report selection, responsive Home breakpoints, screen-state/theme/localization helpers | Pure UI decisions, repository-state mapping, and route behavior | Pixel-perfect layouts on actual devices. |
+| Instrumented UI | Home explicit states/report summary/navigation/semantics/theme/font-scale/RTL, onboarding, settings/licenses, permission/state cards, Full Check preflight/results, history/detail/comparison/export, display interaction, PDF exporter, Room tests | Android runtime/Compose semantics for selected flows | Complete API-level, form-factor, TalkBack and hardware coverage. |
 | CI/security | Debug assemble/test/lint; CodeQL; Semgrep/OSV; configured local static tasks; Sonar/JaCoCo configuration | Intended gates, source scanning, and the coverage-import boundary | A fresh passing result for this revision, Sonar quality-gate status, excluded Android/UI coverage, release/R8 installation, signed artifact review. |
 
-The exact source-set correction is deliberate: `C:\Dev\fonecheck\app\src\test\java` has 60 Kotlin files, 56 with `@Test`; the other four are the fake repositories and shared test fixtures/time source named above. `C:\Dev\fonecheck\app\src\androidTest\java` has 19 Kotlin files, all with `@Test`. Do not turn file counts, JaCoCo configuration, or Sonar exclusions into a test-pass or coverage-quality claim without an actual run and report inspection.
+The exact source-set correction is deliberate: `C:\Dev\fonecheck\app\src\test\java` has 61 Kotlin files, 57 with `@Test` and 234 test annotations in total; the other four are the fake repositories and shared test fixtures/time source named above. `C:\Dev\fonecheck\app\src\androidTest\java` has 19 Kotlin files, all with tests, and 52 test annotations in total. Do not turn file/annotation counts, JaCoCo configuration, stability baselines, or Sonar exclusions into a test-pass, stability-pass, or coverage-quality claim without an actual run and report inspection.
 
 ### Required non-automated validation before release
 
@@ -577,10 +672,11 @@ The exact source-set correction is deliberate: `C:\Dev\fonecheck\app\src\test\ja
 ### Build, analysis, and supply chain
 
 1. Does a dependency or plugin change update the version catalog, applicable Gradle lockfiles, verification metadata/keyring, stability baselines, and time-bounded suppression evidence together?
-2. Is `targetSdk = 36` still an intentional, reviewed compatibility boundary, and has the separately required Android 17/SDK 37 target pass been completed before changing or retaining the `OldTargetApi` suppression?
-3. Does a Sonar coverage exclusion correspond to code that is genuinely exercised through instrumented/device evidence, or is it merely hidden from the JVM coverage denominator?
-4. Was any Sonar or external-AI upload explicitly approved with scope/token/data-retention awareness, and is a local PlanOnly/configuration check being kept distinct from an uploaded clean result?
-5. Are Dependabot configuration, repository enablement, alerts, generated PRs, and actual merges reported as separate states rather than one “enabled and clean” claim?
+2. If a type was added to `config/compose-stability.conf`, is its observable mutation actually mediated through Compose-aware state, and were both variant stability reports reviewed rather than merely regenerated?
+3. Is `targetSdk = 36` still an intentional, reviewed compatibility boundary, and has the separately required Android 17/SDK 37 target pass been completed before changing or retaining the `OldTargetApi` suppression?
+4. Does a Sonar coverage exclusion correspond to code that is genuinely exercised through instrumented/device evidence, or is it merely hidden from the JVM coverage denominator?
+5. Was any Sonar or external-AI upload explicitly approved with scope/token/data-retention awareness, and is a local PlanOnly/configuration check being kept distinct from an uploaded clean result?
+6. Are Dependabot configuration, repository enablement, alerts, generated PRs, and actual merges reported as separate states rather than one “enabled and clean” claim?
 
 ## Implemented, scaffolded, planned, and non-claim boundaries
 
@@ -601,3 +697,4 @@ The exact source-set correction is deliberate: `C:\Dev\fonecheck\app\src\test\ja
 5. Report export is deliberately shareable device diagnostic data; privacy wording, 24-hour cache cleanup, URI grants, receiving-app behavior, and FileProvider paths require signed-artifact verification.
 6. Dependency-Check and MobSF exceptions expire in September/October 2026 and must be revalidated or removed rather than allowed to become permanent bypasses.
 7. Sonar's configured JaCoCo input covers JVM tests and explicitly excludes broad Android/UI/platform surfaces; a future quality-gate pass must be interpreted alongside instrumented and physical-device evidence, not as whole-app behavioral coverage.
+8. Compose stability is configured and baseline-backed but is not part of the current GitHub workflow; review the shared stability contract and both variant baselines during release verification.

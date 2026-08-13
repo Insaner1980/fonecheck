@@ -5,6 +5,8 @@ import androidx.compose.ui.graphics.Color
 // Brand colors used by the interface and the illustration family.
 val Aqua40 = Color(0xFF00716D)
 val Aqua80 = Color(0xFF48D8D2)
+val Lavender40 = Color(0xFF6846A5)
+val Lavender80 = Color(0xFFC9B2FF)
 val Coral40 = Color(0xFF9C4237)
 val Coral80 = Color(0xFFFFB4A9)
 

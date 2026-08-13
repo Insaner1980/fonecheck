@@ -16,6 +16,9 @@ fun readableStatusColor(color: Color): Color =
         lightTheme = MaterialTheme.colorScheme.surface.luminance() > 0.5f,
     )
 
+@Composable
+fun brandLavenderColor(): Color = if (MaterialTheme.colorScheme.surface.luminance() > 0.5f) Lavender40 else Lavender80
+
 internal fun statusColorForTheme(
     color: Color,
     lightTheme: Boolean,

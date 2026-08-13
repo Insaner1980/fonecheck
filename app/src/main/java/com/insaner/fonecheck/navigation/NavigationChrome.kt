@@ -6,11 +6,17 @@ import com.insaner.fonecheck.R
 internal data class NavigationChrome(
     @StringRes val titleResId: Int,
     val showBackAction: Boolean,
+    val showTopBar: Boolean = true,
 )
 
 internal fun navigationChromeFor(route: String?): NavigationChrome =
     when {
-        route.matches(Home) -> NavigationChrome(R.string.app_name, showBackAction = false)
+        route.matches(Home) ->
+            NavigationChrome(
+                R.string.app_name,
+                showBackAction = false,
+                showTopBar = false,
+            )
         route.matches(DeviceInfo) -> NavigationChrome(R.string.home_cat_device, showBackAction = true)
         route.matches(PerformanceInfo) -> NavigationChrome(R.string.home_cat_performance, showBackAction = true)
         route.matches(SimTelephony) -> NavigationChrome(R.string.home_cat_sim, showBackAction = true)

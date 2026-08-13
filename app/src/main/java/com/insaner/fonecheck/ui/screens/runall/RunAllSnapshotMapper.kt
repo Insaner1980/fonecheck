@@ -1212,12 +1212,12 @@ object RunAllSnapshotMapper {
         val result = state.benchmarkResult
         val writeRate = result?.writeMebibytesPerSecond
         val readRate = result?.readMebibytesPerSecond
+        val benchmarkCapturedAt = result?.capturedAt
         val resultError = result?.error
         val hasRates = writeRate != null && readRate != null
         val allowsRates = resultError == null || resultError == StorageBenchmarkErrorCode.CLEANUP_FAILED
         val rateEvidence =
-            if (hasRates && allowsRates) {
-                val benchmarkCapturedAt = requireNotNull(result).capturedAt
+            if (hasRates && benchmarkCapturedAt != null && allowsRates) {
                 listOf(
                     storageRateEvidence(
                         "sequential_write",

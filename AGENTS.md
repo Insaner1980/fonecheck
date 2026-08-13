@@ -91,7 +91,7 @@ Reusable composables in `ui/components/`:
 
 New info screens MUST use these shared components instead of defining local copies.
 
-`RunAllTestsScreen` owns the full-run state machine and report creation. Individual category routes remain independent tests. Add new diagnostic categories to `navigation/DiagnosticDestinations.kt` and extend `RunAllReportBuilder`; do not create a second destination list.
+`RunAllTestsViewModel` owns the full-run state machine and uses `ReportAssembler` for report creation. Individual category routes remain independent tests. Add new diagnostic categories to `navigation/DiagnosticDestination.kt` and extend the existing Full Check snapshot/report mapping; do not create a second destination list.
 
 ## Code Review Triggers
 `CODE_REVIEW.md` contains tagged review items. Check relevant items at these trigger points:

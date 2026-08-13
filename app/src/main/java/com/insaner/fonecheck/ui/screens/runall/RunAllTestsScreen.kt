@@ -78,7 +78,10 @@ private const val PERFORMANCE_TIMEOUT_MS = 7_000L
 private const val STORAGE_TIMEOUT_MS = 45_000L
 
 @Composable
-@Suppress("kotlin:S3776") // Exhaustive stage coordination mirrors the finite run-all state machine.
+@Suppress(
+    "kotlin:S107", // ViewModel parameters are explicit test seams with Hilt defaults.
+    "kotlin:S3776", // Exhaustive stage coordination mirrors the finite run-all state machine.
+)
 fun RunAllTestsScreen(
     onDone: () -> Unit,
     onOpenCategory: (Any) -> Unit,

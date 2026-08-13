@@ -155,7 +155,7 @@ class MainActivity : FragmentActivity() {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             topBar = {
-                if (!isDisplayFullscreen) {
+                if (!isDisplayFullscreen && navigationChrome.showTopBar) {
                     TopAppBar(
                         title = {
                             Text(
@@ -219,7 +219,7 @@ class MainActivity : FragmentActivity() {
     }
 
     private companion object {
-        const val SPLASH_MIN_DURATION_MS = 1_500L
+        const val SPLASH_MIN_DURATION_MS = 1_000L
         const val SPLASH_EXIT_DURATION_MS = 180L
         const val SPLASH_EXIT_SCALE = 0.92f
     }
