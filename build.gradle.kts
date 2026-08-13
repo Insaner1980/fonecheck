@@ -1,8 +1,8 @@
 buildscript {
-    val jacksonVersion = "2.21.5"
-    val protobufVersion = "3.25.5"
-    val nettyVersion = "4.1.136.Final"
-    val bouncyCastleVersion = "1.84"
+    val jacksonVersion = "2.22.1"
+    val protobufVersion = "4.35.1"
+    val nettyVersion = "4.2.16.Final"
+    val bouncyCastleVersion = "1.85"
     val jsoupVersion = "1.23.1"
 
     configurations.classpath {
