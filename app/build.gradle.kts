@@ -28,6 +28,7 @@ android {
     buildTypes {
         debug {
             enableUnitTestCoverage = true
+            versionNameSuffix = "-debug"
         }
 
         release {
