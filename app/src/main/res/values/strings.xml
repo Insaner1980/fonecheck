@@ -696,6 +696,7 @@
     <string name="report_score_partial">Partial coverage</string>
     <string name="report_score_incomplete">Insufficient evidence</string>
     <string name="report_reason_error">Check could not be completed</string>
+    <string name="report_reason_android_version_unsupported">Unsupported on this Android version</string>
     <string name="report_coverage">Coverage</string>
     <string name="report_coverage_value">%1$d%% · Checks: %2$d/%3$d</string>
     <string name="report_pass_count" tools:ignore="PluralsCandidate">%1$d passed</string>

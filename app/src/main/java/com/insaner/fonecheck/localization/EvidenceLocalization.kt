@@ -17,7 +17,7 @@ fun evidenceReasonStringRes(reason: EvidenceReasonCode): Int? =
         EvidenceReasonCode.INSUFFICIENT_SPACE -> R.string.storage_benchmark_insufficient_space
         EvidenceReasonCode.USER_CONFIRMED_FAILURE -> R.string.run_all_manual_failed
         EvidenceReasonCode.HARDWARE_UNAVAILABLE -> R.string.run_all_summary_unavailable
-        EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED -> R.string.biometric_unsupported
+        EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED -> R.string.report_reason_android_version_unsupported
         EvidenceReasonCode.PLATFORM_RESTRICTION -> R.string.button_power_unavailable
         EvidenceReasonCode.BIOMETRIC_LOCKOUT -> R.string.biometric_locked_out
         EvidenceReasonCode.BIOMETRIC_NOT_ENROLLED -> R.string.biometric_none_enrolled

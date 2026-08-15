@@ -690,6 +690,7 @@
     <string name="report_score_partial">Osittainen kattavuus</string>
     <string name="report_score_incomplete">Riittämätön näyttö</string>
     <string name="report_reason_error">Tarkistusta ei voitu suorittaa loppuun</string>
+    <string name="report_reason_android_version_unsupported">Tämä Android-versio ei tue tarkistusta</string>
     <string name="report_coverage">Kattavuus</string>
     <string name="report_coverage_value">%1$d%% · Tarkistukset: %2$d/%3$d</string>
     <string name="report_pass_count">%1$d läpäisty</string>

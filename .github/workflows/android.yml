@@ -89,4 +89,5 @@ jobs:
       - name: Run OSV-Scanner
         shell: bash
         run: |
-          "$RUNNER_TEMP/osv-scanner" scan source --recursive .
+          "$RUNNER_TEMP/osv-scanner" scan source --recursive .deepsec
+          "$RUNNER_TEMP/osv-scanner" scan source --lockfile buildscript-gradle.lockfile

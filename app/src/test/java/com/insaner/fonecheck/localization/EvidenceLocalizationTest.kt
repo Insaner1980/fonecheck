@@ -40,7 +40,7 @@ class EvidenceLocalizationTest {
             evidenceReasonStringRes(EvidenceReasonCode.HARDWARE_UNAVAILABLE),
         )
         assertEquals(
-            R.string.biometric_unsupported,
+            R.string.report_reason_android_version_unsupported,
             evidenceReasonStringRes(EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED),
         )
         assertEquals(
