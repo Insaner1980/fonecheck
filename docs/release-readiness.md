@@ -133,6 +133,7 @@ Finnish full description:
 - [ ] Signed AAB is created with the owner-controlled upload key.
 - [ ] Play test-track install and update pass.
 - [ ] Physical-device and accessibility matrix passes on the required device/API profiles.
+- [ ] Android 17/API 37 passes both the current target-36 compatibility run and the target-37 gate in `hardware-qa-matrix.md` before `targetSdk` is raised or the `OldTargetApi` suppression is removed.
 
 The final RC artifacts produced on 2026-08-08 are:
 

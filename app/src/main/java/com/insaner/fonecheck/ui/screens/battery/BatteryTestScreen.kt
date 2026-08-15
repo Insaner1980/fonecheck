@@ -94,7 +94,7 @@ fun BatteryTestScreen(
                 statusText = stringResource(state.health.healthStatusLabel),
                 statusColor =
                     when (state.health.healthStatusRaw) {
-                        android.os.BatteryManager.BATTERY_HEALTH_GOOD -> Green400
+                        android.os.BatteryManager.BATTERY_HEALTH_GOOD -> Blue400
                         android.os.BatteryManager.BATTERY_HEALTH_UNKNOWN -> Neutral500
                         else -> Red400
                     },
@@ -210,7 +210,7 @@ private fun BasicDetails(
             value = stringResource(viewModel.getHealthLabel(basic.healthStatus)),
             valueColor =
                 when (basic.healthStatus) {
-                    android.os.BatteryManager.BATTERY_HEALTH_GOOD -> Green400
+                    android.os.BatteryManager.BATTERY_HEALTH_GOOD -> Blue400
                     android.os.BatteryManager.BATTERY_HEALTH_UNKNOWN -> Neutral500
                     else -> Red400
                 },
@@ -291,10 +291,16 @@ private fun HealthDetails(health: HealthState) {
             value = stringResource(health.healthStatusLabel),
             valueColor =
                 when (health.healthStatusRaw) {
-                    android.os.BatteryManager.BATTERY_HEALTH_GOOD -> Green400
+                    android.os.BatteryManager.BATTERY_HEALTH_GOOD -> Blue400
                     android.os.BatteryManager.BATTERY_HEALTH_UNKNOWN -> Neutral500
                     else -> Red400
                 },
+        )
+        Text(
+            text = stringResource(R.string.batt_health_source_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp),
         )
 
         if (health.cycleCountSupported) {

@@ -8,17 +8,17 @@ This reference is grounded in the live Android/Kotlin source, resources, Room sc
 | Item | Value |
 |---|---|
 | Verified source snapshot | 2026-08-13 |
-| Verified Git baseline | `0aefaf78a16932e44a7b26539f3d5ba04887de74` on `codex/android-toolchain-update`; the documented checkout also contains uncommitted Home, navigation-chrome, splash/launcher-branding, theme, localization, and test changes, which are part of this snapshot |
+| Verified Git baseline | `43365754c70ae6aafc089683acf185e0cc87fa94` on `codex/android-toolchain-update`; the documented checkout also contains uncommitted changes, which are part of this snapshot |
 | Application ID / namespace | com.insaner.fonecheck |
 | Android module | :app |
 | Version | versionCode = 1; versionName = "1.0.0" |
 | SDK range | min 26; compile 37; target 36 |
-| Source inventory | 142 production Kotlin files; 61 JVM-test Kotlin files (57 files and 234 annotations with `@Test`); 19 instrumented-test Kotlin files (all 19 files, 52 annotations with `@Test`) |
+| Source inventory | 143 production Kotlin files; 61 JVM-test Kotlin files (57 files and 237 annotations with `@Test`); 21 instrumented-test Kotlin files (all 21 files, 56 annotations with `@Test`) |
 | UI/navigation inventory | 24 `*Screen.kt` files, 24 serializable route declarations, 15 shared component files, 14 diagnostic category artwork files |
 | Durable/config inventory | 14 catalog categories, 76 localized durable evidence IDs, 13 manifest permissions, 11 optional manifest features |
 | Localization inventory | English: 985 strings + 8 plurals; Finnish: 980 strings + 8 plurals; both contain the same 988 translatable resource names, with five English-only non-translatable values |
-| This update | Live working-tree source, resources, schemas, tests, CI, build/security configuration, local checker wrappers, and Git inspection. No Gradle task, Sonar upload, external-AI scan, emulator, or physical-device test was run for this documentation update. |
-| Ownership | This documentation update changes only PROJECT.md. |
+| This update | Live working-tree source, resources, schemas, tests, CI, build/security configuration, local checker wrappers, and Git inspection. No Gradle task, Sonar upload, external-AI scan, emulator, or physical-device test was run. |
+| Ownership | This correction updates PROJECT.md, CI wording, the project-local Sonar wrapper/test, and the shared Android-check result provenance and stability wording. |
 
 The current code is authoritative if it differs from this file. FONECHECK_COMPLETE_PRODUCT_SPEC.md is a planning/specification artifact, not proof of implemented functionality.
 
@@ -89,7 +89,8 @@ That coverage report is deliberately JVM-unit-test coverage only. Sonar coverage
 
 - `-PlanOnly` prints the project, host, output paths, token requirement, Gradle task dependencies, and external-upload requirement without calling Sonar or Gradle.
 - A real scan requires the explicit `-AllowExternalUpload` switch and either `SONAR_TOKEN` or `systemProp.sonar.token`; the script writes the managed Gradle output to `reports/sonar.txt`.
-- The wrapper uses `C:\Dev\Android-check\tools\CheckRuntime.psm1` for the timeout-controlled Gradle process. If SonarQube CLI is installed, it then uses `SonarProjectChecks.psm1` to export open/confirmed issues to `reports/sonar-issues.json`; absence of the CLI makes only that issue-export step not applicable.
+- The wrapper uses `C:\Dev\Android-check\tools\CheckRuntime.psm1` for the timeout-controlled Gradle process and `AndroidProjectChecks.psm1` to fingerprint relevant source/configuration inputs before and after the analysis. A changed input makes the wrapper fail instead of attributing the upload to a moving checkout. If SonarQube CLI is installed, it then uses `SonarProjectChecks.psm1` to export open/confirmed issues to `reports/sonar-issues.json`; absence of the CLI makes only that issue-export step not applicable.
+- A successful Gradle process is recorded as an analysis upload with stable inputs, not as a Quality Gate pass. This wrapper does not query Quality Gate status, and its JaCoCo input remains JVM-unit-test coverage only.
 - CLI passthrough arguments also require `-AllowExternalUpload`. `reports/` and `.scannerwork/` are ignored local outputs.
 
 No Sonar task or external upload was performed for this document. Configuration presence and a PlanOnly-capable wrapper are not a current clean quality-gate result.
@@ -273,15 +274,17 @@ The built-in reason vocabulary currently includes permission denied, not run, sk
 
 DiagnosticStatus is intentionally six-way: PASS, FAIL, WARNING, INFO, NOT_AVAILABLE, and NOT_TESTED. Applicability.NOT_APPLICABLE and unavailable evidence do not enter the score denominator. Do not merge denial, skip, unavailable, not-tested, and fail into one generic error status.
 
-ReportAssembler freezes category aggregate status by priority: fail, warning, pass, all unavailable, any not-tested, then info. It rejects duplicate categories; a full report must exactly match the catalog, while a category-only report has exactly one category.
+ReportAssembler freezes category aggregate status by priority: fail, warning, not-tested, pass, all unavailable, then info. This prevents a capability or inventory fact from hiding an applicable check that was not run. It rejects duplicate categories; a full report must exactly match the catalog, while a category-only report has exactly one category.
 
-ScoreCalculator is version 1 and unweighted:
+ScoreCalculator is version 2 and unweighted:
 
 - Applicable PASS = 100, WARNING = 65, FAIL = 0; INFO, unavailable, and not-tested do not score.
 - Category score is the integer-floor mean of scoreable evidence; overall score is the floor mean of scoreable categories.
 - Coverage is completed applicable evidence (PASS/FAIL/WARNING/INFO) divided by applicable evidence.
 - Coverage below 70% is INCOMPLETE with null score; 100% is COMPLETE; otherwise PARTIAL.
 - Unavailable/non-applicable counts stay separate from the applicable denominator.
+
+Capability, inventory, and platform API facts are informational. PASS is reserved for bounded runtime responses or explicit user confirmation; neither status proves general physical hardware health across devices.
 
 Scores are comparable only when score versions match. Coverage deltas are omitted when report schema versions differ. Any change to score points, applicability, evidence, or category ordering must be reviewed through stored-report and comparison behavior.
 
@@ -449,7 +452,7 @@ ResourceParityTest exists, but this documentation update did not execute it. Rev
 - Dependabot is enabled in `config/android-check.json`. `.github/dependabot.yml` schedules weekly Gradle and GitHub Actions updates; configuration presence still does not prove that repository security settings are enabled, alerts are clear, or proposed updates are merged.
 - Project-local DeepSec is pinned to 2.2.9 under `.deepsec/`. Its external-AI processing is separate from normal checks and requires explicit provider, data-scope, cost, and retention approval for each run.
 
-GitHub Actions triggers on pushes and pull requests to `main`, grants read-only contents by default, and pins every action by full commit SHA. Both Android-building jobs use Java 17 and install exactly `platform-tools`, `platforms;android-37.0`, and `build-tools;37.0.0`; `build-test-lint` runs `:app:assembleDebug :app:testDebugUnitTest :app:lintDebug`. The manual-build CodeQL 4.37.5 job builds debug sources before Java/Kotlin analysis. The separately named `semgrep-osv` job currently runs only Semgrep: it uses the digest-pinned `semgrep/semgrep:1.171.0` image and scans the repository with `config/semgrep/fonecheck-security.yml`. The fourth job, `osv`, downloads OSV-Scanner 2.4.0, verifies its expected SHA-256, then scans `.deepsec` recursively and `buildscript-gradle.lockfile` as a lockfile. The workflow does not run ktlint, Detekt, Compose stability, Dependency-Check, instrumented tests, release assembly/installation, or Sonar.
+GitHub Actions triggers on pushes and pull requests to `main`, grants read-only contents by default, and pins every action by full commit SHA. Both Android-building jobs use Java 17 and install exactly `platform-tools`, `platforms;android-37.0`, and `build-tools;37.0.0`; job ID `build-test-lint`, displayed as “Debug and minified release builds, JVM unit tests, and debug lint”, runs `:app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:lintDebug`. The manual-build CodeQL 4.37.6 job builds debug sources before Java/Kotlin analysis. Job ID `semgrep-osv` is displayed as “Semgrep” because it runs only Semgrep: it uses the digest-pinned `semgrep/semgrep:1.171.0` image and scans the repository with `config/semgrep/fonecheck-security.yml`. The fourth job, `osv`, is displayed as “OSV dependency scan”; it downloads OSV-Scanner 2.4.0, verifies its expected SHA-256, then scans the repository recursively. The workflow does not run ktlint, Detekt, Compose stability, Dependency-Check, instrumented tests, signed release installation, or Sonar. `assembleRelease` verifies only that the minified unsigned release APK packages successfully; signing and installation remain external release gates.
 
 `config/android-check.json` declares both debug/release variants and `main`, `test`, and `androidTest` source sets; it additionally names ktlint, Detekt, stability, dependency-check, debug/release dependency configurations, and the Semgrep configuration. Its ordinary test task is still only `:app:testDebugUnitTest`; listing `androidTest` as a source set does not execute device tests. Configuration proves intended automation, not a passing current revision.
 
@@ -470,9 +473,9 @@ Most root `tools/*.ps1` files are versioned thin wrappers around `C:\Dev\Android
 
 For this checkout, Codex must not run Gradle unless the user gives fresh explicit authorization. `-PlanOnly` validates only command planning/configuration; it does not run Gradle or establish a clean result. DeepSec processing/revalidation is an external-AI boundary and requires per-run approval of provider, data scope, cost, and retention. Sonar requires `-AllowExternalUpload` plus a token for a real upload. Scanner summaries must be interpreted with their raw reports, exact suppressions/exceptions, manifest/configuration, and coverage scope.
 
-Manual Gradle command references are `./gradlew assembleDebug`, `./gradlew assembleRelease`, and `./gradlew test`; the repository/CI uses the more specific `:app:assembleDebug`, `:app:testDebugUnitTest`, and `:app:lintDebug` tasks. Relevant configured local gates additionally include `:app:ktlintCheck`, `:app:detekt`, `:app:stabilityCheck`, and `:app:dependencyCheckAnalyze`. These are references, not evidence that the current dirty checkout passed them.
+Manual Gradle command references are `./gradlew assembleDebug`, `./gradlew assembleRelease`, and `./gradlew test`; CI uses the more specific `:app:assembleDebug`, `:app:assembleRelease`, `:app:testDebugUnitTest`, and `:app:lintDebug` tasks, while the local `build-check` configuration names only `:app:assembleDebug`. Relevant configured local gates additionally include `:app:ktlintCheck`, `:app:detekt`, `:app:stabilityCheck`, and `:app:dependencyCheckAnalyze`. These are references, not evidence that the current dirty checkout passed them.
 
-The unit-test source set contains 61 Kotlin files: 57 contain 234 `@Test` annotations; `app/src/test/java/com/insaner/fonecheck/data/repository/FakeReportRepository.kt`, `app/src/test/java/com/insaner/fonecheck/data/preferences/FakeAppPreferencesRepository.kt`, `app/src/test/java/com/insaner/fonecheck/testing/ReportFixtures.kt`, and `app/src/test/java/com/insaner/fonecheck/testing/SequenceNanoTimeSource.kt` are support code. The instrumented-test source set contains 19 Kotlin files, all with tests, for 52 `@Test` annotations. They cover domain scoring/assembly/comparison, report insert/confirm and Room reconstruction, permissions, DataStore, category policies/probes, storage/performance benchmarking, navigation, Room schema/DAO/repository, JSON/PDF export, localization, Full Check state/planning/snapshots, history/detail/comparison/export/settings/onboarding, Compose semantics, Home responsive/report-state behavior, and display interaction. `HomeViewModelTest` specifically protects empty state, latest-Full-Check selection against newer category retests, and summary-flow failure. File and annotation counts describe source inventory, not distinct runtime scenarios or a pass result. No test, coverage report, build, or Sonar scan was run for this documentation change; hardware/device coverage remains required for camera, audio, GPS/GNSS, sensors, Bluetooth, biometrics, vibration, volume keys, storage conditions, API-26 behavior, and release R8/signing.
+The unit-test source set contains 61 Kotlin files: 57 contain 237 `@Test` annotations; `app/src/test/java/com/insaner/fonecheck/data/repository/FakeReportRepository.kt`, `app/src/test/java/com/insaner/fonecheck/data/preferences/FakeAppPreferencesRepository.kt`, `app/src/test/java/com/insaner/fonecheck/testing/ReportFixtures.kt`, and `app/src/test/java/com/insaner/fonecheck/testing/SequenceNanoTimeSource.kt` are support code. The instrumented-test source set contains 21 Kotlin files, all with tests, for 56 `@Test` annotations. Their source cases address domain scoring/assembly/comparison, report insert/confirm and Room reconstruction, permissions, DataStore, category policies/probes, storage/performance benchmarking, navigation, local-only manifest enforcement, external-activity launch handling, Room schema/DAO/repository, JSON/PDF export, localization, Full Check state/planning/snapshots, history/detail/comparison/export/settings/onboarding, Compose semantics, Home responsive/report-state behavior, and display interaction. `HomeViewModelTest` contains cases for empty state, latest-Full-Check selection against newer category retests, and summary-flow failure. File and annotation counts describe source inventory, not distinct runtime scenarios or a pass result. No test, coverage report, build, or Sonar scan was run for this documentation change; hardware/device coverage remains required for camera, audio, GPS/GNSS, sensors, Bluetooth, biometrics, vibration, volume keys, storage conditions, API-26 behavior, and release R8/signing.
 
 ## Review triggers and concrete questions
 
@@ -614,16 +617,16 @@ Most ViewModels use a private MutableStateFlow exposed as StateFlow. Hilt ViewMo
 
 ### Automated coverage map
 
-| Layer | Existing source coverage | What it establishes | What it does not establish |
+| Layer | Existing test/source inventory | What a passing scoped run can establish | What it does not establish |
 |---|---|---|---|
-| Pure domain | Score calculator, report assembler, comparison engine, evidence/report entity invariants | Deterministic status, coverage, scoring, schema and comparison contracts under test cases | Physical diagnostic truth or real Android service behavior. |
-| Policies/adapters | Permission, audio, battery, camera, connectivity, sensor, storage, thermal, vibration and button policy tests | Branching/API-policy expectations and fakeable boundary behavior | Vendor implementations, permissions UI, real hardware callbacks. |
-| Data | DataStore preferences, Room entity/DAO/schema/repository tests | Local persistence/validation and report reconstruction paths | Migration from a prior production DB version; none exists yet. |
-| Compose/unit UI | Navigation chrome, onboarding navigation, Home ViewModel/report selection, responsive Home breakpoints, screen-state/theme/localization helpers | Pure UI decisions, repository-state mapping, and route behavior | Pixel-perfect layouts on actual devices. |
-| Instrumented UI | Home explicit states/report summary/navigation/semantics/theme/font-scale/RTL, onboarding, settings/licenses, permission/state cards, Full Check preflight/results, history/detail/comparison/export, display interaction, PDF exporter, Room tests | Android runtime/Compose semantics for selected flows | Complete API-level, form-factor, TalkBack and hardware coverage. |
-| CI/security | Debug assemble/test/lint; CodeQL; Semgrep/OSV; configured local static tasks; Sonar/JaCoCo configuration | Intended gates, source scanning, and the coverage-import boundary | A fresh passing result for this revision, Sonar quality-gate status, excluded Android/UI coverage, release/R8 installation, signed artifact review. |
+| Pure domain | Score calculator, report assembler, comparison engine, evidence/report entity invariants | A passing JVM run verifies deterministic status, coverage, scoring, schema and comparison behavior for those cases. | Physical diagnostic truth or real Android service behavior. |
+| Policies/adapters | Permission, audio, battery, camera, connectivity, sensor, storage, thermal, vibration and button policy tests | A passing JVM run verifies the represented policy branches and fakeable boundaries. | Vendor implementations, permissions UI, real hardware callbacks. |
+| Data | DataStore preferences, Room entity/DAO/schema/repository tests | A passing applicable JVM or instrumented run verifies the represented persistence, validation and reconstruction paths. | Migration from a prior production DB version; none exists yet. |
+| Compose/unit UI | Navigation chrome, onboarding navigation, Home ViewModel/report selection, responsive Home breakpoints, screen-state/theme/localization helpers | A passing JVM run verifies the represented pure UI decisions, state mapping and routes. | Pixel-perfect layouts on actual devices. |
+| Instrumented UI | Home explicit states/report summary/navigation/semantics/theme/font-scale/RTL, onboarding, settings/licenses, permission/state cards, Full Check preflight/results, history/detail/comparison/export, display interaction, PDF exporter, Room tests | A passing instrumented run verifies selected Android runtime and Compose semantics on the device or emulator used. | Complete API-level, form-factor, TalkBack and hardware coverage. |
+| CI/security | Debug and minified release assemble/JVM test/debug lint; CodeQL; Semgrep/OSV; configured local static tasks; Sonar/JaCoCo configuration | A completed revision-bound run verifies only its named tasks, scan scope and coverage-import boundary. | Other revisions, Sonar quality-gate status unless queried, excluded Android/UI coverage, signed release installation and artifact review. |
 
-The exact source-set correction is deliberate: `C:\Dev\fonecheck\app\src\test\java` has 61 Kotlin files, 57 with `@Test` and 234 test annotations in total; the other four are the fake repositories and shared test fixtures/time source named above. `C:\Dev\fonecheck\app\src\androidTest\java` has 19 Kotlin files, all with tests, and 52 test annotations in total. Do not turn file/annotation counts, JaCoCo configuration, stability baselines, or Sonar exclusions into a test-pass, stability-pass, or coverage-quality claim without an actual run and report inspection.
+The exact source-set correction is deliberate: `C:\Dev\fonecheck\app\src\test\java` has 61 Kotlin files, 57 with `@Test` and 237 test annotations in total; the other four are the fake repositories and shared test fixtures/time source named above. `C:\Dev\fonecheck\app\src\androidTest\java` has 21 Kotlin files, all with tests, and 56 test annotations in total. Do not turn file/annotation counts, JaCoCo configuration, stability baselines, or Sonar exclusions into a test-pass, stability-pass, or coverage-quality claim without an actual revision-bound run and report inspection.
 
 ### Required non-automated validation before release
 
@@ -683,7 +686,7 @@ The exact source-set correction is deliberate: `C:\Dev\fonecheck\app\src\test\ja
 | Boundary | Current repository evidence |
 |---|---|
 | Implemented | Fourteen category routes, Full Check, immutable report domain, Room v1 storage, history/detail/retest/comparison, JSON/PDF export, onboarding, settings, licenses, EN/FI resources, tests and CI configuration. |
-| Versioned but not migration-complete | Report schema and score version are both 1; Room schema is exported, but no migration is needed or implemented until a later database version exists. |
+| Versioned but not migration-complete | Report schema is 1 and score version is 2; Room schema is exported, but no migration is needed or implemented until a later database version exists. |
 | Intentionally absent | Cloud/network service, accounts, analytics, billing, network speed test, remote synchronization, automatic report upload, and full-device storage/thermal certification. |
 | Product/spec-only unless separately implemented | Requirements described only in FONECHECK_COMPLETE_PRODUCT_SPEC.md, not in the code paths listed above. |
 | Runtime non-claims | Source/test inspection does not prove any individual handset’s camera, biometric, sensor, battery, telephony, GPS, Bluetooth, audio, display, permission or release behavior. |

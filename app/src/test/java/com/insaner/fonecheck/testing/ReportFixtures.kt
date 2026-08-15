@@ -42,7 +42,7 @@ fun testReport(
         ReportKind.FULL_CHECK,
         startedAt,
         completedAt,
-        ReportDeviceContext("Finnvek", deviceModel, "Fonecheck", "test", "16", 36, null),
+        ReportDeviceContext("Finnvek", deviceModel, "fonecheck", "test", "16", 36, null),
         ReportAppContext("1.0.0", 1L),
         categories,
         ScoreSummary(scoreVersion, scoreValue, scoreState),
@@ -59,7 +59,7 @@ fun batteryReport(
         DiagnosticEvidence(
             categoryId = DiagnosticCategoryId.BATTERY,
             checkId = DiagnosticCheckId(DiagnosticCategoryId.BATTERY, "battery.level"),
-            status = DiagnosticStatus.PASS,
+            status = DiagnosticStatus.INFO,
             confidence = Confidence.HIGH,
             source = EvidenceSource.ANDROID_API,
             applicability = Applicability.APPLICABLE,
@@ -74,11 +74,13 @@ fun batteryReport(
             listOf(
                 DiagnosticCategoryResult(
                     DiagnosticCategoryId.BATTERY,
-                    DiagnosticStatus.PASS,
+                    DiagnosticStatus.INFO,
                     listOf(evidence),
                 ),
             ),
-        scoreValue = 92,
+        scoreValue = null,
+        scoreState = ScoreState.INCOMPLETE,
+        coverage = CoverageSummary(1, 1, 0, 0, 100),
     )
 }
 

@@ -231,7 +231,7 @@ private fun HapticDetails(haptic: HapticCapabilityState) {
             if (haptic.primitivesApiSupported) {
                 haptic.supportedPrimitivesCount.toString()
             } else {
-                stringResource(R.string.vibration_primitives_require_android_12)
+                stringResource(R.string.vibration_api_requires_android_11)
             },
         )
         haptic.supportedPrimitives.forEach { primitive ->

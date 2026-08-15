@@ -120,7 +120,7 @@ class ReportPdfExporterTest {
             kind = ReportKind.FULL_CHECK,
             startedAt = Instant.parse("2026-08-08T10:00:00Z"),
             completedAt = Instant.parse("2026-08-08T10:01:00Z"),
-            device = ReportDeviceContext("Finnvek", "Test Device", "Fonecheck", "test", "16", 36, null),
+            device = ReportDeviceContext("Finnvek", "Test Device", "fonecheck", "test", "16", 36, null),
             app = ReportAppContext("1.0.0", 1L),
             categories =
                 listOf(

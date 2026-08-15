@@ -145,9 +145,10 @@ class MainActivity : FragmentActivity() {
     ) {
         val navController = rememberNavController()
         val backStackEntry by navController.currentBackStackEntryAsState()
-        val currentRoute = backStackEntry?.destination?.route
+        val currentDestination = backStackEntry?.destination
+        val currentRoute = currentDestination?.route
         var isDisplayFullscreen by remember { mutableStateOf(false) }
-        val navigationChrome = navigationChromeFor(currentRoute)
+        val navigationChrome = navigationChromeFor(currentDestination)
 
         LaunchedEffect(currentRoute) { isDisplayFullscreen = false }
         ConfigureSystemBars(darkTheme, isDisplayFullscreen)

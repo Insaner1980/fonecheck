@@ -4,6 +4,8 @@
 # To regenerate this file, run: ./gradlew dependencies --write-locks
 androidx.databinding:databinding-common:9.3.1=classpath
 androidx.databinding:databinding-compiler-common:9.3.1=classpath
+androidx.room:androidx.room.gradle.plugin:2.8.4=classpath
+androidx.room:room-gradle-plugin:2.8.4=classpath
 com.android.application:com.android.application.gradle.plugin:9.3.1=classpath
 com.android.databinding:baseLibrary:9.3.1=classpath
 com.android.tools.analytics-library:crash:32.3.1=classpath

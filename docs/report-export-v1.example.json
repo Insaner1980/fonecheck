@@ -20,12 +20,12 @@
   "categories": [
     {
       "categoryId": "battery",
-      "aggregateStatus": "pass",
+      "aggregateStatus": "info",
       "evidence": [
         {
           "categoryId": "battery",
           "checkId": "battery.level",
-          "status": "pass",
+          "status": "info",
           "confidence": "high",
           "source": "android_api",
           "applicability": "applicable",
@@ -41,15 +41,15 @@
     }
   ],
   "score": {
-    "version": 1,
-    "value": 92,
-    "state": "partial"
+    "version": 2,
+    "value": null,
+    "state": "incomplete"
   },
   "coverage": {
-    "applicableCount": 4,
-    "completedCount": 3,
-    "notTestedCount": 1,
+    "applicableCount": 1,
+    "completedCount": 1,
+    "notTestedCount": 0,
     "unavailableCount": 0,
-    "percentage": 75
+    "percentage": 100
   }
 }

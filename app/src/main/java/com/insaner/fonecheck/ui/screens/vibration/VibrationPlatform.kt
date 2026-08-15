@@ -1,5 +1,6 @@
 package com.insaner.fonecheck.ui.screens.vibration
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.os.VibrationEffect
@@ -90,7 +91,7 @@ class AndroidVibrationPlatform
             val hasVibrator = runCatching { currentVibrator.hasVibrator() }.getOrDefault(false)
             if (!hasVibrator) return HapticCapabilityState()
             val effectsApiSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
-            val primitivesApiSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+            val primitivesApiSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
             return HapticCapabilityState(
                 hasVibrator = true,
                 hasAmplitudeControl = runCatching { currentVibrator.hasAmplitudeControl() }.getOrDefault(false),
@@ -131,7 +132,8 @@ class AndroidVibrationPlatform
                 }.orEmpty()
         }
 
-        @RequiresApi(Build.VERSION_CODES.S)
+        @SuppressLint("InlinedApi")
+        @RequiresApi(Build.VERSION_CODES.R)
         private fun readSupportedPrimitives(vibrator: Vibrator): List<VibrationPrimitiveCode> {
             val support =
                 runCatching {

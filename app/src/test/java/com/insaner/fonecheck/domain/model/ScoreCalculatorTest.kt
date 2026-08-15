@@ -11,6 +11,9 @@ class ScoreCalculatorTest {
     @Test
     fun `catalog has the exact canonical stable category order`() {
         assertEquals(
+            "Category identity and order are persisted in reports. Before updating this contract, review " +
+                "ReportSchemaVersion, ScoreVersion, old-report decoding, localization, privacy, exports, " +
+                "and comparisons.",
             listOf(
                 "device",
                 "performance",
@@ -181,7 +184,7 @@ class ScoreCalculatorTest {
     @Test
     fun `only identical score versions are compatible`() {
         assertTrue(ScoreVersion.CURRENT.isCompatibleWith(ScoreVersion.CURRENT))
-        assertFalse(ScoreVersion.CURRENT.isCompatibleWith(ScoreVersion(2)))
+        assertFalse(ScoreVersion.CURRENT.isCompatibleWith(ScoreVersion(1)))
     }
 
     private fun assertScore(

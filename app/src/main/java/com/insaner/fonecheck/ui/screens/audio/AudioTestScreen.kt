@@ -44,6 +44,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.permission.PermissionKind
 import com.insaner.fonecheck.domain.permission.PermissionState
@@ -93,6 +95,12 @@ fun AudioTestScreen(
         if (microphonePermission.state != PermissionState.GRANTED) {
             viewModel.stopRecording()
         }
+    }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        viewModel.stopTone()
+        viewModel.stopRecording()
+        viewModel.stopPlayback()
     }
 
     DisposableEffect(Unit) {

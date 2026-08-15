@@ -18,7 +18,7 @@ value class ScoreVersion(
     fun isCompatibleWith(other: ScoreVersion): Boolean = this == other
 
     companion object {
-        val CURRENT = ScoreVersion(1)
+        val CURRENT = ScoreVersion(2)
     }
 }
 

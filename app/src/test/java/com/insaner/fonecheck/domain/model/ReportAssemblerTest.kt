@@ -57,6 +57,28 @@ class ReportAssemblerTest {
     }
 
     @Test
+    fun `not tested applicable evidence prevents a category pass`() {
+        val report =
+            ReportAssembler.assemble(
+                request(
+                    kind = ReportKind.CATEGORY_ONLY,
+                    snapshots =
+                        listOf(
+                            snapshot(
+                                DiagnosticCategoryId.CAMERA,
+                                DiagnosticStatus.PASS,
+                                DiagnosticStatus.NOT_TESTED,
+                            ),
+                        ),
+                ),
+            )
+
+        assertEquals(DiagnosticStatus.NOT_TESTED, report.categories.single().aggregateStatus)
+        assertEquals(ScoreState.INCOMPLETE, report.score.state)
+        assertNull(report.score.value)
+    }
+
+    @Test
     fun `unavailable evidence is excluded from coverage and numeric score`() {
         val snapshots =
             DiagnosticCatalog.categories.map { categoryId ->
@@ -104,7 +126,7 @@ class ReportAssemblerTest {
             ReportDeviceContext(
                 manufacturer = "Finnvek",
                 model = "Test Device",
-                brand = "Fonecheck",
+                brand = "fonecheck",
                 product = "golden",
                 androidRelease = "16",
                 apiLevel = 36,
@@ -116,23 +138,16 @@ class ReportAssemblerTest {
 
     private fun snapshot(
         categoryId: DiagnosticCategoryId,
-        status: DiagnosticStatus,
-    ): DiagnosticCategorySnapshot {
-        val reason =
-            when (status) {
-                DiagnosticStatus.WARNING -> EvidenceReasonCode.DEGRADED
-                DiagnosticStatus.NOT_AVAILABLE -> EvidenceReasonCode.HARDWARE_UNAVAILABLE
-                DiagnosticStatus.NOT_TESTED -> EvidenceReasonCode.SKIPPED
-                else -> null
-            }
-        return DiagnosticCategorySnapshot(
+        vararg statuses: DiagnosticStatus,
+    ): DiagnosticCategorySnapshot =
+        DiagnosticCategorySnapshot(
             version = DiagnosticSnapshotVersion.CURRENT,
             categoryId = categoryId,
             evidence =
-                listOf(
+                statuses.mapIndexed { index, status ->
                     DiagnosticEvidence(
                         categoryId = categoryId,
-                        checkId = DiagnosticCheckId(categoryId, "${categoryId.stableId}.golden"),
+                        checkId = DiagnosticCheckId(categoryId, "${categoryId.stableId}.golden_$index"),
                         status = status,
                         confidence = Confidence.HIGH,
                         source = EvidenceSource.AUTOMATIC_MEASUREMENT,
@@ -142,10 +157,15 @@ class ReportAssemblerTest {
                             } else {
                                 Applicability.APPLICABLE
                             },
-                        reason = reason,
+                        reason =
+                            when (status) {
+                                DiagnosticStatus.WARNING -> EvidenceReasonCode.DEGRADED
+                                DiagnosticStatus.NOT_AVAILABLE -> EvidenceReasonCode.HARDWARE_UNAVAILABLE
+                                DiagnosticStatus.NOT_TESTED -> EvidenceReasonCode.SKIPPED
+                                else -> null
+                            },
                         capturedAt = Instant.parse("2026-08-07T12:00:30Z"),
-                    ),
-                ),
+                    )
+                },
         )
-    }
 }

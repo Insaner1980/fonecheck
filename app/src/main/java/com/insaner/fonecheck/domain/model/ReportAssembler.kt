@@ -100,9 +100,11 @@ object ReportAssembler {
         when {
             evidence.any { it.status == DiagnosticStatus.FAIL } -> DiagnosticStatus.FAIL
             evidence.any { it.status == DiagnosticStatus.WARNING } -> DiagnosticStatus.WARNING
+            evidence.any {
+                it.status == DiagnosticStatus.NOT_TESTED && it.applicability == Applicability.APPLICABLE
+            } -> DiagnosticStatus.NOT_TESTED
             evidence.any { it.status == DiagnosticStatus.PASS } -> DiagnosticStatus.PASS
             evidence.all { it.status == DiagnosticStatus.NOT_AVAILABLE } -> DiagnosticStatus.NOT_AVAILABLE
-            evidence.any { it.status == DiagnosticStatus.NOT_TESTED } -> DiagnosticStatus.NOT_TESTED
             else -> DiagnosticStatus.INFO
         }
 }

@@ -91,6 +91,44 @@ class RunAllResultsScreenTest {
         assertEquals(1, retries)
     }
 
+    @Test
+    fun informationalCategoryUsesInformationalSummaryAndCount() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val report = report()
+        val informational =
+            report.copy(
+                categories =
+                    report.categories.map { category ->
+                        category.copy(
+                            aggregateStatus = DiagnosticStatus.INFO,
+                            evidence = category.evidence.map { it.copy(status = DiagnosticStatus.INFO) },
+                        )
+                    },
+                score = ScoreSummary(ScoreVersion.CURRENT, null, ScoreState.INCOMPLETE),
+            )
+
+        composeRule.setContent {
+            FonecheckTheme {
+                RunAllResultsScreen(
+                    report = informational,
+                    saveStatus = ReportSaveStatus.SAVED,
+                    onRetrySave = {},
+                    onOpenCategory = {},
+                    onDone = {},
+                )
+            }
+        }
+
+        composeRule
+            .onNodeWithText(context.getString(R.string.run_all_summary_info))
+            .performScrollTo()
+            .assertIsDisplayed()
+        composeRule
+            .onNodeWithText(context.getString(R.string.report_info_count, 1))
+            .performScrollTo()
+            .assertIsDisplayed()
+    }
+
     private fun report(): DiagnosticReport {
         val capturedAt = Instant.parse("2026-08-07T12:00:30Z")
         return DiagnosticReport(
@@ -102,7 +140,7 @@ class RunAllResultsScreenTest {
                 ReportDeviceContext(
                     manufacturer = "Finnvek",
                     model = "Test Device",
-                    brand = "Fonecheck",
+                    brand = "fonecheck",
                     product = "ui-test",
                     androidRelease = "16",
                     apiLevel = 36,
