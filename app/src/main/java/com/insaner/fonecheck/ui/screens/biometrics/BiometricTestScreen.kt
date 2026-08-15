@@ -41,40 +41,50 @@ fun BiometricTestScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val activity = LocalActivity.current as? FragmentActivity
-    var activePrompt by remember { mutableStateOf<BiometricPrompt?>(null) }
+    var biometricPrompt by remember { mutableStateOf<BiometricPrompt?>(null) }
 
-    DisposableEffect(viewModel) {
+    DisposableEffect(activity, viewModel) {
+        val currentActivity = activity
+        if (currentActivity == null) {
+            biometricPrompt = null
+            return@DisposableEffect onDispose {}
+        }
+        val prompt =
+            createBiometricPrompt(
+                activity = currentActivity,
+                onSuccess = viewModel::onAuthSuccess,
+                onFailed = viewModel::onAuthFailed,
+                onError = viewModel::onAuthError,
+            )
+        biometricPrompt = prompt
+
         onDispose {
-            viewModel.cancelAuthentication()
-            activePrompt?.cancelAuthentication()
-            activePrompt = null
+            if (!currentActivity.isChangingConfigurations) {
+                viewModel.cancelAuthentication()
+                prompt.cancelAuthentication()
+            }
+            if (biometricPrompt === prompt) {
+                biometricPrompt = null
+            }
         }
     }
 
     fun authenticate() {
-        if (activity == null) return
+        val currentActivity = activity ?: return
+        val currentPrompt = biometricPrompt ?: return
         viewModel.startAuthentication()
         if (!viewModel.state.value.promptActive) return
         runCatching {
-            showBiometricPrompt(
-                activity = activity,
-                onSuccess = {
-                    viewModel.onAuthSuccess()
-                    activePrompt = null
-                },
-                onFailed = viewModel::onAuthFailed,
-                onError = { errorCode, message ->
-                    viewModel.onAuthError(errorCode, message)
-                    activePrompt = null
-                },
+            authenticateWithBiometricPrompt(
+                activity = currentActivity,
+                prompt = currentPrompt,
             )
-        }.onSuccess { activePrompt = it }
-            .onFailure {
-                viewModel.onAuthError(
-                    BiometricPrompt.ERROR_VENDOR,
-                    it.message.orEmpty(),
-                )
-            }
+        }.onFailure {
+            viewModel.onAuthError(
+                BiometricPrompt.ERROR_VENDOR,
+                it.message.orEmpty(),
+            )
+        }
     }
 
     TestScreenContent(modifier = modifier) {

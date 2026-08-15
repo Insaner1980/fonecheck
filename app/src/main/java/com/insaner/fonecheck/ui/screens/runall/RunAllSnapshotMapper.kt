@@ -152,7 +152,7 @@ object RunAllSnapshotMapper {
             evidence(
                 categoryId = DiagnosticCategoryId.PERFORMANCE,
                 id = "cpu",
-                status = passOrWarning(performance.cpuCores > 0),
+                status = infoOrWarning(performance.cpuCores > 0),
                 confidence = performance.cpuConfidence,
                 reason = EvidenceReasonCode.DEGRADED.takeIf { performance.cpuCores <= 0 },
                 value = EvidenceValue.IntValue(performance.cpuCores),
@@ -162,7 +162,7 @@ object RunAllSnapshotMapper {
             evidence(
                 categoryId = DiagnosticCategoryId.PERFORMANCE,
                 id = "ram",
-                status = passOrWarning(hasRamReading),
+                status = infoOrWarning(hasRamReading),
                 confidence = performance.ramConfidence,
                 reason = EvidenceReasonCode.DEGRADED.takeIf { !hasRamReading },
                 value = EvidenceValue.BooleanValue(hasRamReading),
@@ -171,7 +171,7 @@ object RunAllSnapshotMapper {
             evidence(
                 categoryId = DiagnosticCategoryId.PERFORMANCE,
                 id = "gpu",
-                status = passOrWarning(hasGpuReading),
+                status = infoOrWarning(hasGpuReading),
                 confidence = performance.gpuConfidence,
                 reason = EvidenceReasonCode.DEGRADED.takeIf { !hasGpuReading },
                 value = EvidenceValue.BooleanValue(hasGpuReading),
@@ -307,7 +307,7 @@ object RunAllSnapshotMapper {
             evidence(
                 categoryId = DiagnosticCategoryId.DISPLAY,
                 id = "info",
-                status = passOrWarning(hasResolution),
+                status = infoOrWarning(hasResolution),
                 reason = EvidenceReasonCode.DEGRADED.takeIf { !hasResolution },
                 value = EvidenceValue.LongValue(info.widthPx.toLong() * info.heightPx.toLong()),
                 unit = EvidenceUnitCode("pixels"),
@@ -408,13 +408,13 @@ object RunAllSnapshotMapper {
     ): List<DiagnosticEvidence> {
         val capture = snapshots.camera.lastCapture
         return listOf(
-            presence(
+            capabilityPresence(
                 DiagnosticCategoryId.CAMERA,
                 "rear",
                 snapshots.camera.rearCapabilities != null,
                 capturedAt,
             ),
-            presence(
+            capabilityPresence(
                 DiagnosticCategoryId.CAMERA,
                 "front",
                 snapshots.camera.frontCapabilities != null,
@@ -434,7 +434,6 @@ object RunAllSnapshotMapper {
                         DiagnosticCategoryId.CAMERA,
                         "capture",
                         capturedAt,
-                        source = EvidenceSource.USER_CONFIRMATION,
                     )
                 permissions.camera ->
                     manualEvidence(
@@ -800,7 +799,7 @@ object RunAllSnapshotMapper {
             } else {
                 val healthStatus =
                     when (battery.healthStatus) {
-                        BatteryManager.BATTERY_HEALTH_GOOD -> DiagnosticStatus.PASS
+                        BatteryManager.BATTERY_HEALTH_GOOD -> DiagnosticStatus.INFO
                         BatteryManager.BATTERY_HEALTH_OVERHEAT,
                         BatteryManager.BATTERY_HEALTH_DEAD,
                         BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE,
@@ -813,7 +812,10 @@ object RunAllSnapshotMapper {
                     categoryId = DiagnosticCategoryId.BATTERY,
                     id = "health",
                     status = healthStatus,
-                    reason = EvidenceReasonCode.DEGRADED.takeIf { healthStatus != DiagnosticStatus.PASS },
+                    reason =
+                        EvidenceReasonCode.DEGRADED.takeIf {
+                            healthStatus == DiagnosticStatus.WARNING || healthStatus == DiagnosticStatus.FAIL
+                        },
                     value = EvidenceValue.StableTextCodeValue(batteryHealthCode(battery.healthStatus)),
                     capturedAt = capturedAt,
                 )
@@ -961,7 +963,7 @@ object RunAllSnapshotMapper {
         val haptic = snapshots.vibration.haptic
         val hasVibrator = haptic.hasVibrator
         return listOf(
-            presence(DiagnosticCategoryId.VIBRATION, "hardware", hasVibrator, capturedAt),
+            capabilityPresence(DiagnosticCategoryId.VIBRATION, "hardware", hasVibrator, capturedAt),
             if (hasVibrator) {
                 evidence(
                     categoryId = DiagnosticCategoryId.VIBRATION,
@@ -1000,7 +1002,6 @@ object RunAllSnapshotMapper {
                     DiagnosticCategoryId.VIBRATION,
                     "motor",
                     capturedAt,
-                    source = EvidenceSource.USER_CONFIRMATION,
                 )
             },
         )
@@ -1060,7 +1061,7 @@ object RunAllSnapshotMapper {
                 else -> {
                     val diagnosticStatus =
                         when (thermal.status) {
-                            ThermalStatusCode.NONE -> DiagnosticStatus.PASS
+                            ThermalStatusCode.NONE -> DiagnosticStatus.INFO
                             ThermalStatusCode.LIGHT,
                             ThermalStatusCode.MODERATE,
                             -> DiagnosticStatus.WARNING
@@ -1080,7 +1081,8 @@ object RunAllSnapshotMapper {
                         confidence = thermal.statusConfidence,
                         reason =
                             EvidenceReasonCode.DEGRADED.takeIf {
-                                diagnosticStatus != DiagnosticStatus.PASS
+                                diagnosticStatus == DiagnosticStatus.WARNING ||
+                                    diagnosticStatus == DiagnosticStatus.FAIL
                             },
                         value = EvidenceValue.StableTextCodeValue(thermal.status.name.lowercase()),
                         capturedAt = capturedAt,
@@ -1460,7 +1462,7 @@ object RunAllSnapshotMapper {
                 evidence(
                     categoryId = DiagnosticCategoryId.BIOMETRICS,
                     id = "capability",
-                    status = DiagnosticStatus.PASS,
+                    status = DiagnosticStatus.INFO,
                     value = EvidenceValue.StableTextCodeValue(capabilityCode),
                     capturedAt = capturedAt,
                 )
@@ -1510,7 +1512,7 @@ object RunAllSnapshotMapper {
             id = id,
             status =
                 if (status == BiometricAvailability.AVAILABLE) {
-                    DiagnosticStatus.PASS
+                    DiagnosticStatus.INFO
                 } else {
                     DiagnosticStatus.NOT_AVAILABLE
                 },
@@ -1649,7 +1651,6 @@ object RunAllSnapshotMapper {
                         categoryId = categoryId,
                         id = id,
                         capturedAt = capturedAt,
-                        source = EvidenceSource.USER_CONFIRMATION,
                     )
                 } else {
                     notTested(
@@ -1670,36 +1671,7 @@ object RunAllSnapshotMapper {
             else -> EvidenceReasonCode.NOT_RUN
         }
 
-    private fun availability(
-        categoryId: DiagnosticCategoryId,
-        id: String,
-        available: Boolean,
-        enabled: Boolean,
-        capturedAt: Instant,
-    ): DiagnosticEvidence =
-        when {
-            !available -> unavailable(categoryId, id, capturedAt, EvidenceValue.BooleanValue(false))
-            enabled ->
-                evidence(
-                    categoryId = categoryId,
-                    id = id,
-                    status = DiagnosticStatus.PASS,
-                    value = EvidenceValue.BooleanValue(true),
-                    capturedAt = capturedAt,
-                )
-
-            else ->
-                evidence(
-                    categoryId = categoryId,
-                    id = id,
-                    status = DiagnosticStatus.WARNING,
-                    reason = EvidenceReasonCode.DISABLED,
-                    value = EvidenceValue.BooleanValue(false),
-                    capturedAt = capturedAt,
-                )
-        }
-
-    private fun presence(
+    private fun capabilityPresence(
         categoryId: DiagnosticCategoryId,
         id: String,
         available: Boolean,
@@ -1709,7 +1681,7 @@ object RunAllSnapshotMapper {
             evidence(
                 categoryId = categoryId,
                 id = id,
-                status = DiagnosticStatus.PASS,
+                status = DiagnosticStatus.INFO,
                 value = EvidenceValue.BooleanValue(true),
                 capturedAt = capturedAt,
             )
@@ -1746,7 +1718,6 @@ object RunAllSnapshotMapper {
             id = id,
             status = DiagnosticStatus.NOT_AVAILABLE,
             confidence = Confidence.UNAVAILABLE,
-            reason = EvidenceReasonCode.HARDWARE_UNAVAILABLE,
             capturedAt = capturedAt,
         )
 
@@ -1793,8 +1764,8 @@ object RunAllSnapshotMapper {
             capturedAt = capturedAt,
         )
 
-    private fun passOrWarning(condition: Boolean): DiagnosticStatus =
-        if (condition) DiagnosticStatus.PASS else DiagnosticStatus.WARNING
+    private fun infoOrWarning(condition: Boolean): DiagnosticStatus =
+        if (condition) DiagnosticStatus.INFO else DiagnosticStatus.WARNING
 
     private fun batteryHealthCode(healthStatus: Int): String =
         when (healthStatus) {

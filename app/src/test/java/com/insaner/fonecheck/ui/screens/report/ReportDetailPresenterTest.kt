@@ -83,7 +83,7 @@ class ReportDetailPresenterTest {
             ReportDeviceContext(
                 manufacturer = "Finnvek",
                 model = "Test Device",
-                brand = "Fonecheck",
+                brand = "fonecheck",
                 product = "test-product",
                 androidRelease = "16",
                 apiLevel = 36,

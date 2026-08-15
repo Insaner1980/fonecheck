@@ -1,4 +1,4 @@
-# Fonecheck Complete Product Specification
+# fonecheck Complete Product Specification
 
 ## 1. Document purpose
 

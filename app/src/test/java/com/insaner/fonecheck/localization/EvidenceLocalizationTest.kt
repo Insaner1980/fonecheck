@@ -34,6 +34,22 @@ class EvidenceLocalizationTest {
     }
 
     @Test
+    fun `unavailable and error reasons retain their distinct meanings`() {
+        assertEquals(
+            R.string.run_all_summary_unavailable,
+            evidenceReasonStringRes(EvidenceReasonCode.HARDWARE_UNAVAILABLE),
+        )
+        assertEquals(
+            R.string.report_reason_android_version_unsupported,
+            evidenceReasonStringRes(EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED),
+        )
+        assertEquals(
+            R.string.report_reason_error,
+            evidenceReasonStringRes(EvidenceReasonCode.ERROR),
+        )
+    }
+
+    @Test
     fun `future reason codes use readable fallback`() {
         val futureReason = EvidenceReasonCode("future_vendor_reason")
 

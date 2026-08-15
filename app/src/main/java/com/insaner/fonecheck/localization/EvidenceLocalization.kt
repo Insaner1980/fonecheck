@@ -16,15 +16,14 @@ fun evidenceReasonStringRes(reason: EvidenceReasonCode): Int? =
         EvidenceReasonCode.TIMEOUT -> R.string.conn_gps_failed
         EvidenceReasonCode.INSUFFICIENT_SPACE -> R.string.storage_benchmark_insufficient_space
         EvidenceReasonCode.USER_CONFIRMED_FAILURE -> R.string.run_all_manual_failed
-        EvidenceReasonCode.HARDWARE_UNAVAILABLE,
-        EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED,
-        -> R.string.run_all_status_unavailable
+        EvidenceReasonCode.HARDWARE_UNAVAILABLE -> R.string.run_all_summary_unavailable
+        EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED -> R.string.report_reason_android_version_unsupported
         EvidenceReasonCode.PLATFORM_RESTRICTION -> R.string.button_power_unavailable
         EvidenceReasonCode.BIOMETRIC_LOCKOUT -> R.string.biometric_locked_out
         EvidenceReasonCode.BIOMETRIC_NOT_ENROLLED -> R.string.biometric_none_enrolled
         EvidenceReasonCode.DISABLED -> R.string.status_disabled
         EvidenceReasonCode.DEGRADED -> R.string.run_all_summary_warning
-        EvidenceReasonCode.ERROR -> R.string.run_all_summary_fail
+        EvidenceReasonCode.ERROR -> R.string.report_reason_error
         else -> null
     }
 

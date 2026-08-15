@@ -1,7 +1,10 @@
 package com.insaner.fonecheck.navigation
 
 import androidx.annotation.StringRes
+import androidx.navigation.NavDestination
+import androidx.navigation.NavDestination.Companion.hasRoute
 import com.insaner.fonecheck.R
+import kotlin.reflect.KClass
 
 internal data class NavigationChrome(
     @StringRes val titleResId: Int,
@@ -9,48 +12,47 @@ internal data class NavigationChrome(
     val showTopBar: Boolean = true,
 )
 
-internal fun navigationChromeFor(route: String?): NavigationChrome =
+internal fun navigationChromeFor(destination: NavDestination?): NavigationChrome =
     when {
-        route.matches(Home) ->
+        destination.matches(Home::class) ->
             NavigationChrome(
                 R.string.app_name,
                 showBackAction = false,
                 showTopBar = false,
             )
-        route.matches(DeviceInfo) -> NavigationChrome(R.string.home_cat_device, showBackAction = true)
-        route.matches(PerformanceInfo) -> NavigationChrome(R.string.home_cat_performance, showBackAction = true)
-        route.matches(SimTelephony) -> NavigationChrome(R.string.home_cat_sim, showBackAction = true)
-        route.matches(AudioTest) -> NavigationChrome(R.string.home_cat_audio, showBackAction = true)
-        route.matches(CameraTest) -> NavigationChrome(R.string.home_cat_camera, showBackAction = true)
-        route.matches(SensorTest) -> NavigationChrome(R.string.home_cat_sensors, showBackAction = true)
-        route.matches(ConnectivityTest) -> NavigationChrome(R.string.home_cat_connectivity, showBackAction = true)
-        route.matches(BatteryTest) -> NavigationChrome(R.string.home_cat_battery, showBackAction = true)
-        route.matches(ThermalTest) -> NavigationChrome(R.string.home_cat_thermal, showBackAction = true)
-        route.matches(StorageTest) -> NavigationChrome(R.string.home_cat_storage, showBackAction = true)
-        route.matches(DisplayTest) -> NavigationChrome(R.string.home_cat_display, showBackAction = true)
-        route.matches(VibrationTest) -> NavigationChrome(R.string.home_cat_vibration, showBackAction = true)
-        route.matches(ButtonTest) -> NavigationChrome(R.string.home_cat_buttons, showBackAction = true)
-        route.matches(BiometricTest) -> NavigationChrome(R.string.home_cat_biometrics, showBackAction = true)
-        route.matches(RunAllTests) -> NavigationChrome(R.string.home_run_all, showBackAction = true)
-        route.matches(Settings) -> NavigationChrome(R.string.settings_title, showBackAction = true)
-        route.matches(Licenses) -> NavigationChrome(R.string.licenses_title, showBackAction = true)
-        route.matches(Onboarding::class.qualifiedName) ->
+        destination.matches(DeviceInfo::class) -> NavigationChrome(R.string.home_cat_device, showBackAction = true)
+        destination.matches(PerformanceInfo::class) ->
+            NavigationChrome(R.string.home_cat_performance, showBackAction = true)
+        destination.matches(SimTelephony::class) -> NavigationChrome(R.string.home_cat_sim, showBackAction = true)
+        destination.matches(AudioTest::class) -> NavigationChrome(R.string.home_cat_audio, showBackAction = true)
+        destination.matches(CameraTest::class) -> NavigationChrome(R.string.home_cat_camera, showBackAction = true)
+        destination.matches(SensorTest::class) -> NavigationChrome(R.string.home_cat_sensors, showBackAction = true)
+        destination.matches(ConnectivityTest::class) ->
+            NavigationChrome(R.string.home_cat_connectivity, showBackAction = true)
+        destination.matches(BatteryTest::class) -> NavigationChrome(R.string.home_cat_battery, showBackAction = true)
+        destination.matches(ThermalTest::class) -> NavigationChrome(R.string.home_cat_thermal, showBackAction = true)
+        destination.matches(StorageTest::class) -> NavigationChrome(R.string.home_cat_storage, showBackAction = true)
+        destination.matches(DisplayTest::class) -> NavigationChrome(R.string.home_cat_display, showBackAction = true)
+        destination.matches(VibrationTest::class) ->
+            NavigationChrome(R.string.home_cat_vibration, showBackAction = true)
+        destination.matches(ButtonTest::class) -> NavigationChrome(R.string.home_cat_buttons, showBackAction = true)
+        destination.matches(BiometricTest::class) ->
+            NavigationChrome(R.string.home_cat_biometrics, showBackAction = true)
+        destination.matches(RunAllTests::class) -> NavigationChrome(R.string.home_run_all, showBackAction = true)
+        destination.matches(Settings::class) -> NavigationChrome(R.string.settings_title, showBackAction = true)
+        destination.matches(Licenses::class) -> NavigationChrome(R.string.licenses_title, showBackAction = true)
+        destination.matches(Onboarding::class) ->
             NavigationChrome(R.string.onboarding_title, showBackAction = true)
-        route.matches(Report::class.qualifiedName) ->
+        destination.matches(Report::class) ->
             NavigationChrome(R.string.report_saved_title, showBackAction = true)
-        route.matches(CategoryRetest::class.qualifiedName) ->
+        destination.matches(CategoryRetest::class) ->
             NavigationChrome(R.string.report_retest, showBackAction = true)
-        route.matches(History) -> NavigationChrome(R.string.history_title, showBackAction = true)
-        route.matches(ReportComparison::class.qualifiedName) ->
+        destination.matches(History::class) -> NavigationChrome(R.string.history_title, showBackAction = true)
+        destination.matches(ReportComparison::class) ->
             NavigationChrome(R.string.comparison_title, showBackAction = true)
-        route.matches(ReportExport::class.qualifiedName) ->
+        destination.matches(ReportExport::class) ->
             NavigationChrome(R.string.export_title, showBackAction = true)
-        else -> NavigationChrome(R.string.app_name, showBackAction = route != null)
+        else -> NavigationChrome(R.string.app_name, showBackAction = destination != null)
     }
 
-private fun String?.matches(route: Any): Boolean = matches(route::class.qualifiedName)
-
-private fun String?.matches(qualifiedName: String?): Boolean =
-    this != null &&
-        qualifiedName != null &&
-        (this == qualifiedName || startsWith("$qualifiedName/") || startsWith("$qualifiedName?"))
+private fun <T : Any> NavDestination?.matches(route: KClass<T>): Boolean = this?.hasRoute(route) == true

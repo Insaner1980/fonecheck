@@ -184,4 +184,4 @@ Timing tags indicate when to revalidate a still-relevant item. They do not overr
 
 ### Recommended handling
 
-Use the timing order only after current source and configuration confirm that an entry still applies. Do not resume historical phase work or implement a proposed fix from this file alone.
+Use the timing order only after current source and configuration confirm that an entry still applies. Using this register for review is read-only: report verified findings and proposed corrections, but do not edit repository files or execute Gradle/project checkers unless the user separately requests implementation. If a checker plan is useful, use only its `-PlanOnly` mode. Do not resume historical phase work or implement a proposed fix from this file alone.

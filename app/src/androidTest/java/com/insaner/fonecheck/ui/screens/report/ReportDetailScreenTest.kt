@@ -161,7 +161,7 @@ class ReportDetailScreenTest {
             kind = kind,
             startedAt = Instant.parse("2026-08-08T10:00:00Z"),
             completedAt = Instant.parse("2026-08-08T10:01:05Z"),
-            device = ReportDeviceContext("Finnvek", "Test Device", "Fonecheck", "test", "16", 36, "2026-08-01"),
+            device = ReportDeviceContext("Finnvek", "Test Device", "fonecheck", "test", "16", 36, "2026-08-01"),
             app = ReportAppContext("1.2.3", 42L),
             categories =
                 if (kind == ReportKind.CATEGORY_ONLY) {

@@ -2,6 +2,7 @@ package com.insaner.fonecheck.ui.screens.settings
 
 import android.content.Intent
 import android.provider.Settings
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -44,6 +45,7 @@ import com.insaner.fonecheck.data.preferences.AppThemeMode
 import com.insaner.fonecheck.ui.components.InfoRow
 import com.insaner.fonecheck.ui.components.SectionBox
 import com.insaner.fonecheck.ui.components.StandardCard
+import com.insaner.fonecheck.ui.startExternalActivity
 import com.insaner.fonecheck.ui.theme.Green400
 
 @Composable
@@ -58,6 +60,7 @@ fun SettingsRoute(
     val context = LocalContext.current
     val packageInfo = remember { context.packageManager.getPackageInfo(context.packageName, 0) }
     val appVersion = "${packageInfo.versionName} (${PackageInfoCompat.getLongVersionCode(packageInfo)})"
+    val externalAppUnavailable = stringResource(R.string.external_app_unavailable)
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshPermissions() }
     LaunchedEffect(state.openOnboarding) {
         if (state.openOnboarding) {
@@ -71,19 +74,26 @@ fun SettingsRoute(
         onThemeMode = viewModel::setThemeMode,
         onTestWarnings = viewModel::setTestWarningsEnabled,
         onOpenAppSettings = {
-            context.startActivity(
+            val intent =
                 Intent(
                     Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                     "package:${context.packageName}".toUri(),
-                ),
-            )
+                )
+            if (!context.startExternalActivity(intent)) {
+                Toast.makeText(context, externalAppUnavailable, Toast.LENGTH_SHORT).show()
+            }
         },
         onDeleteAll = viewModel::deleteAllReports,
         onOpenPrivacy = {
-            context.startActivity(Intent(Intent.ACTION_VIEW, PRIVACY_URL.toUri()))
+            if (!context.startExternalActivity(Intent(Intent.ACTION_VIEW, PRIVACY_URL.toUri()))) {
+                Toast.makeText(context, externalAppUnavailable, Toast.LENGTH_SHORT).show()
+            }
         },
         onOpenSupport = {
-            context.startActivity(Intent(Intent.ACTION_SENDTO, SUPPORT_EMAIL.toUri()))
+            val intent = Intent(Intent.ACTION_SENDTO, SUPPORT_EMAIL.toUri())
+            if (!context.startExternalActivity(intent)) {
+                Toast.makeText(context, externalAppUnavailable, Toast.LENGTH_SHORT).show()
+            }
         },
         onOpenLicenses = onOpenLicenses,
         onReopenOnboarding = viewModel::reopenOnboarding,

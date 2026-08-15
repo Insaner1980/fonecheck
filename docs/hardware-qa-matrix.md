@@ -13,7 +13,9 @@ No device or emulator is currently available. Every row below is intentionally r
 | 31 | Bluetooth runtime permission and splash behavior | Nearby devices, reduced motion, background/resume | NOT RUN |
 | 33 | notification-era platform behavior and media changes | Full navigation/export/share smoke | NOT RUN |
 | 34 | battery cycle/thermal guards | Battery, thermal and lifecycle smoke | NOT RUN |
-| 36 | target/compile SDK behavior | Full release-candidate regression | NOT RUN |
+| 36 | current targetSdk behavior | Full release-candidate regression | NOT RUN |
+| 37 (target 36) | Android 17 changes affecting all apps | Install the current target-36 release candidate; run all flows with emphasis on lifecycle, audio backgrounding, memory pressure, configuration changes and restricted non-SDK access | NOT RUN |
+| 37 (target 37 gate) | Android 17 target-dependent behavior | Enable applicable compatibility changes, then validate an actual target-37 build before changing targetSdk or removing the OldTargetApi suppression | NOT RUN |
 
 ## Hardware and workflow matrix
 

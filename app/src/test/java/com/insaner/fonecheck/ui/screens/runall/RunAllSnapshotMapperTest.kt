@@ -45,6 +45,7 @@ import com.insaner.fonecheck.ui.screens.connectivity.GpsState
 import com.insaner.fonecheck.ui.screens.connectivity.MobileNetworkState
 import com.insaner.fonecheck.ui.screens.connectivity.NfcState
 import com.insaner.fonecheck.ui.screens.connectivity.WifiState
+import com.insaner.fonecheck.ui.screens.display.DisplayInfoState
 import com.insaner.fonecheck.ui.screens.display.DisplayTestState
 import com.insaner.fonecheck.ui.screens.sensor.GuidedSensorCatalog
 import com.insaner.fonecheck.ui.screens.sensor.GuidedSensorCode
@@ -435,6 +436,7 @@ class RunAllSnapshotMapperTest {
         listOf("battery.health", "battery.temperature", "battery.level", "battery.current_now").forEach { id ->
             assertEquals(DiagnosticStatus.NOT_AVAILABLE, evidence.getValue(id).status)
             assertEquals(Confidence.UNAVAILABLE, evidence.getValue(id).confidence)
+            assertEquals(null, evidence.getValue(id).reason)
             assertEquals(null, evidence.getValue(id).value)
         }
         assertEquals(
@@ -498,6 +500,7 @@ class RunAllSnapshotMapperTest {
         )
         assertEquals(EvidenceValue.IntValue(240), evidence.getValue("battery.cycle_count").value)
         assertEquals(Confidence.HIGH, evidence.getValue("battery.cycle_count").confidence)
+        assertEquals(DiagnosticStatus.INFO, evidence.getValue("battery.health").status)
     }
 
     @Test
@@ -538,7 +541,7 @@ class RunAllSnapshotMapperTest {
                 ).flatMap { it.evidence }
                 .associateBy { it.checkId.value }
 
-        assertEquals(DiagnosticStatus.PASS, normal.getValue("thermal.status").status)
+        assertEquals(DiagnosticStatus.INFO, normal.getValue("thermal.status").status)
         assertEquals(EvidenceValue.StableTextCodeValue("none"), normal.getValue("thermal.status").value)
         assertEquals(
             EvidenceValue.DoubleValue(32.0),
@@ -687,7 +690,7 @@ class RunAllSnapshotMapperTest {
                 ).flatMap { it.evidence }
                 .associateBy { it.checkId.value }
 
-        assertEquals(DiagnosticStatus.PASS, evidence.getValue("vibration.hardware").status)
+        assertEquals(DiagnosticStatus.INFO, evidence.getValue("vibration.hardware").status)
         assertEquals(EvidenceValue.BooleanValue(true), evidence.getValue("vibration.amplitude_control").value)
         assertEquals(EvidenceValue.IntValue(2), evidence.getValue("vibration.effects").value)
         assertEquals(EvidenceValue.IntValue(1), evidence.getValue("vibration.primitives").value)
@@ -765,8 +768,29 @@ class RunAllSnapshotMapperTest {
             EvidenceValue.StableTextCodeValue("none_enrolled"),
             evidence.getValue("biometrics.strong_capability").value,
         )
+        assertEquals(DiagnosticStatus.INFO, evidence.getValue("biometrics.capability").status)
+        assertEquals(DiagnosticStatus.INFO, evidence.getValue("biometrics.weak_capability").status)
         assertEquals(DiagnosticStatus.PASS, evidence.getValue("biometrics.authentication").status)
         assertEquals(EvidenceSource.ANDROID_API, evidence.getValue("biometrics.authentication").source)
+    }
+
+    @Test
+    fun automaticPlatformFactsRemainInformational() {
+        val evidence =
+            mappedEvidence(
+                snapshots =
+                    diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                        display =
+                            DisplayTestState(
+                                info = DisplayInfoState(widthPx = 1080, heightPx = 2400),
+                            ),
+                    ),
+            )
+
+        listOf("performance.cpu", "performance.ram", "performance.gpu", "display.info").forEach { id ->
+            assertEquals(DiagnosticStatus.INFO, evidence.getValue(id).status)
+            assertEquals(EvidenceSource.ANDROID_API, evidence.getValue(id).source)
+        }
     }
 
     @Test
@@ -843,6 +867,8 @@ class RunAllSnapshotMapperTest {
                 .associateBy { it.checkId.value }
         assertEquals(EvidenceReasonCode.HARDWARE_UNAVAILABLE, absent.getValue("audio.microphone").reason)
         assertEquals(Applicability.NOT_APPLICABLE, absent.getValue("camera.capture").applicability)
+        assertEquals(EvidenceSource.ANDROID_API, absent.getValue("camera.capture").source)
+        assertEquals(EvidenceSource.ANDROID_API, absent.getValue("vibration.motor").source)
     }
 
     @Test
@@ -878,6 +904,7 @@ class RunAllSnapshotMapperTest {
         assertEquals(EvidenceReasonCode.SKIPPED, evidence.getValue("audio.speaker").reason)
         assertEquals(DiagnosticStatus.NOT_AVAILABLE, evidence.getValue("camera.capture").status)
         assertEquals(EvidenceReasonCode.HARDWARE_UNAVAILABLE, evidence.getValue("camera.capture").reason)
+        assertEquals(EvidenceSource.ANDROID_API, evidence.getValue("camera.capture").source)
     }
 
     private fun diagnosticSnapshotsWithSensitiveConnectivity() =

@@ -43,8 +43,8 @@
     <string name="status_disabled">Pois käytöstä</string>
 
     <!-- Confidence Badge -->
-    <string name="confidence_high">Tarkka</string>
-    <string name="confidence_low">Arvioitu</string>
+    <string name="confidence_high">Korkea varmuus</string>
+    <string name="confidence_low">Matala varmuus</string>
     <string name="confidence_unavailable">Ei saatavilla</string>
 
     <!-- Performance Info Screen -->
@@ -417,14 +417,14 @@
     <!-- Battery Test Screen -->
     <string name="batt_basic_title">Perustiedot</string>
     <string name="batt_charging_title">Lataus</string>
-    <string name="batt_health_title">Kunto</string>
+    <string name="batt_health_title">Androidin akun tila</string>
     <string name="batt_manufacturer_title">Valmistaja</string>
 
     <!-- Basic -->
     <string name="batt_level">Varaustaso</string>
     <string name="batt_voltage">Jännite</string>
     <string name="batt_temperature">Lämpötila</string>
-    <string name="batt_health_label">Kunto</string>
+    <string name="batt_health_label">Androidin ilmoittama tila</string>
     <string name="batt_technology">Teknologia</string>
     <string name="batt_value_percent">%1$d%%</string>
     <string name="batt_value_millivolts">%1$d mV</string>
@@ -464,7 +464,8 @@
     <string name="batt_plug_none">Ei liitetty</string>
 
     <!-- Health advanced -->
-    <string name="batt_health_status">Kuntotila</string>
+    <string name="batt_health_status">Androidin ilmoittama tila</string>
+    <string name="batt_health_source_note">Tämä on Androidin ilmoittama nykyinen tila, ei akun kapasiteetin tai kulumisen diagnoosi.</string>
     <string name="batt_cycle_count">Lataussyklien määrä</string>
     <string name="batt_requires_api34">Vaatii Android 14+</string>
 
@@ -573,7 +574,7 @@
     <string name="home_latest_retry">Yritä uudelleen</string>
     <string name="home_latest_status_good">Hyvä</string>
     <string name="home_latest_status_warning">Vaatii huomiota</string>
-    <string name="home_latest_status_fail">Ongelmia havaittu</string>
+    <string name="home_latest_status_fail">Ongelmia raportoitu</string>
     <string name="home_latest_status_info">Valmis, lisätietoja</string>
     <string name="home_latest_status_unavailable">Osa tarkistuksista ei ole saatavilla</string>
     <string name="home_latest_status_not_tested">Osa tarkistuksista jäi testaamatta</string>
@@ -639,8 +640,8 @@
     <string name="run_all_felt_vibration">Tunsin värinän</string>
     <string name="run_all_no_vibration">Värinää ei tunnu</string>
     <string name="run_all_buttons_title">Testaa äänenvoimakkuuspainikkeet</string>
-    <string name="run_all_buttons_description">Paina kerran ääni ylös ja ääni alas. Fonecheck kuuntelee kahta painiketapahtumaa 15 sekunnin ajan.</string>
-    <string name="run_all_biometrics_title">Varmista biometrinen anturi</string>
+    <string name="run_all_buttons_description">Paina kerran ääni ylös ja ääni alas. fonecheck kuuntelee kahta painiketapahtumaa 15 sekunnin ajan.</string>
+    <string name="run_all_biometrics_title">Tunnistaudu biometrisesti</string>
     <string name="run_all_biometrics_description">Käytä vain biometriikan hyväksyvää järjestelmäkehotetta. PIN-koodia, kuviota tai salasanaa ei hyväksytä biometriseksi tulokseksi.</string>
     <string name="run_all_skip">Ohita tämä tarkistus</string>
     <string name="run_all_cancel">Keskeytä Full Check</string>
@@ -685,12 +686,15 @@
     <string name="report_duration">Kesto</string>
     <string name="report_duration_value">%1$d min %2$d s</string>
     <string name="report_identifier">Raportin tunniste</string>
-    <string name="report_score_complete">Täydellinen</string>
-    <string name="report_score_partial">Osittainen</string>
-    <string name="report_score_incomplete">Keskeneräinen</string>
+    <string name="report_score_complete">Täysi kattavuus</string>
+    <string name="report_score_partial">Osittainen kattavuus</string>
+    <string name="report_score_incomplete">Riittämätön näyttö</string>
+    <string name="report_reason_error">Tarkistusta ei voitu suorittaa loppuun</string>
+    <string name="report_reason_android_version_unsupported">Tämä Android-versio ei tue tarkistusta</string>
     <string name="report_coverage">Kattavuus</string>
     <string name="report_coverage_value">%1$d%% · Tarkistukset: %2$d/%3$d</string>
-    <string name="report_completed_count">%1$d valmista</string>
+    <string name="report_pass_count">%1$d läpäisty</string>
+    <string name="report_info_count">Tietoja: %1$d</string>
     <string name="report_not_tested_count">%1$d ei testattu</string>
     <string name="report_view_saved_evidence">Näytä tallennettu evidenssi</string>
     <string name="report_hide_saved_evidence">Piilota tallennettu evidenssi</string>
@@ -743,6 +747,7 @@
     <string name="settings_local_only">fonecheck tallentaa raportit ja asetukset paikallisesti. Sovelluksessa ei ole tiliä, pilvisynkronointia, analytiikkaa, mainoksia tai Internet-lupaa.</string>
     <string name="settings_privacy">Tietosuojaseloste</string>
     <string name="settings_support">Ota yhteyttä tukeen</string>
+    <string name="external_app_unavailable">Yhteensopivaa sovellusta ei ole käytettävissä.</string>
     <string name="settings_licenses">Avoimen lähdekoodin lisenssit</string>
     <string name="settings_onboarding">Näytä perehdytys uudelleen</string>
     <string name="settings_about">Tietoja</string>
@@ -877,8 +882,9 @@
     <string name="run_all_status_unavailable">Ei saatavilla</string>
     <string name="run_all_status_not_tested">Ei testattu</string>
     <string name="run_all_summary_pass">Tarkistukset onnistuivat</string>
+    <string name="run_all_summary_info">Tiedot tallennettu</string>
     <string name="run_all_summary_warning">Osa tarkistuksista vaatii huomiota</string>
-    <string name="run_all_summary_fail">Ongelma havaittiin</string>
+    <string name="run_all_summary_fail">Ongelma raportoitiin</string>
     <string name="run_all_summary_unavailable">Laitteistoa ei ole saatavilla</string>
     <string name="run_all_summary_not_tested">Tarkistusta ei suoritettu</string>
     <string name="run_all_check_visual_display">Pikseli- ja burn-in-tarkistus</string>
@@ -983,7 +989,6 @@
     <string name="vibration_strength_warning">Pitkä tai kuvioitu värinä voi tuntua voimakkaalta tai epämiellyttävältä. Sen voi pysäyttää milloin tahansa.</string>
     <string name="vibration_accessibility_note">Jos värinä tuntuu epämiellyttävältä tai sitä ei voi havaita luotettavasti, ohita fyysinen vahvistus. API-ominaisuudet raportoidaan erikseen.</string>
     <string name="vibration_api_requires_android_11">Vaatii Android 11:n tai uudemman</string>
-    <string name="vibration_primitives_require_android_12">Vaatii Android 12:n tai uudemman</string>
     <string name="vibration_capability_note">API-tuki tarkoittaa, että Android ilmoittaa natiivin efektin tai primitiivin. Se ei vahvista, että värinä tuntui fyysisesti.</string>
     <string name="vibration_effect_click">Napsautus</string>
     <string name="vibration_effect_double_click">Kaksoisnapsautus</string>
@@ -1051,7 +1056,7 @@
     <string name="biometric_nonterminal_guidance">Tunnistusta ei hyväksytty. Yritä uudelleen järjestelmäkehotteessa tai poistu tarkistuksesta peruuttamalla kehote.</string>
     <string name="biometric_success_disclaimer">Onnistunut kehote vahvistaa, että yksi rekisteröity biometrinen tunniste hyväksyttiin. Se ei mittaa anturin laatua eikä paljasta rekisteröityjä malleja.</string>
     <string name="biometric_prompt_title">fonecheck</string>
-    <string name="biometric_prompt_subtitle">Varmista biometrinen anturi</string>
+    <string name="biometric_prompt_subtitle">Tunnistaudu biometrisesti</string>
     <string name="biometric_prompt_cancel">Peruuta</string>
 
     <!-- Käyttöoikeudet -->

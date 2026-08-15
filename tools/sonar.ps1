@@ -135,7 +135,9 @@ if ($PlanOnly) {
     Write-Output @(
         "sonar"
         "  - Gradle sonar (depends on :app:assembleDebug and :app:createDebugUnitTestCoverageReport): reports/sonar.txt"
+        "  - coverage scope: JVM unit-test coverage only; instrumented and physical-device behavior remain outside this report"
         "  - optional SonarQube CLI issue export: reports/sonar-issues.json"
+        "  - Quality Gate is not queried by this wrapper"
         "  - requires SONAR_TOKEN or systemProp.sonar.token for the full Gradle scan"
         "  - actual external call requires -AllowExternalUpload"
         "  - project: $projectKey"
@@ -186,6 +188,17 @@ try {
 
     try {
         Import-Module "C:\Dev\Android-check\tools\CheckRuntime.psm1" -Force -ErrorAction Stop
+        Import-Module "C:\Dev\Android-check\tools\AndroidProjectChecks.psm1" -Force -ErrorAction Stop
+        $sourceStateBefore = Get-AndroidProjectSourceState -Root $repoRoot
+        Add-Content -LiteralPath $scanReport -Encoding utf8 -Value @(
+            "Source HEAD: $($sourceStateBefore.gitHead)"
+            "Source branch: $($sourceStateBefore.gitBranch)"
+            "Source dirty: $($sourceStateBefore.gitDirty)"
+            "Source Git status SHA-256: $($sourceStateBefore.gitStatusSha256)"
+            "Source input files: $($sourceStateBefore.inputFileCount)"
+            "Source input SHA-256: $($sourceStateBefore.inputSha256)"
+            ""
+        )
         $scanResult = Invoke-ManagedProcess `
             -Executable (Join-Path $repoRoot "gradlew.bat") `
             -Arguments @("sonar", "--console=plain") `
@@ -211,6 +224,23 @@ try {
         Add-Content -LiteralPath $scanReport -Encoding utf8 -Value "ERROR: SONAR_ANALYSIS_FAILED (exit $($scanResult.ExitCode))"
         exit 2
     }
+
+    $sourceStateAfter = Get-AndroidProjectSourceState -Root $repoRoot
+    if (-not (Test-AndroidProjectSourceStateStable -Before $sourceStateBefore -After $sourceStateAfter)) {
+        Add-Content -LiteralPath $scanReport -Encoding utf8 -Value @(
+            "ERROR: INPUTS_CHANGED: Sonar inputs changed during analysis."
+            "After HEAD: $($sourceStateAfter.gitHead)"
+            "After input files: $($sourceStateAfter.inputFileCount)"
+            "After input SHA-256: $($sourceStateAfter.inputSha256)"
+        )
+        exit 2
+    }
+    Add-Content -LiteralPath $scanReport -Encoding utf8 -Value @(
+        "SOURCE_INPUTS_STABLE"
+        "SONAR_ANALYSIS_UPLOAD_COMPLETED"
+        "QUALITY_GATE_NOT_CHECKED"
+        "The JaCoCo import contains JVM unit-test coverage only; instrumented and physical-device behavior remain separate evidence."
+    )
 
     $cliPath = Get-SonarCliPath
     if ([string]::IsNullOrWhiteSpace($cliPath)) {

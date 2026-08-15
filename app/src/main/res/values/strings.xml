@@ -45,8 +45,8 @@
     <string name="status_disabled">Disabled</string>
 
     <!-- Confidence Badge -->
-    <string name="confidence_high">Accurate</string>
-    <string name="confidence_low">Estimated</string>
+    <string name="confidence_high">High confidence</string>
+    <string name="confidence_low">Low confidence</string>
     <string name="confidence_unavailable">Unavailable</string>
 
     <!-- Performance Info Screen -->
@@ -419,7 +419,7 @@
     <!-- Battery Test Screen -->
     <string name="batt_basic_title">Basic Info</string>
     <string name="batt_charging_title">Charging</string>
-    <string name="batt_health_title">Health</string>
+    <string name="batt_health_title">Android battery status</string>
     <string name="batt_manufacturer_title">Manufacturer</string>
     <string name="batt_icon_basic" translatable="false">BAT</string>
     <string name="batt_icon_charging" translatable="false">CHG</string>
@@ -430,7 +430,7 @@
     <string name="batt_level">Level</string>
     <string name="batt_voltage">Voltage</string>
     <string name="batt_temperature">Temperature</string>
-    <string name="batt_health_label">Health</string>
+    <string name="batt_health_label">Android-reported status</string>
     <string name="batt_technology">Technology</string>
     <string name="batt_value_percent">%1$d%%</string>
     <string name="batt_value_millivolts">%1$d mV</string>
@@ -470,7 +470,8 @@
     <string name="batt_plug_none">None</string>
 
     <!-- Health advanced -->
-    <string name="batt_health_status">Health Status</string>
+    <string name="batt_health_status">Android-reported status</string>
+    <string name="batt_health_source_note">This is Android’s current status value, not a battery capacity or wear diagnosis.</string>
     <string name="batt_cycle_count">Cycle Count</string>
     <string name="batt_requires_api34">Requires Android 14+</string>
 
@@ -579,7 +580,7 @@
     <string name="home_latest_retry">Retry</string>
     <string name="home_latest_status_good">Good</string>
     <string name="home_latest_status_warning">Needs attention</string>
-    <string name="home_latest_status_fail">Issues found</string>
+    <string name="home_latest_status_fail">Issues reported</string>
     <string name="home_latest_status_info">Complete with information</string>
     <string name="home_latest_status_unavailable">Some checks unavailable</string>
     <string name="home_latest_status_not_tested">Some checks not tested</string>
@@ -645,8 +646,8 @@
     <string name="run_all_felt_vibration">I felt it</string>
     <string name="run_all_no_vibration">No vibration</string>
     <string name="run_all_buttons_title">Test the volume buttons</string>
-    <string name="run_all_buttons_description">Press Volume Up and Volume Down once. Fonecheck listens for the two key events for 15 seconds.</string>
-    <string name="run_all_biometrics_title">Verify the biometric sensor</string>
+    <string name="run_all_buttons_description">Press Volume Up and Volume Down once. fonecheck listens for the two key events for 15 seconds.</string>
+    <string name="run_all_biometrics_title">Authenticate with biometrics</string>
     <string name="run_all_biometrics_description">Use the biometric-only system prompt. A PIN, pattern, or password is not accepted as a biometric result.</string>
     <string name="run_all_skip">Skip this check</string>
     <string name="run_all_cancel">Cancel Full Check</string>
@@ -691,12 +692,15 @@
     <string name="report_duration">Duration</string>
     <string name="report_duration_value">%1$d min %2$d s</string>
     <string name="report_identifier">Report ID</string>
-    <string name="report_score_complete">Complete</string>
-    <string name="report_score_partial">Partial</string>
-    <string name="report_score_incomplete">Incomplete</string>
+    <string name="report_score_complete">Full coverage</string>
+    <string name="report_score_partial">Partial coverage</string>
+    <string name="report_score_incomplete">Insufficient evidence</string>
+    <string name="report_reason_error">Check could not be completed</string>
+    <string name="report_reason_android_version_unsupported">Unsupported on this Android version</string>
     <string name="report_coverage">Coverage</string>
     <string name="report_coverage_value">%1$d%% · Checks: %2$d/%3$d</string>
-    <string name="report_completed_count" tools:ignore="PluralsCandidate">%1$d completed</string>
+    <string name="report_pass_count" tools:ignore="PluralsCandidate">%1$d passed</string>
+    <string name="report_info_count">Information: %1$d</string>
     <string name="report_not_tested_count" tools:ignore="PluralsCandidate">%1$d not tested</string>
     <string name="report_view_saved_evidence">View saved evidence</string>
     <string name="report_hide_saved_evidence">Hide saved evidence</string>
@@ -749,6 +753,7 @@
     <string name="settings_local_only">fonecheck stores reports and preferences locally. It has no account, cloud sync, analytics, ads, or Internet permission.</string>
     <string name="settings_privacy">Privacy policy</string>
     <string name="settings_support">Contact support</string>
+    <string name="external_app_unavailable">No compatible app is available.</string>
     <string name="settings_licenses">Open-source licenses</string>
     <string name="settings_onboarding">View onboarding again</string>
     <string name="settings_about">About</string>
@@ -883,8 +888,9 @@
     <string name="run_all_status_unavailable">Not available</string>
     <string name="run_all_status_not_tested">Not tested</string>
     <string name="run_all_summary_pass">Checks completed successfully</string>
+    <string name="run_all_summary_info">Information recorded</string>
     <string name="run_all_summary_warning">Some checks need attention</string>
-    <string name="run_all_summary_fail">A problem was detected</string>
+    <string name="run_all_summary_fail">A problem was reported</string>
     <string name="run_all_summary_unavailable">Hardware not available</string>
     <string name="run_all_summary_not_tested">Check was not completed</string>
     <string name="run_all_check_visual_display">Pixel and burn-in check</string>
@@ -989,7 +995,6 @@
     <string name="vibration_strength_warning">Long and patterned vibrations may feel strong or uncomfortable. Stop at any time.</string>
     <string name="vibration_accessibility_note">If vibration is uncomfortable or cannot be perceived reliably, skip the physical confirmation. API capability remains reported separately.</string>
     <string name="vibration_api_requires_android_11">Requires Android 11+</string>
-    <string name="vibration_primitives_require_android_12">Requires Android 12+</string>
     <string name="vibration_capability_note">API support means Android reports a native effect or primitive. It does not confirm that the vibration was physically felt.</string>
     <string name="vibration_effect_click">Click</string>
     <string name="vibration_effect_double_click">Double click</string>
@@ -1057,7 +1062,7 @@
     <string name="biometric_nonterminal_guidance">Not recognized. Try again in the system prompt or cancel it to exit this check.</string>
     <string name="biometric_success_disclaimer">A successful prompt confirms one enrolled biometric was accepted. It does not measure sensor quality or reveal enrolled templates.</string>
     <string name="biometric_prompt_title">fonecheck</string>
-    <string name="biometric_prompt_subtitle">Verify biometric sensor</string>
+    <string name="biometric_prompt_subtitle">Authenticate with biometrics</string>
     <string name="biometric_prompt_cancel">Cancel</string>
 
     <!-- Permissions -->

@@ -46,11 +46,11 @@
     </suppress>
     <suppress until="2026-09-30Z">
         <notes><![CDATA[
-        CVE-2026-53914 koskee Kotlinin build cache -metadatan deserialisointia,
-        ei kotlin-stdlib-ajonaikaiskirjastoa, johon Dependency-Check liitti
-        löydöksen. Projektissa Gradlen build cache ja Kotlin-tehtävien caching
-        on poistettu käytöstä gradle.properties-tiedostossa. Poikkeus on
-        arvioitava uudelleen jokaisen Kotlin-päivityksen yhteydessä.
+        CVE-2026-53914 koskee Kotlin Gradle -pluginin KAPT:n incrementaalisen
+        cachen turvatonta deserialisointia, ei kotlin-stdlib-ajonaikaiskirjastoa,
+        johon Dependency-Check liitti löydöksen. Projektissa ei käytetä KAPT:ia,
+        vaan annotaatioprosessointi tehdään KSP:llä. Poikkeus on arvioitava
+        uudelleen, jos KAPT otetaan käyttöön tai Kotlin päivitetään.
         ]]></notes>
         <packageUrl>pkg:maven/org.jetbrains.kotlin/kotlin-stdlib@2.4.10</packageUrl>
         <cve>CVE-2026-53914</cve>

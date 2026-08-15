@@ -28,6 +28,7 @@ android {
     buildTypes {
         debug {
             enableUnitTestCoverage = true
+            versionNameSuffix = "-debug"
         }
 
         release {
@@ -88,6 +89,7 @@ detekt {
 }
 
 ktlint {
+    version.set(libs.versions.ktlintEngine.get())
     android.set(true)
     coloredOutput.set(false)
     filter {
@@ -163,7 +165,7 @@ dependencies {
     // Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.startup.runtime)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.activity.compose)
 
@@ -182,7 +184,7 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android)
-    ksp(libs.hilt.android.compiler)
+    ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
 
     // Room

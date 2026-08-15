@@ -2,6 +2,7 @@ package com.insaner.fonecheck.ui.screens.export
 
 import android.content.ClipData
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,6 +29,7 @@ import com.insaner.fonecheck.ui.components.InfoRow
 import com.insaner.fonecheck.ui.components.ReportStateScreen
 import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.StandardCard
+import com.insaner.fonecheck.ui.startExternalActivity
 
 @Composable
 fun ReportExportRoute(
@@ -39,6 +41,7 @@ fun ReportExportRoute(
     val context = LocalContext.current
     val shareRequest = (state as? ReportExportState.Ready)?.shareRequest
     val shareTitle = stringResource(R.string.export_share_title)
+    val externalAppUnavailable = stringResource(R.string.external_app_unavailable)
     LaunchedEffect(shareRequest) {
         shareRequest?.let { exported ->
             val uri = exported.uri.toUri()
@@ -49,7 +52,15 @@ fun ReportExportRoute(
                     clipData = ClipData.newRawUri(exported.displayName, uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
-            context.startActivity(Intent.createChooser(intent, shareTitle))
+            if (!context.startExternalActivity(Intent.createChooser(intent, shareTitle))) {
+                Toast
+                    .makeText(
+                        context,
+                        externalAppUnavailable,
+                        Toast.LENGTH_SHORT,
+                    )
+                    .show()
+            }
             viewModel.consumeShareRequest()
         }
     }

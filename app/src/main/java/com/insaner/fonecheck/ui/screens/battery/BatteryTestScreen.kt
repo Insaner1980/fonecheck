@@ -296,6 +296,12 @@ private fun HealthDetails(health: HealthState) {
                     else -> Red400
                 },
         )
+        Text(
+            text = stringResource(R.string.batt_health_source_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp),
+        )
 
         if (health.cycleCountSupported) {
             if (health.cycleCount != null) {

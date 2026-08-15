@@ -219,7 +219,7 @@ class ReportRepositoryTest {
                 ReportDeviceContext(
                     manufacturer = "Finnvek",
                     model = "Test Device",
-                    brand = "Fonecheck",
+                    brand = "fonecheck",
                     product = "repository-test",
                     androidRelease = "16",
                     apiLevel = 36,

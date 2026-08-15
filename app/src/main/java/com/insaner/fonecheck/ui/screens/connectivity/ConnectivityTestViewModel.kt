@@ -269,7 +269,7 @@ class ConnectivityTestViewModel
 
             if (wifiCapabilities != null) {
                 val wifiInfo =
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         wifiCapabilities.transportInfo as? WifiInfo
                     } else {
                         @Suppress("DEPRECATION")
@@ -287,7 +287,7 @@ class ConnectivityTestViewModel
                     frequency = info.frequency.takeIf { it > 0 }
                     linkSpeed = info.linkSpeed.takeIf { it > 0 }
 
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                         wifiStandard =
                             when (info.wifiStandard) {
                                 ScanResult.WIFI_STANDARD_11AX -> "Wi-Fi 6 (802.11ax)"

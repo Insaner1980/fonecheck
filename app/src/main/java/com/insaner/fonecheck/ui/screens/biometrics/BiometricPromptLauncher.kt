@@ -7,7 +7,7 @@ import com.insaner.fonecheck.R
 
 // This prompt diagnoses the authenticator and does not unlock data or authorize an operation.
 @Suppress("kotlin:S6293")
-internal fun showBiometricPrompt(
+internal fun createBiometricPrompt(
     activity: FragmentActivity,
     onSuccess: () -> Unit,
     onFailed: () -> Unit,
@@ -30,12 +30,27 @@ internal fun showBiometricPrompt(
                 onError(errorCode, errString.toString())
             }
         }
-    val prompt =
-        BiometricPrompt(
-            activity,
-            ContextCompat.getMainExecutor(activity),
-            callback,
-        )
+    return BiometricPrompt(
+        activity,
+        ContextCompat.getMainExecutor(activity),
+        callback,
+    )
+}
+
+internal fun showBiometricPrompt(
+    activity: FragmentActivity,
+    onSuccess: () -> Unit,
+    onFailed: () -> Unit,
+    onError: (errorCode: Int, message: String) -> Unit,
+): BiometricPrompt =
+    createBiometricPrompt(activity, onSuccess, onFailed, onError).also { prompt ->
+        authenticateWithBiometricPrompt(activity, prompt)
+    }
+
+internal fun authenticateWithBiometricPrompt(
+    activity: FragmentActivity,
+    prompt: BiometricPrompt,
+) {
     val promptInfo =
         BiometricPrompt.PromptInfo
             .Builder()
@@ -46,5 +61,4 @@ internal fun showBiometricPrompt(
             .setConfirmationRequired(false)
             .build()
     prompt.authenticate(promptInfo)
-    return prompt
 }

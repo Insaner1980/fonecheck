@@ -304,8 +304,12 @@ private fun ResultsSummaryCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     SummaryCount(
-                        stringResource(R.string.report_completed_count, counts.pass + counts.info),
+                        stringResource(R.string.report_pass_count, counts.pass),
                         Green400,
+                    )
+                    SummaryCount(
+                        stringResource(R.string.report_info_count, counts.info),
+                        MaterialTheme.colorScheme.primary,
                     )
                     SummaryCount(
                         pluralStringResource(R.plurals.run_all_warning_count, counts.warning, counts.warning),
@@ -515,7 +519,8 @@ private fun DiagnosticStatus.toLegacyStatus(): TestStatus =
 private fun categorySummary(status: DiagnosticStatus): String =
     stringResource(
         when (status) {
-            DiagnosticStatus.PASS, DiagnosticStatus.INFO -> R.string.run_all_summary_pass
+            DiagnosticStatus.PASS -> R.string.run_all_summary_pass
+            DiagnosticStatus.INFO -> R.string.run_all_summary_info
             DiagnosticStatus.WARNING -> R.string.run_all_summary_warning
             DiagnosticStatus.FAIL -> R.string.run_all_summary_fail
             DiagnosticStatus.NOT_AVAILABLE -> R.string.run_all_summary_unavailable

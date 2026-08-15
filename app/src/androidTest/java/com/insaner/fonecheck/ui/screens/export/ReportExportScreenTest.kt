@@ -89,7 +89,7 @@ class ReportExportScreenTest {
             ReportKind.FULL_CHECK,
             Instant.parse("2026-08-08T10:00:00Z"),
             Instant.parse("2026-08-08T10:01:00Z"),
-            ReportDeviceContext("Finnvek", "Test", "Fonecheck", "test", "16", 36, null),
+            ReportDeviceContext("Finnvek", "Test", "fonecheck", "test", "16", 36, null),
             ReportAppContext("1.0.0", 1L),
             emptyList(),
             ScoreSummary(ScoreVersion.CURRENT, 90, ScoreState.PARTIAL),

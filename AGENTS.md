@@ -101,6 +101,11 @@ New info screens MUST use these shared components instead of defining local copi
 - **Before release builds**: check all `PRE-RELEASE` items (32 items — security, accessibility, performance)
 - **When making architectural decisions**: check `DECIDE` items (3 items — repository pattern, use case layer, Phase 1 priority)
 
+## Review-only boundary
+- A request to review, audit, inspect, or prepare findings is read-only unless the user separately and explicitly requests implementation.
+- Report verified defects, exact evidence, the smallest safe correction, and focused checks, but do not edit source, tests, documentation, assets, configuration, reports, generated baselines, or schemas during review-only work.
+- Do not run Gradle or execute project checkers during review-only work. If a checker plan is useful, invoke its wrapper only with `-PlanOnly`. Sonar uploads and external-AI scanning still require fresh explicit authorization.
+
 ## State Class Conventions
 - **Complex screens (>10 fields)**: Use nested sub-states with `expandedSection` (see BatteryTestState, ConnectivityTestState)
 - **Simple screens**: Flat data class is fine (see CameraTestState, SensorTestState)
