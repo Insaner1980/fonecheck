@@ -42,54 +42,88 @@ app/src/main/java/com/insaner/fonecheck/
 ├── navigation/                   # Routes + NavHost
 └── ui/
     ├── MainActivity.kt           # @AndroidEntryPoint activity
-    ├── components/               # Shared composables (InfoRow, InfoCard, StatusRow, ConfidenceBadge, TestSectionCard, StatusBadge, SectionBox)
+    ├── components/               # Shared composables (SectionHeader, DataRow, LongValueRow, StatusText, Note, PrimaryButton, SecondaryButton, SegmentedBar, HairlineRule, StrongRule)
     ├── screens/                   # Feature screens (composables + viewmodels)
-    └── theme/                    # Color, Type, Theme
+    └── theme/                    # Color, FonecheckColors, SemanticTone, Spacing, Type, Theme
 ```
 
-## Theme — Cool Neutral Dark Palette
+## Theme — Instrument Palette
 
-### Colors
-| Token       | Hex       | Usage                      |
-|-------------|-----------|----------------------------|
-| Neutral950  | #0A0C10   | Background                 |
-| Neutral900  | #111318   | Surface                    |
-| Neutral850  | #181B22   | Elevated surface           |
-| Neutral800  | #1E2128   | Surface variant            |
-| Neutral700  | #2A2E37   | Outline variant, container |
-| Neutral600  | #3A3F4B   | Outline                    |
-| Neutral500  | #555B6A   | Disabled content           |
-| Neutral400  | #777E8E   | Secondary text             |
-| Neutral300  | #9CA2B0   | On-surface-variant         |
-| Neutral200  | #C0C5D0   | On-secondary-container     |
-| Neutral100  | #DFE2E8   | On-surface, on-background  |
-| Neutral50   | #F0F1F4   | On-primary-container       |
-| Blue400     | #6B9FFF   | Primary accent             |
-| Blue500     | #4A85F2   | Primary pressed            |
-| Blue600     | #3570DB   | Primary container          |
-| Green400    | #5FD88E   | Success / pass             |
-| Yellow400   | #E8C94A   | Warning / caution          |
-| Red400      | #EF6B6B   | Error / fail               |
+Both themes are fully custom; Material dynamic colour is never used. Screens never name a raw
+colour: they read roles from `FonecheckTheme.colors` and pass a `SemanticTone`.
 
-### Typography
-- **Body text**: DM Sans (Regular, Medium, Bold)
-- **Numbers/mono**: JetBrains Mono (Regular, Medium, Bold)
+### Colour roles (`ui/theme/FonecheckColors.kt`)
+| Role                     | Light   | Dark    | Contrast vs background |
+|--------------------------|---------|---------|------------------------|
+| background               | #F7F6F3 | #0B0C0E | —                      |
+| textPrimary              | #17191C | #E8EAED | 16.3 / 16.2            |
+| textSecondary            | #5C6066 | #9AA0A8 | 5.9 / 7.4              |
+| textMuted                | #6B6F75 | #7C828A | 4.7 / 5.1              |
+| textDisabled             | #A9A7A0 | #4A4E55 | disabled content only  |
+| ruleHairline             | #DFDDD7 | #24272C | —                      |
+| ruleStrong               | = textPrimary     | | —                      |
+| pass                     | #166647 | #3FB98A | 6.4 / 7.9              |
+| attention (accent, text) | #95610F | #E8B04B | 4.9 / 10.0             |
+| fail                     | #A32C22 | #E8736B | 6.6 / 6.6              |
+| accentFill (fills only)  | #B5761A | #E8A33D | never text             |
+| segmentTrack             | #D5D3CC | #2A2E34 | —                      |
+| primaryButton bg / fg    | #17191C / #F7F6F3 | #E8A33D / #1A1206 | 16.3 / 8.6 |
+
+`attention` and `accentFill` are the text-safe and fill-safe renderings of the single accent hue.
+The colour vocabulary is `SemanticTone` (NEUTRAL / PASS / ATTENTION / FAIL);
+`DiagnosticStatus.toSemanticTone()` is the only mapping from a diagnostic outcome to a tone.
+`SemanticColorTest` enforces 4.5:1 on every text role in both themes.
+
+### Typography (`ui/theme/Type.kt`)
+Roles live on `FonecheckTheme.type`; the Material `Typography` slots are derived from them.
+- Sans: DM Sans. Mono: JetBrains Mono, with tabular figures on every numeric role.
+- Weights: Regular and Medium only. Never Bold.
+- `screenTitle` 20/28 · `sectionLabel` mono 11 at 0.12em, uppercased by the component ·
+  `rowLabel` 14/20 · `rowValue` mono 14/20 · `readout` mono 40/44 · `readoutUnit` mono 18/24 ·
+  `note` 12/18 · `buttonLabel` 15/20
+
+### Surfaces and spacing
+- No cards, no elevation, no shadows, no gradients. Structure comes from dividers and spacing.
+- Every Material surface and container level collapses onto the background; `surfaceTint` is transparent.
+- Corner radius 4dp, on controls only.
+- `FonecheckTheme.spacing` is an 8dp grid: `xs 4` (in-row gaps only), `sm 8`, `md 16`, `lg 24`,
+  `xl 32`, `xxl 48`, plus `minTouchTarget 48`, `controlRadius 4`, `ruleThickness 1`.
 
 ## Localization
-- Default: English (`values/strings.xml`)
-- Finnish: (`values-fi/strings.xml`)
+- English in `values/strings.xml` is the source language.
+- Finnish in `values-fi/strings.xml` is a shipped locale, not an optional extra. Every new or
+  changed string gets a Finnish counterpart in the same change; the two files stay in sync.
+- No hardcoded user-visible strings in composables. Component defaults use `stringResource`.
+- `n/a` is deliberately identical in both locales.
 
 ## Shared UI Components
-Reusable composables in `ui/components/`:
-- `InfoRow` — Label + monospace value row
-- `InfoCard` — Card with title and optional `ConfidenceBadge`
-- `StatusRow` — Label + colored status value (Green400/Yellow400)
-- `ConfidenceBadge` — HIGH/LOW/UNAVAILABLE badge
-- `TestSectionCard` — Expandable card with icon box, title, StatusBadge, AnimatedVisibility content
-- `StatusBadge` — Color-coded status pill (text + tinted background)
-- `SectionBox` — Content wrapper with Neutral850 rounded background
+Reusable composables in `ui/components/`.
 
-New info screens MUST use these shared components instead of defining local copies.
+Current foundation — new and migrated screens MUST use these instead of local copies:
+- `SectionHeader` — uppercase mono label with a strong rule beneath, optional trailing value
+- `DataRow` — sans label, mono value, hairline rule; `tone` sets the semantic colour, and
+  `value = null` draws `unavailableLabel` (default `n/a`) in muted text
+- `LongValueRow` — label on its own line, full-width left-aligned value that wraps only after
+  `-`, `.` or `,`
+- `StatusText` — short mono uppercase label in a semantic colour
+- `Note` — small muted sans caveat under a row
+- `PrimaryButton` / `SecondaryButton` — filled and outlined, 48dp minimum height
+- `SegmentedBar` — one segment per item, coloured by that item's tone
+- `HairlineRule` / `StrongRule` — the only two divider weights
+
+Being retired. Do not use in new work; each is deleted in the same task that migrates the last
+screen using it:
+- `InfoRow`, `DetailInfoRow` → `DataRow`
+- `StatusBadge`, `ConfidenceBadge` → `StatusText`
+- `RefreshButton` → `PrimaryButton`
+- `StandardCard`, `SectionBox`, `InfoCard`, `TestSectionCard` → `SectionHeader` plus rules
+- Legacy `Neutral*` / `Green400` / `Yellow400` / `Red400` / `Blue400` tokens and
+  `readableStatusColor` → `FonecheckTheme.colors` and `SemanticTone`
+- Inline `FontWeight.Bold`, deleted together with the bold font weights in `Type.kt`
+
+The visual foundation is previewable in isolation: `app/src/debug/.../ui/preview/FoundationPreviews.kt`
+is a light and dark specimen sheet of every component above. It lives in the debug source set and
+never reaches a release build.
 
 ## Code Review Triggers
 `CODE_REVIEW.md` contains tagged review items. Check relevant items at these trigger points:
@@ -111,9 +145,17 @@ New info screens MUST use these shared components instead of defining local copi
 - **Naming**: `private _state: MutableStateFlow` + `public state: StateFlow`
 
 ## Semantic Colors
-- Green400: success, pass, good, enabled
-- Yellow400: warning, caution, highlighted
-- Red400: error, fail, disabled, bad
+Screens pass a `SemanticTone`, never a `Color`. Resolve it with `tone.contentColor()` for text and
+`tone.fillColor()` for a filled shape.
+- `PASS`: success, pass, good, enabled
+- `ATTENTION`: warning, caution, needs a look — the accent hue
+- `FAIL`: error, fail, bad
+- `NEUTRAL`: no verdict — informational, not available, not tested
+
+Any colour that carries meaning must clear WCAG AA against what it sits on: 4.5:1 for text, 3:1 for
+a border or boundary a control depends on. `textDisabled` clears neither and is for disabled content
+only — never draw a meaningful control boundary in it. `accentFill` is for filled shapes and never
+for text; `attention` is its text-safe form.
 
 ## Build Commands (reference only)
 **Do NOT run gradle builds from Claude Code** — user builds manually in terminal due to CPU constraints.

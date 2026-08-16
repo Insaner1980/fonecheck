@@ -2,35 +2,35 @@ package com.insaner.fonecheck.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 
-private val LightSuccess = Color(0xFF146C3A)
-private val LightWarning = Color(0xFF765700)
-private val LightError = Color(0xFFB3261E)
-
+/**
+ * Bridge for screens that still name the legacy status colors directly. It resolves them to the
+ * palette roles so there is one set of status colors in the app, not two. Migrated screens pass a
+ * [SemanticTone] instead, and this function disappears with the last unmigrated screen.
+ */
 @Composable
+@ReadOnlyComposable
 fun readableStatusColor(color: Color): Color =
     statusColorForTheme(
         color = color,
-        lightTheme = MaterialTheme.colorScheme.surface.luminance() > 0.5f,
+        lightTheme = MaterialTheme.colorScheme.surface.luminance() > LIGHT_SURFACE_LUMINANCE,
     )
-
-@Composable
-fun brandLavenderColor(): Color = if (MaterialTheme.colorScheme.surface.luminance() > 0.5f) Lavender40 else Lavender80
 
 internal fun statusColorForTheme(
     color: Color,
     lightTheme: Boolean,
-): Color =
-    if (!lightTheme) {
-        color
-    } else {
-        when (color) {
-            Green400 -> LightSuccess
-            Yellow400 -> LightWarning
-            Red400 -> LightError
-            Aqua80 -> Aqua40
-            else -> color
-        }
+): Color {
+    val colors = if (lightTheme) LightFonecheckColors else DarkFonecheckColors
+    return when (color) {
+        Green400 -> colors.pass
+        Yellow400 -> colors.attention
+        Red400 -> colors.fail
+        Aqua80 -> colors.attention
+        else -> color
     }
+}
+
+private const val LIGHT_SURFACE_LUMINANCE = 0.5f

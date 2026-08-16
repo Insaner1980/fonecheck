@@ -53,6 +53,8 @@ Compose:
     active: true
   CompositionLocalAllowlist:
     active: true
+    allowedCompositionLocals:
+      - LocalFonecheckColors
   CompositionLocalNaming:
     active: true
   ContentEmitterReturningValues:

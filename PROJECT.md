@@ -171,49 +171,59 @@ Settings privacy and support actions leave the app through `ACTION_VIEW` to `htt
 
 ## UI system, components, accessibility, and responsive layout
 
-The Material 3 theme supports system, forced-light, and forced-dark modes.
+The Material 3 theme supports system, forced-light, and forced-dark modes. Both themes are fully custom and Material dynamic colour is never used. Screens read roles from `FonecheckTheme.colors` and pass a `SemanticTone`; naming a raw colour constant inside a screen is a defect, not a shortcut.
 
-| Token | Current role |
+| Role | Light | Dark | Contrast vs background |
+|---|---|---|---|
+| background | `#F7F6F3` | `#0B0C0E` | — |
+| textPrimary | `#17191C` | `#E8EAED` | 16.3 / 16.2 |
+| textSecondary | `#5C6066` | `#9AA0A8` | 5.9 / 7.4 |
+| textMuted | `#6B6F75` | `#7C828A` | 4.7 / 5.1 |
+| textDisabled | `#A9A7A0` | `#4A4E55` | disabled content only, never meaningful text |
+| ruleHairline | `#DFDDD7` | `#24272C` | — |
+| ruleStrong | = textPrimary | = textPrimary | — |
+| pass | `#166647` | `#3FB98A` | 6.4 / 7.9 |
+| attention (accent, text-safe) | `#95610F` | `#E8B04B` | 4.9 / 10.0 |
+| fail | `#A32C22` | `#E8736B` | 6.6 / 6.6 |
+| accentFill (fills only) | `#B5761A` | `#E8A33D` | never text |
+| segmentTrack | `#D5D3CC` | `#2A2E34` | — |
+| primaryButton background / content | `#17191C` / `#F7F6F3` | `#E8A33D` / `#1A1206` | 16.3 / 8.6 |
+
+`attention` and `accentFill` are the text-safe and fill-safe renderings of the single accent hue. `SemanticTone` (NEUTRAL / PASS / ATTENTION / FAIL) is the whole colour vocabulary, and `DiagnosticStatus.toSemanticTone()` is the only mapping from a diagnostic outcome to a visual role. `SemanticColorTest` enforces 4.5:1 for every text role and 3:1 for the control boundary, in both themes.
+
+The Material `ColorScheme` is derived from those roles rather than declared separately. Every surface and container level collapses onto the background and `surfaceTint` is transparent, so no Material component can reintroduce a card or an elevation tint. Shapes are 4 dp throughout, and only controls are rounded.
+
+Type roles live on `FonecheckTheme.type`; the fifteen Material slots are derived from them, so there is one type scale rather than two.
+
+| Role | Size / line height | Family and weight |
+|---|---|---|
+| `screenTitle` | 20/28 sp | Medium DM Sans |
+| `sectionLabel` | 11/16 sp, 0.12 em tracking | Regular JetBrains Mono, uppercased by the component |
+| `rowLabel` | 14/20 sp | Regular DM Sans |
+| `rowValue` | 14/20 sp | Medium JetBrains Mono, tabular figures |
+| `readout` | 40/44 sp | Medium JetBrains Mono, tabular figures |
+| `readoutUnit` | 18/24 sp | Regular JetBrains Mono, tabular figures |
+| `note` | 12/18 sp | Regular DM Sans |
+| `buttonLabel` | 15/20 sp | Medium DM Sans |
+
+Weights are Regular and Medium only; nothing is Bold. JetBrains Mono carries every measured value, number, unit, identifier and timestamp, and is never used as decoration. Spacing is the 8 dp grid on `FonecheckTheme.spacing` (`xs 4` for in-row gaps only, then `sm 8`, `md 16`, `lg 24`, `xl 32`, `xxl 48`), with `minTouchTarget 48`, `controlRadius 4`, `ruleThickness 1` and `rowLabelMaxWidth 160`.
+
+`app/src/debug/.../ui/preview/FoundationPreviews.kt` is the light and dark specimen sheet for the whole foundation. It lives in the debug source set and never reaches a release build.
+
+Use the shared UI components rather than creating local equivalents. The foundation components are:
+
+| Component | Contract that UI changes must preserve |
 |---|---|
-| Aqua80 #48D8D2 / Aqua40 #00716D | Dark/light primary and secondary accent |
-| Lavender80 #C9B2FF / Lavender40 #6846A5 | Home report/brand accents. Current Home code references these constants directly; `brandLavenderColor()` exists in `SemanticColor.kt` but currently has no call site. |
-| Coral80 / Coral40 | Dark/light tertiary accent |
-| Neutral950 … Neutral50 | Graphite neutral scale; dark background is Neutral950, surface Neutral900, standard card surface Neutral850 |
-| Green400, Yellow400, Red400 | Pass/good, warning/caution, fail/error; readableStatusColor darkens these for light surfaces |
-| Shapes | 8 dp small, 16 dp medium, 20 dp large |
-| Typography | DM Sans for Material roles; JetBrains Mono for technical measurements/values |
+| `SectionHeader` | Uppercase monospace label with a full-weight rule beneath; optional trailing value on the same line; the label is a semantic heading and screen readers get the original casing. |
+| `DataRow` | Sans label, monospace value, hairline rule below. The label takes the width its text needs up to `rowLabelMaxWidth` and the value takes the rest. `tone` colours the value; `value = null` draws `unavailableLabel` (default `n/a`) in muted text and ignores the tone. An ellipsised value is a defect to fix by moving the row to `LongValueRow`. |
+| `LongValueRow` | Uppercase monospace label on its own line, full-width left-aligned value below it. Wraps only after `-`, `.` or `,`, never mid-token and never right-aligned. Screen readers get the value without the break hints. |
+| `StatusText` | Short monospace uppercase verdict in a semantic colour. No pill and no tinted background; the colour alone carries the meaning. |
+| `Note` | Small muted sans caveat under a row: why a value is missing, how it was derived, what it does not mean. |
+| `PrimaryButton` / `SecondaryButton` | Filled and outlined actions, 4 dp radius, 48 dp minimum height, no elevation in any state. One primary action per screen. |
+| `SegmentedBar` | One segment per item, coloured by that item's tone. Hidden from screen readers, because the count it pictures is always stated in words beside it. |
+| `HairlineRule` / `StrongRule` | The only two divider weights. The hairline is one physical pixel at any density; the strong rule is 1 dp and appears only under a section label. |
 
-The Material roles resolve as follows; direct token use should be exceptional when a semantic `MaterialTheme.colorScheme` role already expresses the intent.
-
-| Material role | Dark theme | Light theme |
-|---|---|---|
-| primary / secondary | Aqua80 `#48D8D2` | Aqua40 `#00716D` |
-| onPrimary / onSecondary | `#00201E` | white |
-| primaryContainer | `#143C3B` | `#B7F3EF` |
-| secondaryContainer | `#143C3B` | `#9FF2E8` |
-| onPrimaryContainer / onSecondaryContainer | `#A5F2ED` | `#00201E` |
-| tertiary | Coral80 `#FFB4A9` | Coral40 `#9C4237` |
-| tertiaryContainer | `#7E2A22` | `#FFDAD4` |
-| background / onBackground | Neutral950 `#0D0F14` / Neutral100 `#F4F6FA` | `#F6F8FA` / `#171A20` |
-| surface / onSurface | Neutral900 `#15181F` / Neutral100 `#F4F6FA` | white / `#171A20` |
-| surfaceVariant / onSurfaceVariant | Neutral850 `#1C2028` / Neutral300 `#AEB6C4` | `#ECEFF3` / `#4B5563` |
-| outline / outlineVariant | Neutral600 `#48515F` / Neutral700 `#343B48` | `#737D8C` / `#D5DAE2` |
-| error / onError | Red400 `#FF7474` / Neutral950 | `#BA1A1A` / white |
-
-The complete Material type scale is explicit rather than inherited from platform defaults:
-
-| Roles | Size / line height | Weight / family |
-|---|---|---|
-| displayLarge / Medium / Small | 57/64, 45/52, 36/44 sp | Bold DM Sans |
-| headlineLarge | 32/40 sp | Bold DM Sans |
-| headlineMedium / Small | 28/36, 24/32 sp | Medium DM Sans |
-| titleLarge / Medium / Small | 22/28, 16/24, 14/20 sp | Medium DM Sans |
-| bodyLarge / Medium / Small | 16/24, 14/20, 12/16 sp | Regular DM Sans |
-| labelLarge / Medium / Small | 14/20, 12/16, 11/16 sp | Medium DM Sans |
-
-JetBrains Mono has regular, medium, and bold bundled weights and is applied deliberately by value rows, rates, IDs, status values, and diagnostic measurements. New text should use a Material role first; copying an arbitrary `TextStyle` creates a type-scale fork.
-
-Use the shared UI components rather than creating local equivalents:
+The components below predate the instrument redesign and are being retired. Do not use them in new work; each is deleted in the same task that migrates the last screen using it.
 
 | Component | Contract that UI changes must preserve |
 |---|---|
@@ -570,25 +580,30 @@ For a new or changed category, update and review all of these together:
 |---|---|---|
 | Standard clickable or static tonal card | `StandardCard` | A local Card copy with different border, container or shape defaults. |
 | Regular diagnostics vertical list | `TestScreenContent` | An ad-hoc LazyColumn with subtly different padding/spacing. |
-| Titled information group | `InfoCard` plus `InfoRow`/`DetailInfoRow`/`LabeledValueRow` | Repeated local label/value layout. |
-| Color-coded diagnostic outcome | `StatusBadge` or `StatusRow`; use `readableStatusColor` where raw semantic color is needed | Color-only text or unlabelled icon state. |
+| Titled information group | `SectionHeader` plus `DataRow` | Repeated local label/value layout, or a card wrapper. |
+| Value too long for one line | `LongValueRow` | A `DataRow` that ellipsises, or a right-aligned value that wraps. |
+| Caveat about a value | `Note` under the row it explains | A parenthetical inside the value itself. |
+| Per-item run result overview | `SegmentedBar` beside the count in words | A chart library, or colour with no adjacent text. |
+| Section boundary | `SectionHeader`, `HairlineRule`, `StrongRule` | A card, an elevation, or a coloured background block. |
+| Color-coded diagnostic outcome | `StatusText` with the `SemanticTone` from `DiagnosticStatus.toSemanticTone()` | Color-only text, an unlabelled icon state, or a raw `Color` chosen at the call site. |
 | Measurement reliability | `ConfidenceBadge` when confidence changes interpretation | A decorative badge that has no source/measurement meaning. |
 | Collapsible diagnostics section | `TestSectionCard` with the screen’s `expandedSection` state | Multiple uncoordinated local expand states. |
 | Permission explanation/recovery | `PermissionStatusCard` plus contextual request launcher | A raw permission string with no denied or Settings path. |
 | Whole-screen or list-state outcome | `ScreenStateScreen` / `ScreenStateCard` | Empty content or a generic toast that loses state. |
 | Saved-report load/error outcome | `ReportStateScreen` | A screen-local Retry/Back wrapper. |
 | Binary human confirmation | `ManualResultButtons` | Reversed emphasis, duplicated two-button rows, or a Boolean action with unclear problem/pass wording. |
-| Information refresh | `RefreshButton` | A screen-local full-width refresh button with different shape/enabled behavior. |
+| Screen action | `PrimaryButton` for the one primary action, `SecondaryButton` for the rest | A screen-local button with different shape, elevation or enabled behavior. |
 
 ### Explicit UI-decision rules
 
 - Hierarchy: one screen should have one obvious primary action. Full Check manual stages use a direct affirmative action and an outlined negative/skip action; avoid adding competing emphasized actions.
-- Typography: DM Sans carries headings/body/action copy. JetBrains Mono is for values, dimensions, IDs, rates and diagnostic measurements; do not use monospace merely for visual decoration.
-- Semantics: Green400 means pass/good, Yellow400 warning/attention, Red400 fail/error. Always pair color with localized text/status; unavailable and not-tested are neutral states, not failures.
-- Spacing/shapes: retain Material shapes and the shared 16 dp diagnostic side padding / 8 dp list spacing unless a controlled full-screen interaction needs a different layout.
+- Typography: use a role from `FonecheckTheme.type`; copying an arbitrary `TextStyle` forks the type scale. DM Sans carries headings, body and action copy. JetBrains Mono carries every measured value, unit, identifier and timestamp, with tabular figures, and is never decoration. Regular and Medium only — nothing is Bold.
+- Semantics: screens pass a `SemanticTone`, never a `Color`. `PASS` is pass/good, `ATTENTION` is warning/needs a look, `FAIL` is fail/error, `NEUTRAL` is no verdict. Always pair colour with localized text; unavailable and not-tested are neutral states, not failures.
+- Spacing/shapes: use `FonecheckTheme.spacing`; no literal `dp` in a screen. The grid is 8 dp, the corner radius is 4 dp and applies to controls only, and touch targets are at least 48 dp. No cards, elevation, shadows or gradients — structure comes from dividers and spacing.
+- Contrast: any colour carrying meaning must clear WCAG AA against what it sits on — 4.5:1 for text, 3:1 for a border or boundary that a control depends on. `textDisabled` clears neither and is for disabled content only. A border that separates a control from the background is never drawn in a decorative tint.
 - Accessibility: headings, localized icon labels, live progress/state messaging, meaningful touch targets, and non-color state text are requirements. Decorative artwork must remain excluded only where adjacent text fully identifies the target.
 - Responsive layout: preserve Home breakpoints. For other screens, test width, height, large font, landscape and RTL before hard-coding fixed widths/heights or relying on row-only action layouts.
-- Localization: no durable diagnostic model may contain rendered English/Finnish as its stable value. Add resource strings and stable-code localization together; format dynamic values with the platform/locale-aware formatter already used by the relevant screen/export.
+- Localization: English in `values/` is the source language and every new or changed string gets a Finnish counterpart in `values-fi/`; the two files must stay in sync. No hardcoded user-visible strings in composables. No durable diagnostic model may contain rendered English/Finnish as its stable value — add resource strings and stable-code localization together, and format dynamic values with the platform/locale-aware formatter already used by the relevant screen/export.
 
 ## ViewModel, concurrency, and resource ownership
 

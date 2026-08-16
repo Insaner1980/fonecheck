@@ -58,8 +58,7 @@ fun ReportExportRoute(
                         context,
                         externalAppUnavailable,
                         Toast.LENGTH_SHORT,
-                    )
-                    .show()
+                    ).show()
             }
             viewModel.consumeShareRequest()
         }
