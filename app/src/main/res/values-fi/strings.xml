@@ -583,7 +583,7 @@
     </plurals>
     <string name="home_latest_completed_at">Valmistui %1$s</string>
     <string name="home_latest_passed_label">Läpäisty</string>
-    <string name="home_latest_passed_total">/%1$s</string>
+    <string name="home_latest_passed_total">%1$s</string>
     <string name="home_latest_passed_description">Läpäistyjä tarkistuksia %1$s / %2$s</string>
     <string name="home_latest_coverage_value">Kattavuus %1$s</string>
     <string name="home_latest_category_statuses">Kategorioiden tilat: läpäisty %1$s, varoitus %2$s, hylätty %3$s, tieto %4$s, ei saatavilla %5$s, ei testattu %6$s.</string>

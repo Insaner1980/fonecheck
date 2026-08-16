@@ -88,9 +88,14 @@ class HomeContentTest {
                 )
             }
         }
-        composeRule.mainClock.advanceTimeByFrame()
         composeRule.onNodeWithTag("home_latest_loading").assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.home_latest_loading)).assertIsDisplayed()
+        composeRule.onNodeWithTag("home_latest_loading_indicator").assertDoesNotExist()
+        composeRule.mainClock.advanceTimeBy(HOME_LOADING_INDICATOR_DELAY_MILLIS - 1L)
+        composeRule.onNodeWithTag("home_latest_loading_indicator").assertDoesNotExist()
+        composeRule.mainClock.advanceTimeBy(2L)
+        composeRule.mainClock.advanceTimeByFrame()
+        composeRule.onNodeWithTag("home_latest_loading_indicator").assertIsDisplayed()
 
         state = LatestFullCheckState.Unavailable(ReportReadFailure.CORRUPT_DATA)
         composeRule.mainClock.advanceTimeByFrame()
@@ -112,9 +117,8 @@ class HomeContentTest {
         setHomeContent(LatestFullCheckState.Available(report))
 
         val label = context.getString(R.string.home_latest_passed_label)
-        val total = context.getString(R.string.home_latest_passed_total, "1")
         composeRule.onNodeWithText(label).assertIsDisplayed()
-        composeRule.onNodeWithText(total, substring = true).assertIsDisplayed()
+        composeRule.onNodeWithText("1\u2009/\u20091").assertIsDisplayed()
         assertPassedCount(context, passed = "1", total = "1")
         composeRule.onNodeWithContentDescription(coverageValue(context, 1.0)).assertIsDisplayed()
         composeRule
@@ -323,7 +327,7 @@ class HomeContentTest {
         context: Context,
         fraction: Double,
     ): String {
-        val locale = context.resources.configuration.locales[0]
+        val locale = homeUiLanguageLocale(context.resources.configuration.locales[0])
         return context.getString(
             R.string.home_latest_coverage_value,
             NumberFormat.getPercentInstance(locale).format(fraction),

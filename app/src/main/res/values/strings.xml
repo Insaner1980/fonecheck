@@ -591,7 +591,7 @@
     </plurals>
     <string name="home_latest_completed_at">Completed %1$s</string>
     <string name="home_latest_passed_label">Checks passed</string>
-    <string name="home_latest_passed_total">/%1$s</string>
+    <string name="home_latest_passed_total">%1$s</string>
     <string name="home_latest_passed_description">%1$s of %2$s checks passed</string>
     <string name="home_latest_coverage_value">Coverage %1$s</string>
     <string name="home_latest_category_statuses">Category status: Pass %1$s, Warning %2$s, Fail %3$s, Info %4$s, Not available %5$s, Not tested %6$s.</string>

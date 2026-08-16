@@ -28,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,7 +41,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.testTag
@@ -108,7 +108,8 @@ import java.text.NumberFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
+import java.util.Locale
+import kotlinx.coroutines.delay
 
 @Composable
 fun HomeScreen(
@@ -202,6 +203,17 @@ internal fun latestReportUsesStackedLayout(
     availableWidthDp: Float,
     fontScale: Float,
 ): Boolean = availableWidthDp < 312f || fontScale > 1.3f
+
+internal const val HOME_LOADING_INDICATOR_DELAY_MILLIS = 300L
+
+private val homeTimestampFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm", Locale.ROOT)
+
+internal fun homeUiLanguageLocale(locale: Locale): Locale = Locale.forLanguageTag(locale.language)
+
+internal fun formatHomeCompletedAt(
+    value: Instant,
+    zoneId: ZoneId,
+): String = homeTimestampFormatter.withZone(zoneId).format(value)
 
 @Composable
 private fun HomeBrandHeader(
@@ -469,6 +481,13 @@ private fun LatestFullCheckMessage(
     onAction: (() -> Unit)? = null,
     assertive: Boolean = false,
 ) {
+    val showLoadingIndicator by
+        produceState(initialValue = false, key1 = loading) {
+            if (loading) {
+                delay(HOME_LOADING_INDICATOR_DELAY_MILLIS)
+                value = true
+            }
+        }
     Column(
         modifier =
             Modifier
@@ -482,8 +501,10 @@ private fun LatestFullCheckMessage(
             label = stringResource(R.string.home_latest_title),
             trailing = trailing,
         )
-        if (loading) {
-            IndeterminateRule()
+        if (showLoadingIndicator) {
+            Box(modifier = Modifier.testTag("home_latest_loading_indicator")) {
+                IndeterminateRule()
+            }
         }
         Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
         Text(
@@ -611,16 +632,12 @@ private fun LatestFullCheckReadout(
 ) {
     val presentation = remember(report) { HomeReportPresentation.from(report) }
     val segments = remember(report) { latestCheckSegments(report) }
-    val locale = LocalConfiguration.current.locales[0]
+    val locale = homeUiLanguageLocale(LocalLocale.current.platformLocale)
     val numberFormat = remember(locale) { NumberFormat.getIntegerInstance(locale) }
     val percentFormat = remember(locale) { NumberFormat.getPercentInstance(locale) }
-    // The short form, not the medium one: the header label beside it is already long in Finnish.
-    val dateFormatter =
-        remember(locale) {
-            DateTimeFormatter
-                .ofLocalizedDateTime(FormatStyle.SHORT)
-                .withLocale(locale)
-                .withZone(ZoneId.systemDefault())
+    val completedAtValue =
+        remember(report.completedAt) {
+            formatHomeCompletedAt(report.completedAt, ZoneId.systemDefault())
         }
     val coverageValue =
         stringResource(
@@ -659,7 +676,6 @@ private fun LatestFullCheckReadout(
             numberFormat.format(presentation.notAvailableCount),
             numberFormat.format(presentation.notTestedCount),
         )
-    val completedAtValue = dateFormatter.format(report.completedAt)
     // The verdict word no longer appears on the screen, but it still opens the spoken description.
     val cardStateDescription =
         stringResource(
@@ -713,8 +729,8 @@ private fun LatestFullCheckReadout(
 }
 
 /**
- * A hair space between the figure and its total. A full space is too wide at readout size, and the
- * two are one run of text so that they share a baseline without being laid out against each other.
+ * Hair spaces balance the slash between the figure and its total without separating their shared
+ * baseline into independently measured text nodes.
  */
 private const val FIGURE_GAP = "\u2009"
 
@@ -739,6 +755,8 @@ private fun PassedReadout(
                     .toSpanStyle()
                     .copy(color = FonecheckTheme.colors.textMuted),
             ) {
+                append(FIGURE_GAP)
+                append('/')
                 append(FIGURE_GAP)
                 append(total)
             }
