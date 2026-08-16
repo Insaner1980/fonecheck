@@ -43,6 +43,7 @@ import com.insaner.fonecheck.domain.model.ReportSchemaVersion
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
+import com.insaner.fonecheck.navigation.DeviceInfo
 import com.insaner.fonecheck.navigation.History
 import com.insaner.fonecheck.navigation.Report
 import com.insaner.fonecheck.navigation.Settings
@@ -200,6 +201,40 @@ class HomeContentTest {
         composeRule
             .onNodeWithTag("home_latest_report_card")
             .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.StateDescription))
+    }
+
+    @Test
+    fun categoryRowsUseTheLatestFullCheckAndKeepTheirNavigationTarget() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        var route: Any? = null
+        val report = report("category-row", listOf(DiagnosticStatus.PASS), score = 90)
+        composeRule.setContent {
+            FonecheckTheme {
+                HomeContent(
+                    latestFullCheck = LatestFullCheckState.Available(report),
+                    onNavigate = { route = it },
+                    onRunAllTests = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText(context.getString(R.string.home_categories_title)).assertIsDisplayed()
+        composeRule
+            .onNodeWithText(context.getString(R.string.home_category_android_api, 36))
+            .assertIsDisplayed()
+        composeRule
+            .onNodeWithTag("home_category_device")
+            .assertHeightIsAtLeast(48.dp)
+            .performClick()
+        assertEquals(DeviceInfo, route)
+        composeRule
+            .onNodeWithTag("home_category_performance")
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.StateDescription,
+                    context.getString(R.string.value_unavailable_short),
+                ),
+            )
     }
 
     @Test

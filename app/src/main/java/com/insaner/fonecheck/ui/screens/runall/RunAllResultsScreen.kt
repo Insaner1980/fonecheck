@@ -3,7 +3,6 @@
 package com.insaner.fonecheck.ui.screens.runall
 
 import android.text.format.Formatter
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -42,7 +42,6 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.CategoryTestResult
@@ -70,6 +69,7 @@ import com.insaner.fonecheck.ui.components.StatusBadge
 import com.insaner.fonecheck.ui.screens.report.ReportDetailPresentation
 import com.insaner.fonecheck.ui.screens.report.ReportDetailPresenter
 import com.insaner.fonecheck.ui.screens.report.stableCodeFallback
+import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.Green400
 import com.insaner.fonecheck.ui.theme.Neutral400
 import com.insaner.fonecheck.ui.theme.Red400
@@ -655,7 +655,7 @@ private fun ExpandedCategoryResult(
     CategoryResultCard(
         result = result,
         title = stringResource(destination.labelResId),
-        imageResId = destination.imageResId,
+        iconResId = destination.iconResId,
         isExpanded = isExpanded,
         onToggle = onToggle,
         onOpen = {
@@ -685,7 +685,7 @@ private fun CompletedResultsCard(
             CompactResultRow(
                 result = result,
                 title = stringResource(destination.labelResId),
-                imageResId = destination.imageResId,
+                iconResId = destination.iconResId,
                 isExpanded = expandedCategoryName == result.category.name,
                 onToggle = { onToggle(result) },
                 onOpen = {
@@ -713,7 +713,7 @@ private fun CompletedResultsCard(
 private fun CompactResultRow(
     result: CategoryTestResult,
     title: String,
-    imageResId: Int,
+    iconResId: Int,
     isExpanded: Boolean,
     onToggle: () -> Unit,
     onOpen: () -> Unit,
@@ -738,9 +738,8 @@ private fun CompactResultRow(
         ResultHeader(
             result = result,
             title = title,
-            imageResId = imageResId,
+            iconResId = iconResId,
             showSummary = false,
-            imageSize = 44.dp,
         )
         if (isExpanded) {
             ResultDetails(result.results, onOpen, mode)
@@ -752,7 +751,7 @@ private fun CompactResultRow(
 private fun CategoryResultCard(
     result: CategoryTestResult,
     title: String,
-    imageResId: Int,
+    iconResId: Int,
     isExpanded: Boolean,
     mode: ReportResultMode,
     onToggle: () -> Unit,
@@ -774,9 +773,8 @@ private fun CategoryResultCard(
             ResultHeader(
                 result = result,
                 title = title,
-                imageResId = imageResId,
+                iconResId = iconResId,
                 showSummary = true,
-                imageSize = 52.dp,
             )
             Text(
                 text =
@@ -804,15 +802,15 @@ private fun CategoryResultCard(
 private fun ResultHeader(
     result: CategoryTestResult,
     title: String,
-    imageResId: Int,
+    iconResId: Int,
     showSummary: Boolean,
-    imageSize: Dp,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Image(
-            painter = painterResource(imageResId),
+        Icon(
+            painter = painterResource(iconResId),
             contentDescription = null,
-            modifier = Modifier.size(imageSize),
+            tint = FonecheckTheme.colors.textSecondary,
+            modifier = Modifier.size(FonecheckTheme.spacing.lg),
         )
         Column(
             modifier =

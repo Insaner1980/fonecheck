@@ -1,25 +1,26 @@
 package com.insaner.fonecheck.ui.screens.home
 
+import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class HomeResponsiveLayoutTest {
     @Test
-    fun `compact width uses two columns`() {
-        assertEquals(2, homeGridColumnCount(360f))
-        assertEquals(2, homeGridColumnCount(599f))
+    fun `category headlines use only values that stay stable between full checks`() {
+        assertEquals("report.device.api_level", stableHomeHeadlineSource(DiagnosticCategoryId.DEVICE))
+        assertEquals("performance.cpu", stableHomeHeadlineSource(DiagnosticCategoryId.PERFORMANCE))
+        assertEquals("camera.inventory", stableHomeHeadlineSource(DiagnosticCategoryId.CAMERA))
+        assertEquals("sensors.inventory", stableHomeHeadlineSource(DiagnosticCategoryId.SENSORS))
+        assertEquals("battery.health", stableHomeHeadlineSource(DiagnosticCategoryId.BATTERY))
     }
 
     @Test
-    fun `medium width uses three columns`() {
-        assertEquals(3, homeGridColumnCount(600f))
-        assertEquals(3, homeGridColumnCount(839f))
-    }
-
-    @Test
-    fun `expanded width uses four columns`() {
-        assertEquals(4, homeGridColumnCount(840f))
-        assertEquals(4, homeGridColumnCount(1_280f))
+    fun `changing readings and situational state are not category headlines`() {
+        assertNull(stableHomeHeadlineSource(DiagnosticCategoryId.SIM))
+        assertNull(stableHomeHeadlineSource(DiagnosticCategoryId.CONNECTIVITY))
+        assertNull(stableHomeHeadlineSource(DiagnosticCategoryId.THERMAL))
+        assertNull(stableHomeHeadlineSource(DiagnosticCategoryId.STORAGE))
     }
 
     @Test

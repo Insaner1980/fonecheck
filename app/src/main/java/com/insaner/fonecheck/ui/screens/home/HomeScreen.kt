@@ -18,10 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Settings
@@ -61,7 +58,6 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -80,6 +76,7 @@ import com.insaner.fonecheck.domain.model.DiagnosticEvidence
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceSource
+import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.ReportAppContext
 import com.insaner.fonecheck.domain.model.ReportDeviceContext
 import com.insaner.fonecheck.domain.model.ReportKind
@@ -87,18 +84,18 @@ import com.insaner.fonecheck.domain.model.ReportSchemaVersion
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
-import com.insaner.fonecheck.navigation.DiagnosticDestination
+import com.insaner.fonecheck.localization.stableTextStringRes
 import com.insaner.fonecheck.navigation.History
 import com.insaner.fonecheck.navigation.Report
 import com.insaner.fonecheck.navigation.Settings
 import com.insaner.fonecheck.navigation.diagnosticDestinations
+import com.insaner.fonecheck.ui.components.CategoryNavigationRow
 import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.IndeterminateRule
 import com.insaner.fonecheck.ui.components.PrimaryButton
 import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.SegmentedBar
-import com.insaner.fonecheck.ui.components.StandardCard
 import com.insaner.fonecheck.ui.components.StatusText
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.Lavender80
@@ -139,84 +136,67 @@ internal fun HomeContent(
     modifier: Modifier = Modifier,
     onRetryLatestFullCheck: () -> Unit = {},
 ) {
-    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-        val columnCount = homeGridColumnCount(maxWidth.value)
-        val horizontalPadding = if (maxWidth < 600.dp) 16.dp else 24.dp
-        val itemSpacing = if (maxWidth < 600.dp) 12.dp else 16.dp
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(columnCount),
-            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-            contentPadding =
-                PaddingValues(
-                    start = horizontalPadding,
-                    top = 12.dp,
-                    end = horizontalPadding,
-                    bottom = 32.dp,
-                ),
-            horizontalArrangement = Arrangement.spacedBy(itemSpacing),
-            verticalArrangement = Arrangement.spacedBy(itemSpacing),
-        ) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
+    LazyColumn(
+        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        contentPadding =
+            PaddingValues(
+                start = FonecheckTheme.spacing.md,
+                top = FonecheckTheme.spacing.sm,
+                end = FonecheckTheme.spacing.md,
+                bottom = FonecheckTheme.spacing.xl,
+            ),
+    ) {
+        item {
+            Box(modifier = Modifier.padding(bottom = FonecheckTheme.spacing.md)) {
                 HomeBrandHeader(
                     onHistory = { onNavigate(History) },
                     onSettings = { onNavigate(Settings) },
                 )
             }
+        }
 
-            item(span = { GridItemSpan(maxLineSpan) }) {
+        item {
+            Box(modifier = Modifier.padding(bottom = FonecheckTheme.spacing.md)) {
                 LatestFullCheckSection(
                     state = latestFullCheck,
                     onOpenReport = { reportId -> onNavigate(Report(reportId)) },
                     onRetry = onRetryLatestFullCheck,
                 )
             }
+        }
 
-            item(span = { GridItemSpan(maxLineSpan) }) {
+        item {
+            Box(modifier = Modifier.padding(bottom = FonecheckTheme.spacing.lg)) {
                 PrimaryButton(
                     label = stringResource(R.string.home_run_all),
                     onClick = onRunAllTests,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+        }
 
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Column(modifier = Modifier.padding(top = 12.dp, bottom = 2.dp)) {
-                    Text(
-                        text = stringResource(R.string.home_categories_title),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = stringResource(R.string.home_categories_subtitle),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        item {
+            Column {
+                SectionHeader(
+                    label = stringResource(R.string.home_categories_title),
+                    trailing = diagnosticDestinations.size.toString(),
+                )
+                diagnosticDestinations.forEachIndexed { index, destination ->
+                    val result = homeCategoryRowResult(latestFullCheck, destination.category)
+                    CategoryNavigationRow(
+                        iconResId = destination.iconResId,
+                        label = stringResource(destination.labelResId),
+                        value = result.value,
+                        tone = result.tone,
+                        onClick = { onNavigate(destination.route) },
+                        modifier = Modifier.testTag("home_category_${destination.category.stableId}"),
+                        showDivider = index < diagnosticDestinations.lastIndex,
                     )
                 }
-            }
-
-            items(
-                items = diagnosticDestinations,
-                key = { it.labelResId },
-            ) { category ->
-                CategoryGridItem(
-                    category = category,
-                    label = stringResource(category.labelResId),
-                    onClick = { onNavigate(category.route) },
-                )
             }
         }
     }
 }
-
-internal fun homeGridColumnCount(availableWidthDp: Float): Int =
-    when {
-        availableWidthDp < 600f -> 2
-        availableWidthDp < 840f -> 3
-        else -> 4
-    }
 
 internal fun latestReportUsesStackedLayout(
     availableWidthDp: Float,
@@ -523,6 +503,102 @@ private fun LatestFullCheckMessage(
 /** One segment per category, coloured by that category's own result. */
 internal fun latestCheckSegments(report: DiagnosticReport): List<SemanticTone> =
     report.categories.map { it.aggregateStatus.toSemanticTone() }
+
+private data class HomeCategoryRowResult(
+    val value: String?,
+    val tone: SemanticTone,
+)
+
+internal fun stableHomeHeadlineSource(categoryId: DiagnosticCategoryId): String? =
+    when (categoryId) {
+        DiagnosticCategoryId.DEVICE -> "report.device.api_level"
+        DiagnosticCategoryId.PERFORMANCE -> "performance.cpu"
+        DiagnosticCategoryId.CAMERA -> "camera.inventory"
+        DiagnosticCategoryId.SENSORS -> "sensors.inventory"
+        DiagnosticCategoryId.BATTERY -> "battery.health"
+        else -> null
+    }
+
+private val stableBatteryHealthCodes =
+    setOf(
+        "good",
+        "dead",
+        "over_voltage",
+        "unspecified_failure",
+    )
+
+@Composable
+private fun homeCategoryRowResult(
+    state: LatestFullCheckState,
+    categoryId: DiagnosticCategoryId,
+): HomeCategoryRowResult {
+    val report = (state as? LatestFullCheckState.Available)?.report
+        ?: return HomeCategoryRowResult(null, SemanticTone.NEUTRAL)
+    val category = report.categories.firstOrNull { it.categoryId == categoryId }
+        ?: return HomeCategoryRowResult(null, SemanticTone.NEUTRAL)
+    val tone = category.aggregateStatus.toSemanticTone()
+    val headline =
+        if (category.aggregateStatus == DiagnosticStatus.PASS || category.aggregateStatus == DiagnosticStatus.INFO) {
+            stableHomeHeadline(report, categoryId)
+        } else {
+            null
+        }
+    return HomeCategoryRowResult(
+        value = headline ?: homeCategoryStatusLabel(category.aggregateStatus),
+        tone = tone,
+    )
+}
+
+@Composable
+private fun stableHomeHeadline(
+    report: DiagnosticReport,
+    categoryId: DiagnosticCategoryId,
+): String? {
+    val source = stableHomeHeadlineSource(categoryId) ?: return null
+    if (source == "report.device.api_level") {
+        return stringResource(R.string.home_category_android_api, report.device.apiLevel)
+    }
+    val evidence =
+        report.categories
+            .firstOrNull { it.categoryId == categoryId }
+            ?.evidence
+            ?.firstOrNull { it.checkId.value == source }
+            ?: return null
+    return when (source) {
+        "performance.cpu" ->
+            (evidence.value as? EvidenceValue.IntValue)?.value?.let { count ->
+                pluralStringResource(R.plurals.home_category_cpu_cores, count, count)
+            }
+        "camera.inventory" ->
+            (evidence.value as? EvidenceValue.IntValue)?.value?.let { count ->
+                pluralStringResource(R.plurals.home_category_cameras, count, count)
+            }
+        "sensors.inventory" ->
+            (evidence.value as? EvidenceValue.IntValue)?.value?.let { count ->
+                pluralStringResource(R.plurals.home_category_sensors, count, count)
+            }
+        "battery.health" ->
+            (evidence.value as? EvidenceValue.StableTextCodeValue)
+                ?.value
+                ?.takeIf(stableBatteryHealthCodes::contains)
+                ?.let { stableTextStringRes(it) }
+                ?.let { stringResource(it) }
+        else -> null
+    }
+}
+
+@Composable
+private fun homeCategoryStatusLabel(status: DiagnosticStatus): String =
+    stringResource(
+        when (status) {
+            DiagnosticStatus.PASS -> R.string.run_all_status_pass
+            DiagnosticStatus.WARNING -> R.string.run_all_status_warning
+            DiagnosticStatus.FAIL -> R.string.run_all_status_fail
+            DiagnosticStatus.INFO -> R.string.run_all_status_info
+            DiagnosticStatus.NOT_AVAILABLE -> R.string.run_all_status_unavailable
+            DiagnosticStatus.NOT_TESTED -> R.string.run_all_status_not_tested
+        },
+    )
 
 /**
  * The finished report as a readout: how many categories passed, the shape of the run as a segment
@@ -854,48 +930,6 @@ private data class HomeReportPresentation(
                 notTestedCount = categories.count { it.aggregateStatus == DiagnosticStatus.NOT_TESTED },
                 warningItemCount = evidence.count { it.status == DiagnosticStatus.WARNING },
                 failureItemCount = evidence.count { it.status == DiagnosticStatus.FAIL },
-            )
-        }
-    }
-}
-
-@Composable
-private fun CategoryGridItem(
-    category: DiagnosticDestination,
-    label: String,
-    onClick: () -> Unit,
-) {
-    StandardCard(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(
-            modifier =
-                Modifier
-                    .padding(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 16.dp),
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(126.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Image(
-                    painter = painterResource(category.imageResId),
-                    contentDescription = null,
-                    modifier = Modifier.size(118.dp),
-                    contentScale = ContentScale.Fit,
-                )
-            }
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
             )
         }
     }

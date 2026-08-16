@@ -895,8 +895,20 @@
     <string name="run_all_permission_missing">Permission was not granted</string>
     <string name="run_all_manual_failed">User reported a problem</string>
     <string name="run_all_manual_skipped">Interactive check was skipped</string>
-    <string name="home_categories_title">Test Categories</string>
-    <string name="home_categories_subtitle">Choose a category to inspect or test</string>
+    <string name="home_categories_title">Categories</string>
+    <string name="home_category_android_api">Android API %1$d</string>
+    <plurals name="home_category_cpu_cores">
+        <item quantity="one">%1$d core</item>
+        <item quantity="other">%1$d cores</item>
+    </plurals>
+    <plurals name="home_category_cameras">
+        <item quantity="one">%1$d camera</item>
+        <item quantity="other">%1$d cameras</item>
+    </plurals>
+    <plurals name="home_category_sensors">
+        <item quantity="one">%1$d sensor</item>
+        <item quantity="other">%1$d sensors</item>
+    </plurals>
 
     <string name="home_cat_device">Device</string>
     <string name="home_cat_performance">Performance</string>

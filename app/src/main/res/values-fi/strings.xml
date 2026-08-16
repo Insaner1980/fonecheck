@@ -887,8 +887,20 @@
     <string name="run_all_permission_missing">Oikeutta ei myönnetty</string>
     <string name="run_all_manual_failed">Käyttäjä ilmoitti ongelmasta</string>
     <string name="run_all_manual_skipped">Vuorovaikutteinen tarkistus ohitettiin</string>
-    <string name="home_categories_title">Testikategoriat</string>
-    <string name="home_categories_subtitle">Valitse tarkasteltava tai testattava kategoria</string>
+    <string name="home_categories_title">Kategoriat</string>
+    <string name="home_category_android_api">Android API %1$d</string>
+    <plurals name="home_category_cpu_cores">
+        <item quantity="one">%1$d ydin</item>
+        <item quantity="other">%1$d ydintä</item>
+    </plurals>
+    <plurals name="home_category_cameras">
+        <item quantity="one">%1$d kamera</item>
+        <item quantity="other">%1$d kameraa</item>
+    </plurals>
+    <plurals name="home_category_sensors">
+        <item quantity="one">%1$d anturi</item>
+        <item quantity="other">%1$d anturia</item>
+    </plurals>
 
     <string name="home_cat_device">Laite</string>
     <string name="home_cat_performance">Suorituskyky</string>
