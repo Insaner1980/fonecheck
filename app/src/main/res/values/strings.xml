@@ -576,9 +576,6 @@
     <string name="home_latest_title">Last full check</string>
     <string name="home_latest_loading">Loading the latest Full Check…</string>
     <string name="home_latest_empty_title">No Full Check yet</string>
-    <string name="home_latest_empty_message">Run a Full Check to create your first saved summary.</string>
-    <string name="home_latest_unavailable_title">Latest Full Check unavailable</string>
-    <string name="home_latest_error_title">Couldn’t load the latest Full Check</string>
     <string name="home_latest_error_message">The saved report summary could not be refreshed.</string>
     <string name="home_latest_retry">Retry</string>
     <string name="home_latest_status_good">Good</string>
@@ -592,25 +589,13 @@
         <item quantity="one">%1$d item needs attention</item>
         <item quantity="other">%1$d items need attention</item>
     </plurals>
-    <plurals name="home_latest_attention_count">
-        <item quantity="one">%1$d item</item>
-        <item quantity="other">%1$d items</item>
-    </plurals>
     <string name="home_latest_completed_at">Completed %1$s</string>
     <string name="home_latest_passed_label">Checks passed</string>
     <string name="home_latest_passed_total">/%1$s</string>
     <string name="home_latest_passed_description">%1$s of %2$s checks passed</string>
     <string name="home_latest_coverage_value">Coverage %1$s</string>
-    <string name="home_latest_categories">Categories</string>
-    <string name="home_latest_coverage">Coverage</string>
-    <string name="home_latest_needs_attention">Needs attention</string>
-    <string name="home_latest_categories_value">%1$s / %2$s</string>
-    <string name="home_latest_no_score">No score</string>
-    <string name="home_latest_score_description">Score %1$s out of 100</string>
-    <string name="home_latest_no_score_description">No score. Status: %1$s</string>
     <string name="home_latest_category_statuses">Category status: Pass %1$s, Warning %2$s, Fail %3$s, Info %4$s, Not available %5$s, Not tested %6$s.</string>
     <string name="home_latest_state_description">%1$s. %2$s. %3$s. %4$s. %5$s. %6$s</string>
-    <string name="home_latest_metric_state_description">%1$s: %2$s</string>
     <string name="run_all_preflight_title">Before the full check</string>
     <string name="run_all_preflight_description">Review what fonecheck will do before any permission request appears.</string>
     <string name="run_all_preflight_interactions">You will inspect the display and use supported camera, motion, volume-button, vibration, speaker, and biometric checks.</string>

@@ -568,9 +568,6 @@
     <string name="home_latest_title">Viimeisin Full Check</string>
     <string name="home_latest_loading">Viimeisintä Full Check -raporttia ladataan…</string>
     <string name="home_latest_empty_title">Ei vielä Full Check -raporttia</string>
-    <string name="home_latest_empty_message">Luo ensimmäinen tallennettu yhteenveto suorittamalla Full Check.</string>
-    <string name="home_latest_unavailable_title">Viimeisin Full Check ei ole saatavilla</string>
-    <string name="home_latest_error_title">Viimeisintä Full Check -raporttia ei voitu ladata</string>
     <string name="home_latest_error_message">Tallennetun raportin yhteenvetoa ei voitu päivittää.</string>
     <string name="home_latest_retry">Yritä uudelleen</string>
     <string name="home_latest_status_good">Hyvä</string>
@@ -584,25 +581,13 @@
         <item quantity="one">%1$d kohde vaatii huomiota</item>
         <item quantity="other">%1$d kohdetta vaatii huomiota</item>
     </plurals>
-    <plurals name="home_latest_attention_count">
-        <item quantity="one">%1$d kohde</item>
-        <item quantity="other">%1$d kohdetta</item>
-    </plurals>
     <string name="home_latest_completed_at">Valmistui %1$s</string>
     <string name="home_latest_passed_label">Läpäisty</string>
     <string name="home_latest_passed_total">/%1$s</string>
     <string name="home_latest_passed_description">Läpäistyjä tarkistuksia %1$s / %2$s</string>
     <string name="home_latest_coverage_value">Kattavuus %1$s</string>
-    <string name="home_latest_categories">Kategoriat</string>
-    <string name="home_latest_coverage">Kattavuus</string>
-    <string name="home_latest_needs_attention">Vaatii huomiota</string>
-    <string name="home_latest_categories_value">%1$s / %2$s</string>
-    <string name="home_latest_no_score">Ei pisteitä</string>
-    <string name="home_latest_score_description">Pisteet %1$s / 100</string>
-    <string name="home_latest_no_score_description">Pisteitä ei ole. Tila: %1$s</string>
     <string name="home_latest_category_statuses">Kategorioiden tilat: läpäisty %1$s, varoitus %2$s, hylätty %3$s, tieto %4$s, ei saatavilla %5$s, ei testattu %6$s.</string>
     <string name="home_latest_state_description">%1$s. %2$s. %3$s. %4$s. %5$s. %6$s</string>
-    <string name="home_latest_metric_state_description">%1$s: %2$s</string>
     <string name="run_all_preflight_title">Ennen koko tarkistusta</string>
     <string name="run_all_preflight_description">Tarkista, mitä fonecheck tekee, ennen kuin yhtään lupapyyntöä näytetään.</string>
     <string name="run_all_preflight_interactions">Tarkistat näytön ja käytät tuettuja kamera-, liike-, äänenvoimakkuuspainike-, värinä-, kaiutin- ja biometriikkatarkistuksia.</string>
