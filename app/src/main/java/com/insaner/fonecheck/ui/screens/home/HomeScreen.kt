@@ -57,6 +57,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -105,7 +106,14 @@ import com.insaner.fonecheck.navigation.History
 import com.insaner.fonecheck.navigation.Report
 import com.insaner.fonecheck.navigation.Settings
 import com.insaner.fonecheck.navigation.diagnosticDestinations
+import com.insaner.fonecheck.ui.components.HairlineRule
+import com.insaner.fonecheck.ui.components.IndeterminateRule
+import com.insaner.fonecheck.ui.components.PrimaryButton
+import com.insaner.fonecheck.ui.components.SecondaryButton
+import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.components.SegmentedBar
 import com.insaner.fonecheck.ui.components.StandardCard
+import com.insaner.fonecheck.ui.components.StatusText
 import com.insaner.fonecheck.ui.theme.Aqua40
 import com.insaner.fonecheck.ui.theme.Aqua80
 import com.insaner.fonecheck.ui.theme.Coral80
@@ -124,6 +132,8 @@ import com.insaner.fonecheck.ui.theme.Neutral850
 import com.insaner.fonecheck.ui.theme.Neutral900
 import com.insaner.fonecheck.ui.theme.Neutral950
 import com.insaner.fonecheck.ui.theme.Red400
+import com.insaner.fonecheck.ui.theme.SemanticTone
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 import java.text.NumberFormat
 import java.time.Instant
 import java.time.ZoneId
@@ -190,25 +200,11 @@ internal fun HomeContent(
             }
 
             item(span = { GridItemSpan(maxLineSpan) }) {
-                Button(
+                PrimaryButton(
+                    label = stringResource(R.string.home_run_all),
                     onClick = onRunAllTests,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 56.dp),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                        ),
-                    shape = MaterialTheme.shapes.medium,
-                ) {
-                    Text(
-                        text = stringResource(R.string.home_run_all),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
 
             item(span = { GridItemSpan(maxLineSpan) }) {
@@ -298,12 +294,14 @@ private fun HomeBrand(modifier: Modifier = Modifier) {
             modifier = Modifier.size(56.dp),
             contentScale = ContentScale.Fit,
         )
+        // The wordmark stays neutral: the primary action is the one element on this screen that
+        // carries the accent.
         Text(
             text =
                 buildAnnotatedString {
                     withStyle(
                         SpanStyle(
-                            color = MaterialTheme.colorScheme.primary,
+                            color = FonecheckTheme.colors.textPrimary,
                             fontWeight = FontWeight.Bold,
                         ),
                     ) {
@@ -311,7 +309,7 @@ private fun HomeBrand(modifier: Modifier = Modifier) {
                     }
                     withStyle(
                         SpanStyle(
-                            color = MaterialTheme.colorScheme.onBackground,
+                            color = FonecheckTheme.colors.textPrimary,
                             fontWeight = FontWeight.Medium,
                         ),
                     ) {
@@ -461,23 +459,22 @@ private fun LatestFullCheckSection(
     onOpenReport: (String) -> Unit,
     onRetry: () -> Unit,
 ) {
+    val unavailableValue = stringResource(R.string.value_unavailable_short)
     when (state) {
         LatestFullCheckState.Loading ->
-            LatestFullCheckStateCard(
-                title = stringResource(R.string.home_latest_title),
+            LatestFullCheckMessage(
                 message = stringResource(R.string.home_latest_loading),
                 tag = "home_latest_loading",
-                isLoading = true,
+                loading = true,
             )
         LatestFullCheckState.Empty ->
-            LatestFullCheckStateCard(
-                title = stringResource(R.string.home_latest_empty_title),
-                message = stringResource(R.string.home_latest_empty_message),
+            LatestFullCheckMessage(
+                message = stringResource(R.string.home_latest_empty_title),
                 tag = "home_latest_empty",
+                trailing = unavailableValue,
             )
         is LatestFullCheckState.Unavailable ->
-            LatestFullCheckStateCard(
-                title = stringResource(R.string.home_latest_unavailable_title),
+            LatestFullCheckMessage(
                 message =
                     stringResource(
                         when (state.reason) {
@@ -486,21 +483,264 @@ private fun LatestFullCheckSection(
                         },
                     ),
                 tag = "home_latest_unavailable",
+                trailing = unavailableValue,
             )
         LatestFullCheckState.Error ->
-            LatestFullCheckStateCard(
-                title = stringResource(R.string.home_latest_error_title),
+            LatestFullCheckMessage(
                 message = stringResource(R.string.home_latest_error_message),
                 tag = "home_latest_error",
+                trailing = unavailableValue,
                 actionLabel = stringResource(R.string.home_latest_retry),
                 onAction = onRetry,
                 assertive = true,
             )
         is LatestFullCheckState.Available ->
-            LatestFullCheckCard(
+            LatestFullCheckReadout(
                 report = state.report,
                 onClick = { onOpenReport(state.report.stableId) },
             )
+    }
+}
+
+/**
+ * Every state that is not a finished report: the section header, one line saying what is going on,
+ * and for a failed load the action that retries it. No zeroes and no invented figures.
+ */
+@Composable
+private fun LatestFullCheckMessage(
+    message: String,
+    tag: String,
+    trailing: String? = null,
+    loading: Boolean = false,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
+    assertive: Boolean = false,
+) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .testTag(tag)
+                .semantics {
+                    liveRegion = if (assertive) LiveRegionMode.Assertive else LiveRegionMode.Polite
+                },
+    ) {
+        SectionHeader(
+            label = stringResource(R.string.home_latest_title),
+            trailing = trailing,
+        )
+        if (loading) {
+            IndeterminateRule()
+        }
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+        Text(
+            text = message,
+            style = FonecheckTheme.type.rowLabel,
+            color = FonecheckTheme.colors.textSecondary,
+        )
+        if (actionLabel != null && onAction != null) {
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+            SecondaryButton(label = actionLabel, onClick = onAction)
+        }
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+        HairlineRule()
+    }
+}
+
+/** One segment per category, coloured by that category's own result. */
+internal fun latestCheckSegments(report: DiagnosticReport): List<SemanticTone> =
+    report.categories.map { it.aggregateStatus.toSemanticTone() }
+
+/**
+ * The finished report as a readout: how many categories passed, the shape of the run as a segment
+ * per category, and the two figures that qualify it. The whole block opens the full report.
+ */
+@Composable
+private fun LatestFullCheckReadout(
+    report: DiagnosticReport,
+    onClick: () -> Unit,
+) {
+    val presentation = remember(report) { HomeReportPresentation.from(report) }
+    val segments = remember(report) { latestCheckSegments(report) }
+    val locale = LocalConfiguration.current.locales[0]
+    val numberFormat = remember(locale) { NumberFormat.getIntegerInstance(locale) }
+    val percentFormat = remember(locale) { NumberFormat.getPercentInstance(locale) }
+    // The short form, not the medium one: the header label beside it is already long in Finnish.
+    val dateFormatter =
+        remember(locale) {
+            DateTimeFormatter
+                .ofLocalizedDateTime(FormatStyle.SHORT)
+                .withLocale(locale)
+                .withZone(ZoneId.systemDefault())
+        }
+    val coverageValue =
+        stringResource(
+            R.string.home_latest_coverage_value,
+            percentFormat.format(report.coverage.percentage / 100.0),
+        )
+    val attentionSummary =
+        if (presentation.attentionCount == 0) {
+            stringResource(R.string.home_latest_no_attention)
+        } else {
+            pluralStringResource(
+                R.plurals.home_latest_attention_summary,
+                presentation.attentionCount,
+                presentation.attentionCount,
+            )
+        }
+    val attentionTone =
+        when {
+            presentation.failureItemCount > 0 -> SemanticTone.FAIL
+            presentation.attentionCount > 0 -> SemanticTone.ATTENTION
+            else -> SemanticTone.PASS
+        }
+    val passedDescription =
+        stringResource(
+            R.string.home_latest_passed_description,
+            numberFormat.format(presentation.passCount),
+            numberFormat.format(presentation.totalCategories),
+        )
+    val categoryStatusDescription =
+        stringResource(
+            R.string.home_latest_category_statuses,
+            numberFormat.format(presentation.passCount),
+            numberFormat.format(presentation.warningCategoryCount),
+            numberFormat.format(presentation.failureCategoryCount),
+            numberFormat.format(presentation.infoCount),
+            numberFormat.format(presentation.notAvailableCount),
+            numberFormat.format(presentation.notTestedCount),
+        )
+    val completedAtValue = dateFormatter.format(report.completedAt)
+    // The verdict word no longer appears on the screen, but it still opens the spoken description.
+    val cardStateDescription =
+        stringResource(
+            R.string.home_latest_state_description,
+            reportStatusText(report, presentation),
+            passedDescription,
+            coverageValue,
+            attentionSummary,
+            stringResource(R.string.home_latest_completed_at, completedAtValue),
+            categoryStatusDescription,
+        )
+
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val fontScale = LocalDensity.current.fontScale
+        val stacked = latestReportUsesStackedLayout(maxWidth.value, fontScale)
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .testTag("home_latest_report_card")
+                    .semantics { stateDescription = cardStateDescription }
+                    .clickable(role = Role.Button, onClick = onClick),
+        ) {
+            SectionHeader(
+                label = stringResource(R.string.home_latest_title),
+                trailing = completedAtValue,
+            )
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+            PassedReadout(
+                passed = numberFormat.format(presentation.passCount),
+                total =
+                    stringResource(
+                        R.string.home_latest_passed_total,
+                        numberFormat.format(presentation.totalCategories),
+                    ),
+                label = stringResource(R.string.home_latest_passed_label),
+                stacked = stacked,
+            )
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+            SegmentedBar(segments = segments)
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+            LatestCheckInfoLine(
+                coverage = coverageValue,
+                attention = attentionSummary,
+                attentionTone = attentionTone,
+            )
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+            HairlineRule()
+        }
+    }
+}
+
+/**
+ * A hair space between the figure and its total. A full space is too wide at readout size, and the
+ * two are one run of text so that they share a baseline without being laid out against each other.
+ */
+private const val FIGURE_GAP = "\u2009"
+
+@Composable
+private fun PassedReadout(
+    passed: String,
+    total: String,
+    label: String,
+    stacked: Boolean,
+) {
+    val figures =
+        buildAnnotatedString {
+            withStyle(
+                FonecheckTheme.type.readout
+                    .toSpanStyle()
+                    .copy(color = FonecheckTheme.colors.textPrimary),
+            ) {
+                append(passed)
+            }
+            withStyle(
+                FonecheckTheme.type.readoutUnit
+                    .toSpanStyle()
+                    .copy(color = FonecheckTheme.colors.textMuted),
+            ) {
+                append(FIGURE_GAP)
+                append(total)
+            }
+        }
+    if (stacked) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(text = figures, style = FonecheckTheme.type.readout, maxLines = 1)
+            Text(
+                text = label,
+                style = FonecheckTheme.type.rowLabel,
+                color = FonecheckTheme.colors.textSecondary,
+            )
+        }
+    } else {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = figures,
+                modifier = Modifier.alignByBaseline(),
+                style = FonecheckTheme.type.readout,
+                maxLines = 1,
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = label,
+                modifier = Modifier.alignByBaseline(),
+                style = FonecheckTheme.type.rowLabel,
+                color = FonecheckTheme.colors.textSecondary,
+            )
+        }
+    }
+}
+
+@Composable
+private fun LatestCheckInfoLine(
+    coverage: String,
+    attention: String,
+    attentionTone: SemanticTone,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        // Coverage carries no verdict, so it is not a StatusText and there is no tone for a muted
+        // micro label. Drawn from tokens here; extracted when the detail screens need the same line.
+        Text(
+            text = coverage.uppercase(LocalLocale.current.platformLocale),
+            style = FonecheckTheme.type.sectionLabel,
+            color = FonecheckTheme.colors.textMuted,
+            modifier = Modifier.semantics { contentDescription = coverage },
+        )
+        StatusText(text = attention, tone = attentionTone)
     }
 }
 
@@ -1064,7 +1304,12 @@ private fun HomeTopPreview(darkTheme: Boolean) {
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 HomeBrandHeader(onHistory = {}, onSettings = {})
-                LatestFullCheckCard(report = previewDiagnosticReport(), onClick = {})
+                LatestFullCheckReadout(report = previewDiagnosticReport(), onClick = {})
+                PrimaryButton(
+                    label = stringResource(R.string.home_run_all),
+                    onClick = {},
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
     }

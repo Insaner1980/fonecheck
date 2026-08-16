@@ -7,6 +7,7 @@
     <string name="state_not_tested_title">Ei testattu</string>
     <string name="state_permission_denied_title">Lupa tarvitaan</string>
     <string name="state_error_title">Jokin meni pieleen</string>
+    <string name="value_unavailable_short">n/a</string>
     <!-- Device Info Screen -->
     <string name="device_info_title">Laite</string>
     <string name="os_info_title">Käyttöjärjestelmä</string>
@@ -588,6 +589,10 @@
         <item quantity="other">%1$d kohdetta</item>
     </plurals>
     <string name="home_latest_completed_at">Valmistui %1$s</string>
+    <string name="home_latest_passed_label">Läpäisty</string>
+    <string name="home_latest_passed_total">/%1$s</string>
+    <string name="home_latest_passed_description">Läpäistyjä tarkistuksia %1$s / %2$s</string>
+    <string name="home_latest_coverage_value">Kattavuus %1$s</string>
     <string name="home_latest_categories">Kategoriat</string>
     <string name="home_latest_coverage">Kattavuus</string>
     <string name="home_latest_needs_attention">Vaatii huomiota</string>
@@ -596,7 +601,7 @@
     <string name="home_latest_score_description">Pisteet %1$s / 100</string>
     <string name="home_latest_no_score_description">Pisteitä ei ole. Tila: %1$s</string>
     <string name="home_latest_category_statuses">Kategorioiden tilat: läpäisty %1$s, varoitus %2$s, hylätty %3$s, tieto %4$s, ei saatavilla %5$s, ei testattu %6$s.</string>
-    <string name="home_latest_state_description">%1$s. %2$s. %3$s. %4$s</string>
+    <string name="home_latest_state_description">%1$s. %2$s. %3$s. %4$s. %5$s. %6$s</string>
     <string name="home_latest_metric_state_description">%1$s: %2$s</string>
     <string name="run_all_preflight_title">Ennen koko tarkistusta</string>
     <string name="run_all_preflight_description">Tarkista, mitä fonecheck tekee, ennen kuin yhtään lupapyyntöä näytetään.</string>

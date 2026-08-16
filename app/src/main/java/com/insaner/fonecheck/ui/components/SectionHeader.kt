@@ -16,10 +16,15 @@ import com.insaner.fonecheck.ui.theme.FonecheckTheme
 
 /**
  * Opens a section: a small uppercase monospace label with a full-weight rule beneath it. The
- * optional [trailing] value sits on the same baseline, for a count or a coverage figure.
+ * optional [trailing] value sits on the same baseline, for a count, a coverage figure or a
+ * timestamp.
  *
- * Pass [label] and [trailing] in their natural casing; the component uppercases what it draws and
- * keeps the original wording for screen readers.
+ * Pass [label] in its natural casing; the component uppercases what it draws and keeps the original
+ * wording for screen readers. [trailing] is drawn exactly as given, because uppercasing a localised
+ * value mangles it — a Finnish medium-form date becomes `11. ELOK. 2026`.
+ *
+ * The trailing value is measured first and never wraps; a label too long to fit beside it wraps
+ * instead.
  */
 @Composable
 fun SectionHeader(
@@ -41,17 +46,19 @@ fun SectionHeader(
                 style = FonecheckTheme.type.sectionLabel,
                 color = FonecheckTheme.colors.textMuted,
                 modifier =
-                    Modifier.semantics {
-                        heading()
-                        contentDescription = label
-                    },
+                    Modifier
+                        .weight(1f, fill = false)
+                        .semantics {
+                            heading()
+                            contentDescription = label
+                        },
             )
             if (trailing != null) {
                 Text(
-                    text = trailing.uppercase(locale),
+                    text = trailing,
                     style = FonecheckTheme.type.sectionLabel,
                     color = FonecheckTheme.colors.textMuted,
-                    modifier = Modifier.semantics { contentDescription = trailing },
+                    modifier = Modifier.padding(start = FonecheckTheme.spacing.sm),
                 )
             }
         }

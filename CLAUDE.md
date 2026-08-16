@@ -110,6 +110,11 @@ Current foundation — new and migrated screens MUST use these instead of local 
 - `PrimaryButton` / `SecondaryButton` — filled and outlined, 48dp minimum height
 - `SegmentedBar` — one segment per item, coloured by that item's tone
 - `HairlineRule` / `StrongRule` — the only two divider weights
+- `IndeterminateRule` — a hairline with a travelling segment, for a section that is still loading.
+  Replaces the spinner; a surface with no cards and no elevation has nowhere to put one.
+
+`SectionHeader` uppercases its label but draws `trailing` exactly as given: uppercasing a localised
+value mangles it, and a Finnish medium-form date becomes `11. ELOK. 2026`.
 
 Being retired. Do not use in new work; each is deleted in the same task that migrates the last
 screen using it:
@@ -120,6 +125,12 @@ screen using it:
 - Legacy `Neutral*` / `Green400` / `Yellow400` / `Red400` / `Blue400` tokens and
   `readableStatusColor` → `FonecheckTheme.colors` and `SemanticTone`
 - Inline `FontWeight.Bold`, deleted together with the bold font weights in `Type.kt`
+
+Pending extraction, not a retirement: the muted monospace micro-line under the home segmented bar
+(`LatestCheckInfoLine` in `HomeScreen.kt`) is drawn from `type.sectionLabel` and `colors.textMuted`
+inline, because a muted label carries no verdict and so has no `SemanticTone`. The detail screens
+need the same line for their axis captions (`30 D` / `NOW`); extract a shared component when the
+second use lands, not before.
 
 The visual foundation is previewable in isolation: `app/src/debug/.../ui/preview/FoundationPreviews.kt`
 is a light and dark specimen sheet of every component above. It lives in the debug source set and
@@ -164,3 +175,15 @@ for text; `attention` is its text-safe form.
 ./gradlew assembleRelease     # Release build
 ./gradlew test                # Unit tests
 ```
+
+### Who verifies what, and when
+- Claude never invokes Gradle. Not to compile, not to run tests, not to check that a change worked,
+  and not "just this once" because a task asked for proof.
+- The user builds and runs the unit tests **once, at the tip of a task**, and reports the result.
+  Verification is not per commit.
+- Never check out a commit in order to build it. A task that lands several commits is still verified
+  only at the tip, and the working tree is left on the branch head where the user expects it.
+- Claim only what has actually been observed. Where a build was not run, say the change is unverified
+  and name what the user should watch for, rather than asserting that it compiles or passes.
+- Intermediate commits are made self-consistent by reasoning about file contents — every symbol a
+  commit references exists at that commit — not by building them.

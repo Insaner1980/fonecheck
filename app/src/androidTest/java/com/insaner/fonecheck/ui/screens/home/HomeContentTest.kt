@@ -1,5 +1,6 @@
 package com.insaner.fonecheck.ui.screens.home
 
+import android.content.Context
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -7,6 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
@@ -49,6 +51,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.text.NumberFormat
 import java.time.Instant
 
 @RunWith(AndroidJUnit4::class)
@@ -62,13 +65,19 @@ class HomeContentTest {
         setHomeContent(LatestFullCheckState.Empty)
 
         composeRule.onNodeWithText(context.getString(R.string.home_latest_empty_title)).assertIsDisplayed()
-        composeRule.onNodeWithTag("home_latest_empty").assertIsDisplayed()
+        composeRule
+            .onNodeWithTag("home_latest_empty")
+            .assertIsDisplayed()
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.LiveRegion))
     }
 
     @Test
     fun loadingUnavailableAndErrorStatesStayExplicit() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         var state by mutableStateOf<LatestFullCheckState>(LatestFullCheckState.Loading)
+        // The loading rule animates indefinitely, so the test clock is driven by hand while it is on
+        // screen; an auto-advancing clock never reaches idle against an infinite animation.
+        composeRule.mainClock.autoAdvance = false
         composeRule.setContent {
             FonecheckTheme {
                 HomeContent(
@@ -78,10 +87,13 @@ class HomeContentTest {
                 )
             }
         }
+        composeRule.mainClock.advanceTimeByFrame()
         composeRule.onNodeWithTag("home_latest_loading").assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.home_latest_loading)).assertIsDisplayed()
 
         state = LatestFullCheckState.Unavailable(ReportReadFailure.CORRUPT_DATA)
+        composeRule.mainClock.advanceTimeByFrame()
+        composeRule.mainClock.autoAdvance = true
         composeRule.waitForIdle()
         composeRule.onNodeWithTag("home_latest_unavailable").assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.report_corrupt)).assertIsDisplayed()
@@ -93,14 +105,22 @@ class HomeContentTest {
     }
 
     @Test
-    fun completedReportWithoutAttentionShowsRealScoreAndStatus() {
+    fun completedReportShowsPassedCountInsteadOfScore() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val report = report("clean", listOf(DiagnosticStatus.PASS), score = 92)
         setHomeContent(LatestFullCheckState.Available(report))
 
-        composeRule.onNodeWithText("92").assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.home_latest_status_good)).assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.home_latest_no_attention)).assertIsDisplayed()
+        val label = context.getString(R.string.home_latest_passed_label)
+        val total = context.getString(R.string.home_latest_passed_total, "1")
+        composeRule.onNodeWithText(label).assertIsDisplayed()
+        composeRule.onNodeWithText(total, substring = true).assertIsDisplayed()
+        assertPassedCount(context, passed = "1", total = "1")
+        composeRule.onNodeWithContentDescription(coverageValue(context, 1.0)).assertIsDisplayed()
+        composeRule
+            .onNodeWithContentDescription(context.getString(R.string.home_latest_no_attention))
+            .assertIsDisplayed()
+        // The score is still in the report; the home screen no longer renders one.
+        composeRule.onNodeWithText("92").assertDoesNotExist()
     }
 
     @Test
@@ -114,14 +134,15 @@ class HomeContentTest {
             )
         setHomeContent(LatestFullCheckState.Available(report))
 
-        composeRule.onNodeWithText(context.getString(R.string.home_latest_status_fail)).assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.resources.getQuantityString(R.plurals.home_latest_attention_count, 2, 2))
-            .assertIsDisplayed()
+            .onNodeWithContentDescription(
+                context.resources.getQuantityString(R.plurals.home_latest_attention_summary, 2, 2),
+            ).assertIsDisplayed()
+        assertPassedCount(context, passed = "0", total = "2")
     }
 
     @Test
-    fun incompleteReportDoesNotInventScore() {
+    fun incompleteReportReportsWhatWasPassedWithoutInventingOne() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val report =
             report(
@@ -133,8 +154,8 @@ class HomeContentTest {
             )
         setHomeContent(LatestFullCheckState.Available(report))
 
-        composeRule.onNodeWithText(context.getString(R.string.report_score_incomplete)).assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.home_latest_no_score)).assertIsDisplayed()
+        assertPassedCount(context, passed = "1", total = "2")
+        composeRule.onNodeWithContentDescription(coverageValue(context, 0.5)).assertIsDisplayed()
     }
 
     @Test
@@ -245,6 +266,33 @@ class HomeContentTest {
             .onNodeWithContentDescription(context.getString(R.string.home_settings_content_description))
             .assertIsDisplayed()
         composeRule.onNodeWithTag("home_latest_report_card").assertIsDisplayed()
+    }
+
+    /** The figures are drawn as one run of styled text, so the counts are read back spoken. */
+    private fun assertPassedCount(
+        context: Context,
+        passed: String,
+        total: String,
+    ) {
+        val spoken = context.getString(R.string.home_latest_passed_description, passed, total)
+        composeRule
+            .onNodeWithTag("home_latest_report_card")
+            .assert(
+                SemanticsMatcher("state description contains '$spoken'") { node ->
+                    node.config.getOrNull(SemanticsProperties.StateDescription)?.contains(spoken) == true
+                },
+            )
+    }
+
+    private fun coverageValue(
+        context: Context,
+        fraction: Double,
+    ): String {
+        val locale = context.resources.configuration.locales[0]
+        return context.getString(
+            R.string.home_latest_coverage_value,
+            NumberFormat.getPercentInstance(locale).format(fraction),
+        )
     }
 
     private fun setHomeContent(state: LatestFullCheckState) {

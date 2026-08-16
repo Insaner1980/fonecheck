@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.insaner.fonecheck.ui.components.DataRow
+import com.insaner.fonecheck.ui.components.IndeterminateRule
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.PrimaryButton
@@ -31,7 +32,7 @@ import com.insaner.fonecheck.ui.theme.SemanticTone
 // build. The values here are invented; screens draw their own measurements.
 
 private const val SPECIMEN_WIDTH_DP = 380
-private const val SPECIMEN_HEIGHT_DP = 1580
+private const val SPECIMEN_HEIGHT_DP = 1720
 
 private val SummarySegments =
     listOf(
@@ -74,6 +75,7 @@ private fun FoundationSpecimenPreview() {
         ) {
             SpecimenTitle()
             SpecimenSummary()
+            SpecimenWaiting()
             SpecimenMeasured()
             SpecimenStatuses()
             SpecimenActions()
@@ -120,6 +122,22 @@ private fun SpecimenSummary() {
         }
         SegmentedBar(
             segments = SummarySegments,
+            modifier = Modifier.padding(top = FonecheckTheme.spacing.md),
+        )
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.lg))
+    }
+}
+
+@Composable
+private fun SpecimenWaiting() {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        SectionHeader(label = "Last full check", trailing = "n/a")
+        // Static in the preview; on device the segment travels along the rule.
+        IndeterminateRule()
+        Text(
+            text = "Loading the latest Full Check…",
+            style = FonecheckTheme.type.rowLabel,
+            color = FonecheckTheme.colors.textSecondary,
             modifier = Modifier.padding(top = FonecheckTheme.spacing.md),
         )
         Spacer(modifier = Modifier.height(FonecheckTheme.spacing.lg))
