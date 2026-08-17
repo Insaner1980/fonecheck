@@ -1,362 +1,202 @@
 package com.insaner.fonecheck.ui.screens.battery
 
+import android.os.BatteryManager
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.Confidence
-import com.insaner.fonecheck.ui.components.ConfidenceBadge
-import com.insaner.fonecheck.ui.components.DetailInfoRow
-import com.insaner.fonecheck.ui.components.SectionBox
-import com.insaner.fonecheck.ui.components.TestScreenContent
-import com.insaner.fonecheck.ui.components.TestSectionCard
-import com.insaner.fonecheck.ui.theme.Blue400
-import com.insaner.fonecheck.ui.theme.Green400
-import com.insaner.fonecheck.ui.theme.JetBrainsMono
-import com.insaner.fonecheck.ui.theme.Neutral500
-import com.insaner.fonecheck.ui.theme.Red400
-import com.insaner.fonecheck.ui.theme.Yellow400
-import com.insaner.fonecheck.ui.theme.readableStatusColor
+import com.insaner.fonecheck.ui.components.DataRow
+import com.insaner.fonecheck.ui.components.HairlineRule
+import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.theme.FonecheckTheme
+import com.insaner.fonecheck.ui.theme.SemanticTone
 
 @Composable
-@Suppress("ViewModelForwarding", "ktlint:compose:vm-forwarding-check")
 fun BatteryTestScreen(
     modifier: Modifier = Modifier,
     viewModel: BatteryTestViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
-    TestScreenContent(modifier = modifier) {
-        // Basic Info
-        item {
-            val healthLabel = stringResource(state.health.healthStatusLabel)
-            val batteryLevel = state.basic.level
-            val levelText =
-                batteryLevel?.let { stringResource(R.string.batt_value_percent, it) }
-                    ?: stringResource(R.string.device_value_unavailable)
-            TestSectionCard(
-                icon = stringResource(R.string.batt_icon_basic),
-                title = stringResource(R.string.batt_basic_title),
-                statusText = "$levelText \u2022 $healthLabel",
-                statusColor =
-                    when {
-                        batteryLevel == null -> Neutral500
-                        batteryLevel > 50 -> Green400
-                        batteryLevel > 20 -> Yellow400
-                        else -> Red400
-                    },
-                isExpanded = state.expandedSection == BatterySection.BASIC,
-                onClick = { viewModel.toggleSection(BatterySection.BASIC) },
-            ) {
-                BasicDetails(state.basic, viewModel)
-            }
-        }
-
-        // Charging
-        item {
-            TestSectionCard(
-                icon = stringResource(R.string.batt_icon_charging),
-                title = stringResource(R.string.batt_charging_title),
-                statusText = stringResource(viewModel.getChargingStatusLabel(state.charging.status)),
-                statusColor =
-                    when {
-                        state.basic.isCharging -> Green400
-                        else -> Neutral500
-                    },
-                isExpanded = state.expandedSection == BatterySection.CHARGING,
-                onClick = { viewModel.toggleSection(BatterySection.CHARGING) },
-            ) {
-                ChargingDetails(state.charging, viewModel)
-            }
-        }
-
-        // Health
-        item {
-            TestSectionCard(
-                icon = stringResource(R.string.batt_icon_health),
-                title = stringResource(R.string.batt_health_title),
-                statusText = stringResource(state.health.healthStatusLabel),
-                statusColor =
-                    when (state.health.healthStatusRaw) {
-                        android.os.BatteryManager.BATTERY_HEALTH_GOOD -> Green400
-                        android.os.BatteryManager.BATTERY_HEALTH_UNKNOWN -> Neutral500
-                        else -> Red400
-                    },
-                isExpanded = state.expandedSection == BatterySection.HEALTH,
-                onClick = { viewModel.toggleSection(BatterySection.HEALTH) },
-            ) {
-                HealthDetails(state.health)
-            }
-        }
-
-        // Manufacturer
-        item {
-            TestSectionCard(
-                icon = stringResource(R.string.batt_icon_manufacturer),
-                title = stringResource(R.string.batt_manufacturer_title),
-                statusText = state.manufacturer.manufacturerName,
-                statusColor = Blue400,
-                isExpanded = state.expandedSection == BatterySection.MANUFACTURER,
-                onClick = { viewModel.toggleSection(BatterySection.MANUFACTURER) },
-            ) {
-                ManufacturerDetails(state.manufacturer)
-            }
-        }
-    }
-}
-
-@Composable
-private fun InfoRowWithConfidence(
-    label: String,
-    value: String,
-    confidence: Confidence,
-    valueColor: Color? = null,
-) {
-    Row(
+    Column(
         modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(FonecheckTheme.spacing.md),
+        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg),
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-        )
-        Row(
-            modifier = Modifier.weight(1.5f),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = value,
-                style =
-                    MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = JetBrainsMono,
-                        fontWeight = FontWeight.Medium,
-                    ),
-                color = readableStatusColor(valueColor ?: MaterialTheme.colorScheme.onSurface),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            ConfidenceBadge(confidence = confidence)
+        BatterySection(label = stringResource(R.string.batt_basic_title)) {
+            BasicDetails(state.basic, viewModel)
+        }
+        BatterySection(label = stringResource(R.string.batt_charging_title)) {
+            ChargingDetails(state.charging, viewModel)
+        }
+        BatterySection(label = stringResource(R.string.batt_health_title)) {
+            HealthDetails(state.health)
+        }
+        BatterySection(label = stringResource(R.string.batt_manufacturer_title)) {
+            ManufacturerDetails(state.manufacturer)
         }
     }
 }
-
-// ── Basic Details ───────────────────────────────────────────────────────────────
 
 @Composable
 private fun BasicDetails(
     basic: BasicBatteryState,
     viewModel: BatteryTestViewModel,
 ) {
-    SectionBox {
-        val level = basic.level
-        DetailInfoRow(
-            label = stringResource(R.string.batt_level),
-            value =
-                level?.let { stringResource(R.string.batt_value_percent, it) }
-                    ?: stringResource(R.string.device_value_unavailable),
-            valueColor =
-                when {
-                    level == null -> Neutral500
-                    level > 50 -> Green400
-                    level > 20 -> Yellow400
-                    else -> Red400
-                },
-        )
-        DetailInfoRow(
-            label = stringResource(R.string.batt_voltage),
-            value =
-                basic.voltageMv?.let { stringResource(R.string.batt_value_millivolts, it) }
-                    ?: stringResource(R.string.device_value_unavailable),
-        )
-        val temperature = basic.temperatureCelsius
-        DetailInfoRow(
-            label = stringResource(R.string.batt_temperature),
-            value =
-                temperature?.let { stringResource(R.string.batt_value_celsius, it) }
-                    ?: stringResource(R.string.device_value_unavailable),
-            valueColor =
-                when {
-                    temperature == null -> Neutral500
-                    temperature < 35f -> Green400
-                    temperature < 45f -> Yellow400
-                    else -> Red400
-                },
-        )
-        DetailInfoRow(
-            label = stringResource(R.string.batt_health_label),
-            value = stringResource(viewModel.getHealthLabel(basic.healthStatus)),
-            valueColor =
-                when (basic.healthStatus) {
-                    android.os.BatteryManager.BATTERY_HEALTH_GOOD -> Green400
-                    android.os.BatteryManager.BATTERY_HEALTH_UNKNOWN -> Neutral500
-                    else -> Red400
-                },
-        )
-        basic.technology?.let {
-            DetailInfoRow(
-                label = stringResource(R.string.batt_technology),
-                value = it,
-            )
-        }
-    }
+    DataRow(
+        label = stringResource(R.string.batt_level),
+        value = basic.level?.let { stringResource(R.string.batt_value_percent, it) },
+    )
+    DataRow(
+        label = stringResource(R.string.batt_voltage),
+        value = basic.voltageMv?.let { stringResource(R.string.batt_value_millivolts, it) },
+    )
+    DataRow(
+        label = stringResource(R.string.batt_temperature),
+        value = basic.temperatureCelsius?.let { stringResource(R.string.batt_value_celsius, it) },
+        tone = batteryTemperatureTone(basic.temperatureCelsius),
+    )
+    DataRow(
+        label = stringResource(R.string.batt_health_label),
+        value = stringResource(viewModel.getHealthLabel(basic.healthStatus)),
+        tone = batteryHealthTone(basic.healthStatus),
+    )
+    DataRow(
+        label = stringResource(R.string.batt_technology),
+        value = basic.technology,
+    )
 }
-
-// ── Charging Details ────────────────────────────────────────────────────────────
 
 @Composable
 private fun ChargingDetails(
     charging: ChargingState,
     viewModel: BatteryTestViewModel,
 ) {
-    SectionBox {
-        DetailInfoRow(
-            label = stringResource(R.string.batt_charging_status),
-            value = stringResource(viewModel.getChargingStatusLabel(charging.status)),
+    DataRow(
+        label = stringResource(R.string.batt_charging_status),
+        value = stringResource(viewModel.getChargingStatusLabel(charging.status)),
+    )
+    DataRow(
+        label = stringResource(R.string.batt_plug_type),
+        value = stringResource(viewModel.getPlugTypeLabel(charging.plugType)),
+    )
+    DataRow(
+        label = stringResource(R.string.batt_charging_current),
+        value =
+            charging.chargingCurrentMa?.let {
+                stringResource(R.string.batt_value_milliamps, it)
+            },
+        showDivider = charging.chargingCurrentMa == null,
+    )
+    charging.chargingCurrentMa?.let {
+        Note(confidenceLabel(charging.chargingCurrentConfidence))
+        DataRow(
+            label = stringResource(R.string.batt_current_direction),
+            value = currentDirectionLabel(charging.currentDirection),
+            showDivider = false,
         )
-        DetailInfoRow(
-            label = stringResource(R.string.batt_plug_type),
-            value = stringResource(viewModel.getPlugTypeLabel(charging.plugType)),
+        Note(
+            stringResource(
+                if (charging.currentSignNormalized) {
+                    R.string.batt_current_sign_normalized
+                } else {
+                    R.string.batt_current_caveat
+                },
+            ),
         )
-        if (charging.chargingCurrentMa != null) {
-            InfoRowWithConfidence(
-                label = stringResource(R.string.batt_charging_current),
-                value = stringResource(R.string.batt_value_milliamps, charging.chargingCurrentMa),
-                confidence = charging.chargingCurrentConfidence,
-            )
-            DetailInfoRow(
-                label = stringResource(R.string.batt_current_direction),
-                value = currentDirectionLabel(charging.currentDirection),
-            )
-            Text(
-                text =
-                    stringResource(
-                        if (charging.currentSignNormalized) {
-                            R.string.batt_current_sign_normalized
-                        } else {
-                            R.string.batt_current_caveat
-                        },
-                    ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-        } else {
-            InfoRowWithConfidence(
-                label = stringResource(R.string.batt_charging_current),
-                value = stringResource(R.string.device_value_unavailable),
-                confidence = Confidence.UNAVAILABLE,
-            )
-        }
-        charging.manufacturerNote?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.bodySmall,
-                color = Yellow400,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-        }
+        charging.manufacturerNote?.let { note -> Note(note) }
+        HairlineRule()
     }
 }
-
-// ── Health Details ──────────────────────────────────────────────────────────────
 
 @Composable
 private fun HealthDetails(health: HealthState) {
-    SectionBox {
-        DetailInfoRow(
-            label = stringResource(R.string.batt_health_status),
-            value = stringResource(health.healthStatusLabel),
-            valueColor =
-                when (health.healthStatusRaw) {
-                    android.os.BatteryManager.BATTERY_HEALTH_GOOD -> Green400
-                    android.os.BatteryManager.BATTERY_HEALTH_UNKNOWN -> Neutral500
-                    else -> Red400
-                },
-        )
-        Text(
-            text = stringResource(R.string.batt_health_source_note),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp),
-        )
+    DataRow(
+        label = stringResource(R.string.batt_health_status),
+        value = stringResource(health.healthStatusLabel),
+        tone = batteryHealthTone(health.healthStatusRaw),
+        showDivider = false,
+    )
+    Note(stringResource(R.string.batt_health_source_note))
+    HairlineRule()
 
-        if (health.cycleCountSupported) {
-            if (health.cycleCount != null) {
-                InfoRowWithConfidence(
-                    label = stringResource(R.string.batt_cycle_count),
-                    value = health.cycleCount.toString(),
-                    confidence = health.cycleCountConfidence,
-                )
-            } else {
-                InfoRowWithConfidence(
-                    label = stringResource(R.string.batt_cycle_count),
-                    value = stringResource(R.string.device_value_unavailable),
-                    confidence = Confidence.UNAVAILABLE,
-                )
-            }
-        } else {
-            InfoRowWithConfidence(
-                label = stringResource(R.string.batt_cycle_count),
-                value = stringResource(R.string.batt_requires_api34),
-                confidence = Confidence.UNAVAILABLE,
-            )
+    DataRow(
+        label = stringResource(R.string.batt_cycle_count),
+        value = health.cycleCount?.toString(),
+        showDivider = health.cycleCountSupported && health.cycleCount == null,
+    )
+    if (!health.cycleCountSupported) {
+        Note(stringResource(R.string.batt_requires_api34))
+        HairlineRule()
+    } else {
+        health.cycleCount?.let {
+            Note(confidenceLabel(health.cycleCountConfidence))
+            HairlineRule()
         }
     }
 }
-
-// ── Manufacturer Details ────────────────────────────────────────────────────────
 
 @Composable
 private fun ManufacturerDetails(manufacturer: ManufacturerState) {
-    SectionBox {
-        DetailInfoRow(
-            label = stringResource(R.string.batt_mfr_name),
-            value = manufacturer.manufacturerName,
-        )
-        InfoRowWithConfidence(
-            label = stringResource(R.string.batt_mfr_profile),
-            value =
-                when (manufacturer.profile) {
-                    ManufacturerProfile.SAMSUNG -> stringResource(R.string.batt_mfr_samsung)
-                    ManufacturerProfile.ONEPLUS -> stringResource(R.string.batt_mfr_oneplus)
-                    ManufacturerProfile.GOOGLE_PIXEL -> stringResource(R.string.batt_mfr_pixel)
-                    ManufacturerProfile.GENERIC -> stringResource(R.string.batt_mfr_generic)
-                },
-            confidence = manufacturer.profileConfidence,
-        )
-        manufacturer.notes.forEach { note ->
-            Text(
-                text = note,
-                style = MaterialTheme.typography.bodySmall,
-                color = Yellow400,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-        }
+    DataRow(
+        label = stringResource(R.string.batt_mfr_name),
+        value = manufacturer.manufacturerName.takeIf(String::isNotBlank),
+    )
+    DataRow(
+        label = stringResource(R.string.batt_mfr_profile),
+        value = manufacturerProfileLabel(manufacturer.profile),
+        showDivider = false,
+    )
+    Note(confidenceLabel(manufacturer.profileConfidence))
+    manufacturer.notes.forEach { note -> Note(note) }
+    HairlineRule()
+}
+
+@Composable
+private fun BatterySection(
+    label: String,
+    content: @Composable () -> Unit,
+) {
+    Column {
+        SectionHeader(label)
+        content()
     }
 }
+
+@Composable
+private fun confidenceLabel(confidence: Confidence): String =
+    stringResource(
+        when (confidence) {
+            Confidence.HIGH -> R.string.confidence_high
+            Confidence.LOW -> R.string.confidence_low
+            Confidence.UNAVAILABLE -> R.string.confidence_unavailable
+        },
+    )
+
+@Composable
+private fun manufacturerProfileLabel(profile: ManufacturerProfile): String =
+    stringResource(
+        when (profile) {
+            ManufacturerProfile.SAMSUNG -> R.string.batt_mfr_samsung
+            ManufacturerProfile.ONEPLUS -> R.string.batt_mfr_oneplus
+            ManufacturerProfile.GOOGLE_PIXEL -> R.string.batt_mfr_pixel
+            ManufacturerProfile.GENERIC -> R.string.batt_mfr_generic
+        },
+    )
 
 @Composable
 private fun currentDirectionLabel(direction: BatteryCurrentDirection): String =
@@ -367,3 +207,18 @@ private fun currentDirectionLabel(direction: BatteryCurrentDirection): String =
             BatteryCurrentDirection.IDLE -> R.string.batt_current_direction_idle
         },
     )
+
+private fun batteryTemperatureTone(temperatureCelsius: Float?): SemanticTone =
+    when {
+        temperatureCelsius == null -> SemanticTone.NEUTRAL
+        temperatureCelsius < 35f -> SemanticTone.PASS
+        temperatureCelsius < 45f -> SemanticTone.ATTENTION
+        else -> SemanticTone.FAIL
+    }
+
+private fun batteryHealthTone(healthStatus: Int): SemanticTone =
+    when (healthStatus) {
+        BatteryManager.BATTERY_HEALTH_GOOD -> SemanticTone.PASS
+        BatteryManager.BATTERY_HEALTH_UNKNOWN -> SemanticTone.NEUTRAL
+        else -> SemanticTone.FAIL
+    }
