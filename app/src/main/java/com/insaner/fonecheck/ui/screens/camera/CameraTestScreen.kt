@@ -5,30 +5,17 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -38,34 +25,33 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.permission.PermissionKind
 import com.insaner.fonecheck.domain.permission.PermissionState
-import com.insaner.fonecheck.ui.components.InfoCard
-import com.insaner.fonecheck.ui.components.InfoRow
+import com.insaner.fonecheck.ui.components.DataRow
+import com.insaner.fonecheck.ui.components.IndeterminateRule
+import com.insaner.fonecheck.ui.components.LongValueRow
+import com.insaner.fonecheck.ui.components.ManualResultButtons
+import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.PermissionStatusCard
+import com.insaner.fonecheck.ui.components.PrimaryButton
 import com.insaner.fonecheck.ui.components.ScreenStateCard
 import com.insaner.fonecheck.ui.components.ScreenStateType
-import com.insaner.fonecheck.ui.components.StatusBadge
+import com.insaner.fonecheck.ui.components.SecondaryButton
+import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.components.StatusText
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
-import com.insaner.fonecheck.ui.theme.Green400
-import com.insaner.fonecheck.ui.theme.JetBrainsMono
-import com.insaner.fonecheck.ui.theme.Neutral500
-import com.insaner.fonecheck.ui.theme.Neutral700
-import com.insaner.fonecheck.ui.theme.Neutral950
-import com.insaner.fonecheck.ui.theme.Red400
-import com.insaner.fonecheck.ui.theme.Yellow400
+import com.insaner.fonecheck.ui.theme.FonecheckTheme
+import com.insaner.fonecheck.ui.theme.SemanticTone
 import androidx.annotation.OptIn as ExperimentalOptIn
 
 @Composable
@@ -113,8 +99,8 @@ fun CameraTestScreen(
             modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(FonecheckTheme.spacing.md),
+        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg),
     ) {
         PermissionStatusCard(
             state = cameraPermission.state,
@@ -127,22 +113,21 @@ fun CameraTestScreen(
                 type = ScreenStateType.LOADING,
                 message = stringResource(R.string.camera_loading),
             )
-        }
-        if (!state.isLoading) {
-            CameraPreviewCard(
+        } else {
+            CameraPreviewSection(
                 state = state,
                 viewModel = viewModel,
                 hasPermission = cameraPermission.state == PermissionState.GRANTED,
             )
-            FlashTestCard(
+            FlashTestSection(
                 state = state,
                 viewModel = viewModel,
                 hasPermission = cameraPermission.state == PermissionState.GRANTED,
             )
-            state.cameras.forEach { caps ->
-                CapabilitiesCard(
-                    title = stringResource(R.string.camera_capabilities_title, caps.cameraId),
-                    capabilities = caps,
+            state.cameras.forEach { capabilities ->
+                CapabilitiesSection(
+                    title = stringResource(R.string.camera_capabilities_title, capabilities.cameraId),
+                    capabilities = capabilities,
                 )
             }
         }
@@ -166,8 +151,7 @@ fun CameraTestScreen(
 
 @Composable
 @ExperimentalOptIn(markerClass = [ExperimentalCamera2Interop::class])
-@Suppress("kotlin:S3776") // Declarative branches render independent preview states.
-private fun CameraPreviewCard(
+private fun CameraPreviewSection(
     state: CameraTestState,
     viewModel: CameraTestViewModel,
     hasPermission: Boolean,
@@ -176,159 +160,105 @@ private fun CameraPreviewCard(
     val lifecycleOwner = LocalLifecycleOwner.current
     val previewView = remember { PreviewView(context) }
 
-    InfoCard(title = stringResource(R.string.camera_capture_title)) {
-        Text(
-            text = stringResource(R.string.camera_capture_description),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 12.dp),
-        )
-
+    CameraSection(title = stringResource(R.string.camera_capture_title)) {
+        Note(stringResource(R.string.camera_capture_description))
         state.cameras.forEach { camera ->
             val isActive = state.isPreviewActive && state.selectedCameraId == camera.cameraId
-            Button(
+            CameraSelectorButton(
+                label = cameraButtonLabel(camera),
+                isActive = isActive,
+                enabled = hasPermission,
                 onClick = {
                     viewModel.startPreview(previewView, lifecycleOwner, camera.cameraId)
                 },
-                modifier = Modifier.fillMaxWidth(),
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor =
-                            if (isActive) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.surface
-                            },
-                        contentColor =
-                            if (isActive) {
-                                MaterialTheme.colorScheme.onPrimary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            },
-                    ),
-                shape = MaterialTheme.shapes.medium,
-                enabled = hasPermission,
-            ) {
-                Text(cameraButtonLabel(camera))
-            }
-            Spacer(modifier = Modifier.height(8.dp))
+            )
         }
 
-        // Preview
         if (state.isPreviewActive) {
-            Spacer(modifier = Modifier.height(12.dp))
             Box(
                 modifier =
                     Modifier
                         .fillMaxWidth()
                         .aspectRatio(4f / 3f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Neutral950),
+                        .background(FonecheckTheme.colors.segmentTrack),
             ) {
                 AndroidView(
                     factory = { previewView },
                     modifier = Modifier.fillMaxSize(),
                 )
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
+            if (state.isCapturing) {
+                IndeterminateRule()
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
             ) {
-                Button(
-                    onClick = { viewModel.capturePhoto() },
+                PrimaryButton(
+                    label = stringResource(R.string.camera_capture),
+                    onClick = viewModel::capturePhoto,
                     modifier = Modifier.weight(1f),
                     enabled = !state.isCapturing,
-                    colors = ButtonDefaults.buttonColors(containerColor = Green400),
-                    shape = MaterialTheme.shapes.medium,
-                ) {
-                    if (state.isCapturing) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.dp,
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    Text(
-                        stringResource(R.string.camera_capture),
-                        color = Neutral950,
-                    )
-                }
-                OutlinedButton(
-                    onClick = { viewModel.stopPreview() },
+                )
+                SecondaryButton(
+                    label = stringResource(R.string.camera_stop),
+                    onClick = viewModel::stopPreview,
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Red400),
-                    border = BorderStroke(1.dp, Red400.copy(alpha = 0.7f)),
-                    shape = MaterialTheme.shapes.medium,
-                ) {
-                    Text(stringResource(R.string.camera_stop))
-                }
+                )
             }
         }
 
-        // Capture result
         state.lastCapture?.let { result ->
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface, MaterialTheme.shapes.medium)
-                        .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column {
-                    Text(
-                        text = stringResource(R.string.camera_captured),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = Green400,
-                    )
-                    Text(
-                        text = stringResource(R.string.camera_dimensions_value, result.width, result.height),
-                        style =
-                            MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = JetBrainsMono,
-                                fontWeight = FontWeight.Medium,
-                            ),
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    val mp = (result.width.toLong() * result.height.toLong()) / 1_000_000.0
-                    Text(
-                        text = stringResource(R.string.camera_megapixels_value, uiNumber(mp, 1, 1)),
-                        style =
-                            MaterialTheme.typography.bodySmall.copy(
-                                fontFamily = JetBrainsMono,
-                            ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.camera_confirm_question),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            val megapixels = (result.width.toLong() * result.height.toLong()) / 1_000_000.0
+            LongValueRow(
+                label = stringResource(R.string.camera_captured),
+                value =
+                    "${stringResource(R.string.camera_dimensions_value, result.width, result.height)} · " +
+                        stringResource(R.string.camera_megapixels_value, uiNumber(megapixels, 1, 1)),
             )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                OutlinedButton(
-                    onClick = { viewModel.confirmSelectedCamera(false) },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(stringResource(R.string.camera_confirm_problem))
-                }
-                Button(
-                    onClick = { viewModel.confirmSelectedCamera(true) },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(stringResource(R.string.camera_confirm_pass))
+            Note(stringResource(R.string.camera_confirm_question))
+            ManualResultButtons(
+                problemLabel = stringResource(R.string.camera_confirm_problem),
+                passLabel = stringResource(R.string.camera_confirm_pass),
+                onResult = viewModel::confirmSelectedCamera,
+            )
+            state.selectedCameraId?.let { selectedCameraId ->
+                state.confirmations[selectedCameraId]?.let { confirmed ->
+                    StatusText(
+                        text =
+                            stringResource(
+                                if (confirmed) R.string.camera_confirm_pass else R.string.camera_confirm_problem,
+                            ),
+                        tone = if (confirmed) SemanticTone.PASS else SemanticTone.FAIL,
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CameraSelectorButton(
+    label: String,
+    isActive: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val modifier = Modifier.fillMaxWidth().semantics { selected = isActive }
+    if (isActive) {
+        PrimaryButton(
+            label = label,
+            onClick = onClick,
+            modifier = modifier,
+            enabled = enabled,
+        )
+    } else {
+        SecondaryButton(
+            label = label,
+            onClick = onClick,
+            modifier = modifier,
+            enabled = enabled,
+        )
     }
 }
 
@@ -353,124 +283,83 @@ private fun cameraButtonLabel(camera: CameraCapabilities): String {
 }
 
 @Composable
-@Suppress("kotlin:S3776") // Declarative branches render flash capability and test states.
-private fun FlashTestCard(
+private fun FlashTestSection(
     state: CameraTestState,
     viewModel: CameraTestViewModel,
     hasPermission: Boolean,
 ) {
     val hasFlash = state.rearCapabilities?.hasFlash == true
 
-    InfoCard(title = stringResource(R.string.camera_flash_title)) {
-        Text(
-            text = stringResource(R.string.camera_flash_description),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 12.dp),
+    CameraSection(title = stringResource(R.string.camera_flash_title)) {
+        Note(stringResource(R.string.camera_flash_description))
+        DataRow(
+            label = stringResource(R.string.camera_flash),
+            value = flashTestLabel(state.flashTestResult),
         )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            StatusBadge(
-                text =
-                    when (state.flashTestResult) {
-                        FlashTestResult.ON -> stringResource(R.string.camera_flash_on)
-                        FlashTestResult.OFF -> stringResource(R.string.camera_flash_off)
-                        FlashTestResult.NOT_AVAILABLE -> stringResource(R.string.camera_flash_na)
-                        FlashTestResult.NOT_TESTED -> stringResource(R.string.camera_flash_not_tested)
-                    },
-                color =
-                    when (state.flashTestResult) {
-                        FlashTestResult.ON -> Yellow400
-                        FlashTestResult.NOT_AVAILABLE -> Red400
-                        else -> Neutral500
-                    },
-            )
-
-            Button(
-                onClick = { viewModel.toggleFlash() },
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = if (state.flashOn) Yellow400 else Neutral700,
-                        contentColor = if (state.flashOn) Neutral950 else MaterialTheme.colorScheme.onSurface,
-                        disabledContainerColor = Neutral700,
-                    ),
-                shape = MaterialTheme.shapes.medium,
+        if (state.flashOn) {
+            SecondaryButton(
+                label = stringResource(R.string.camera_flash_turn_off),
+                onClick = viewModel::toggleFlash,
+                modifier = Modifier.fillMaxWidth(),
                 enabled = hasPermission && hasFlash,
-            ) {
-                Text(
-                    if (state.flashOn) {
-                        stringResource(R.string.camera_flash_turn_off)
-                    } else {
-                        stringResource(R.string.camera_flash_turn_on)
-                    },
-                )
-            }
-        }
-
-        if (!hasFlash) {
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = stringResource(R.string.camera_no_flash),
-                style = MaterialTheme.typography.bodySmall,
-                color = Neutral500,
             )
+        } else {
+            PrimaryButton(
+                label = stringResource(R.string.camera_flash_turn_on),
+                onClick = viewModel::toggleFlash,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = hasPermission && hasFlash,
+            )
+        }
+        if (!hasFlash) {
+            Note(stringResource(R.string.camera_no_flash))
         }
     }
 }
 
 @Composable
-@Suppress("kotlin:S3776") // Capability rows intentionally stay grouped in one card.
-private fun CapabilitiesCard(
+private fun flashTestLabel(result: FlashTestResult): String =
+    stringResource(
+        when (result) {
+            FlashTestResult.ON -> R.string.camera_flash_on
+            FlashTestResult.OFF -> R.string.camera_flash_off
+            FlashTestResult.NOT_AVAILABLE -> R.string.camera_flash_na
+            FlashTestResult.NOT_TESTED -> R.string.camera_flash_not_tested
+        },
+    )
+
+@Composable
+private fun CapabilitiesSection(
     title: String,
     capabilities: CameraCapabilities,
 ) {
     var showTechnicalDetails by rememberSaveable(title) { mutableStateOf(false) }
 
-    InfoCard(title = title) {
-        InfoRow(
-            stringResource(R.string.camera_max_resolution),
-            capabilities.maxResolution.ifBlank { stringResource(R.string.device_value_unavailable) },
+    CameraSection(title = title) {
+        DataRow(
+            label = stringResource(R.string.camera_max_resolution),
+            value = capabilities.maxResolution.ifBlank { null },
         )
-        InfoRow(stringResource(R.string.camera_zoom), capabilities.zoomRange)
-        InfoRow(
-            stringResource(R.string.camera_ois),
-            if (capabilities.hasOis) {
-                stringResource(R.string.status_yes)
-            } else {
-                stringResource(R.string.status_no)
-            },
-            valueColor = if (capabilities.hasOis) Green400 else Neutral500,
+        DataRow(
+            label = stringResource(R.string.camera_zoom),
+            value = capabilities.zoomRange.ifBlank { null },
         )
-        InfoRow(
-            stringResource(R.string.camera_flash),
-            if (capabilities.hasFlash) {
-                stringResource(R.string.status_yes)
-            } else {
-                stringResource(R.string.status_no)
-            },
-            valueColor = if (capabilities.hasFlash) Green400 else Neutral500,
+        DataRow(
+            label = stringResource(R.string.camera_ois),
+            value = yesNoLabel(capabilities.hasOis),
         )
-
+        DataRow(
+            label = stringResource(R.string.camera_flash),
+            value = yesNoLabel(capabilities.hasFlash),
+        )
         if (capabilities.focalLengths.isNotEmpty()) {
-            InfoRow(
-                stringResource(R.string.camera_focal_lengths),
-                capabilities.focalLengths.joinToString(", "),
+            LongValueRow(
+                label = stringResource(R.string.camera_focal_lengths),
+                value = capabilities.focalLengths.joinToString(", "),
             )
         }
-
-        OutlinedButton(
-            onClick = { showTechnicalDetails = !showTechnicalDetails },
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(top = 14.dp),
-            shape = MaterialTheme.shapes.medium,
-        ) {
-            Text(
+        SecondaryButton(
+            label =
                 stringResource(
                     if (showTechnicalDetails) {
                         R.string.camera_hide_technical_details
@@ -478,38 +367,33 @@ private fun CapabilitiesCard(
                         R.string.camera_show_technical_details
                     },
                 ),
-            )
-        }
-
+            onClick = { showTechnicalDetails = !showTechnicalDetails },
+            modifier = Modifier.fillMaxWidth(),
+        )
         if (showTechnicalDetails) {
-            Spacer(modifier = Modifier.height(12.dp))
-            Surface(
-                color = MaterialTheme.colorScheme.surface,
-                shape = MaterialTheme.shapes.medium,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            ) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    InfoRow(
-                        stringResource(R.string.camera_sensor_size),
-                        capabilities.sensorSize.ifBlank { stringResource(R.string.device_value_unavailable) },
-                    )
-                    TechnicalValueGroup(
-                        title = stringResource(R.string.camera_fps_ranges),
-                        values = capabilities.fpsRanges,
-                    )
-                    TechnicalValueGroup(
-                        title = stringResource(R.string.camera_all_resolutions),
-                        values = capabilities.resolutions,
-                    )
-                    TechnicalValueGroup(
-                        title = stringResource(R.string.camera_autofocus),
-                        values = capabilities.autoFocusModes.map { cameraAutoFocusLabel(it) },
-                    )
-                }
-            }
+            LongValueRow(
+                label = stringResource(R.string.camera_sensor_size),
+                value = capabilities.sensorSize.ifBlank { null },
+            )
+            TechnicalValueRow(
+                label = stringResource(R.string.camera_fps_ranges),
+                values = capabilities.fpsRanges,
+            )
+            TechnicalValueRow(
+                label = stringResource(R.string.camera_all_resolutions),
+                values = capabilities.resolutions,
+            )
+            TechnicalValueRow(
+                label = stringResource(R.string.camera_autofocus),
+                values = capabilities.autoFocusModes.map { cameraAutoFocusLabel(it) },
+            )
         }
     }
 }
+
+@Composable
+private fun yesNoLabel(value: Boolean): String =
+    stringResource(if (value) R.string.status_yes else R.string.status_no)
 
 @Composable
 private fun cameraAutoFocusLabel(code: String): String =
@@ -526,29 +410,28 @@ private fun cameraAutoFocusLabel(code: String): String =
     )
 
 @Composable
-private fun TechnicalValueGroup(
-    title: String,
+private fun TechnicalValueRow(
+    label: String,
     values: List<String>,
 ) {
-    if (values.isEmpty()) return
-
-    Column(modifier = Modifier.padding(top = 12.dp)) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 6.dp),
+    if (values.isNotEmpty()) {
+        LongValueRow(
+            label = label,
+            value = values.joinToString(", "),
         )
-        values.forEach { value ->
-            Text(
-                text = value,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp),
-                style = MaterialTheme.typography.bodySmall.copy(fontFamily = JetBrainsMono),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
+    }
+}
+
+@Composable
+private fun CameraSection(
+    title: String,
+    content: @Composable () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
+    ) {
+        SectionHeader(label = title)
+        content()
     }
 }

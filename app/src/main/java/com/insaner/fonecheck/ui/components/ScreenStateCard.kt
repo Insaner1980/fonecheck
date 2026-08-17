@@ -6,16 +6,9 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,9 +18,9 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.ui.theme.FonecheckTheme
+import com.insaner.fonecheck.ui.theme.SemanticTone
 
 enum class ScreenStateType {
     LOADING,
@@ -60,52 +53,38 @@ fun ScreenStateCard(
             ScreenStateType.ERROR, ScreenStateType.PERMISSION_DENIED -> LiveRegionMode.Assertive
             else -> LiveRegionMode.Polite
         }
-    StandardCard(
+    Column(
         modifier =
             modifier
+                .fillMaxWidth()
                 .testTag("screen_state_${type.name.lowercase()}")
                 .semantics { liveRegion = liveRegionMode },
+        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
     ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (type == ScreenStateType.LOADING) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                }
-                Text(
-                    text = stringResource(screenStateTitleResId(type)),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = screenStateColor(type),
-                    modifier = Modifier.semantics { heading() },
-                )
-            }
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+        StatusText(
+            text = stringResource(screenStateTitleResId(type)),
+            tone = screenStateTone(type),
+            modifier = Modifier.semantics { heading() },
+        )
+        if (type == ScreenStateType.LOADING) {
+            IndeterminateRule()
+        } else {
+            StrongRule()
+        }
+        Note(text = message)
+        if (actionLabel != null && onAction != null) {
+            PrimaryButton(
+                label = actionLabel,
+                onClick = onAction,
+                modifier = Modifier.fillMaxWidth(),
             )
-            if (actionLabel != null && onAction != null) {
-                Button(
-                    onClick = onAction,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(actionLabel)
-                }
-            }
-            if (secondaryActionLabel != null && onSecondaryAction != null) {
-                OutlinedButton(
-                    onClick = onSecondaryAction,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(secondaryActionLabel)
-                }
-            }
+        }
+        if (secondaryActionLabel != null && onSecondaryAction != null) {
+            SecondaryButton(
+                label = secondaryActionLabel,
+                onClick = onSecondaryAction,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
@@ -118,7 +97,7 @@ fun ScreenStateScreen(
     actions: ScreenStateActions = ScreenStateActions(),
 ) {
     Box(
-        modifier = modifier.fillMaxSize().padding(24.dp),
+        modifier = modifier.fillMaxSize().padding(FonecheckTheme.spacing.lg),
         contentAlignment = Alignment.Center,
     ) {
         ScreenStateCard(
@@ -165,14 +144,13 @@ internal fun screenStateTitleResId(type: ScreenStateType): Int =
         ScreenStateType.ERROR -> R.string.state_error_title
     }
 
-@Composable
-private fun screenStateColor(type: ScreenStateType) =
+private fun screenStateTone(type: ScreenStateType): SemanticTone =
     when (type) {
-        ScreenStateType.LOADING -> MaterialTheme.colorScheme.primary
+        ScreenStateType.LOADING -> SemanticTone.NEUTRAL
         ScreenStateType.EMPTY,
         ScreenStateType.UNAVAILABLE,
         ScreenStateType.NOT_TESTED,
-        -> MaterialTheme.colorScheme.onSurfaceVariant
-        ScreenStateType.PERMISSION_DENIED -> MaterialTheme.colorScheme.tertiary
-        ScreenStateType.ERROR -> MaterialTheme.colorScheme.error
+        -> SemanticTone.NEUTRAL
+        ScreenStateType.PERMISSION_DENIED -> SemanticTone.ATTENTION
+        ScreenStateType.ERROR -> SemanticTone.FAIL
     }
