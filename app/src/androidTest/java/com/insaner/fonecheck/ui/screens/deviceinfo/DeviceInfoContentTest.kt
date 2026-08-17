@@ -58,7 +58,7 @@ class DeviceInfoContentTest {
         composeRule.onNodeWithText(context.getString(R.string.status_enabled)).assertExists()
         composeRule.onNodeWithText(context.getString(R.string.device_developer_options_note)).assertExists()
         composeRule
-            .onNodeWithContentDescription("radio-one,\nradio-two", useUnmergedTree = true)
+            .onNodeWithContentDescription("radio-one\nradio-two", useUnmergedTree = true)
             .assertExists()
     }
 
@@ -161,7 +161,7 @@ class DeviceInfoContentTest {
             )
 
         assertTrue(snapshot.contains("${context.getString(R.string.label_model)}: Pixel 10"))
-        assertTrue(snapshot.contains("radio-one,\nradio-two"))
+        assertTrue(snapshot.contains("radio-one\nradio-two"))
         assertTrue(snapshot.contains(context.getString(R.string.device_value_restricted)))
         assertTrue(snapshot.contains(context.getString(R.string.device_value_unavailable)))
         assertTrue(snapshot.contains(context.getString(R.string.device_root_finding_note)))

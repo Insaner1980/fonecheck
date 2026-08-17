@@ -17,11 +17,11 @@ class DeviceInfoScreenTest {
     @Test
     fun `two concatenated identifiers are placed on separate lines`() {
         assertEquals(
-            "radio-one,\nradio-two",
+            "radio-one\nradio-two",
             splitConcatenatedDeviceIdentifiers("radio-one, radio-two"),
         )
         assertEquals(
-            "boot-one;\nboot-two",
+            "boot-one\nboot-two",
             splitConcatenatedDeviceIdentifiers("boot-one;boot-two"),
         )
     }

@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -18,8 +17,8 @@ import com.insaner.fonecheck.ui.theme.contentColor
 
 /**
  * A measured value too long for one line: build fingerprints, identifiers, serial numbers. The label
- * goes on its own line as a small uppercase monospace label, the value sits below it across the full
- * width, left aligned.
+ * goes on its own line in the subordinate row-label style, and the value sits below it across the
+ * full width, left aligned.
  *
  * The value wraps only after a hyphen, dot or comma, so a token is never cut in the middle, and it
  * is never right-aligned — a wrapped value read from the right edge is unreadable.
@@ -51,8 +50,8 @@ fun LongValueRow(
                 ),
     ) {
         Text(
-            text = label.uppercase(LocalLocale.current.platformLocale),
-            style = FonecheckTheme.type.sectionLabel,
+            text = label,
+            style = FonecheckTheme.type.rowLabel,
             color = FonecheckTheme.colors.textMuted,
             modifier =
                 Modifier

@@ -42,9 +42,9 @@
     <string name="device_capture_error_description">fonecheck ei voinut päivittää laitteen tilannekuvaa. Viimeisin onnistunut tilannekuva pysyy näkyvissä.</string>
     <string name="device_loading">Luetaan laitteen tietoja…</string>
     <string name="label_developer_options">Kehittäjäasetukset</string>
-    <string name="device_developer_options_note">Kehittäjäasetuksilla on merkitystä vain, kun niiden lisäasetuksia käytetään.</string>
+    <string name="device_developer_options_note">Kehittäjäasetukset ovat tavallisia kehityskäytössä olevassa puhelimessa. Ne kannattaa poistaa käytöstä ennen puhelimen myymistä tai luovuttamista eteenpäin.</string>
     <string name="label_usb_debugging">USB-virheenkorjaus</string>
-    <string name="device_usb_debugging_note">USB-virheenkorjauksella on merkitystä, kun laite yhdistetään tietokoneeseen, jolle on annettu virheenkorjausoikeus.</string>
+    <string name="device_usb_debugging_note">USB-virheenkorjaus on tavallista kehityskäytössä olevassa puhelimessa. Se kannattaa poistaa käytöstä ennen puhelimen myymistä tai luovuttamista eteenpäin.</string>
     <string name="device_clipboard_label">Laitteen tilannekuva</string>
     <string name="device_copied_confirmation">Kopioitu leikepöydälle</string>
     <string name="device_copy_all">Kopioi kaikki</string>

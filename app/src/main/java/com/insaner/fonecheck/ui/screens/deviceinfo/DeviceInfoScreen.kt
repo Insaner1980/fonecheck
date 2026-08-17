@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
@@ -170,8 +171,14 @@ internal fun DeviceInfoContent(
                     modifier = Modifier.weight(1f),
                 )
             }
-            Note(
+            Text(
                 text = stringResource(R.string.device_captured_at, formatCapturedAt(info.capturedAt)),
+                style = FonecheckTheme.type.rowValue,
+                color = FonecheckTheme.colors.textMuted,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = FonecheckTheme.spacing.xs, bottom = FonecheckTheme.spacing.sm),
             )
         }
     }
@@ -376,7 +383,7 @@ internal fun splitConcatenatedDeviceIdentifiers(value: String?): String? {
     listOf(',', ';').forEach { separator ->
         val parts = value.split(separator)
         if (parts.size == 2 && parts.all { it.isNotBlank() }) {
-            return "${parts[0].trimEnd()}$separator\n${parts[1].trimStart()}"
+            return "${parts[0].trimEnd()}\n${parts[1].trimStart()}"
         }
     }
     return value

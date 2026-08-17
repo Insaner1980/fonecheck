@@ -46,9 +46,9 @@
     <string name="device_capture_error_description">fonecheck could not refresh the device snapshot. The last successful snapshot remains visible.</string>
     <string name="device_loading">Reading device information…</string>
     <string name="label_developer_options">Developer options</string>
-    <string name="device_developer_options_note">Developer options matter only when their advanced settings are used.</string>
+    <string name="device_developer_options_note">Developer options are normal on a phone used for development. They are worth turning off before selling the phone or passing it on.</string>
     <string name="label_usb_debugging">USB debugging</string>
-    <string name="device_usb_debugging_note">USB debugging matters when the device is connected to a computer authorized for debugging.</string>
+    <string name="device_usb_debugging_note">USB debugging is normal on a phone used for development. It is worth turning off before selling the phone or passing it on.</string>
     <string name="device_clipboard_label">Device snapshot</string>
     <string name="device_copied_confirmation">Copied to clipboard</string>
     <string name="device_copy_all">Copy all</string>
