@@ -538,6 +538,7 @@
     <string name="storage_available">Available</string>
     <string name="storage_usage">Usage</string>
     <string name="storage_percent_value">%1$s%%</string>
+    <string name="storage_usage_context">%1$s used · %2$s free · %3$s total</string>
     <string name="storage_internal_access">App-private storage</string>
     <string name="storage_accessible">Accessible</string>
     <string name="storage_info_error">Storage information could not be read.</string>
@@ -553,6 +554,7 @@
     <string name="storage_state_unavailable">Not mounted</string>
     <string name="storage_benchmark_title">App-private storage benchmark</string>
     <string name="storage_benchmark_description">Writes and reads one 64 MiB temporary file in fonecheck’s private cache, then deletes it. You can cancel or skip the check.</string>
+    <string name="storage_benchmark_running">Benchmark running</string>
     <string name="storage_benchmark_start">Run benchmark</string>
     <string name="storage_benchmark_run_again">Run again</string>
     <string name="storage_benchmark_cancel">Cancel benchmark</string>

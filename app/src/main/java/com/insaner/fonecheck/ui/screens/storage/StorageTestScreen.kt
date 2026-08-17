@@ -1,29 +1,40 @@
 package com.insaner.fonecheck.ui.screens.storage
 
 import android.text.format.Formatter
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
-import com.insaner.fonecheck.domain.model.Confidence
-import com.insaner.fonecheck.ui.components.InfoCard
-import com.insaner.fonecheck.ui.components.InfoRow
-import com.insaner.fonecheck.ui.components.ScreenStateCard
-import com.insaner.fonecheck.ui.components.ScreenStateType
-import com.insaner.fonecheck.ui.components.TestScreenContent
+import com.insaner.fonecheck.ui.components.DataRow
+import com.insaner.fonecheck.ui.components.HairlineRule
+import com.insaner.fonecheck.ui.components.HeadlineReadout
+import com.insaner.fonecheck.ui.components.IndeterminateRule
+import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.PrimaryButton
+import com.insaner.fonecheck.ui.components.SecondaryButton
+import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.components.StatusText
+import com.insaner.fonecheck.ui.theme.FonecheckTheme
+import com.insaner.fonecheck.ui.theme.SemanticTone
 import java.text.NumberFormat
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun StorageTestScreen(
@@ -32,157 +43,176 @@ fun StorageTestScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    TestScreenContent(modifier = modifier) {
-        if (state.isInfoLoading && state.info == null) {
-            item {
-                ScreenStateCard(
-                    type = ScreenStateType.LOADING,
-                    message = stringResource(R.string.storage_loading),
-                )
-            }
-        }
-        state.info?.let { info ->
-            item { StorageOverviewCard(info) }
-            item { StorageVolumesCard(info.appAccessibleVolumes) }
-        }
-        state.infoError?.let {
-            item {
-                ScreenStateCard(
-                    type = ScreenStateType.ERROR,
-                    message = stringResource(R.string.storage_info_error),
-                    actionLabel = stringResource(R.string.storage_refresh),
-                    onAction = viewModel::refreshInfo,
-                )
-            }
-        }
-        item {
-            StorageBenchmarkCard(
-                state = state,
-                onStart = viewModel::startBenchmark,
-                onCancel = viewModel::cancelBenchmark,
-                onSkip = viewModel::skipBenchmark,
-            )
-        }
-        item {
-            InfoCard(title = stringResource(R.string.storage_limitations_title)) {
-                Text(
-                    text = stringResource(R.string.storage_limitations_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        if (state.infoError == null) {
-            item {
-                OutlinedButton(
-                    onClick = viewModel::refreshInfo,
-                    enabled = !state.isInfoLoading,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium,
-                ) {
-                    Text(stringResource(R.string.storage_refresh))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun StorageOverviewCard(info: StorageInfo) {
-    val context = LocalContext.current
-    InfoCard(
-        title = stringResource(R.string.storage_overview_title),
-        confidence = Confidence.HIGH,
+    Column(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(FonecheckTheme.spacing.md),
+        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg),
     ) {
-        InfoRow(stringResource(R.string.storage_total), Formatter.formatFileSize(context, info.totalBytes))
-        InfoRow(stringResource(R.string.storage_used), Formatter.formatFileSize(context, info.usedBytes))
-        InfoRow(stringResource(R.string.storage_available), Formatter.formatFileSize(context, info.availableBytes))
-        InfoRow(
-            stringResource(R.string.storage_usage),
-            info.usagePercent?.let {
-                stringResource(R.string.storage_percent_value, numberFormat().format(it))
-            } ?: stringResource(R.string.device_value_unavailable),
+        if (state.isInfoLoading && state.info == null) {
+            Column {
+                IndeterminateRule()
+                Note(
+                    text = stringResource(R.string.storage_loading),
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                )
+            }
+        }
+
+        state.info?.let { info ->
+            StorageOverviewSection(info)
+            StorageVolumesSection(info.appAccessibleVolumes)
+        }
+
+        state.infoError?.let {
+            Column {
+                Note(
+                    text = stringResource(R.string.storage_info_error),
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
+                )
+                SecondaryButton(
+                    label = stringResource(R.string.storage_refresh),
+                    onClick = viewModel::refreshInfo,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+        StorageBenchmarkSection(
+            state = state,
+            onStart = viewModel::startBenchmark,
+            onCancel = viewModel::cancelBenchmark,
+            onSkip = viewModel::skipBenchmark,
         )
-        InfoRow(
-            stringResource(R.string.storage_internal_access),
-            stringResource(
-                if (info.internalStorageAccessible) {
-                    R.string.storage_accessible
-                } else {
-                    R.string.device_value_unavailable
-                },
-            ),
-        )
+
+        StorageSection(label = stringResource(R.string.storage_limitations_title)) {
+            Note(stringResource(R.string.storage_limitations_description))
+            HairlineRule()
+        }
+
+        if (state.infoError == null) {
+            SecondaryButton(
+                label = stringResource(R.string.storage_refresh),
+                onClick = viewModel::refreshInfo,
+                enabled = !state.isInfoLoading,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 
 @Composable
-private fun StorageVolumesCard(volumes: List<AppStorageVolumeInfo>) {
+private fun StorageOverviewSection(info: StorageInfo) {
     val context = LocalContext.current
-    InfoCard(title = stringResource(R.string.storage_volumes_title)) {
-        if (volumes.isEmpty()) {
-            Text(
-                text = stringResource(R.string.storage_no_shared_volumes),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+    val usagePercent = info.usagePercent
+    val total = Formatter.formatFileSize(context, info.totalBytes)
+    val used = Formatter.formatFileSize(context, info.usedBytes)
+    val available = Formatter.formatFileSize(context, info.availableBytes)
+
+    StorageSection(
+        label = stringResource(R.string.storage_overview_title),
+        trailing = stringResource(R.string.device_captured_at, formatMeasurementTime(info.capturedAt)),
+    ) {
+        if (usagePercent != null) {
+            HeadlineReadout(
+                value = numberFormat().format(usagePercent),
+                unit = stringResource(R.string.storage_percent_value, "").trim(),
+                rawValues = stringResource(R.string.storage_usage_context, used, available, total),
+                modifier = Modifier.padding(vertical = FonecheckTheme.spacing.md),
             )
+        } else {
+            DataRow(stringResource(R.string.storage_total), total)
+            DataRow(stringResource(R.string.storage_used), used)
+            DataRow(stringResource(R.string.storage_available), available)
+            DataRow(stringResource(R.string.storage_usage), null)
         }
-        volumes.forEachIndexed { index, volume ->
-            Text(
-                text =
-                    if (volume.isPrimary) {
-                        stringResource(R.string.storage_volume_primary)
-                    } else {
-                        stringResource(R.string.storage_volume_number, index + 1)
-                    },
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(top = if (index == 0) 0.dp else 12.dp),
-            )
-            InfoRow(stringResource(R.string.storage_mounted_state), storageStateLabel(volume.stateCode))
-            InfoRow(
-                stringResource(R.string.storage_removable),
-                stringResource(if (volume.isRemovable) R.string.status_yes else R.string.status_no),
-            )
-            volume.totalBytes?.let {
-                InfoRow(stringResource(R.string.storage_total), Formatter.formatFileSize(context, it))
-            }
-            volume.availableBytes?.let {
-                InfoRow(stringResource(R.string.storage_available), Formatter.formatFileSize(context, it))
+        DataRow(
+            label = stringResource(R.string.storage_internal_access),
+            value = stringResource(R.string.storage_accessible).takeIf { info.internalStorageAccessible },
+            showDivider = false,
+        )
+        Note(stringResource(R.string.confidence_high))
+        HairlineRule()
+    }
+}
+
+@Composable
+private fun StorageVolumesSection(volumes: List<AppStorageVolumeInfo>) {
+    val context = LocalContext.current
+    StorageSection(label = stringResource(R.string.storage_volumes_title)) {
+        if (volumes.isEmpty()) {
+            Note(stringResource(R.string.storage_no_shared_volumes))
+            HairlineRule()
+        } else {
+            volumes.forEachIndexed { index, volume ->
+                DataRow(
+                    label =
+                        if (volume.isPrimary) {
+                            stringResource(R.string.storage_volume_primary)
+                        } else {
+                            stringResource(R.string.storage_volume_number, index + 1)
+                        },
+                    value = storageStateLabel(volume.stateCode),
+                )
+                DataRow(
+                    label = stringResource(R.string.storage_removable),
+                    value = stringResource(if (volume.isRemovable) R.string.status_yes else R.string.status_no),
+                )
+                DataRow(
+                    label = stringResource(R.string.storage_total),
+                    value = volume.totalBytes?.let { Formatter.formatFileSize(context, it) },
+                )
+                DataRow(
+                    label = stringResource(R.string.storage_available),
+                    value = volume.availableBytes?.let { Formatter.formatFileSize(context, it) },
+                )
             }
         }
     }
 }
 
 @Composable
-private fun StorageBenchmarkCard(
+private fun StorageBenchmarkSection(
     state: StorageTestState,
     onStart: () -> Unit,
     onCancel: () -> Unit,
     onSkip: () -> Unit,
 ) {
-    InfoCard(title = stringResource(R.string.storage_benchmark_title)) {
-        Text(
-            text = stringResource(R.string.storage_benchmark_description),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 12.dp),
-        )
+    StorageSection(
+        label = stringResource(R.string.storage_benchmark_title),
+        trailing =
+            state.benchmarkResult?.let {
+                stringResource(R.string.device_captured_at, formatMeasurementTime(it.capturedAt))
+            },
+    ) {
+        Note(stringResource(R.string.storage_benchmark_description))
         when (state.benchmarkPhase) {
             StorageBenchmarkPhase.RUNNING -> {
-                CircularProgressIndicator()
-                OutlinedButton(
+                Column(
+                    modifier = Modifier.padding(vertical = FonecheckTheme.spacing.sm),
+                    verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
+                ) {
+                    StatusText(
+                        text = stringResource(R.string.storage_benchmark_running),
+                        tone = SemanticTone.NEUTRAL,
+                    )
+                    IndeterminateRule()
+                }
+                SecondaryButton(
+                    label = stringResource(R.string.storage_benchmark_cancel),
                     onClick = onCancel,
-                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                ) {
-                    Text(stringResource(R.string.storage_benchmark_cancel))
-                }
-                OutlinedButton(
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                SecondaryButton(
+                    label = stringResource(R.string.storage_benchmark_skip),
                     onClick = onSkip,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                ) {
-                    Text(stringResource(R.string.storage_benchmark_skip))
-                }
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(top = FonecheckTheme.spacing.sm),
+                )
             }
             StorageBenchmarkPhase.COMPLETED -> {
                 state.benchmarkResult?.let { StorageBenchmarkRows(it) }
@@ -190,23 +220,21 @@ private fun StorageBenchmarkCard(
             }
             StorageBenchmarkPhase.IDLE -> {
                 BenchmarkStartButton(onStart, R.string.storage_benchmark_start)
-                OutlinedButton(
+                SecondaryButton(
+                    label = stringResource(R.string.storage_benchmark_skip),
                     onClick = onSkip,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                ) {
-                    Text(stringResource(R.string.storage_benchmark_skip))
-                }
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(top = FonecheckTheme.spacing.sm),
+                )
             }
             StorageBenchmarkPhase.NOT_RUN,
             StorageBenchmarkPhase.SKIPPED,
             StorageBenchmarkPhase.CANCELLED,
             StorageBenchmarkPhase.ERROR,
             -> {
-                Text(
-                    text = storageBenchmarkMessage(state),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Note(storageBenchmarkMessage(state))
                 state.benchmarkResult?.let { StorageBenchmarkConditions(it) }
                 BenchmarkStartButton(onStart, R.string.storage_benchmark_start)
             }
@@ -217,54 +245,70 @@ private fun StorageBenchmarkCard(
 @Composable
 private fun StorageBenchmarkRows(result: StorageBenchmarkResult) {
     val context = LocalContext.current
-    InfoRow(
-        stringResource(R.string.storage_benchmark_write_rate),
-        stringResource(R.string.storage_rate_value, result.writeMebibytesPerSecond ?: 0.0),
+    DataRow(
+        label = stringResource(R.string.storage_benchmark_write_rate),
+        value =
+            result.writeMebibytesPerSecond?.let {
+                stringResource(R.string.storage_rate_value, it)
+            },
     )
-    InfoRow(
-        stringResource(R.string.storage_benchmark_read_rate),
-        stringResource(R.string.storage_rate_value, result.readMebibytesPerSecond ?: 0.0),
+    DataRow(
+        label = stringResource(R.string.storage_benchmark_read_rate),
+        value =
+            result.readMebibytesPerSecond?.let {
+                stringResource(R.string.storage_rate_value, it)
+            },
     )
-    InfoRow(
+    DataRow(
         stringResource(R.string.storage_benchmark_data_size),
         Formatter.formatFileSize(context, result.dataSizeBytes),
     )
-    InfoRow(
+    DataRow(
         stringResource(R.string.storage_benchmark_buffer_size),
         Formatter.formatFileSize(context, result.bufferSizeBytes.toLong()),
     )
-    InfoRow(
+    DataRow(
         stringResource(R.string.storage_benchmark_duration),
         stringResource(R.string.storage_duration_value, result.durationMillis),
     )
-    InfoRow(stringResource(R.string.storage_benchmark_location), stringResource(R.string.storage_app_cache))
-    InfoRow(
-        stringResource(R.string.storage_benchmark_cleanup),
-        stringResource(
-            if (result.cleanupSucceeded) R.string.storage_cleanup_complete else R.string.storage_cleanup_failed,
-        ),
+    DataRow(
+        stringResource(R.string.storage_benchmark_location),
+        stringResource(R.string.storage_app_cache),
     )
-    Text(
-        text = stringResource(R.string.storage_benchmark_conditions),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = 8.dp),
+    DataRow(
+        label = stringResource(R.string.storage_benchmark_cleanup),
+        value =
+            stringResource(
+                if (result.cleanupSucceeded) {
+                    R.string.storage_cleanup_complete
+                } else {
+                    R.string.storage_cleanup_failed
+                },
+            ),
+        tone = if (result.cleanupSucceeded) SemanticTone.PASS else SemanticTone.ATTENTION,
+        showDivider = false,
     )
+    Note(stringResource(R.string.storage_benchmark_conditions))
+    HairlineRule()
 }
 
 @Composable
 private fun StorageBenchmarkConditions(result: StorageBenchmarkResult) {
     val context = LocalContext.current
-    InfoRow(
+    DataRow(
         stringResource(R.string.storage_benchmark_required_space),
         Formatter.formatFileSize(context, result.dataSizeBytes),
     )
-    InfoRow(
+    DataRow(
         stringResource(R.string.storage_benchmark_available_before),
         Formatter.formatFileSize(context, result.availableBeforeBytes.coerceAtLeast(0L)),
     )
     if (!result.cleanupSucceeded) {
-        InfoRow(stringResource(R.string.storage_benchmark_cleanup), stringResource(R.string.storage_cleanup_failed))
+        DataRow(
+            label = stringResource(R.string.storage_benchmark_cleanup),
+            value = stringResource(R.string.storage_cleanup_failed),
+            tone = SemanticTone.ATTENTION,
+        )
     }
 }
 
@@ -273,12 +317,25 @@ private fun BenchmarkStartButton(
     onStart: () -> Unit,
     label: Int,
 ) {
-    Button(
+    PrimaryButton(
+        label = stringResource(label),
         onClick = onStart,
-        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-        shape = MaterialTheme.shapes.medium,
-    ) {
-        Text(stringResource(label))
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(top = FonecheckTheme.spacing.sm),
+    )
+}
+
+@Composable
+private fun StorageSection(
+    label: String,
+    trailing: String? = null,
+    content: @Composable () -> Unit,
+) {
+    Column {
+        SectionHeader(label = label, trailing = trailing)
+        content()
     }
 }
 
@@ -313,3 +370,10 @@ private fun numberFormat(): NumberFormat =
         maximumFractionDigits = 1
         minimumFractionDigits = 0
     }
+
+private val measurementTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm", Locale.ROOT)
+
+private fun formatMeasurementTime(
+    value: Instant,
+    zoneId: ZoneId = ZoneId.systemDefault(),
+): String = measurementTimeFormatter.withZone(zoneId).format(value)

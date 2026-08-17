@@ -530,6 +530,7 @@
     <string name="storage_available">Vapaana</string>
     <string name="storage_usage">Käyttöaste</string>
     <string name="storage_percent_value">%1$s%%</string>
+    <string name="storage_usage_context">%1$s käytetty · %2$s vapaana · %3$s yhteensä</string>
     <string name="storage_internal_access">Sovelluksen yksityinen tallennustila</string>
     <string name="storage_accessible">Käytettävissä</string>
     <string name="storage_info_error">Tallennustilan tietoja ei voitu lukea.</string>
@@ -545,6 +546,7 @@
     <string name="storage_state_unavailable">Ei liitetty</string>
     <string name="storage_benchmark_title">Sovelluksen yksityinen tallennustilatesti</string>
     <string name="storage_benchmark_description">Kirjoittaa ja lukee yhden 64 MiB:n väliaikaistiedoston fonecheckin yksityisessä välimuistissa ja poistaa sen. Testin voi perua tai ohittaa.</string>
+    <string name="storage_benchmark_running">Tallennustilatesti on käynnissä</string>
     <string name="storage_benchmark_start">Suorita testi</string>
     <string name="storage_benchmark_run_again">Suorita uudelleen</string>
     <string name="storage_benchmark_cancel">Peru testi</string>
