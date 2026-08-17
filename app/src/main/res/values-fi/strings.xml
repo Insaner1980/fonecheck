@@ -10,6 +10,7 @@
     <string name="value_unavailable_short">n/a</string>
     <!-- Device Info Screen -->
     <string name="device_info_title">Laite</string>
+    <string name="device_identity_title">Tunnistetiedot</string>
     <string name="os_info_title">Käyttöjärjestelmä</string>
     <string name="drm_info_title">DRM</string>
     <string name="security_info_title">Turvallisuus</string>
@@ -18,6 +19,7 @@
     <string name="label_manufacturer">Valmistaja</string>
     <string name="label_brand">Tuotemerkki</string>
     <string name="label_product">Tuote</string>
+    <string name="label_serial_number">Sarjanumero</string>
     <string name="label_android_version">Android-versio</string>
     <string name="label_api_level">API-taso</string>
     <string name="label_security_patch">Tietoturvapäivitys</string>
@@ -29,14 +31,19 @@
     <string name="label_root_artifact">Tunnettu root-jälki</string>
     <string name="device_root_artifact_detected">Havaittu</string>
     <string name="device_root_artifact_not_detected">Ei havaittu</string>
+    <string name="device_root_finding_note">Luetteloa vastaava tiedosto on tutkimisen arvoinen havainto, mutta se ei yksin todista, että laite olisi vaarantunut.</string>
     <string name="device_root_heuristic_disclaimer">Tämä rajattu tarkistus etsii vain lyhyttä luetteloa tunnetuista tiedostoista. Havaitsematta jääminen ei todista, että laite olisi vaarantumaton.</string>
     <string name="device_value_unavailable">Ei saatavilla</string>
-    <string name="device_captured_at">Kerätty</string>
+    <string name="device_value_restricted">Rajoitettu</string>
+    <string name="device_serial_restricted_note">Android ei anna tälle sovellukselle pääsyä laitteen sarjanumeroon.</string>
+    <string name="device_captured_at">Kerätty %1$s</string>
     <string name="device_refresh">Päivitä laitetiedot</string>
     <string name="device_capture_error_description">fonecheck ei voinut päivittää laitteen tilannekuvaa. Viimeisin onnistunut tilannekuva pysyy näkyvissä.</string>
     <string name="device_loading">Luetaan laitteen tietoja…</string>
     <string name="label_developer_options">Kehittäjäasetukset</string>
+    <string name="device_developer_options_note">Kehittäjäasetuksilla on merkitystä vain, kun niiden lisäasetuksia käytetään.</string>
     <string name="label_usb_debugging">USB-virheenkorjaus</string>
+    <string name="device_usb_debugging_note">USB-virheenkorjauksella on merkitystä, kun laite yhdistetään tietokoneeseen, jolle on annettu virheenkorjausoikeus.</string>
 
     <string name="status_yes">Kyllä</string>
     <string name="status_no">Ei</string>
@@ -888,7 +895,6 @@
     <string name="run_all_manual_failed">Käyttäjä ilmoitti ongelmasta</string>
     <string name="run_all_manual_skipped">Vuorovaikutteinen tarkistus ohitettiin</string>
     <string name="home_categories_title">Kategoriat</string>
-    <string name="home_category_android_api">Android API %1$d</string>
     <plurals name="home_category_cpu_cores">
         <item quantity="one">%1$d ydin</item>
         <item quantity="other">%1$d ydintä</item>

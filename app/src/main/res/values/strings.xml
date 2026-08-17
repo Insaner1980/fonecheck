@@ -14,7 +14,8 @@
 
     <!-- Device Info Screen -->
     <string name="device_info_title">Device</string>
-    <string name="os_info_title">Operating System</string>
+    <string name="device_identity_title">Identity</string>
+    <string name="os_info_title">Operating system</string>
     <string name="drm_info_title">DRM</string>
     <string name="security_info_title">Security</string>
 
@@ -22,25 +23,31 @@
     <string name="label_manufacturer">Manufacturer</string>
     <string name="label_brand">Brand</string>
     <string name="label_product">Product</string>
-    <string name="label_android_version">Android Version</string>
-    <string name="label_api_level">API Level</string>
-    <string name="label_security_patch">Security Patch</string>
-    <string name="label_build_number">Build Number</string>
+    <string name="label_serial_number">Serial number</string>
+    <string name="label_android_version">Android version</string>
+    <string name="label_api_level">API level</string>
+    <string name="label_security_patch">Security patch</string>
+    <string name="label_build_number">Build number</string>
     <string name="label_kernel">Kernel</string>
     <string name="label_baseband">Baseband</string>
     <string name="label_bootloader">Bootloader</string>
-    <string name="label_widevine">Widevine Level</string>
+    <string name="label_widevine">Widevine level</string>
     <string name="label_root_artifact">Known root artifact</string>
     <string name="device_root_artifact_detected">Detected</string>
     <string name="device_root_artifact_not_detected">Not detected</string>
+    <string name="device_root_finding_note">A matching file is evidence worth reviewing, but it does not by itself prove that the device is compromised.</string>
     <string name="device_root_heuristic_disclaimer">This limited check only looks for a short list of known files. No detection does not prove that the device is uncompromised.</string>
     <string name="device_value_unavailable">Not available</string>
-    <string name="device_captured_at">Captured</string>
+    <string name="device_value_restricted">Restricted</string>
+    <string name="device_serial_restricted_note">Android does not give this app access to the device serial number.</string>
+    <string name="device_captured_at">Captured %1$s</string>
     <string name="device_refresh">Refresh device information</string>
     <string name="device_capture_error_description">fonecheck could not refresh the device snapshot. The last successful snapshot remains visible.</string>
     <string name="device_loading">Reading device information…</string>
-    <string name="label_developer_options">Developer Options</string>
-    <string name="label_usb_debugging">USB Debugging</string>
+    <string name="label_developer_options">Developer options</string>
+    <string name="device_developer_options_note">Developer options matter only when their advanced settings are used.</string>
+    <string name="label_usb_debugging">USB debugging</string>
+    <string name="device_usb_debugging_note">USB debugging matters when the device is connected to a computer authorized for debugging.</string>
 
     <string name="status_yes">Yes</string>
     <string name="status_no">No</string>
@@ -896,7 +903,6 @@
     <string name="run_all_manual_failed">User reported a problem</string>
     <string name="run_all_manual_skipped">Interactive check was skipped</string>
     <string name="home_categories_title">Categories</string>
-    <string name="home_category_android_api">Android API %1$d</string>
     <plurals name="home_category_cpu_cores">
         <item quantity="one">%1$d core</item>
         <item quantity="other">%1$d cores</item>

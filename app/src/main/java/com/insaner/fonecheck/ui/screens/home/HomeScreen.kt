@@ -75,6 +75,7 @@ import com.insaner.fonecheck.domain.model.DiagnosticCheckId
 import com.insaner.fonecheck.domain.model.DiagnosticEvidence
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
+import com.insaner.fonecheck.domain.model.DeviceInfo
 import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.ReportAppContext
@@ -532,7 +533,7 @@ private data class HomeCategoryRowResult(
 
 internal fun stableHomeHeadlineSource(categoryId: DiagnosticCategoryId): String? =
     when (categoryId) {
-        DiagnosticCategoryId.DEVICE -> "report.device.api_level"
+        DiagnosticCategoryId.DEVICE -> "report.device.model"
         DiagnosticCategoryId.PERFORMANCE -> "performance.cpu"
         DiagnosticCategoryId.CAMERA -> "camera.inventory"
         DiagnosticCategoryId.SENSORS -> "sensors.inventory"
@@ -576,8 +577,8 @@ private fun stableHomeHeadline(
     categoryId: DiagnosticCategoryId,
 ): String? {
     val source = stableHomeHeadlineSource(categoryId) ?: return null
-    if (source == "report.device.api_level") {
-        return stringResource(R.string.home_category_android_api, report.device.apiLevel)
+    if (source == "report.device.model") {
+        return report.device.model.takeUnless { it == DeviceInfo.UNAVAILABLE }
     }
     val evidence =
         report.categories

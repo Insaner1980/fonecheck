@@ -8,7 +8,7 @@ import org.junit.Test
 class HomeResponsiveLayoutTest {
     @Test
     fun `category headlines use only values that stay stable between full checks`() {
-        assertEquals("report.device.api_level", stableHomeHeadlineSource(DiagnosticCategoryId.DEVICE))
+        assertEquals("report.device.model", stableHomeHeadlineSource(DiagnosticCategoryId.DEVICE))
         assertEquals("performance.cpu", stableHomeHeadlineSource(DiagnosticCategoryId.PERFORMANCE))
         assertEquals("camera.inventory", stableHomeHeadlineSource(DiagnosticCategoryId.CAMERA))
         assertEquals("sensors.inventory", stableHomeHeadlineSource(DiagnosticCategoryId.SENSORS))

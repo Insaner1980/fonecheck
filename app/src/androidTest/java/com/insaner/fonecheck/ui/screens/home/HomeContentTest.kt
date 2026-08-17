@@ -223,9 +223,7 @@ class HomeContentTest {
         }
 
         composeRule.onNodeWithText(context.getString(R.string.home_categories_title)).assertIsDisplayed()
-        composeRule
-            .onNodeWithText(context.getString(R.string.home_category_android_api, 36))
-            .assertIsDisplayed()
+        composeRule.onNodeWithText("Phone").assertIsDisplayed()
         composeRule
             .onNodeWithTag("home_category_device")
             .assertHeightIsAtLeast(48.dp)
