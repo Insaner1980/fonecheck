@@ -94,11 +94,19 @@ private fun CpuInfoSection(info: PerformanceInfo) {
         label = stringResource(R.string.perf_cpu_title),
         trailing = confidenceLabel(info.cpuConfidence),
     ) {
-        LongValueRow(
-            label = stringResource(R.string.perf_cpu_model),
-            value = performanceValueOrNull(info.cpuModel),
-        )
-        LongValueRow(
+        val cpuModel = performanceValueOrNull(info.cpuModel)
+        if (cpuModel == null) {
+            DataRow(
+                label = stringResource(R.string.perf_cpu_model),
+                value = null,
+            )
+        } else {
+            LongValueRow(
+                label = stringResource(R.string.perf_cpu_model),
+                value = cpuModel,
+            )
+        }
+        DataRow(
             label = stringResource(R.string.perf_cpu_architecture),
             value = performanceValueOrNull(info.cpuArchitecture),
         )
@@ -137,11 +145,11 @@ private fun GpuInfoSection(info: PerformanceInfo) {
             label = stringResource(R.string.perf_gpu_gles_version),
             value = performanceValueOrNull(info.glEsVersion),
         )
-        LongValueRow(
+        DataRow(
             label = stringResource(R.string.perf_gpu_renderer),
             value = performanceValueOrNull(info.glRenderer),
         )
-        LongValueRow(
+        DataRow(
             label = stringResource(R.string.perf_gpu_vendor),
             value = performanceValueOrNull(info.glVendor),
         )

@@ -110,7 +110,6 @@ fun SimTelephonyScreen(
                 DataRow(
                     label = stringResource(R.string.sim_inventory_label),
                     value = inventoryLabel(info.inventory),
-                    tone = inventoryTone(info.inventory),
                 )
                 DataRow(
                     label = stringResource(R.string.label_phone_type),
@@ -186,18 +185,6 @@ private fun SimSection(
         content()
     }
 }
-
-private fun inventoryTone(value: SimInventoryCode): SemanticTone =
-    when (value) {
-        SimInventoryCode.SINGLE_SIM,
-        SimInventoryCode.MULTIPLE_SIM,
-        -> SemanticTone.PASS
-        SimInventoryCode.INACTIVE_SIM -> SemanticTone.ATTENTION
-        SimInventoryCode.NO_TELEPHONY,
-        SimInventoryCode.NO_SIM,
-        SimInventoryCode.UNKNOWN,
-        -> SemanticTone.NEUTRAL
-    }
 
 private fun slotStateTone(value: SimSlotStateCode): SemanticTone =
     when (value) {

@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.ui.components.DataRow
+import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.PrimaryButton
 import com.insaner.fonecheck.ui.components.SecondaryButton
@@ -184,7 +185,7 @@ private fun DisplayOverview(
 
 @Composable
 private fun DisplayInfoDetails(info: DisplayInfoState) {
-    DataRow(
+    LongValueRow(
         label = stringResource(R.string.display_resolution),
         value =
             stringResource(
