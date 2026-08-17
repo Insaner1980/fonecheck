@@ -17,30 +17,39 @@ import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.model.Confidence
+import com.insaner.fonecheck.ui.TopBarAction
+import com.insaner.fonecheck.ui.components.CaptureTimestamp
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.HeadlineReadout
 import com.insaner.fonecheck.ui.components.IndeterminateRule
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.PrimaryButton
+import com.insaner.fonecheck.ui.components.RegisterRefreshTopBarAction
 import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.StatusText
+import com.insaner.fonecheck.ui.components.formatCaptureTimestamp
 import com.insaner.fonecheck.ui.format.uiFileSize
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @Composable
 fun StorageTestScreen(
     modifier: Modifier = Modifier,
+    onTopBarActionChange: (TopBarAction?) -> Unit = {},
     viewModel: StorageTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    RegisterRefreshTopBarAction(
+        contentDescriptionResId = R.string.storage_refresh,
+        enabled = !state.isInfoLoading,
+        onRefresh = viewModel::refreshInfo,
+        onTopBarActionChange = onTopBarActionChange,
+    )
 
     Column(
         modifier =
@@ -66,17 +75,10 @@ fun StorageTestScreen(
         }
 
         state.infoError?.let {
-            Column {
-                Note(
-                    text = stringResource(R.string.storage_info_error),
-                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
-                )
-                SecondaryButton(
-                    label = stringResource(R.string.storage_refresh),
-                    onClick = viewModel::refreshInfo,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
+            Note(
+                text = stringResource(R.string.storage_info_error),
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
+            )
         }
 
         StorageBenchmarkSection(
@@ -91,14 +93,7 @@ fun StorageTestScreen(
             HairlineRule()
         }
 
-        if (state.infoError == null) {
-            SecondaryButton(
-                label = stringResource(R.string.storage_refresh),
-                onClick = viewModel::refreshInfo,
-                enabled = !state.isInfoLoading,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+        state.info?.let { CaptureTimestamp(it.capturedAt) }
     }
 }
 
@@ -109,10 +104,7 @@ private fun StorageOverviewSection(info: StorageInfo) {
     val used = uiFileSize(info.usedBytes)
     val available = uiFileSize(info.availableBytes)
 
-    StorageSection(
-        label = stringResource(R.string.storage_overview_title),
-        trailing = stringResource(R.string.device_captured_at, formatMeasurementTime(info.capturedAt)),
-    ) {
+    StorageSection(label = stringResource(R.string.storage_overview_title)) {
         if (usagePercent != null) {
             HeadlineReadout(
                 value = uiNumber(usagePercent, maximumFractionDigits = 1),
@@ -129,10 +121,8 @@ private fun StorageOverviewSection(info: StorageInfo) {
         DataRow(
             label = stringResource(R.string.storage_internal_access),
             value = stringResource(R.string.storage_accessible).takeIf { info.internalStorageAccessible },
-            showDivider = false,
+            confidence = Confidence.HIGH,
         )
-        Note(stringResource(R.string.confidence_high))
-        HairlineRule()
     }
 }
 
@@ -177,13 +167,7 @@ private fun StorageBenchmarkSection(
     onCancel: () -> Unit,
     onSkip: () -> Unit,
 ) {
-    StorageSection(
-        label = stringResource(R.string.storage_benchmark_title),
-        trailing =
-            state.benchmarkResult?.let {
-                stringResource(R.string.device_captured_at, formatMeasurementTime(it.capturedAt))
-            },
-    ) {
+    StorageSection(label = stringResource(R.string.storage_benchmark_title)) {
         Note(stringResource(R.string.storage_benchmark_description))
         when (state.benchmarkPhase) {
             StorageBenchmarkPhase.RUNNING -> {
@@ -270,6 +254,10 @@ private fun StorageBenchmarkRows(result: StorageBenchmarkResult) {
     DataRow(
         stringResource(R.string.storage_benchmark_location),
         stringResource(R.string.storage_app_cache),
+    )
+    DataRow(
+        stringResource(R.string.storage_benchmark_captured),
+        formatCaptureTimestamp(result.capturedAt),
     )
     DataRow(
         label = stringResource(R.string.storage_benchmark_cleanup),
@@ -359,10 +347,3 @@ private fun storageStateLabel(stateCode: String): String =
             else -> R.string.storage_state_unavailable
         },
     )
-
-private val measurementTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm", Locale.ROOT)
-
-private fun formatMeasurementTime(
-    value: Instant,
-    zoneId: ZoneId = ZoneId.systemDefault(),
-): String = measurementTimeFormatter.withZone(zoneId).format(value)

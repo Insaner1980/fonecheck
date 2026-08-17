@@ -573,6 +573,7 @@
     <string name="storage_benchmark_duration">Measured duration</string>
     <string name="storage_duration_value">%1$d ms</string>
     <string name="storage_benchmark_location">Location</string>
+    <string name="storage_benchmark_captured">Measured at</string>
     <string name="storage_app_cache">App-private cache</string>
     <string name="storage_benchmark_cleanup">Temporary-file cleanup</string>
     <string name="storage_cleanup_complete">Complete</string>

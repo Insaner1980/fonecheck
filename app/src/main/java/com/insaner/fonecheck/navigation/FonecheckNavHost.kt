@@ -83,10 +83,10 @@ fun FonecheckNavHost(
             BatteryTestScreen()
         }
         composable<ThermalTest> {
-            ThermalTestScreen()
+            ThermalTestScreen(onTopBarActionChange = onTopBarActionChange)
         }
         composable<StorageTest> {
-            StorageTestScreen()
+            StorageTestScreen(onTopBarActionChange = onTopBarActionChange)
         }
         composable<DisplayTest> {
             DisplayTestScreen(onFullscreenChange = onDisplayFullscreenChange)

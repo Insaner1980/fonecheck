@@ -1,6 +1,5 @@
 package com.insaner.fonecheck.ui.screens.battery
 
-import android.os.BatteryManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,14 +13,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
-import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
-import com.insaner.fonecheck.ui.theme.SemanticTone
 
 @Composable
 fun BatteryTestScreen(
@@ -39,7 +36,7 @@ fun BatteryTestScreen(
         verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg),
     ) {
         BatterySection(label = stringResource(R.string.batt_basic_title)) {
-            BasicDetails(state.basic, viewModel)
+            BasicDetails(state.basic)
         }
         BatterySection(label = stringResource(R.string.batt_charging_title)) {
             ChargingDetails(state.charging, viewModel)
@@ -56,7 +53,6 @@ fun BatteryTestScreen(
 @Composable
 private fun BasicDetails(
     basic: BasicBatteryState,
-    viewModel: BatteryTestViewModel,
 ) {
     DataRow(
         label = stringResource(R.string.batt_level),
@@ -72,12 +68,6 @@ private fun BasicDetails(
             basic.temperatureCelsius?.let {
                 stringResource(R.string.batt_value_celsius, uiNumber(it, 1, 1))
             },
-        tone = batteryTemperatureTone(basic.temperatureCelsius),
-    )
-    DataRow(
-        label = stringResource(R.string.batt_health_label),
-        value = stringResource(viewModel.getHealthLabel(basic.healthStatus)),
-        tone = batteryHealthTone(basic.healthStatus),
     )
     DataRow(
         label = stringResource(R.string.batt_technology),
@@ -104,10 +94,10 @@ private fun ChargingDetails(
             charging.chargingCurrentMa?.let {
                 stringResource(R.string.batt_value_milliamps, uiNumber(it, 1, 1))
             },
+        confidence = charging.chargingCurrentConfidence.takeIf { charging.chargingCurrentMa != null },
         showDivider = charging.chargingCurrentMa == null,
     )
     charging.chargingCurrentMa?.let {
-        Note(confidenceLabel(charging.chargingCurrentConfidence))
         DataRow(
             label = stringResource(R.string.batt_current_direction),
             value = currentDirectionLabel(charging.currentDirection),
@@ -132,7 +122,6 @@ private fun HealthDetails(health: HealthState) {
     DataRow(
         label = stringResource(R.string.batt_health_status),
         value = stringResource(health.healthStatusLabel),
-        tone = batteryHealthTone(health.healthStatusRaw),
         showDivider = false,
     )
     Note(stringResource(R.string.batt_health_source_note))
@@ -141,16 +130,12 @@ private fun HealthDetails(health: HealthState) {
     DataRow(
         label = stringResource(R.string.batt_cycle_count),
         value = health.cycleCount?.toString(),
-        showDivider = health.cycleCountSupported && health.cycleCount == null,
+        confidence = health.cycleCountConfidence.takeIf { health.cycleCountSupported && health.cycleCount != null },
+        showDivider = health.cycleCountSupported,
     )
     if (!health.cycleCountSupported) {
         Note(stringResource(R.string.batt_requires_api34))
         HairlineRule()
-    } else {
-        health.cycleCount?.let {
-            Note(confidenceLabel(health.cycleCountConfidence))
-            HairlineRule()
-        }
     }
 }
 
@@ -163,9 +148,9 @@ private fun ManufacturerDetails(manufacturer: ManufacturerState) {
     DataRow(
         label = stringResource(R.string.batt_mfr_profile),
         value = manufacturerProfileLabel(manufacturer.profile),
+        confidence = manufacturer.profileConfidence,
         showDivider = false,
     )
-    Note(confidenceLabel(manufacturer.profileConfidence))
     manufacturer.notes.forEach { note -> Note(note) }
     HairlineRule()
 }
@@ -180,16 +165,6 @@ private fun BatterySection(
         content()
     }
 }
-
-@Composable
-private fun confidenceLabel(confidence: Confidence): String =
-    stringResource(
-        when (confidence) {
-            Confidence.HIGH -> R.string.confidence_high
-            Confidence.LOW -> R.string.confidence_low
-            Confidence.UNAVAILABLE -> R.string.confidence_unavailable
-        },
-    )
 
 @Composable
 private fun manufacturerProfileLabel(profile: ManufacturerProfile): String =
@@ -211,18 +186,3 @@ private fun currentDirectionLabel(direction: BatteryCurrentDirection): String =
             BatteryCurrentDirection.IDLE -> R.string.batt_current_direction_idle
         },
     )
-
-private fun batteryTemperatureTone(temperatureCelsius: Float?): SemanticTone =
-    when {
-        temperatureCelsius == null -> SemanticTone.NEUTRAL
-        temperatureCelsius < 35f -> SemanticTone.PASS
-        temperatureCelsius < 45f -> SemanticTone.ATTENTION
-        else -> SemanticTone.FAIL
-    }
-
-private fun batteryHealthTone(healthStatus: Int): SemanticTone =
-    when (healthStatus) {
-        BatteryManager.BATTERY_HEALTH_GOOD -> SemanticTone.PASS
-        BatteryManager.BATTERY_HEALTH_UNKNOWN -> SemanticTone.NEUTRAL
-        else -> SemanticTone.FAIL
-    }

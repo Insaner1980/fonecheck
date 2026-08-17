@@ -3,7 +3,6 @@ package com.insaner.fonecheck.ui.screens.thermal
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -17,28 +16,34 @@ import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
-import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import com.insaner.fonecheck.localization.thermalStatusStringRes
+import com.insaner.fonecheck.ui.TopBarAction
+import com.insaner.fonecheck.ui.components.CaptureTimestamp
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.Note
-import com.insaner.fonecheck.ui.components.PrimaryButton
+import com.insaner.fonecheck.ui.components.RegisterRefreshTopBarAction
 import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.components.confidenceLabel
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @Composable
 fun ThermalTestScreen(
     modifier: Modifier = Modifier,
+    onTopBarActionChange: (TopBarAction?) -> Unit = {},
     viewModel: ThermalTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    RegisterRefreshTopBarAction(
+        contentDescriptionResId = R.string.thermal_refresh,
+        enabled = true,
+        onRefresh = viewModel::refresh,
+        onTopBarActionChange = onTopBarActionChange,
+    )
     ThermalMonitoringEffect(
         onStartMonitoring = viewModel::startMonitoring,
         onStopMonitoring = viewModel::stopMonitoring,
@@ -69,11 +74,7 @@ fun ThermalTestScreen(
             HairlineRule()
         }
 
-        PrimaryButton(
-            label = stringResource(R.string.thermal_refresh),
-            onClick = viewModel::refresh,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        state.capturedAt?.let { CaptureTimestamp(it) }
     }
 }
 
@@ -81,10 +82,7 @@ fun ThermalTestScreen(
 private fun ThermalStatusSection(state: ThermalTestState) {
     ThermalSection(
         label = stringResource(R.string.thermal_status_title),
-        trailing =
-            state.capturedAt?.let {
-                stringResource(R.string.device_captured_at, formatMeasurementTime(it))
-            },
+        trailing = confidenceLabel(state.statusConfidence),
     ) {
         DataRow(
             label = stringResource(R.string.thermal_status_label),
@@ -114,7 +112,6 @@ private fun ThermalStatusSection(state: ThermalTestState) {
                 ),
             showDivider = false,
         )
-        Note(confidenceLabel(state.statusConfidence))
         Note(
             stringResource(
                 if (state.statusApiSupported) {
@@ -182,16 +179,6 @@ private fun ThermalSection(
 }
 
 @Composable
-private fun confidenceLabel(confidence: Confidence): String =
-    stringResource(
-        when (confidence) {
-            Confidence.HIGH -> R.string.confidence_high
-            Confidence.LOW -> R.string.confidence_low
-            Confidence.UNAVAILABLE -> R.string.confidence_unavailable
-        },
-    )
-
-@Composable
 private fun thermalSeverityLabel(severity: ThermalSeverityCode): String =
     stringResource(
         when (severity) {
@@ -226,10 +213,3 @@ private fun thermalErrorLabel(error: ThermalErrorCode): String =
             ThermalErrorCode.LISTENER_REGISTRATION_FAILED -> R.string.thermal_listener_failed
         },
     )
-
-private val measurementTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm", Locale.ROOT)
-
-private fun formatMeasurementTime(
-    value: Instant,
-    zoneId: ZoneId = ZoneId.systemDefault(),
-): String = measurementTimeFormatter.withZone(zoneId).format(value)
