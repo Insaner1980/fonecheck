@@ -71,7 +71,7 @@
     <string name="perf_cpu_architecture">Architecture</string>
     <string name="perf_cpu_cores">Cores</string>
     <string name="perf_cpu_clock_speeds">Clock Speeds</string>
-    <string name="perf_cpu_core_label">Core %1$d</string>
+    <string name="perf_cpu_core_label">Core %1$s</string>
     <string name="perf_cpu_freq_range">%1$s (%2$s – %3$s)</string>
     <string name="perf_ram_title">RAM</string>
     <string name="perf_ram_total">Total</string>
@@ -81,7 +81,7 @@
     <string name="perf_gpu_renderer">Renderer</string>
     <string name="perf_gpu_vendor">Vendor</string>
     <string name="perf_gpu_vulkan_feature">Vulkan feature declared</string>
-    <string name="perf_cpu_frequency_value">%1$d MHz</string>
+    <string name="perf_cpu_frequency_value">%1$s MHz</string>
     <string name="perf_info_error_description">fonecheck could not refresh the hardware information. The last successful snapshot remains visible.</string>
     <string name="perf_info_loading">Reading performance and hardware information…</string>
     <string name="perf_refresh_info">Refresh hardware information</string>
@@ -98,9 +98,9 @@
     <string name="perf_benchmark_memory_rate">Memory throughput</string>
     <string name="perf_benchmark_memory_rate_value">%1$s MiB/s</string>
     <string name="perf_benchmark_workload">Memory processed</string>
-    <string name="perf_benchmark_workload_value">%1$d MiB</string>
+    <string name="perf_benchmark_workload_value">%1$s MiB</string>
     <string name="perf_benchmark_duration">Measured duration</string>
-    <string name="perf_benchmark_duration_value">%1$d ms</string>
+    <string name="perf_benchmark_duration_value">%1$s ms</string>
     <string name="perf_benchmark_thermal_before">Thermal state before</string>
     <string name="perf_benchmark_thermal_after">Thermal state after</string>
     <string name="perf_benchmark_memory_unavailable">Memory throughput was not available because the bounded buffer could not be allocated.</string>
@@ -114,7 +114,7 @@
 
     <!-- SIM & Telephony Screen -->
     <string name="sim_telephony_title">Telephony</string>
-    <string name="sim_slot_title">SIM Slot %1$d</string>
+    <string name="sim_slot_title">SIM Slot %1$s</string>
     <string name="label_phone_type">Phone Type</string>
     <string name="label_phone_count">Phone Count</string>
     <string name="label_data_network">Data Network</string>
@@ -952,6 +952,7 @@
     <string name="display_wide_color">Wide Color Gamut</string>
     <string name="display_brightness">Brightness</string>
     <string name="display_auto_brightness">Auto-Brightness</string>
+    <string name="display_status_label">Status</string>
     <string name="display_start_test">Start Test</string>
     <string name="display_visual_title">Pixel and uniformity test</string>
     <string name="display_visual_description">Inspect red, green, blue, white, black and a gray gradient for dead or stuck pixels, shadows and image retention.</string>
@@ -973,13 +974,13 @@
     <string name="display_status_complete">Complete</string>
     <string name="display_touch_cells">Grid coverage</string>
     <string name="display_multi_touch_peak">Maximum simultaneous touches</string>
-    <string name="display_touch_progress">Grid %1$d/%2$d · active pointers %3$d · maximum %4$d</string>
+    <string name="display_touch_progress">Grid %1$s/%2$s · active pointers %3$s · maximum %4$s</string>
     <string name="display_touch_grid_description">Touch-test grid. Drag across the whole area and place multiple fingers simultaneously.</string>
     <string name="display_touch_complete">Complete test</string>
-    <string name="display_resolution_value">%1$d × %2$d px (%3$s)</string>
-    <string name="display_density_value" tools:ignore="PluralsCandidate">%1$d dpi</string>
+    <string name="display_resolution_value">%1$s × %2$s px (%3$s)</string>
+    <string name="display_density_value">%1$s dpi</string>
     <string name="display_refresh_rate_value">%1$s Hz</string>
-    <string name="display_value_ratio">%1$d / %2$d</string>
+    <string name="display_value_ratio">%1$s / %2$s</string>
     <string name="display_resolution_source_window">app window</string>
     <string name="display_resolution_source_mode">display mode</string>
     <string name="display_resolution_source_physical">physical metrics</string>
@@ -1085,6 +1086,7 @@
     <string name="biometric_prompt_cancel">Cancel</string>
 
     <!-- Permissions -->
+    <string name="permission_section_title">Permission</string>
     <string name="permission_status_not_requested">Permission not requested</string>
     <string name="permission_status_granted">Permission granted</string>
     <string name="permission_status_denied">Permission denied</string>

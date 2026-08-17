@@ -62,10 +62,10 @@ fun FonecheckNavHost(
             DeviceInfoScreen(onTopBarActionChange = onTopBarActionChange)
         }
         composable<PerformanceInfo> {
-            PerformanceInfoScreen()
+            PerformanceInfoScreen(onTopBarActionChange = onTopBarActionChange)
         }
         composable<SimTelephony> {
-            SimTelephonyScreen()
+            SimTelephonyScreen(onTopBarActionChange = onTopBarActionChange)
         }
         composable<AudioTest> {
             AudioTestScreen()

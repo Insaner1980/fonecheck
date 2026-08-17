@@ -67,7 +67,7 @@
     <string name="perf_cpu_architecture">Arkkitehtuuri</string>
     <string name="perf_cpu_cores">Ytimet</string>
     <string name="perf_cpu_clock_speeds">Kellotaajuudet</string>
-    <string name="perf_cpu_core_label">Ydin %1$d</string>
+    <string name="perf_cpu_core_label">Ydin %1$s</string>
     <string name="perf_cpu_freq_range">%1$s (%2$s – %3$s)</string>
     <string name="perf_ram_title">Keskusmuisti</string>
     <string name="perf_ram_total">Yhteensä</string>
@@ -77,7 +77,7 @@
     <string name="perf_gpu_renderer">Renderöijä</string>
     <string name="perf_gpu_vendor">Valmistaja</string>
     <string name="perf_gpu_vulkan_feature">Vulkan-ominaisuus ilmoitettu</string>
-    <string name="perf_cpu_frequency_value">%1$d MHz</string>
+    <string name="perf_cpu_frequency_value">%1$s MHz</string>
     <string name="perf_info_error_description">fonecheck ei voinut päivittää laitteistotietoja. Viimeisin onnistunut tilannekuva pysyy näkyvissä.</string>
     <string name="perf_info_loading">Luetaan suorituskyky- ja laitteistotietoja…</string>
     <string name="perf_refresh_info">Päivitä laitteistotiedot</string>
@@ -94,9 +94,9 @@
     <string name="perf_benchmark_memory_rate">Muistin läpimeno</string>
     <string name="perf_benchmark_memory_rate_value">%1$s MiB/s</string>
     <string name="perf_benchmark_workload">Käsitelty muisti</string>
-    <string name="perf_benchmark_workload_value">%1$d MiB</string>
+    <string name="perf_benchmark_workload_value">%1$s MiB</string>
     <string name="perf_benchmark_duration">Mitattu kesto</string>
-    <string name="perf_benchmark_duration_value">%1$d ms</string>
+    <string name="perf_benchmark_duration_value">%1$s ms</string>
     <string name="perf_benchmark_thermal_before">Lämpötilanhallinnan tila ennen</string>
     <string name="perf_benchmark_thermal_after">Lämpötilanhallinnan tila jälkeen</string>
     <string name="perf_benchmark_memory_unavailable">Muistin läpimenoa ei saatu, koska rajattua muistipuskuria ei voitu varata.</string>
@@ -110,7 +110,7 @@
 
     <!-- SIM & Telephony Screen -->
     <string name="sim_telephony_title">Puhelinverkko</string>
-    <string name="sim_slot_title">SIM-paikka %1$d</string>
+    <string name="sim_slot_title">SIM-paikka %1$s</string>
     <string name="label_phone_type">Puhelintyyppi</string>
     <string name="label_phone_count">Puhelinten määrä</string>
     <string name="label_data_network">Dataverkko</string>
@@ -944,6 +944,7 @@
     <string name="display_wide_color">Laaja väriavaruus</string>
     <string name="display_brightness">Kirkkaus</string>
     <string name="display_auto_brightness">Automaattinen kirkkaus</string>
+    <string name="display_status_label">Tila</string>
     <string name="display_start_test">Aloita testi</string>
     <string name="display_visual_title">Pikseli- ja tasaisuustesti</string>
     <string name="display_visual_description">Tarkista punainen, vihreä, sininen, valkoinen, musta ja harmaaliukuväri kuolleiden tai juuttuneiden pikseleiden, varjojen ja kuvanpidätyksen varalta.</string>
@@ -965,13 +966,13 @@
     <string name="display_status_complete">Valmis</string>
     <string name="display_touch_cells">Ruudukon kattavuus</string>
     <string name="display_multi_touch_peak">Samanaikaisten kosketusten enimmäismäärä</string>
-    <string name="display_touch_progress">Ruudukko %1$d/%2$d · aktiivisia kosketuksia %3$d · enintään %4$d</string>
+    <string name="display_touch_progress">Ruudukko %1$s/%2$s · aktiivisia kosketuksia %3$s · enintään %4$s</string>
     <string name="display_touch_grid_description">Kosketustestin ruudukko. Vedä koko alueen yli ja aseta useita sormia näytölle samanaikaisesti.</string>
     <string name="display_touch_complete">Viimeistele testi</string>
-    <string name="display_resolution_value">%1$d × %2$d px (%3$s)</string>
-    <string name="display_density_value">%1$d dpi</string>
+    <string name="display_resolution_value">%1$s × %2$s px (%3$s)</string>
+    <string name="display_density_value">%1$s dpi</string>
     <string name="display_refresh_rate_value">%1$s Hz</string>
-    <string name="display_value_ratio">%1$d / %2$d</string>
+    <string name="display_value_ratio">%1$s / %2$s</string>
     <string name="display_resolution_source_window">sovellusikkuna</string>
     <string name="display_resolution_source_mode">näyttötila</string>
     <string name="display_resolution_source_physical">fyysinen mitta</string>
@@ -1077,6 +1078,7 @@
     <string name="biometric_prompt_cancel">Peruuta</string>
 
     <!-- Käyttöoikeudet -->
+    <string name="permission_section_title">Käyttöoikeus</string>
     <string name="permission_status_not_requested">Käyttöoikeutta ei ole pyydetty</string>
     <string name="permission_status_granted">Käyttöoikeus myönnetty</string>
     <string name="permission_status_denied">Käyttöoikeus evätty</string>
