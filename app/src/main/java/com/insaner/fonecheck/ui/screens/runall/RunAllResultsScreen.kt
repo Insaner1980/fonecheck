@@ -2,7 +2,6 @@
 
 package com.insaner.fonecheck.ui.screens.runall
 
-import android.text.format.Formatter
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,7 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -66,6 +65,9 @@ import com.insaner.fonecheck.ui.components.ConfidenceBadge
 import com.insaner.fonecheck.ui.components.InfoRow
 import com.insaner.fonecheck.ui.components.StandardCard
 import com.insaner.fonecheck.ui.components.StatusBadge
+import com.insaner.fonecheck.ui.format.uiFileSize
+import com.insaner.fonecheck.ui.format.uiLanguageLocale
+import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.screens.report.ReportDetailPresentation
 import com.insaner.fonecheck.ui.screens.report.ReportDetailPresenter
 import com.insaner.fonecheck.ui.screens.report.stableCodeFallback
@@ -75,11 +77,9 @@ import com.insaner.fonecheck.ui.theme.Neutral400
 import com.insaner.fonecheck.ui.theme.Red400
 import com.insaner.fonecheck.ui.theme.Yellow400
 import com.insaner.fonecheck.ui.theme.readableStatusColor
-import java.text.NumberFormat
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.util.Locale
 
 enum class ReportResultMode {
     COMPLETED_RUN,
@@ -360,7 +360,7 @@ private fun ReportMetadataCard(
         remember {
             DateTimeFormatter
                 .ofLocalizedDateTime(FormatStyle.MEDIUM)
-                .withLocale(Locale.getDefault())
+                .withLocale(uiLanguageLocale(LocalLocale.current.platformLocale))
                 .withZone(ZoneId.systemDefault())
         }
     val durationSeconds = durationMillis / 1_000L
@@ -557,19 +557,22 @@ private fun evidenceValueLabel(
                 "operations_per_second" ->
                     stringResource(R.string.perf_benchmark_cpu_rate_value, localizedNumber(value.value))
                 "milliseconds" ->
-                    stringResource(R.string.conn_gps_fix_duration_format, value.value / 1_000.0)
-                "bytes" -> Formatter.formatFileSize(LocalContext.current, value.value)
+                    stringResource(
+                        R.string.conn_gps_fix_duration_format,
+                        uiNumber(value.value / 1_000.0, 1, 1),
+                    )
+                "bytes" -> uiFileSize(value.value)
                 else -> localizedNumber(value.value)
             }
         is EvidenceValue.DecimalValue -> localizedNumber(value.value)
         is EvidenceValue.DoubleValue ->
             when (unit?.value) {
-                "celsius" -> stringResource(R.string.run_all_detail_temperature, value.value)
-                "milliamperes" -> stringResource(R.string.batt_value_milliamps, value.value)
-                "ratio" -> stringResource(R.string.thermal_headroom_value, value.value)
+                "celsius" -> stringResource(R.string.run_all_detail_temperature, uiNumber(value.value, 1, 1))
+                "milliamperes" -> stringResource(R.string.batt_value_milliamps, uiNumber(value.value, 1, 1))
+                "ratio" -> stringResource(R.string.thermal_headroom_value, uiNumber(value.value, 2, 2))
                 "percent" -> stringResource(R.string.storage_percent_value, localizedNumber(value.value))
                 "mebibytes_per_second" ->
-                    stringResource(R.string.storage_rate_value, value.value)
+                    stringResource(R.string.storage_rate_value, uiNumber(value.value, 1, 1))
                 else -> localizedNumber(value.value)
             }
 
@@ -577,12 +580,8 @@ private fun evidenceValueLabel(
         is EvidenceValue.StableTextCodeValue -> stableTextLabel(value.value)
     }
 
-private fun localizedNumber(value: Number): String =
-    NumberFormat
-        .getNumberInstance(Locale.getDefault())
-        .apply {
-            maximumFractionDigits = 6
-        }.format(value)
+@Composable
+private fun localizedNumber(value: Number): String = uiNumber(value, maximumFractionDigits = 6, grouping = true)
 
 @Composable
 private fun stableTextLabel(code: String): String =

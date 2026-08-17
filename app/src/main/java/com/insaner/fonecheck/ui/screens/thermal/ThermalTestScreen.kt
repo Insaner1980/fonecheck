@@ -25,6 +25,7 @@ import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.PrimaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
 import java.time.Instant
@@ -137,7 +138,7 @@ private fun ThermalHeadroomSection(state: ThermalTestState) {
             label = stringResource(R.string.thermal_headroom_current),
             value =
                 state.headroom?.takeIf { state.headroomApiSupported }?.let {
-                    stringResource(R.string.thermal_headroom_value, it)
+                    stringResource(R.string.thermal_headroom_value, uiNumber(it, 2, 2))
                 },
             showDivider = false,
         )
@@ -159,7 +160,7 @@ private fun ThermalBatterySection(state: ThermalTestState) {
             label = stringResource(R.string.thermal_battery_temperature),
             value =
                 state.batteryTemperatureCelsius?.let {
-                    stringResource(R.string.batt_value_celsius, it)
+                    stringResource(R.string.batt_value_celsius, uiNumber(it, 1, 1))
                 },
             showDivider = false,
         )

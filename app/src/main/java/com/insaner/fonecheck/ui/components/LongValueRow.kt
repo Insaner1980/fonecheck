@@ -11,6 +11,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
 import com.insaner.fonecheck.ui.theme.contentColor
@@ -34,6 +35,7 @@ fun LongValueRow(
     value: String?,
     modifier: Modifier = Modifier,
     tone: SemanticTone = SemanticTone.NEUTRAL,
+    confidence: Confidence? = null,
     unavailableLabel: String = stringResource(R.string.value_unavailable_short),
     showDivider: Boolean = true,
     onValueLongClick: (() -> Unit)? = null,
@@ -66,10 +68,21 @@ fun LongValueRow(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(top = FonecheckTheme.spacing.xs, bottom = FonecheckTheme.spacing.sm)
+                    .padding(
+                        top = FonecheckTheme.spacing.xs,
+                        bottom = if (confidence == null) FonecheckTheme.spacing.sm else FonecheckTheme.spacing.xs,
+                    )
                     // The break hints are invisible but would still be spelled out, so read the original.
                     .semantics { contentDescription = value ?: unavailableLabel },
         )
+        confidence?.let {
+            Text(
+                text = confidenceLabel(it),
+                style = FonecheckTheme.type.sectionLabel,
+                color = FonecheckTheme.colors.textMuted,
+                modifier = Modifier.padding(bottom = FonecheckTheme.spacing.sm),
+            )
+        }
         if (showDivider) {
             HairlineRule()
         }

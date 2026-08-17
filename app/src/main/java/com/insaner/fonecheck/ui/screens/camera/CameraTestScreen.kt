@@ -57,6 +57,7 @@ import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.ScreenStateCard
 import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.StatusBadge
+import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
 import com.insaner.fonecheck.ui.theme.Green400
 import com.insaner.fonecheck.ui.theme.JetBrainsMono
@@ -295,7 +296,7 @@ private fun CameraPreviewCard(
                     )
                     val mp = (result.width.toLong() * result.height.toLong()) / 1_000_000.0
                     Text(
-                        text = stringResource(R.string.camera_megapixels_value, mp),
+                        text = stringResource(R.string.camera_megapixels_value, uiNumber(mp, 1, 1)),
                         style =
                             MaterialTheme.typography.bodySmall.copy(
                                 fontFamily = JetBrainsMono,

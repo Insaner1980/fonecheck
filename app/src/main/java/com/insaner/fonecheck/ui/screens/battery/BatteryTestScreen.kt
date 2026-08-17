@@ -19,6 +19,7 @@ import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
 
@@ -67,7 +68,10 @@ private fun BasicDetails(
     )
     DataRow(
         label = stringResource(R.string.batt_temperature),
-        value = basic.temperatureCelsius?.let { stringResource(R.string.batt_value_celsius, it) },
+        value =
+            basic.temperatureCelsius?.let {
+                stringResource(R.string.batt_value_celsius, uiNumber(it, 1, 1))
+            },
         tone = batteryTemperatureTone(basic.temperatureCelsius),
     )
     DataRow(
@@ -98,7 +102,7 @@ private fun ChargingDetails(
         label = stringResource(R.string.batt_charging_current),
         value =
             charging.chargingCurrentMa?.let {
-                stringResource(R.string.batt_value_milliamps, it)
+                stringResource(R.string.batt_value_milliamps, uiNumber(it, 1, 1))
             },
         showDivider = charging.chargingCurrentMa == null,
     )

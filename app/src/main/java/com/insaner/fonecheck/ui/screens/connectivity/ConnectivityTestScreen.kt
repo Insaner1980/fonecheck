@@ -36,6 +36,7 @@ import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.SectionBox
 import com.insaner.fonecheck.ui.components.TestScreenContent
 import com.insaner.fonecheck.ui.components.TestSectionCard
+import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
 import com.insaner.fonecheck.ui.theme.Blue400
 import com.insaner.fonecheck.ui.theme.Green400
@@ -491,7 +492,10 @@ private fun GpsDetails(
                     )
                     DetailInfoRow(
                         stringResource(R.string.conn_gps_elapsed),
-                        stringResource(R.string.conn_gps_fix_duration_format, gps.elapsedSearchMs / 1000.0),
+                        stringResource(
+                            R.string.conn_gps_fix_duration_format,
+                            uiNumber(gps.elapsedSearchMs / 1000.0, 1, 1),
+                        ),
                     )
                     DetailInfoRow(
                         stringResource(R.string.conn_gps_satellites_visible),
@@ -521,7 +525,10 @@ private fun GpsDetails(
                     gps.fixTimeMs?.let {
                         DetailInfoRow(
                             stringResource(R.string.conn_gps_fix_time),
-                            stringResource(R.string.conn_gps_fix_duration_format, it / 1000.0),
+                            stringResource(
+                                R.string.conn_gps_fix_duration_format,
+                                uiNumber(it / 1000.0, 1, 1),
+                            ),
                             valueColor =
                                 when {
                                     it < 5000 -> Green400
@@ -533,19 +540,19 @@ private fun GpsDetails(
                     gps.latitude?.let {
                         DetailInfoRow(
                             stringResource(R.string.conn_gps_latitude),
-                            stringResource(R.string.conn_gps_coordinate_format, it),
+                            stringResource(R.string.conn_gps_coordinate_format, uiNumber(it, 6, 6)),
                         )
                     }
                     gps.longitude?.let {
                         DetailInfoRow(
                             stringResource(R.string.conn_gps_longitude),
-                            stringResource(R.string.conn_gps_coordinate_format, it),
+                            stringResource(R.string.conn_gps_coordinate_format, uiNumber(it, 6, 6)),
                         )
                     }
                     gps.accuracy?.let {
                         DetailInfoRow(
                             stringResource(R.string.conn_gps_accuracy),
-                            stringResource(R.string.conn_gps_accuracy_format, it),
+                            stringResource(R.string.conn_gps_accuracy_format, uiNumber(it, 1, 1)),
                             valueColor =
                                 when {
                                     it < 5f -> Green400
@@ -557,13 +564,13 @@ private fun GpsDetails(
                     gps.altitude?.let {
                         DetailInfoRow(
                             stringResource(R.string.conn_gps_altitude),
-                            stringResource(R.string.conn_gps_altitude_format, it),
+                            stringResource(R.string.conn_gps_altitude_format, uiNumber(it, 1, 1)),
                         )
                     }
                     gps.speed?.let {
                         DetailInfoRow(
                             stringResource(R.string.conn_gps_speed),
-                            stringResource(R.string.conn_gps_speed_format, it),
+                            stringResource(R.string.conn_gps_speed_format, uiNumber(it, 1, 1)),
                         )
                     }
                     DetailInfoRow(
@@ -650,7 +657,7 @@ private fun GpsDetails(
                             modifier = Modifier.weight(1f),
                         )
                         Text(
-                            stringResource(R.string.conn_gps_cn0_format, sat.cn0DbHz),
+                            stringResource(R.string.conn_gps_cn0_format, uiNumber(sat.cn0DbHz, 1, 1)),
                             style = MaterialTheme.typography.bodySmall.copy(fontFamily = JetBrainsMono),
                             color =
                                 when {

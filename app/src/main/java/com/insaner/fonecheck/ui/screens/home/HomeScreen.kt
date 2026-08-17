@@ -98,6 +98,7 @@ import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.SegmentedBar
 import com.insaner.fonecheck.ui.components.StatusText
+import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.Lavender80
 import com.insaner.fonecheck.ui.theme.Neutral850
@@ -209,7 +210,7 @@ internal const val HOME_LOADING_INDICATOR_DELAY_MILLIS = 300L
 
 private val homeTimestampFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm", Locale.ROOT)
 
-internal fun homeUiLanguageLocale(locale: Locale): Locale = Locale.forLanguageTag(locale.language)
+internal fun homeUiLanguageLocale(locale: Locale): Locale = uiLanguageLocale(locale)
 
 internal fun formatHomeCompletedAt(
     value: Instant,

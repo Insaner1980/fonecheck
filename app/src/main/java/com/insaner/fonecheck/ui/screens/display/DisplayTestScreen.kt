@@ -54,6 +54,7 @@ import com.insaner.fonecheck.ui.components.ManualResultButtons
 import com.insaner.fonecheck.ui.components.SectionBox
 import com.insaner.fonecheck.ui.components.TestScreenContent
 import com.insaner.fonecheck.ui.components.TestSectionCard
+import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.theme.Blue400
 import com.insaner.fonecheck.ui.theme.Green400
 import com.insaner.fonecheck.ui.theme.Neutral500
@@ -219,7 +220,7 @@ private fun DisplayInfoDetails(info: DisplayInfoState) {
         )
         DetailInfoRow(
             stringResource(R.string.display_refresh_rate),
-            stringResource(R.string.display_refresh_rate_value, info.refreshRate),
+            stringResource(R.string.display_refresh_rate_value, uiNumber(info.refreshRate)),
         )
         DetailInfoRow(
             stringResource(R.string.display_hdr),

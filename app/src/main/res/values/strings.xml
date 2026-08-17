@@ -96,7 +96,7 @@
     <string name="perf_benchmark_cpu_rate">CPU throughput</string>
     <string name="perf_benchmark_cpu_rate_value">%1$s operations/s</string>
     <string name="perf_benchmark_memory_rate">Memory throughput</string>
-    <string name="perf_benchmark_memory_rate_value">%1$.1f MiB/s</string>
+    <string name="perf_benchmark_memory_rate_value">%1$s MiB/s</string>
     <string name="perf_benchmark_workload">Memory processed</string>
     <string name="perf_benchmark_workload_value">%1$d MiB</string>
     <string name="perf_benchmark_duration">Measured duration</string>
@@ -177,7 +177,7 @@
     <string name="audio_stop_recording">Stop Recording</string>
     <string name="audio_playback">Play Back</string>
     <string name="audio_level">Relative input level</string>
-    <string name="audio_relative_level_value">%.0f%%</string>
+    <string name="audio_relative_level_value">%1$s%%</string>
     <string name="audio_relative_level_disclaimer">Relative PCM amplitude only, not a calibrated sound-pressure or loudness measurement. Recorded audio stays in memory and is discarded when the test closes.</string>
     <string name="audio_manual_confirmation">Confirm what you heard. Device detection alone cannot verify audible output.</string>
     <string name="audio_manual_problem">Problem heard</string>
@@ -236,7 +236,7 @@
     <string name="camera_af_continuous_picture">Continuous picture</string>
     <string name="camera_af_edof">Extended depth of field</string>
     <string name="camera_dimensions_value">%1$d × %2$d</string>
-    <string name="camera_megapixels_value">%1$.1f MP</string>
+    <string name="camera_megapixels_value">%1$s MP</string>
     <string name="camera_show_technical_details">Show technical details</string>
     <string name="camera_hide_technical_details">Hide technical details</string>
     <string name="camera_capabilities_title">Camera %1$s capabilities</string>
@@ -291,7 +291,7 @@
     <string name="sensor_unit_pressure">hPa</string>
     <string name="sensor_unit_steps">steps</string>
     <string name="sensor_version_format">v%1$d</string>
-    <string name="sensor_power_format">%1$.2f mA</string>
+    <string name="sensor_power_format">%1$s mA</string>
     <string name="sensor_delay_format">%1$d µs</string>
     <string name="sensor_type_accelerometer">Accelerometer</string>
     <string name="sensor_type_gyroscope">Gyroscope</string>
@@ -390,13 +390,13 @@
     <string name="conn_gps_privacy_ephemeral">Exact location is shown only on this screen and is not saved in the report.</string>
     <string name="conn_gps_elapsed">Elapsed</string>
     <string name="conn_gps_fix_time">Fix Time</string>
-    <string name="conn_gps_fix_duration_format">%1$.1f s</string>
-    <string name="conn_gps_coordinate_format">%1$.6f°</string>
-    <string name="conn_gps_accuracy_format">±%1$.1f m</string>
-    <string name="conn_gps_altitude_format">%1$.1f m</string>
-    <string name="conn_gps_speed_format">%1$.1f m/s</string>
+    <string name="conn_gps_fix_duration_format">%1$s s</string>
+    <string name="conn_gps_coordinate_format">%1$s°</string>
+    <string name="conn_gps_accuracy_format">±%1$s m</string>
+    <string name="conn_gps_altitude_format">%1$s m</string>
+    <string name="conn_gps_speed_format">%1$s m/s</string>
     <string name="conn_gps_satellite_ratio">%1$d / %2$d</string>
-    <string name="conn_gps_cn0_format">%1$.1f</string>
+    <string name="conn_gps_cn0_format">%1$s</string>
     <string name="conn_gps_latitude">Latitude</string>
     <string name="conn_gps_longitude">Longitude</string>
     <string name="conn_gps_accuracy">Accuracy</string>
@@ -450,7 +450,7 @@
     <string name="batt_technology">Technology</string>
     <string name="batt_value_percent">%1$d%%</string>
     <string name="batt_value_millivolts">%1$d mV</string>
-    <string name="batt_value_celsius">%1$.1f °C</string>
+    <string name="batt_value_celsius">%1$s °C</string>
 
     <!-- Health statuses -->
     <string name="batt_health_good">Good</string>
@@ -465,7 +465,7 @@
     <string name="batt_charging_status">Status</string>
     <string name="batt_plug_type">Plug Type</string>
     <string name="batt_charging_current">Current</string>
-    <string name="batt_value_milliamps">%1$.1f mA</string>
+    <string name="batt_value_milliamps">%1$s mA</string>
     <string name="batt_current_direction">Direction</string>
     <string name="batt_current_interpretation">Current interpretation</string>
     <string name="batt_current_direction_charging">Charging</string>
@@ -521,7 +521,7 @@
     <string name="thermal_listener_failed">Live thermal monitoring could not be started.</string>
     <string name="thermal_headroom_title">Thermal headroom</string>
     <string name="thermal_headroom_current">Current estimate</string>
-    <string name="thermal_headroom_value">%1$.2f</string>
+    <string name="thermal_headroom_value">%1$s</string>
     <string name="thermal_headroom_requires_api30">Requires Android 11+</string>
     <string name="thermal_headroom_note">A value of 1.0 is the device’s severe-throttling threshold. This unitless estimate is not a temperature and may be unavailable on supported Android versions.</string>
     <string name="thermal_battery_title">Battery temperature</string>
@@ -567,7 +567,7 @@
     <string name="storage_benchmark_cleanup_error">The benchmark completed, but Android could not confirm deletion of the temporary file.</string>
     <string name="storage_benchmark_write_rate">Sequential write</string>
     <string name="storage_benchmark_read_rate">Sequential read</string>
-    <string name="storage_rate_value">%1$.1f MiB/s</string>
+    <string name="storage_rate_value">%1$s MiB/s</string>
     <string name="storage_benchmark_data_size">Data size</string>
     <string name="storage_benchmark_buffer_size">Buffer size</string>
     <string name="storage_benchmark_duration">Measured duration</string>
@@ -906,7 +906,7 @@
     <string name="run_all_check_headphones">Connected headphones</string>
     <string name="run_all_check_motion_sensor">Motion response</string>
     <string name="run_all_check_volume_buttons">Volume buttons</string>
-    <string name="run_all_detail_temperature">%1$.1f °C</string>
+    <string name="run_all_detail_temperature">%1$s °C</string>
     <string name="run_all_permission_missing">Permission was not granted</string>
     <string name="run_all_manual_failed">User reported a problem</string>
     <string name="run_all_manual_skipped">Interactive check was skipped</string>
@@ -977,7 +977,7 @@
     <string name="display_touch_complete">Complete test</string>
     <string name="display_resolution_value">%1$d × %2$d px (%3$s)</string>
     <string name="display_density_value" tools:ignore="PluralsCandidate">%1$d dpi</string>
-    <string name="display_refresh_rate_value">%1$.0f Hz</string>
+    <string name="display_refresh_rate_value">%1$s Hz</string>
     <string name="display_value_ratio">%1$d / %2$d</string>
     <string name="display_resolution_source_window">app window</string>
     <string name="display_resolution_source_mode">display mode</string>

@@ -126,6 +126,23 @@ The visual foundation is previewable in isolation: `app/src/debug/.../ui/preview
 is a light and dark specimen sheet of every component above. It lives in the debug source set and
 never reaches a release build.
 
+## Diagnostic screen presentation conventions
+
+- A large `HeadlineReadout` is a claim about the category's headline truth. Omit it when no single
+  measured value carries that weight honestly; never add one only for visual consistency.
+- Format every displayed number through `uiNumber` or `uiFileSize`. These use the UI language only,
+  so a regional device preference cannot change the decimal separator of an English or Finnish UI.
+- Measured and Android-reported values are neutral. Apply a `SemanticTone` only when the app is
+  presenting an actual verdict, warning or failure.
+- Never truncate a measured value. Use `LongValueRow` for long row values and allow
+  `HeadlineReadout` context to continue on another line.
+- Put the snapshot-wide `CaptureTimestamp` at the bottom of the screen. A time that belongs only to
+  one measurement remains with that measurement, not in a section header.
+- Put per-row confidence inside that `DataRow` or `LongValueRow`; put section-wide confidence in the
+  `SectionHeader` trailing slot. Never show the same confidence in both places.
+- Register refresh with `RegisterRefreshTopBarAction`. Bottom-screen buttons are reserved for the
+  screen's workflow actions, not snapshot refresh.
+
 ## Code Review Triggers
 `CODE_REVIEW.md` contains tagged review items. Check relevant items at these trigger points:
 - **When editing a file**: check for `NEXT TOUCH` items mentioning that file

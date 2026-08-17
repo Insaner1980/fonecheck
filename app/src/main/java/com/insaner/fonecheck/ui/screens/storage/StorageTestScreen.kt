@@ -1,6 +1,5 @@
 package com.insaner.fonecheck.ui.screens.storage
 
-import android.text.format.Formatter
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,7 +10,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
@@ -28,9 +26,10 @@ import com.insaner.fonecheck.ui.components.PrimaryButton
 import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.StatusText
+import com.insaner.fonecheck.ui.format.uiFileSize
+import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
-import java.text.NumberFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -105,11 +104,10 @@ fun StorageTestScreen(
 
 @Composable
 private fun StorageOverviewSection(info: StorageInfo) {
-    val context = LocalContext.current
     val usagePercent = info.usagePercent
-    val total = Formatter.formatFileSize(context, info.totalBytes)
-    val used = Formatter.formatFileSize(context, info.usedBytes)
-    val available = Formatter.formatFileSize(context, info.availableBytes)
+    val total = uiFileSize(info.totalBytes)
+    val used = uiFileSize(info.usedBytes)
+    val available = uiFileSize(info.availableBytes)
 
     StorageSection(
         label = stringResource(R.string.storage_overview_title),
@@ -117,7 +115,7 @@ private fun StorageOverviewSection(info: StorageInfo) {
     ) {
         if (usagePercent != null) {
             HeadlineReadout(
-                value = numberFormat().format(usagePercent),
+                value = uiNumber(usagePercent, maximumFractionDigits = 1),
                 unit = stringResource(R.string.storage_percent_value, "").trim(),
                 rawValues = stringResource(R.string.storage_usage_context, used, available, total),
                 modifier = Modifier.padding(vertical = FonecheckTheme.spacing.md),
@@ -140,7 +138,6 @@ private fun StorageOverviewSection(info: StorageInfo) {
 
 @Composable
 private fun StorageVolumesSection(volumes: List<AppStorageVolumeInfo>) {
-    val context = LocalContext.current
     StorageSection(label = stringResource(R.string.storage_volumes_title)) {
         if (volumes.isEmpty()) {
             Note(stringResource(R.string.storage_no_shared_volumes))
@@ -162,11 +159,11 @@ private fun StorageVolumesSection(volumes: List<AppStorageVolumeInfo>) {
                 )
                 DataRow(
                     label = stringResource(R.string.storage_total),
-                    value = volume.totalBytes?.let { Formatter.formatFileSize(context, it) },
+                    value = volume.totalBytes?.let { uiFileSize(it) },
                 )
                 DataRow(
                     label = stringResource(R.string.storage_available),
-                    value = volume.availableBytes?.let { Formatter.formatFileSize(context, it) },
+                    value = volume.availableBytes?.let { uiFileSize(it) },
                 )
             }
         }
@@ -244,28 +241,27 @@ private fun StorageBenchmarkSection(
 
 @Composable
 private fun StorageBenchmarkRows(result: StorageBenchmarkResult) {
-    val context = LocalContext.current
     DataRow(
         label = stringResource(R.string.storage_benchmark_write_rate),
         value =
             result.writeMebibytesPerSecond?.let {
-                stringResource(R.string.storage_rate_value, it)
+                stringResource(R.string.storage_rate_value, uiNumber(it, 1, 1))
             },
     )
     DataRow(
         label = stringResource(R.string.storage_benchmark_read_rate),
         value =
             result.readMebibytesPerSecond?.let {
-                stringResource(R.string.storage_rate_value, it)
+                stringResource(R.string.storage_rate_value, uiNumber(it, 1, 1))
             },
     )
     DataRow(
         stringResource(R.string.storage_benchmark_data_size),
-        Formatter.formatFileSize(context, result.dataSizeBytes),
+        uiFileSize(result.dataSizeBytes),
     )
     DataRow(
         stringResource(R.string.storage_benchmark_buffer_size),
-        Formatter.formatFileSize(context, result.bufferSizeBytes.toLong()),
+        uiFileSize(result.bufferSizeBytes.toLong()),
     )
     DataRow(
         stringResource(R.string.storage_benchmark_duration),
@@ -294,14 +290,13 @@ private fun StorageBenchmarkRows(result: StorageBenchmarkResult) {
 
 @Composable
 private fun StorageBenchmarkConditions(result: StorageBenchmarkResult) {
-    val context = LocalContext.current
     DataRow(
         stringResource(R.string.storage_benchmark_required_space),
-        Formatter.formatFileSize(context, result.dataSizeBytes),
+        uiFileSize(result.dataSizeBytes),
     )
     DataRow(
         stringResource(R.string.storage_benchmark_available_before),
-        Formatter.formatFileSize(context, result.availableBeforeBytes.coerceAtLeast(0L)),
+        uiFileSize(result.availableBeforeBytes.coerceAtLeast(0L)),
     )
     if (!result.cleanupSucceeded) {
         DataRow(
@@ -364,12 +359,6 @@ private fun storageStateLabel(stateCode: String): String =
             else -> R.string.storage_state_unavailable
         },
     )
-
-private fun numberFormat(): NumberFormat =
-    NumberFormat.getNumberInstance().apply {
-        maximumFractionDigits = 1
-        minimumFractionDigits = 0
-    }
 
 private val measurementTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm", Locale.ROOT)
 

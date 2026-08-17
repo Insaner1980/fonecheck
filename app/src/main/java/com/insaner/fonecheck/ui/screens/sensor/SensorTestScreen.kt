@@ -49,6 +49,8 @@ import com.insaner.fonecheck.ui.components.DetailInfoRow
 import com.insaner.fonecheck.ui.components.ScreenStateCard
 import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.TestScreenContent
+import com.insaner.fonecheck.ui.format.uiNumber
+import com.insaner.fonecheck.ui.format.uiScientificNumber
 import com.insaner.fonecheck.ui.theme.Blue400
 import com.insaner.fonecheck.ui.theme.Green400
 import com.insaner.fonecheck.ui.theme.JetBrainsMono
@@ -367,7 +369,7 @@ private fun SensorInfoSection(sensorInfo: SensorInfo) {
         DetailInfoRow(stringResource(R.string.sensor_max_range), formatSensorValue(sensorInfo.maxRange))
         DetailInfoRow(
             stringResource(R.string.sensor_power),
-            stringResource(R.string.sensor_power_format, sensorInfo.power),
+            stringResource(R.string.sensor_power_format, uiNumber(sensorInfo.power, 2, 2)),
         )
         DetailInfoRow(
             stringResource(R.string.sensor_min_delay),
@@ -514,12 +516,13 @@ private fun GuidedSensorStatus.color() =
         GuidedSensorStatus.NOT_AVAILABLE -> Neutral500
     }
 
+@Composable
 private fun formatSensorValue(value: Float): String =
     when {
         value == 0f -> "0"
-        value == value.toLong().toFloat() && kotlin.math.abs(value) < 1_000_000 -> value.toLong().toString()
-        kotlin.math.abs(value) >= 1000 -> "%.1f".format(value)
-        kotlin.math.abs(value) >= 1 -> "%.3f".format(value)
-        kotlin.math.abs(value) >= 0.001f -> "%.5f".format(value)
-        else -> "%.2e".format(value)
+        value == value.toLong().toFloat() && kotlin.math.abs(value) < 1_000_000 -> uiNumber(value.toLong())
+        kotlin.math.abs(value) >= 1000 -> uiNumber(value, 1, 1)
+        kotlin.math.abs(value) >= 1 -> uiNumber(value, 3, 3)
+        kotlin.math.abs(value) >= 0.001f -> uiNumber(value, 5, 5)
+        else -> uiScientificNumber(value, 2)
     }

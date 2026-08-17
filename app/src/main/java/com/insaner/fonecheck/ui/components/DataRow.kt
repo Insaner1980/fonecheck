@@ -15,6 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
 import com.insaner.fonecheck.ui.theme.contentColor
@@ -45,6 +46,7 @@ fun DataRow(
     value: String?,
     modifier: Modifier = Modifier,
     tone: SemanticTone = SemanticTone.NEUTRAL,
+    confidence: Confidence? = null,
     unavailableLabel: String = stringResource(R.string.value_unavailable_short),
     showDivider: Boolean = true,
     onValueLongClick: (() -> Unit)? = null,
@@ -73,15 +75,28 @@ fun DataRow(
                 modifier = Modifier.widthIn(max = FonecheckTheme.spacing.rowLabelMaxWidth),
             )
             Spacer(modifier = Modifier.width(FonecheckTheme.spacing.md))
-            Text(
-                text = value ?: unavailableLabel,
-                style = FonecheckTheme.type.rowValue,
-                color = if (value == null) FonecheckTheme.colors.textMuted else tone.contentColor(),
-                textAlign = TextAlign.End,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+            Column(
+                horizontalAlignment = Alignment.End,
                 modifier = Modifier.weight(1f),
-            )
+            ) {
+                Text(
+                    text = value ?: unavailableLabel,
+                    style = FonecheckTheme.type.rowValue,
+                    color = if (value == null) FonecheckTheme.colors.textMuted else tone.contentColor(),
+                    textAlign = TextAlign.End,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                confidence?.let {
+                    Text(
+                        text = confidenceLabel(it),
+                        style = FonecheckTheme.type.sectionLabel,
+                        color = FonecheckTheme.colors.textMuted,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.padding(top = FonecheckTheme.spacing.xs),
+                    )
+                }
+            }
         }
         if (showDivider) {
             HairlineRule()

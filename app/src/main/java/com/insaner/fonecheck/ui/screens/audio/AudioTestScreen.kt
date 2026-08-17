@@ -53,6 +53,7 @@ import com.insaner.fonecheck.ui.components.InfoRow
 import com.insaner.fonecheck.ui.components.ManualResultButtons
 import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.StatusBadge
+import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
 import com.insaner.fonecheck.ui.theme.Blue400
 import com.insaner.fonecheck.ui.theme.Green400
@@ -336,7 +337,11 @@ private fun MicrophoneTestCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
-                        text = stringResource(R.string.audio_relative_level_value, state.relativeInputLevel * 100f),
+                        text =
+                            stringResource(
+                                R.string.audio_relative_level_value,
+                                uiNumber(state.relativeInputLevel * 100f),
+                            ),
                         style =
                             MaterialTheme.typography.bodySmall.copy(
                                 fontFamily = JetBrainsMono,

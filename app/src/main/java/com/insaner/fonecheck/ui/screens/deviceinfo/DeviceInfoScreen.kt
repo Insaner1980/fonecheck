@@ -12,15 +12,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -32,19 +26,20 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.DeviceInfo
 import com.insaner.fonecheck.ui.TopBarAction
+import com.insaner.fonecheck.ui.components.CaptureTimestamp
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.PrimaryButton
-import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.components.RegisterRefreshTopBarAction
 import com.insaner.fonecheck.ui.components.SecondaryButton
+import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.components.formatCaptureTimestamp
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
 import java.time.Instant
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @Composable
 fun DeviceInfoScreen(
@@ -100,22 +95,12 @@ internal fun RegisterDeviceTopBarAction(
     onRefresh: () -> Unit,
     onTopBarActionChange: (TopBarAction?) -> Unit,
 ) {
-    val currentActionChange by rememberUpdatedState(onTopBarActionChange)
-    val currentRefresh by rememberUpdatedState(onRefresh)
-    val action =
-        remember(enabled) {
-            TopBarAction(
-                icon = Icons.Default.Refresh,
-                contentDescriptionResId = R.string.device_refresh,
-                enabled = enabled,
-                onClick = { currentRefresh() },
-            )
-        }
-
-    SideEffect { currentActionChange(action) }
-    DisposableEffect(Unit) {
-        onDispose { currentActionChange(null) }
-    }
+    RegisterRefreshTopBarAction(
+        contentDescriptionResId = R.string.device_refresh,
+        enabled = enabled,
+        onRefresh = onRefresh,
+        onTopBarActionChange = onTopBarActionChange,
+    )
 }
 
 @Composable
@@ -171,15 +156,7 @@ internal fun DeviceInfoContent(
                     modifier = Modifier.weight(1f),
                 )
             }
-            Text(
-                text = stringResource(R.string.device_captured_at, formatCapturedAt(info.capturedAt)),
-                style = FonecheckTheme.type.rowValue,
-                color = FonecheckTheme.colors.textMuted,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = FonecheckTheme.spacing.xs, bottom = FonecheckTheme.spacing.sm),
-            )
+            CaptureTimestamp(info.capturedAt)
         }
     }
 }
@@ -389,9 +366,7 @@ internal fun splitConcatenatedDeviceIdentifiers(value: String?): String? {
     return value
 }
 
-private val capturedAtFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm", Locale.ROOT)
-
 internal fun formatCapturedAt(
     value: Instant,
     zoneId: ZoneId = ZoneId.systemDefault(),
-): String = capturedAtFormatter.withZone(zoneId).format(value)
+): String = formatCaptureTimestamp(value, zoneId)

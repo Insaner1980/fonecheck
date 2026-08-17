@@ -92,7 +92,7 @@
     <string name="perf_benchmark_cpu_rate">CPU-suoritusteho</string>
     <string name="perf_benchmark_cpu_rate_value">%1$s operaatiota/s</string>
     <string name="perf_benchmark_memory_rate">Muistin läpimeno</string>
-    <string name="perf_benchmark_memory_rate_value">%1$.1f MiB/s</string>
+    <string name="perf_benchmark_memory_rate_value">%1$s MiB/s</string>
     <string name="perf_benchmark_workload">Käsitelty muisti</string>
     <string name="perf_benchmark_workload_value">%1$d MiB</string>
     <string name="perf_benchmark_duration">Mitattu kesto</string>
@@ -173,7 +173,7 @@
     <string name="audio_stop_recording">Lopeta nauhoitus</string>
     <string name="audio_playback">Toista</string>
     <string name="audio_level">Suhteellinen tulotaso</string>
-    <string name="audio_relative_level_value">%.0f%%</string>
+    <string name="audio_relative_level_value">%1$s%%</string>
     <string name="audio_relative_level_disclaimer">Vain suhteellinen PCM-amplitudi, ei kalibroitu äänenpaine- tai äänekkyysmittaus. Tallenne säilyy vain muistissa ja poistetaan testin sulkeutuessa.</string>
     <string name="audio_manual_confirmation">Vahvista kuulemasi. Laitetunnistus ei yksin todista kuuluvaa ääntä.</string>
     <string name="audio_manual_problem">Kuulin ongelman</string>
@@ -232,7 +232,7 @@
     <string name="camera_af_continuous_picture">Jatkuva kuva</string>
     <string name="camera_af_edof">Laajennettu syväterävyys</string>
     <string name="camera_dimensions_value">%1$d × %2$d</string>
-    <string name="camera_megapixels_value">%1$.1f MP</string>
+    <string name="camera_megapixels_value">%1$s MP</string>
     <string name="camera_show_technical_details">Näytä tekniset tiedot</string>
     <string name="camera_hide_technical_details">Piilota tekniset tiedot</string>
     <string name="camera_capabilities_title">Kameran %1$s ominaisuudet</string>
@@ -287,7 +287,7 @@
     <string name="sensor_unit_pressure">hPa</string>
     <string name="sensor_unit_steps">askelta</string>
     <string name="sensor_version_format">v%1$d</string>
-    <string name="sensor_power_format">%1$.2f mA</string>
+    <string name="sensor_power_format">%1$s mA</string>
     <string name="sensor_delay_format">%1$d µs</string>
     <string name="sensor_type_accelerometer">Kiihtyvyysanturi</string>
     <string name="sensor_type_gyroscope">Gyroskooppi</string>
@@ -386,13 +386,13 @@
     <string name="conn_gps_privacy_ephemeral">Tarkka sijainti näkyy vain tässä näkymässä eikä sitä tallenneta raporttiin.</string>
     <string name="conn_gps_elapsed">Kulunut aika</string>
     <string name="conn_gps_fix_time">Lukitusaika</string>
-    <string name="conn_gps_fix_duration_format">%1$.1f s</string>
-    <string name="conn_gps_coordinate_format">%1$.6f°</string>
-    <string name="conn_gps_accuracy_format">±%1$.1f m</string>
-    <string name="conn_gps_altitude_format">%1$.1f m</string>
-    <string name="conn_gps_speed_format">%1$.1f m/s</string>
+    <string name="conn_gps_fix_duration_format">%1$s s</string>
+    <string name="conn_gps_coordinate_format">%1$s°</string>
+    <string name="conn_gps_accuracy_format">±%1$s m</string>
+    <string name="conn_gps_altitude_format">%1$s m</string>
+    <string name="conn_gps_speed_format">%1$s m/s</string>
     <string name="conn_gps_satellite_ratio">%1$d / %2$d</string>
-    <string name="conn_gps_cn0_format">%1$.1f</string>
+    <string name="conn_gps_cn0_format">%1$s</string>
     <string name="conn_gps_latitude">Leveysaste</string>
     <string name="conn_gps_longitude">Pituusaste</string>
     <string name="conn_gps_accuracy">Tarkkuus</string>
@@ -442,7 +442,7 @@
     <string name="batt_technology">Teknologia</string>
     <string name="batt_value_percent">%1$d%%</string>
     <string name="batt_value_millivolts">%1$d mV</string>
-    <string name="batt_value_celsius">%1$.1f °C</string>
+    <string name="batt_value_celsius">%1$s °C</string>
 
     <!-- Health statuses -->
     <string name="batt_health_good">Hyvä</string>
@@ -457,7 +457,7 @@
     <string name="batt_charging_status">Tila</string>
     <string name="batt_plug_type">Liitäntätyyppi</string>
     <string name="batt_charging_current">Virta</string>
-    <string name="batt_value_milliamps">%1$.1f mA</string>
+    <string name="batt_value_milliamps">%1$s mA</string>
     <string name="batt_current_direction">Suunta</string>
     <string name="batt_current_interpretation">Virran tulkinta</string>
     <string name="batt_current_direction_charging">Lataa</string>
@@ -513,7 +513,7 @@
     <string name="thermal_listener_failed">Reaaliaikaista lämpötilanhallinnan seurantaa ei voitu käynnistää.</string>
     <string name="thermal_headroom_title">Lämpötilanhallinnan headroom</string>
     <string name="thermal_headroom_current">Tämänhetkinen arvio</string>
-    <string name="thermal_headroom_value">%1$.2f</string>
+    <string name="thermal_headroom_value">%1$s</string>
     <string name="thermal_headroom_requires_api30">Vaatii Android 11+</string>
     <string name="thermal_headroom_note">Arvo 1,0 on laitteen voimakkaan rajoituksen kynnys. Tämä yksikötön arvio ei ole lämpötila, eikä sitä välttämättä saada tuetullakaan Android-versiolla.</string>
     <string name="thermal_battery_title">Akun lämpötila</string>
@@ -559,7 +559,7 @@
     <string name="storage_benchmark_cleanup_error">Testi valmistui, mutta Android ei voinut vahvistaa väliaikaistiedoston poistamista.</string>
     <string name="storage_benchmark_write_rate">Peräkkäinen kirjoitus</string>
     <string name="storage_benchmark_read_rate">Peräkkäinen luku</string>
-    <string name="storage_rate_value">%1$.1f MiB/s</string>
+    <string name="storage_rate_value">%1$s MiB/s</string>
     <string name="storage_benchmark_data_size">Tietomäärä</string>
     <string name="storage_benchmark_buffer_size">Puskurin koko</string>
     <string name="storage_benchmark_duration">Mitattu kesto</string>
@@ -898,7 +898,7 @@
     <string name="run_all_check_headphones">Liitetyt kuulokkeet</string>
     <string name="run_all_check_motion_sensor">Liikevaste</string>
     <string name="run_all_check_volume_buttons">Äänenvoimakkuuspainikkeet</string>
-    <string name="run_all_detail_temperature">%1$.1f °C</string>
+    <string name="run_all_detail_temperature">%1$s °C</string>
     <string name="run_all_permission_missing">Oikeutta ei myönnetty</string>
     <string name="run_all_manual_failed">Käyttäjä ilmoitti ongelmasta</string>
     <string name="run_all_manual_skipped">Vuorovaikutteinen tarkistus ohitettiin</string>
@@ -969,7 +969,7 @@
     <string name="display_touch_complete">Viimeistele testi</string>
     <string name="display_resolution_value">%1$d × %2$d px (%3$s)</string>
     <string name="display_density_value">%1$d dpi</string>
-    <string name="display_refresh_rate_value">%1$.0f Hz</string>
+    <string name="display_refresh_rate_value">%1$s Hz</string>
     <string name="display_value_ratio">%1$d / %2$d</string>
     <string name="display_resolution_source_window">sovellusikkuna</string>
     <string name="display_resolution_source_mode">näyttötila</string>

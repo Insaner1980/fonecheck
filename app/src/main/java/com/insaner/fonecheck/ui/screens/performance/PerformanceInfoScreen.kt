@@ -1,6 +1,5 @@
 package com.insaner.fonecheck.ui.screens.performance
 
-import android.text.format.Formatter
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,7 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -34,9 +32,10 @@ import com.insaner.fonecheck.ui.components.InfoCard
 import com.insaner.fonecheck.ui.components.InfoRow
 import com.insaner.fonecheck.ui.components.ScreenStateCard
 import com.insaner.fonecheck.ui.components.ScreenStateType
+import com.insaner.fonecheck.ui.format.uiFileSize
+import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.theme.JetBrainsMono
 import com.insaner.fonecheck.ui.theme.Neutral600
-import java.text.NumberFormat
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -119,18 +118,17 @@ private fun CpuInfoCard(info: PerformanceInfo) {
 
 @Composable
 private fun RamInfoCard(info: PerformanceInfo) {
-    val context = LocalContext.current
     InfoCard(
         title = stringResource(R.string.perf_ram_title),
         confidence = info.ramConfidence,
     ) {
         InfoRow(
             stringResource(R.string.perf_ram_total),
-            info.totalRamBytes?.let { Formatter.formatFileSize(context, it) } ?: performanceUnavailable(),
+            info.totalRamBytes?.let { uiFileSize(it) } ?: performanceUnavailable(),
         )
         InfoRow(
             stringResource(R.string.perf_ram_available),
-            info.availableRamBytes?.let { Formatter.formatFileSize(context, it) } ?: performanceUnavailable(),
+            info.availableRamBytes?.let { uiFileSize(it) } ?: performanceUnavailable(),
         )
     }
 }
@@ -220,15 +218,17 @@ private fun BenchmarkCard(
 
 @Composable
 private fun BenchmarkResultRows(result: PerformanceBenchmarkResult) {
-    val numberFormat = NumberFormat.getIntegerInstance()
     InfoRow(
         stringResource(R.string.perf_benchmark_cpu_rate),
-        stringResource(R.string.perf_benchmark_cpu_rate_value, numberFormat.format(result.cpuOperationsPerSecond)),
+        stringResource(
+            R.string.perf_benchmark_cpu_rate_value,
+            uiNumber(result.cpuOperationsPerSecond, grouping = true),
+        ),
     )
     InfoRow(
         stringResource(R.string.perf_benchmark_memory_rate),
         result.memoryMebibytesPerSecond?.let {
-            stringResource(R.string.perf_benchmark_memory_rate_value, it)
+            stringResource(R.string.perf_benchmark_memory_rate_value, uiNumber(it, 1, 1))
         } ?: performanceUnavailable(),
     )
     InfoRow(
