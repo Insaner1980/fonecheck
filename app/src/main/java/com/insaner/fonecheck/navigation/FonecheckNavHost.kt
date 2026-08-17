@@ -14,6 +14,7 @@ import androidx.navigation.toRoute
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.data.preferences.AppPreferences
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
+import com.insaner.fonecheck.ui.TopBarAction
 import com.insaner.fonecheck.ui.screens.audio.AudioTestScreen
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestScreen
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestScreen
@@ -43,6 +44,7 @@ fun FonecheckNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     onDisplayFullscreenChange: (Boolean) -> Unit = {},
+    onTopBarActionChange: (TopBarAction?) -> Unit = {},
     appPreferences: AppPreferences = AppPreferences(),
 ) {
     NavHost(
@@ -57,7 +59,7 @@ fun FonecheckNavHost(
             )
         }
         composable<DeviceInfo> {
-            DeviceInfoScreen()
+            DeviceInfoScreen(onTopBarActionChange = onTopBarActionChange)
         }
         composable<PerformanceInfo> {
             PerformanceInfoScreen()

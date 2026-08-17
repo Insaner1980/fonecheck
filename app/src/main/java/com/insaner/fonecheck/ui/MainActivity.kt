@@ -148,6 +148,7 @@ class MainActivity : FragmentActivity() {
         val currentDestination = backStackEntry?.destination
         val currentRoute = currentDestination?.route
         var isDisplayFullscreen by remember { mutableStateOf(false) }
+        var topBarAction by remember(currentRoute) { mutableStateOf<TopBarAction?>(null) }
         val navigationChrome = navigationChromeFor(currentDestination)
 
         LaunchedEffect(currentRoute) { isDisplayFullscreen = false }
@@ -174,6 +175,19 @@ class MainActivity : FragmentActivity() {
                                 }
                             }
                         },
+                        actions = {
+                            topBarAction?.let { action ->
+                                IconButton(
+                                    enabled = action.enabled,
+                                    onClick = action.onClick,
+                                ) {
+                                    Icon(
+                                        imageVector = action.icon,
+                                        contentDescription = stringResource(action.contentDescriptionResId),
+                                    )
+                                }
+                            }
+                        },
                         colors =
                             TopAppBarDefaults.topAppBarColors(
                                 containerColor = MaterialTheme.colorScheme.surface,
@@ -189,6 +203,7 @@ class MainActivity : FragmentActivity() {
                 modifier =
                     if (isDisplayFullscreen) Modifier.fillMaxSize() else Modifier.padding(innerPadding),
                 onDisplayFullscreenChange = { isDisplayFullscreen = it },
+                onTopBarActionChange = { topBarAction = it },
             )
         }
     }

@@ -28,6 +28,9 @@ import com.insaner.fonecheck.ui.theme.contentColor
  * is a plain "n/a"; a screen that knows a more accurate word passes its own, and a [Note] underneath
  * gives the reason.
  *
+ * [onValueLongClick] makes the full row a long-press target only when [value] is present. The
+ * optional interaction preserves the default non-interactive behavior on existing screens.
+ *
  * The label takes the width its own text needs and the value takes the rest of the row, so a short
  * label leaves more room for a long value. The label wraps once it reaches
  * `FonecheckTheme.spacing.rowLabelMaxWidth`, which is what keeps a minimum width for the value.
@@ -44,8 +47,18 @@ fun DataRow(
     tone: SemanticTone = SemanticTone.NEUTRAL,
     unavailableLabel: String = stringResource(R.string.value_unavailable_short),
     showDivider: Boolean = true,
+    onValueLongClick: (() -> Unit)? = null,
+    longClickLabel: String = stringResource(R.string.copy_value_action),
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .valueLongPress(
+                    label = longClickLabel,
+                    onLongPress = onValueLongClick.takeIf { value != null },
+                ),
+    ) {
         Row(
             modifier =
                 Modifier

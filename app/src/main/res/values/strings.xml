@@ -11,6 +11,7 @@
     <!-- Default short label for a measured value the app could not read. Rows that know a more
          accurate word (for example "restricted") pass their own. -->
     <string name="value_unavailable_short">n/a</string>
+    <string name="copy_value_action">Copy value</string>
 
     <!-- Device Info Screen -->
     <string name="device_info_title">Device</string>
@@ -48,6 +49,11 @@
     <string name="device_developer_options_note">Developer options matter only when their advanced settings are used.</string>
     <string name="label_usb_debugging">USB debugging</string>
     <string name="device_usb_debugging_note">USB debugging matters when the device is connected to a computer authorized for debugging.</string>
+    <string name="device_clipboard_label">Device snapshot</string>
+    <string name="device_copied_confirmation">Copied to clipboard</string>
+    <string name="device_copy_all">Copy all</string>
+    <string name="device_export">Export</string>
+    <string name="device_share_title">Export device snapshot</string>
 
     <string name="status_yes">Yes</string>
     <string name="status_no">No</string>

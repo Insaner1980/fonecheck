@@ -8,6 +8,7 @@
     <string name="state_permission_denied_title">Lupa tarvitaan</string>
     <string name="state_error_title">Jokin meni pieleen</string>
     <string name="value_unavailable_short">n/a</string>
+    <string name="copy_value_action">Kopioi arvo</string>
     <!-- Device Info Screen -->
     <string name="device_info_title">Laite</string>
     <string name="device_identity_title">Tunnistetiedot</string>
@@ -44,6 +45,11 @@
     <string name="device_developer_options_note">Kehittäjäasetuksilla on merkitystä vain, kun niiden lisäasetuksia käytetään.</string>
     <string name="label_usb_debugging">USB-virheenkorjaus</string>
     <string name="device_usb_debugging_note">USB-virheenkorjauksella on merkitystä, kun laite yhdistetään tietokoneeseen, jolle on annettu virheenkorjausoikeus.</string>
+    <string name="device_clipboard_label">Laitteen tilannekuva</string>
+    <string name="device_copied_confirmation">Kopioitu leikepöydälle</string>
+    <string name="device_copy_all">Kopioi kaikki</string>
+    <string name="device_export">Vie</string>
+    <string name="device_share_title">Vie laitteen tilannekuva</string>
 
     <string name="status_yes">Kyllä</string>
     <string name="status_no">Ei</string>

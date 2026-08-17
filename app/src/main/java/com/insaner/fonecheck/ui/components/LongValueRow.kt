@@ -25,6 +25,7 @@ import com.insaner.fonecheck.ui.theme.contentColor
  * is never right-aligned — a wrapped value read from the right edge is unreadable.
  *
  * A null [value] behaves as in [DataRow]: [unavailableLabel] in muted text, [tone] ignored.
+ * [onValueLongClick] follows the same optional interaction contract as [DataRow].
  */
 // CPD-OFF
 // DataRow and LongValueRow intentionally expose the same row API.
@@ -36,9 +37,19 @@ fun LongValueRow(
     tone: SemanticTone = SemanticTone.NEUTRAL,
     unavailableLabel: String = stringResource(R.string.value_unavailable_short),
     showDivider: Boolean = true,
+    onValueLongClick: (() -> Unit)? = null,
+    longClickLabel: String = stringResource(R.string.copy_value_action),
 ) {
     // CPD-ON
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .valueLongPress(
+                    label = longClickLabel,
+                    onLongPress = onValueLongClick.takeIf { value != null },
+                ),
+    ) {
         Text(
             text = label.uppercase(LocalLocale.current.platformLocale),
             style = FonecheckTheme.type.sectionLabel,
