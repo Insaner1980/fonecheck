@@ -147,7 +147,7 @@ class HistoryScreenTest {
         }
 
         composeRule.onNodeWithText(context.getString(R.string.history_unavailable_report)).assertIsDisplayed()
-        composeRule.onNodeWithText("—").assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.value_unavailable_short)).assertIsDisplayed()
     }
 
     private fun summary(

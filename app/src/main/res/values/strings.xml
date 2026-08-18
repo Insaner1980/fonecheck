@@ -827,7 +827,8 @@
     <string name="history_unavailable_report">Unavailable report</string>
     <string name="history_score">Score</string>
     <string name="history_coverage">Coverage</string>
-    <string name="history_issue_summary">Warnings: %1$d · Issues: %2$d</string>
+    <string name="history_coverage_value">%1$s%%</string>
+    <string name="history_issue_summary">Warnings: %1$s · Issues: %2$s</string>
     <string name="history_open">Open</string>
     <string name="history_compare">Compare</string>
     <string name="history_compare_selected">Selected</string>
@@ -862,10 +863,12 @@
     <string name="export_title">Export report</string>
     <string name="export_description">Create a local copy of this immutable saved report.</string>
     <string name="export_local_only">The file is created locally in temporary app storage. Nothing is uploaded.</string>
+    <string name="export_pdf_section">PDF</string>
     <string name="export_pdf_description">PDF includes the report metadata, score, coverage, categories, saved evidence, versions, and measurement limitations.</string>
     <string name="export_pdf">Create and share PDF</string>
     <string name="export_generating">Creating PDF…</string>
     <string name="export_pdf_error">The PDF could not be created. You can try again.</string>
+    <string name="export_json_section">JSON</string>
     <string name="export_json_description">JSON is the versioned, machine-readable report with stable IDs, typed values, statuses, sources, confidence, and timestamps.</string>
     <string name="export_json">Create and share JSON</string>
     <string name="export_json_error">The JSON file could not be created. You can try again.</string>
@@ -875,19 +878,22 @@
     <string name="export_load_error">The saved report could not be loaded for export.</string>
     <string name="comparison_title">Report comparison</string>
     <string name="comparison_description">First report → second report</string>
+    <string name="comparison_limitations">Interpretation</string>
     <string name="comparison_disclaimer">Differences between saved evidence do not prove physical wear or a change in device health.</string>
+    <string name="comparison_categories">Categories</string>
+    <string name="comparison_check">Check</string>
     <string name="comparison_first_report">First report</string>
     <string name="comparison_second_report">Second report</string>
     <string name="comparison_app_version">App %1$s (%2$d)</string>
     <string name="comparison_report_version">Report format %1$d</string>
     <string name="comparison_score">Score</string>
     <string name="comparison_score_value">%1$s → %2$s</string>
-    <string name="comparison_score_delta">Score change: %+1$d</string>
+    <string name="comparison_score_delta">Score change: %1$s</string>
     <string name="comparison_score_no_delta">No numeric score change is available.</string>
-    <string name="comparison_score_incompatible" tools:ignore="PluralsCandidate">Scores cannot be compared because their score versions differ (%1$d and %2$d).</string>
+    <string name="comparison_score_incompatible" tools:ignore="PluralsCandidate">Scores cannot be compared because their score versions differ (%1$s and %2$s).</string>
     <string name="comparison_coverage">Coverage</string>
-    <string name="comparison_coverage_value">%1$d%% → %2$d%%</string>
-    <string name="comparison_coverage_delta">Coverage change: %+1$d percentage points</string>
+    <string name="comparison_coverage_value">%1$s%% → %2$s%%</string>
+    <string name="comparison_coverage_delta">Coverage change: %1$s percentage points</string>
     <string name="comparison_coverage_incompatible">Coverage formats differ, so no numeric change is shown.</string>
     <string name="comparison_category_status">%1$s → %2$s</string>
     <string name="comparison_missing">Missing</string>
