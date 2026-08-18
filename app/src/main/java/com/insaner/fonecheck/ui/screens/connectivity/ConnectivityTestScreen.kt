@@ -5,13 +5,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -19,10 +18,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
@@ -30,6 +25,7 @@ import com.insaner.fonecheck.domain.permission.PermissionKind
 import com.insaner.fonecheck.domain.permission.PermissionState
 import com.insaner.fonecheck.ui.TopBarAction
 import com.insaner.fonecheck.ui.components.DataRow
+import com.insaner.fonecheck.ui.components.DisclosureHeader
 import com.insaner.fonecheck.ui.components.IndeterminateRule
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.Note
@@ -199,31 +195,17 @@ fun ConnectivityTestScreen(
 private fun ConnectivitySectionBlock(
     title: String,
     status: String,
-    statusTone: SemanticTone = SemanticTone.NEUTRAL,
     isExpanded: Boolean,
     onToggle: () -> Unit,
+    statusTone: SemanticTone = SemanticTone.NEUTRAL,
     content: @Composable () -> Unit,
 ) {
-    val expansionState =
-        stringResource(
-            if (isExpanded) R.string.accessibility_expanded else R.string.accessibility_collapsed,
-        )
     Column {
-        SectionHeader(
+        DisclosureHeader(
             label = title,
-            trailing = expansionState,
-            modifier =
-                Modifier
-                    .heightIn(min = FonecheckTheme.spacing.minTouchTarget)
-                    .clickable(onClick = onToggle, role = Role.Button)
-                    .semantics {
-                        role = Role.Button
-                        stateDescription = expansionState
-                    },
-        )
-        DataRow(
-            label = stringResource(R.string.conn_status_label),
-            value = status,
+            summary = status,
+            expanded = isExpanded,
+            onClick = onToggle,
             tone = statusTone,
         )
         AnimatedVisibility(
@@ -232,7 +214,10 @@ private fun ConnectivitySectionBlock(
             exit = shrinkVertically(),
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = FonecheckTheme.spacing.md),
                 verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md),
             ) {
                 content()
@@ -376,9 +361,6 @@ private fun GpsDetails(
     onRequestPermission: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    val mcc = mobile.mcc
-    val mnc = mobile.mnc
-
     Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md)) {
         PermissionStatusCard(
             state = permissionState,
@@ -588,6 +570,9 @@ private fun MobileNetworkDetails(
     onRequestPermission: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
+    val mcc = mobile.mcc
+    val mnc = mobile.mnc
+
     Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md)) {
         PermissionStatusCard(
             state = permissionState,
@@ -705,8 +690,8 @@ private fun GpsState.summaryTone(): SemanticTone =
 private fun mobileSummary(mobile: MobileNetworkState): String =
     when {
         !mobile.isAvailable -> stringResource(R.string.conn_not_available)
-        mobile.isConnected -> stringResource(R.string.audio_connected)
-        else -> stringResource(R.string.audio_disconnected)
+        mobile.isConnected -> stringResource(R.string.conn_mobile_summary_connected)
+        else -> stringResource(R.string.conn_mobile_summary_disconnected)
     }
 
 @Composable

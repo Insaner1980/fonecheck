@@ -256,9 +256,10 @@
     <!-- Sensor Test Screen -->
     <string name="sensor_summary_title">Anturien yhteenveto</string>
     <string name="sensor_description">Avaa jokainen saatavilla oleva testi ja seuraa ohjetta. Läpäisy vaatii rajatun näytteen tai liikevasteen.</string>
-    <string name="sensor_count">Havaitut anturit</string>
-    <string name="sensor_guided_completed">Läpäistyt ohjatut testit</string>
+    <string name="sensor_count">Androidin anturimerkinnät</string>
+    <string name="sensor_guided_completed">Läpäistyt ohjatut testityypit</string>
     <string name="sensor_guided_progress">%1$s / %2$s</string>
+    <string name="sensor_guided_title">Ohjatut testit</string>
     <string name="sensor_listener_error">Anturin kuuntelua ei voitu käynnistää. Yritä testiä uudelleen.</string>
     <string name="sensor_not_available_description">Tätä anturia ei ole saatavilla tällä laitteella.</string>
     <string name="sensor_skip_test">Ohita testi</string>
@@ -371,7 +372,7 @@
     <!-- Bluetooth -->
     <string name="conn_bluetooth_title">Bluetooth</string>
     <string name="conn_bt_not_supported">Bluetooth-laitteistoa ei ole tässä laitteessa.</string>
-    <string name="conn_bt_status">Tila</string>
+    <string name="conn_bt_status">Bluetoothin tila</string>
     <string name="conn_bt_name">Nimi</string>
     <string name="conn_bt_ble">Bluetooth LE</string>
     <string name="conn_bt_bonded">Paritetut laitteet</string>
@@ -379,7 +380,7 @@
     <!-- NFC -->
     <string name="conn_nfc_title">NFC</string>
     <string name="conn_nfc_not_supported">NFC-laitteistoa ei ole tässä laitteessa.</string>
-    <string name="conn_nfc_status">Tila</string>
+    <string name="conn_nfc_status">NFC:n tila</string>
     <string name="conn_nfc_hce">Host Card Emulation</string>
     <string name="conn_nfc_capability_only">Tämä näyttää vain NFC-tuen ja käyttötilan; se ei varmista fyysistä NFC-tiedonsiirtoa.</string>
 
@@ -387,7 +388,7 @@
     <string name="conn_gps_title">GPS</string>
     <string name="conn_gps_not_supported">GPS-laitteistoa ei ole tässä laitteessa.</string>
     <string name="conn_gps_provider">GPS-palvelu</string>
-    <string name="conn_gps_status">Tila</string>
+    <string name="conn_gps_status">GPS-testi</string>
     <string name="conn_gps_ready">Valmis</string>
     <string name="conn_gps_searching">Etsitään…</string>
     <string name="conn_gps_fixed">Lukittu</string>
@@ -426,6 +427,8 @@
     <string name="conn_mobile_title">Mobiiliverkko</string>
     <string name="conn_mobile_not_supported">Puhelinlaitteistoa ei ole tässä laitteessa.</string>
     <string name="conn_mobile_status">Datayhteys</string>
+    <string name="conn_mobile_summary_connected">Datayhteys käytössä</string>
+    <string name="conn_mobile_summary_disconnected">Ei datayhteyttä</string>
     <string name="conn_mobile_data_connected">Yhdistetty</string>
     <string name="conn_mobile_data_connecting">Yhdistetään</string>
     <string name="conn_mobile_data_disconnected">Ei yhdistetty</string>

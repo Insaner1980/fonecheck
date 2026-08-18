@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.insaner.fonecheck.ui.components.DataRow
+import com.insaner.fonecheck.ui.components.DisclosureHeader
 import com.insaner.fonecheck.ui.components.IndeterminateRule
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.Note
@@ -32,7 +33,7 @@ import com.insaner.fonecheck.ui.theme.SemanticTone
 // build. The values here are invented; screens draw their own measurements.
 
 private const val SPECIMEN_WIDTH_DP = 380
-private const val SPECIMEN_HEIGHT_DP = 1720
+private const val SPECIMEN_HEIGHT_DP = 1900
 
 private val SummarySegments =
     listOf(
@@ -78,6 +79,7 @@ private fun FoundationSpecimenPreview() {
             SpecimenWaiting()
             SpecimenMeasured()
             SpecimenStatuses()
+            SpecimenDisclosures()
             SpecimenActions()
         }
     }
@@ -185,6 +187,27 @@ private fun SpecimenStatuses() {
             StatusText(text = "fail", tone = SemanticTone.FAIL)
             StatusText(text = "not tested", tone = SemanticTone.NEUTRAL)
         }
+    }
+}
+
+@Composable
+private fun SpecimenDisclosures() {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        SectionHeader(label = "Disclosure headers")
+        DisclosureHeader(
+            label = "GPS",
+            summary = "Ready",
+            expanded = false,
+            onClick = {},
+        )
+        DisclosureHeader(
+            label = "Accelerometer",
+            summary = "Not tested",
+            expanded = false,
+            onClick = {},
+            strongDivider = false,
+        )
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.lg))
     }
 }
 
