@@ -2,24 +2,13 @@
 
 package com.insaner.fonecheck.ui.screens.runall
 
-import androidx.compose.foundation.clickable
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,21 +16,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.CategoryTestResult
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryResult
@@ -61,10 +42,18 @@ import com.insaner.fonecheck.localization.evidenceReasonStringRes
 import com.insaner.fonecheck.localization.stableTextStringRes
 import com.insaner.fonecheck.navigation.CategoryRetest
 import com.insaner.fonecheck.navigation.diagnosticDestinations
-import com.insaner.fonecheck.ui.components.ConfidenceBadge
-import com.insaner.fonecheck.ui.components.InfoRow
-import com.insaner.fonecheck.ui.components.StandardCard
-import com.insaner.fonecheck.ui.components.StatusBadge
+import com.insaner.fonecheck.ui.components.DataRow
+import com.insaner.fonecheck.ui.components.DisclosureHeader
+import com.insaner.fonecheck.ui.components.HeadlineReadout
+import com.insaner.fonecheck.ui.components.LongValueRow
+import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.PrimaryButton
+import com.insaner.fonecheck.ui.components.ScreenStateCard
+import com.insaner.fonecheck.ui.components.ScreenStateType
+import com.insaner.fonecheck.ui.components.SecondaryButton
+import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.components.SegmentedBar
+import com.insaner.fonecheck.ui.components.TestScreenContent
 import com.insaner.fonecheck.ui.format.uiFileSize
 import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import com.insaner.fonecheck.ui.format.uiNumber
@@ -72,11 +61,9 @@ import com.insaner.fonecheck.ui.screens.report.ReportDetailPresentation
 import com.insaner.fonecheck.ui.screens.report.ReportDetailPresenter
 import com.insaner.fonecheck.ui.screens.report.stableCodeFallback
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
-import com.insaner.fonecheck.ui.theme.Green400
-import com.insaner.fonecheck.ui.theme.Neutral400
-import com.insaner.fonecheck.ui.theme.Red400
-import com.insaner.fonecheck.ui.theme.Yellow400
-import com.insaner.fonecheck.ui.theme.readableStatusColor
+import com.insaner.fonecheck.ui.theme.SemanticTone
+import com.insaner.fonecheck.ui.theme.contentColor
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -122,90 +109,55 @@ fun RunAllResultsScreen(
         mutableStateOf(attentionResults.firstOrNull()?.category?.name)
     }
 
-    LazyColumn(
-        modifier = modifier,
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    TestScreenContent(modifier = modifier) {
         if (mode == ReportResultMode.SAVED_REPORT) {
             item {
-                ReportMetadataCard(report, presentation.durationMillis)
+                ReportMetadataSection(report, presentation.durationMillis)
             }
         }
 
         item {
-            ResultsSummaryCard(report, presentation)
+            ResultsSummary(
+                report = report,
+                presentation = presentation,
+                categoryTones = categories.map { it.status.semanticTone() },
+            )
         }
 
         if (saveStatus != ReportSaveStatus.SAVED) {
             item {
-                ReportSaveCard(saveStatus, onRetrySave)
+                ReportSaveSection(saveStatus, onRetrySave)
             }
         }
 
-        if (attentionResults.isNotEmpty()) {
-            item {
-                ResultSectionTitle(
-                    title = stringResource(R.string.run_all_needs_attention),
-                    count = attentionResults.size,
-                )
-            }
-            categoryResultItems(
-                results = attentionResults,
-                expandedCategoryName = expandedCategoryName,
-                onExpandedChange = { expandedCategoryName = it },
-                onOpenCategory = onOpenCategory,
-                mode = mode,
-            )
-        }
-
-        if (completedResults.isNotEmpty()) {
-            item {
-                ResultSectionTitle(
-                    title = stringResource(R.string.run_all_completed),
-                    count = completedResults.size,
-                )
-            }
-            item {
-                CompletedResultsCard(
-                    results = completedResults,
-                    expandedCategoryName = expandedCategoryName,
-                    onToggle = { result ->
-                        expandedCategoryName = toggleExpanded(expandedCategoryName, result)
-                    },
-                    onOpenCategory = onOpenCategory,
-                    mode = mode,
-                )
-            }
-        }
-
-        if (incompleteResults.isNotEmpty()) {
-            item {
-                ResultSectionTitle(
-                    title = stringResource(R.string.run_all_not_completed),
-                    count = incompleteResults.size,
-                )
-            }
-            categoryResultItems(
-                results = incompleteResults,
-                expandedCategoryName = expandedCategoryName,
-                onExpandedChange = { expandedCategoryName = it },
-                onOpenCategory = onOpenCategory,
-                mode = mode,
-            )
-        }
+        resultGroup(
+            titleResId = R.string.run_all_needs_attention,
+            results = attentionResults,
+            expandedCategoryName = expandedCategoryName,
+            onExpandedChange = { expandedCategoryName = it },
+            onOpenCategory = onOpenCategory,
+            mode = mode,
+        )
+        resultGroup(
+            titleResId = R.string.run_all_completed,
+            results = completedResults,
+            expandedCategoryName = expandedCategoryName,
+            onExpandedChange = { expandedCategoryName = it },
+            onOpenCategory = onOpenCategory,
+            mode = mode,
+        )
+        resultGroup(
+            titleResId = R.string.run_all_not_completed,
+            results = incompleteResults,
+            expandedCategoryName = expandedCategoryName,
+            onExpandedChange = { expandedCategoryName = it },
+            onOpenCategory = onOpenCategory,
+            mode = mode,
+        )
 
         item {
-            Button(
-                onClick = onDone,
-                enabled = saveStatus == ReportSaveStatus.SAVED,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp, bottom = 20.dp),
-                shape = MaterialTheme.shapes.medium,
-            ) {
-                Text(
+            PrimaryButton(
+                label =
                     stringResource(
                         if (mode == ReportResultMode.SAVED_REPORT) {
                             R.string.report_back
@@ -213,24 +165,35 @@ fun RunAllResultsScreen(
                             R.string.run_all_done
                         },
                     ),
-                )
-            }
+                onClick = onDone,
+                enabled = saveStatus == ReportSaveStatus.SAVED,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
 
-private fun LazyListScope.categoryResultItems(
+private fun LazyListScope.resultGroup(
+    @StringRes titleResId: Int,
     results: List<CategoryTestResult>,
     expandedCategoryName: String?,
     onExpandedChange: (String?) -> Unit,
     onOpenCategory: (Any) -> Unit,
     mode: ReportResultMode,
 ) {
+    if (results.isEmpty()) return
+
+    item {
+        SectionHeader(
+            label = stringResource(titleResId),
+            trailing = uiNumber(results.size, grouping = true),
+        )
+    }
     items(
         items = results,
         key = { it.category.name },
     ) { result ->
-        ExpandedCategoryResult(
+        CategoryResult(
             result = result,
             isExpanded = expandedCategoryName == result.category.name,
             onToggle = {
@@ -248,111 +211,101 @@ private fun toggleExpanded(
 ): String? = if (currentCategoryName == result.category.name) null else result.category.name
 
 @Composable
-private fun ResultsSummaryCard(
+private fun ResultsSummary(
     report: DiagnosticReport,
     presentation: ReportDetailPresentation,
+    categoryTones: List<SemanticTone>,
 ) {
     val score = report.score.value
     val counts = presentation.counts
-    val scoreColor =
-        when {
-            score == null -> Neutral400
-            score >= 85 -> Green400
-            score >= 65 -> Yellow400
-            else -> Red400
-        }
 
-    StandardCard {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text(
-                text = stringResource(R.string.run_all_results_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
+    Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm)) {
+        Text(
+            text = stringResource(R.string.run_all_results_title),
+            style = FonecheckTheme.type.screenTitle,
+            color = FonecheckTheme.colors.textPrimary,
+            modifier = Modifier.semantics { heading() },
+        )
+        Note(stringResource(R.string.run_all_results_description))
+        if (score != null) {
+            HeadlineReadout(
+                value = uiNumber(score),
+                unit = stringResource(R.string.report_score_unit),
+                rawValues = scoreStateLabel(report.score.state),
             )
-            Text(
-                text = stringResource(R.string.run_all_results_description),
-                modifier = Modifier.padding(top = 6.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = score?.toString() ?: "—",
-                        style = MaterialTheme.typography.displayMedium,
-                        color = readableStatusColor(scoreColor),
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text =
-                            stringResource(R.string.run_all_overall_score) +
-                                " · " +
-                                scoreStateLabel(report.score.state),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Column(
-                    modifier = Modifier.weight(1.2f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    SummaryCount(
-                        stringResource(R.string.report_pass_count, counts.pass),
-                        Green400,
-                    )
-                    SummaryCount(
-                        stringResource(R.string.report_info_count, counts.info),
-                        MaterialTheme.colorScheme.primary,
-                    )
-                    SummaryCount(
-                        pluralStringResource(R.plurals.run_all_warning_count, counts.warning, counts.warning),
-                        Yellow400,
-                    )
-                    SummaryCount(
-                        pluralStringResource(R.plurals.run_all_failed_count, counts.fail, counts.fail),
-                        Red400,
-                    )
-                    SummaryCount(
-                        pluralStringResource(
-                            R.plurals.run_all_unavailable_count,
-                            counts.notAvailable,
-                            counts.notAvailable,
-                        ),
-                        Neutral400,
-                    )
-                    SummaryCount(
-                        stringResource(R.string.report_not_tested_count, counts.notTested),
-                        Neutral400,
-                    )
-                }
-            }
-            Text(
-                text =
-                    stringResource(R.string.report_coverage) +
-                        ": " +
-                        stringResource(
-                            R.string.report_coverage_value,
-                            report.coverage.percentage,
-                            report.coverage.completedCount,
-                            report.coverage.applicableCount,
-                        ),
-                modifier = Modifier.padding(top = 16.dp),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+        } else {
+            DataRow(
+                label = stringResource(R.string.run_all_overall_score),
+                value = null,
+                unavailableLabel = scoreStateLabel(report.score.state),
             )
         }
+        SegmentedBar(segments = categoryTones)
+        SummaryCount(
+            text = stringResource(R.string.report_pass_count, uiNumber(counts.pass)),
+            tone = SemanticTone.PASS,
+        )
+        SummaryCount(
+            text = stringResource(R.string.report_info_count, uiNumber(counts.info)),
+            tone = SemanticTone.NEUTRAL,
+        )
+        SummaryCount(
+            text =
+                pluralStringResource(
+                    R.plurals.run_all_warning_count,
+                    counts.warning,
+                    uiNumber(counts.warning),
+                ),
+            tone = SemanticTone.ATTENTION,
+        )
+        SummaryCount(
+            text =
+                pluralStringResource(
+                    R.plurals.run_all_failed_count,
+                    counts.fail,
+                    uiNumber(counts.fail),
+                ),
+            tone = SemanticTone.FAIL,
+        )
+        SummaryCount(
+            text =
+                pluralStringResource(
+                    R.plurals.run_all_unavailable_count,
+                    counts.notAvailable,
+                    uiNumber(counts.notAvailable),
+                ),
+            tone = SemanticTone.NEUTRAL,
+        )
+        SummaryCount(
+            text = stringResource(R.string.report_not_tested_count, uiNumber(counts.notTested)),
+            tone = SemanticTone.NEUTRAL,
+        )
+        Note(
+            text =
+                stringResource(
+                    R.string.report_coverage_value,
+                    uiNumber(report.coverage.percentage),
+                    uiNumber(report.coverage.completedCount),
+                    uiNumber(report.coverage.applicableCount),
+                ),
+        )
     }
 }
 
 @Composable
-private fun ReportMetadataCard(
+private fun SummaryCount(
+    text: String,
+    tone: SemanticTone,
+) {
+    Text(
+        text = text,
+        style = FonecheckTheme.type.rowValue,
+        color = tone.contentColor(),
+    )
+}
+
+@Composable
+private fun ReportMetadataSection(
     report: DiagnosticReport,
     durationMillis: Long,
 ) {
@@ -370,72 +323,59 @@ private fun ReportMetadataCard(
             .distinct()
             .joinToString(" ")
 
-    StandardCard {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.report_saved_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                text = stringResource(R.string.report_saved_description),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            InfoRow(
-                label = stringResource(R.string.report_kind),
-                value =
-                    stringResource(
-                        if (report.kind == ReportKind.FULL_CHECK) {
-                            R.string.report_kind_full
-                        } else {
-                            R.string.report_kind_category
-                        },
-                    ),
-            )
-            InfoRow(
-                label = stringResource(R.string.report_device),
-                value = deviceName,
-            )
-            InfoRow(
-                label = stringResource(R.string.report_android),
-                value =
-                    stringResource(
-                        R.string.report_android_value,
-                        report.device.androidRelease,
-                        report.device.apiLevel,
-                    ),
-            )
-            InfoRow(
-                label = stringResource(R.string.report_app_version),
-                value =
-                    stringResource(
-                        R.string.report_app_version_value,
-                        report.app.versionName,
-                        report.app.versionCode,
-                    ),
-            )
-            InfoRow(
-                label = stringResource(R.string.report_completed_at),
-                value = dateFormatter.format(report.completedAt),
-            )
-            InfoRow(
-                label = stringResource(R.string.report_duration),
-                value =
-                    stringResource(
-                        R.string.report_duration_value,
-                        durationSeconds / 60L,
-                        durationSeconds % 60L,
-                    ),
-            )
-            InfoRow(
-                label = stringResource(R.string.report_identifier),
-                value = report.stableId,
-            )
-        }
+    Column {
+        SectionHeader(stringResource(R.string.report_saved_title))
+        Note(stringResource(R.string.report_saved_description))
+        DataRow(
+            label = stringResource(R.string.report_kind),
+            value =
+                stringResource(
+                    if (report.kind == ReportKind.FULL_CHECK) {
+                        R.string.report_kind_full
+                    } else {
+                        R.string.report_kind_category
+                    },
+                ),
+        )
+        LongValueRow(
+            label = stringResource(R.string.report_device),
+            value = deviceName,
+        )
+        LongValueRow(
+            label = stringResource(R.string.report_android),
+            value =
+                stringResource(
+                    R.string.report_android_value,
+                    report.device.androidRelease,
+                    uiNumber(report.device.apiLevel),
+                ),
+        )
+        LongValueRow(
+            label = stringResource(R.string.report_app_version),
+            value =
+                stringResource(
+                    R.string.report_app_version_value,
+                    report.app.versionName,
+                    uiNumber(report.app.versionCode),
+                ),
+        )
+        LongValueRow(
+            label = stringResource(R.string.report_completed_at),
+            value = dateFormatter.format(report.completedAt),
+        )
+        DataRow(
+            label = stringResource(R.string.report_duration),
+            value =
+                stringResource(
+                    R.string.report_duration_value,
+                    uiNumber(durationSeconds / 60L),
+                    uiNumber(durationSeconds % 60L),
+                ),
+        )
+        LongValueRow(
+            label = stringResource(R.string.report_identifier),
+            value = report.stableId,
+        )
     }
 }
 
@@ -450,35 +390,118 @@ private fun scoreStateLabel(state: ScoreState): String =
     )
 
 @Composable
-private fun ReportSaveCard(
+private fun ReportSaveSection(
     status: ReportSaveStatus,
     onRetry: () -> Unit,
 ) {
-    StandardCard {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text =
-                    stringResource(
-                        if (status == ReportSaveStatus.FAILED) {
-                            R.string.run_all_save_failed
-                        } else {
-                            R.string.run_all_saving_report
-                        },
-                    ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+    val failed = status == ReportSaveStatus.FAILED
+    ScreenStateCard(
+        type = if (failed) ScreenStateType.ERROR else ScreenStateType.LOADING,
+        message =
+            stringResource(
+                if (failed) R.string.run_all_save_failed else R.string.run_all_saving_report,
+            ),
+        actionLabel = stringResource(R.string.run_all_retry_save).takeIf { failed },
+        onAction = onRetry.takeIf { failed },
+    )
+}
+
+@Composable
+private fun CategoryResult(
+    result: CategoryTestResult,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
+    onOpenCategory: (Any) -> Unit,
+    mode: ReportResultMode,
+) {
+    val destination = diagnosticDestinations.first { it.category == result.category }
+    val title = stringResource(destination.labelResId)
+    val status = statusLabel(result.status)
+    val route =
+        if (mode == ReportResultMode.SAVED_REPORT) {
+            CategoryRetest(result.category.stableId)
+        } else {
+            destination.route
+        }
+
+    Column(
+        modifier = Modifier.fillMaxWidth().testTag("report_category_${result.category.stableId}"),
+    ) {
+        DisclosureHeader(
+            label = title,
+            summary = status,
+            expanded = isExpanded,
+            onClick = onToggle,
+            tone = result.status.semanticTone(),
+        )
+        Note(text = result.summary)
+        if (isExpanded) {
+            ResultDetails(
+                results = result.results,
+                onOpen = { onOpenCategory(route) },
+                mode = mode,
             )
-            if (status == ReportSaveStatus.FAILED) {
-                Button(
-                    onClick = onRetry,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(stringResource(R.string.run_all_retry_save))
-                }
+        }
+    }
+}
+
+@Composable
+private fun ResultDetails(
+    results: List<TestResult>,
+    onOpen: () -> Unit,
+    mode: ReportResultMode,
+) {
+    Column(
+        modifier = Modifier.padding(top = FonecheckTheme.spacing.sm),
+        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
+    ) {
+        if (results.isEmpty()) {
+            Note(text = stringResource(R.string.report_no_saved_evidence))
+        } else {
+            results.forEach { result ->
+                ResultDetail(result)
             }
+        }
+        SecondaryButton(
+            label =
+                stringResource(
+                    if (mode == ReportResultMode.SAVED_REPORT) {
+                        R.string.report_retest
+                    } else {
+                        R.string.run_all_open_test
+                    },
+                ),
+            onClick = onOpen,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun ResultDetail(result: TestResult) {
+    val hasDetail = result.detail != null
+    Column {
+        DataRow(
+            label = result.name,
+            value = statusLabel(result.status),
+            tone = result.status.semanticTone(),
+            confidence = result.confidence.takeUnless { hasDetail },
+        )
+        result.detail?.let { detail ->
+            LongValueRow(
+                label = stringResource(R.string.report_evidence_value),
+                value = detail,
+                confidence = result.confidence,
+            )
+        }
+        result.source?.let { source ->
+            LongValueRow(
+                label = stringResource(R.string.report_evidence_source),
+                value = sourceLabel(source),
+            )
+        }
+        result.reason?.let { reason ->
+            Note(text = stringResource(R.string.report_evidence_reason, reason))
         }
     }
 }
@@ -548,7 +571,12 @@ private fun evidenceValueLabel(
         is EvidenceValue.IntValue ->
             when (unit?.value) {
                 "percent" -> stringResource(R.string.storage_percent_value, localizedNumber(value.value))
-                "samples" -> pluralStringResource(R.plurals.sensor_samples, value.value, value.value)
+                "samples" ->
+                    pluralStringResource(
+                        R.plurals.sensor_samples,
+                        value.value,
+                        uiNumber(value.value),
+                    )
                 else -> localizedNumber(value.value)
             }
 
@@ -581,7 +609,8 @@ private fun evidenceValueLabel(
     }
 
 @Composable
-private fun localizedNumber(value: Number): String = uiNumber(value, maximumFractionDigits = 6, grouping = true)
+private fun localizedNumber(value: Number): String =
+    uiNumber(value, maximumFractionDigits = 6, grouping = true)
 
 @Composable
 private fun stableTextLabel(code: String): String =
@@ -604,338 +633,6 @@ private fun sourceLabel(source: EvidenceSource): String =
     )
 
 @Composable
-private fun SummaryCount(
-    text: String,
-    color: Color,
-) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelLarge,
-        color = readableStatusColor(color),
-    )
-}
-
-@Composable
-private fun ResultSectionTitle(
-    title: String,
-    count: Int,
-) {
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(top = 10.dp, bottom = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onBackground,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(
-            text = count.toString(),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun ExpandedCategoryResult(
-    result: CategoryTestResult,
-    isExpanded: Boolean,
-    onToggle: () -> Unit,
-    onOpenCategory: (Any) -> Unit,
-    mode: ReportResultMode,
-) {
-    val destination = diagnosticDestinations.first { it.category == result.category }
-    CategoryResultCard(
-        result = result,
-        title = stringResource(destination.labelResId),
-        iconResId = destination.iconResId,
-        isExpanded = isExpanded,
-        onToggle = onToggle,
-        onOpen = {
-            onOpenCategory(
-                if (mode == ReportResultMode.SAVED_REPORT) {
-                    CategoryRetest(result.category.stableId)
-                } else {
-                    destination.route
-                },
-            )
-        },
-        mode = mode,
-    )
-}
-
-@Composable
-private fun CompletedResultsCard(
-    results: List<CategoryTestResult>,
-    expandedCategoryName: String?,
-    onToggle: (CategoryTestResult) -> Unit,
-    onOpenCategory: (Any) -> Unit,
-    mode: ReportResultMode,
-) {
-    StandardCard {
-        results.forEachIndexed { index, result ->
-            val destination = diagnosticDestinations.first { it.category == result.category }
-            CompactResultRow(
-                result = result,
-                title = stringResource(destination.labelResId),
-                iconResId = destination.iconResId,
-                isExpanded = expandedCategoryName == result.category.name,
-                onToggle = { onToggle(result) },
-                onOpen = {
-                    onOpenCategory(
-                        if (mode == ReportResultMode.SAVED_REPORT) {
-                            CategoryRetest(result.category.stableId)
-                        } else {
-                            destination.route
-                        },
-                    )
-                },
-                mode = mode,
-            )
-            if (index < results.lastIndex) {
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CompactResultRow(
-    result: CategoryTestResult,
-    title: String,
-    iconResId: Int,
-    isExpanded: Boolean,
-    onToggle: () -> Unit,
-    onOpen: () -> Unit,
-    mode: ReportResultMode,
-) {
-    val statusText = statusLabel(result.status)
-    val expansionState =
-        stringResource(
-            if (isExpanded) R.string.accessibility_expanded else R.string.accessibility_collapsed,
-        )
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .testTag("report_category_${result.category.stableId}")
-                .semantics {
-                    role = Role.Button
-                    stateDescription = "$statusText, $expansionState"
-                }.clickable(onClick = onToggle)
-                .padding(14.dp),
-    ) {
-        ResultHeader(
-            result = result,
-            title = title,
-            iconResId = iconResId,
-            showSummary = false,
-        )
-        if (isExpanded) {
-            ResultDetails(result.results, onOpen, mode)
-        }
-    }
-}
-
-@Composable
-private fun CategoryResultCard(
-    result: CategoryTestResult,
-    title: String,
-    iconResId: Int,
-    isExpanded: Boolean,
-    mode: ReportResultMode,
-    onToggle: () -> Unit,
-    onOpen: () -> Unit,
-) {
-    val statusText = statusLabel(result.status)
-    val expansionState =
-        stringResource(
-            if (isExpanded) R.string.accessibility_expanded else R.string.accessibility_collapsed,
-        )
-    StandardCard(
-        modifier =
-            Modifier
-                .testTag("report_category_${result.category.stableId}")
-                .semantics { stateDescription = "$statusText, $expansionState" },
-        onClick = onToggle,
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            ResultHeader(
-                result = result,
-                title = title,
-                iconResId = iconResId,
-                showSummary = true,
-            )
-            Text(
-                text =
-                    stringResource(
-                        when {
-                            mode == ReportResultMode.SAVED_REPORT && isExpanded ->
-                                R.string.report_hide_saved_evidence
-                            mode == ReportResultMode.SAVED_REPORT -> R.string.report_view_saved_evidence
-                            isExpanded -> R.string.run_all_hide_details
-                            else -> R.string.run_all_view_details
-                        },
-                    ),
-                modifier = Modifier.padding(top = 12.dp),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            if (isExpanded) {
-                ResultDetails(result.results, onOpen, mode)
-            }
-        }
-    }
-}
-
-@Composable
-private fun ResultHeader(
-    result: CategoryTestResult,
-    title: String,
-    iconResId: Int,
-    showSummary: Boolean,
-) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            painter = painterResource(iconResId),
-            contentDescription = null,
-            tint = FonecheckTheme.colors.textSecondary,
-            modifier = Modifier.size(FonecheckTheme.spacing.lg),
-        )
-        Column(
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .padding(horizontal = 12.dp),
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.semantics { heading() },
-            )
-            if (showSummary) {
-                Text(
-                    text = result.summary,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        StatusBadge(
-            text = statusLabel(result.status),
-            color = statusColor(result.status),
-        )
-    }
-}
-
-@Composable
-private fun ResultDetails(
-    results: List<TestResult>,
-    onOpen: () -> Unit,
-    mode: ReportResultMode,
-) {
-    Column {
-        Spacer(modifier = Modifier.height(14.dp))
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        if (results.isEmpty()) {
-            Text(
-                text = stringResource(R.string.report_no_saved_evidence),
-                modifier = Modifier.padding(vertical = 14.dp),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        } else {
-            results.forEach { testResult ->
-                ResultDetailRow(testResult)
-            }
-        }
-        OutlinedButton(
-            onClick = onOpen,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-            shape = MaterialTheme.shapes.medium,
-        ) {
-            Text(
-                stringResource(
-                    if (mode == ReportResultMode.SAVED_REPORT) {
-                        R.string.report_retest
-                    } else {
-                        R.string.run_all_open_test
-                    },
-                ),
-            )
-        }
-    }
-}
-
-@Composable
-private fun ResultDetailRow(result: TestResult) {
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = result.name,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Medium,
-            )
-            result.detail?.let { detail ->
-                Text(
-                    text = detail,
-                    modifier = Modifier.padding(top = 3.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            result.reason?.let { reason ->
-                Text(
-                    text = stringResource(R.string.report_evidence_reason, reason),
-                    modifier = Modifier.padding(top = 3.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Row(
-                modifier = Modifier.padding(top = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                result.source?.let { source ->
-                    Text(
-                        text = sourceLabel(source),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                ConfidenceBadge(confidence = result.confidence)
-            }
-        }
-        StatusBadge(
-            text = statusLabel(result.status),
-            color = statusColor(result.status),
-        )
-    }
-}
-
-@Composable
 private fun statusLabel(status: TestStatus): String =
     stringResource(
         when (status) {
@@ -948,12 +645,12 @@ private fun statusLabel(status: TestStatus): String =
         },
     )
 
-@Composable
-private fun statusColor(status: TestStatus): Color =
-    when (status) {
-        TestStatus.Pass -> Green400
-        is TestStatus.Warning -> Yellow400
-        is TestStatus.Fail -> Red400
-        is TestStatus.Info -> MaterialTheme.colorScheme.primary
-        TestStatus.NotAvailable, TestStatus.NotTested -> Neutral400
+private fun TestStatus.semanticTone(): SemanticTone =
+    when (this) {
+        TestStatus.Pass -> DiagnosticStatus.PASS.toSemanticTone()
+        is TestStatus.Warning -> DiagnosticStatus.WARNING.toSemanticTone()
+        is TestStatus.Fail -> DiagnosticStatus.FAIL.toSemanticTone()
+        is TestStatus.Info -> DiagnosticStatus.INFO.toSemanticTone()
+        TestStatus.NotAvailable -> DiagnosticStatus.NOT_AVAILABLE.toSemanticTone()
+        TestStatus.NotTested -> DiagnosticStatus.NOT_TESTED.toSemanticTone()
     }

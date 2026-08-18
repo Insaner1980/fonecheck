@@ -639,7 +639,7 @@
     <string name="run_all_permissions_continue">Jatka käytettävissä olevilla oikeuksilla</string>
     <string name="run_all_automatic_title">Puhelinta testataan</string>
     <string name="run_all_automatic_description">Laitetiedot luetaan ja rajatut suorituskyky- sekä sovelluksen yksityiset tallennustilatarkistukset suoritetaan. Väliaikainen 64 MiB:n tiedosto poistetaan tarkistuksen jälkeen.</string>
-    <string name="run_all_interactive_progress">Pikatarkistus %1$d/%2$d</string>
+    <string name="run_all_interactive_progress">Pikatarkistus %1$s/%2$s</string>
     <string name="run_all_display_title">Tarkista näyttö</string>
     <string name="run_all_display_description">Tarkista jokaisesta tasaväristä kuolleet pikselit, kirkkaat pisteet, varjot ja kuvan kiinnipalaminen.</string>
     <string name="run_all_next_color">Näytä seuraava väri</string>
@@ -653,7 +653,7 @@
     <string name="run_all_no_tone">Ääntä ei kuulu</string>
     <string name="run_all_camera_title">Kameroita testataan</string>
     <string name="run_all_camera_description">Jokaiselle julkiselle kameralle avataan esikatselu ja otetaan yksi kuva automaattisesti.</string>
-    <string name="run_all_camera_progress">Kamera %1$d/%2$d</string>
+    <string name="run_all_camera_progress">Kamera %1$s/%2$s</string>
     <string name="run_all_sensor_title">Testaa liikeanturi</string>
     <string name="run_all_sensor_description">Ravista puhelinta kevyesti. Testi jatkuu automaattisesti, kun liike havaitaan.</string>
     <string name="run_all_vibration_title">Tunsitko värinän?</string>
@@ -671,17 +671,18 @@
     <string name="run_all_results_title">Puhelimesi raportti</string>
     <string name="run_all_results_description">Automaattiset ja vuorovaikutteiset tarkistukset on ryhmitelty alle kategorioittain.</string>
     <string name="run_all_overall_score">Kokonaispisteet</string>
+    <string name="report_score_unit">/ 100</string>
     <plurals name="run_all_warning_count">
-        <item quantity="one">%1$d varoitus</item>
-        <item quantity="other">%1$d varoitusta</item>
+        <item quantity="one">%1$s varoitus</item>
+        <item quantity="other">%1$s varoitusta</item>
     </plurals>
     <plurals name="run_all_failed_count">
-        <item quantity="one">%1$d ongelma</item>
-        <item quantity="other">%1$d ongelmaa</item>
+        <item quantity="one">%1$s ongelma</item>
+        <item quantity="other">%1$s ongelmaa</item>
     </plurals>
     <plurals name="run_all_unavailable_count">
-        <item quantity="one">%1$d ei saatavilla</item>
-        <item quantity="other">%1$d ei saatavilla</item>
+        <item quantity="one">%1$s ei saatavilla</item>
+        <item quantity="other">%1$s ei saatavilla</item>
     </plurals>
     <string name="run_all_needs_attention">Vaatii huomiota</string>
     <string name="run_all_completed">Valmiit</string>
@@ -700,12 +701,12 @@
     <string name="report_kind_category">Kategorian uusintatesti</string>
     <string name="report_device">Laite</string>
     <string name="report_android">Android</string>
-    <string name="report_android_value">%1$s (API %2$d)</string>
+    <string name="report_android_value">%1$s (API %2$s)</string>
     <string name="report_app_version">Sovellusversio</string>
-    <string name="report_app_version_value">%1$s (%2$d)</string>
+    <string name="report_app_version_value">%1$s (%2$s)</string>
     <string name="report_completed_at">Valmistunut</string>
     <string name="report_duration">Kesto</string>
-    <string name="report_duration_value">%1$d min %2$d s</string>
+    <string name="report_duration_value">%1$s min %2$s s</string>
     <string name="report_identifier">Raportin tunniste</string>
     <string name="report_score_complete">Täysi kattavuus</string>
     <string name="report_score_partial">Osittainen kattavuus</string>
@@ -713,10 +714,10 @@
     <string name="report_reason_error">Tarkistusta ei voitu suorittaa loppuun</string>
     <string name="report_reason_android_version_unsupported">Tämä Android-versio ei tue tarkistusta</string>
     <string name="report_coverage">Kattavuus</string>
-    <string name="report_coverage_value">%1$d%% · Tarkistukset: %2$d/%3$d</string>
-    <string name="report_pass_count">%1$d läpäisty</string>
-    <string name="report_info_count">Tietoja: %1$d</string>
-    <string name="report_not_tested_count">%1$d ei testattu</string>
+    <string name="report_coverage_value">%1$s%% · Tarkistukset: %2$s/%3$s</string>
+    <string name="report_pass_count">%1$s läpäisty</string>
+    <string name="report_info_count">Tietoja: %1$s</string>
+    <string name="report_not_tested_count">%1$s ei testattu</string>
     <string name="report_view_saved_evidence">Näytä tallennettu evidenssi</string>
     <string name="report_hide_saved_evidence">Piilota tallennettu evidenssi</string>
     <string name="report_retest">Testaa uudelleen</string>
@@ -727,6 +728,8 @@
     <string name="report_retest_unavailable">Tämä diagnostiikkakategoria ei ole käytettävissä.</string>
     <string name="report_back">Takaisin</string>
     <string name="report_no_saved_evidence">Tälle kategorialle ei tallennettu evidenssiä.</string>
+    <string name="report_evidence_value">Arvo</string>
+    <string name="report_evidence_source">Lähde</string>
     <string name="report_evidence_reason">Syy: %1$s</string>
     <string name="report_source_automatic">Automaattinen mittaus</string>
     <string name="report_source_android_api">Android API</string>
