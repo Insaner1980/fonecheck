@@ -14,16 +14,12 @@ val DmSans =
     FontFamily(
         Font(R.font.dm_sans_regular, FontWeight.Normal),
         Font(R.font.dm_sans_medium, FontWeight.Medium),
-        // Bold is registered only for screens that still set FontWeight.Bold inline. It is deleted
-        // in the task that removes the last one; no role below uses a weight above Medium.
-        Font(R.font.dm_sans_bold, FontWeight.Bold),
     )
 
 val JetBrainsMono =
     FontFamily(
         Font(R.font.jetbrains_mono_regular, FontWeight.Normal),
         Font(R.font.jetbrains_mono_medium, FontWeight.Medium),
-        Font(R.font.jetbrains_mono_bold, FontWeight.Bold),
     )
 
 /** Tabular figures, so a column of numbers stays aligned as the digits change. */
@@ -106,9 +102,8 @@ object FonecheckType {
         )
 }
 
-// The Material slots are derived from the roles above so there is one type scale, not two. Slots
-// with no role of their own exist only so unmigrated screens and Material components keep the app
-// typeface; they are removed once no screen reads MaterialTheme.typography directly.
+// The Material slots are derived from the roles above so Material components inherit the same
+// typeface and scale instead of creating a second visual system.
 val Typography =
     Typography(
         displayLarge = FonecheckType.readout.copy(fontSize = 48.sp, lineHeight = 52.sp),

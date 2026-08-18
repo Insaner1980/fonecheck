@@ -1,9 +1,7 @@
 package com.insaner.fonecheck.ui.screens.home
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,11 +17,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,15 +30,6 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.testTag
@@ -55,13 +44,9 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
@@ -100,10 +85,6 @@ import com.insaner.fonecheck.ui.components.SegmentedBar
 import com.insaner.fonecheck.ui.components.StatusText
 import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
-import com.insaner.fonecheck.ui.theme.Lavender80
-import com.insaner.fonecheck.ui.theme.Neutral850
-import com.insaner.fonecheck.ui.theme.Neutral900
-import com.insaner.fonecheck.ui.theme.Neutral950
 import com.insaner.fonecheck.ui.theme.SemanticTone
 import com.insaner.fonecheck.ui.theme.toSemanticTone
 import java.text.NumberFormat
@@ -140,7 +121,7 @@ internal fun HomeContent(
     onRetryLatestFullCheck: () -> Unit = {},
 ) {
     LazyColumn(
-        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        modifier = modifier.fillMaxSize().background(FonecheckTheme.colors.background),
         contentPadding =
             PaddingValues(
                 start = FonecheckTheme.spacing.md,
@@ -187,7 +168,6 @@ internal fun HomeContent(
                 diagnosticDestinations.forEachIndexed { index, destination ->
                     val result = homeCategoryRowResult(latestFullCheck, destination.category)
                     CategoryNavigationRow(
-                        iconResId = destination.iconResId,
                         label = stringResource(destination.labelResId),
                         value = result.value,
                         tone = result.tone,
@@ -224,9 +204,9 @@ private fun HomeBrandHeader(
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
         val fontScale = LocalDensity.current.fontScale
-        val stackActions = maxWidth < 480.dp && fontScale > 1.3f
+        val stackActions = latestReportUsesStackedLayout(maxWidth.value, fontScale)
         if (stackActions) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm)) {
                 HomeBrand()
                 HeaderActions(
                     onHistory = onHistory,
@@ -237,7 +217,7 @@ private fun HomeBrandHeader(
         } else {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 HomeBrand(modifier = Modifier.weight(1f))
@@ -252,39 +232,19 @@ private fun HomeBrand(modifier: Modifier = Modifier) {
     val appName = stringResource(R.string.app_name)
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Image(
             painter = painterResource(R.drawable.fonecheck_mark),
             contentDescription = null,
-            modifier = Modifier.size(56.dp),
-            contentScale = ContentScale.Fit,
+            modifier = Modifier.size(FonecheckTheme.spacing.xxl),
         )
-        // The wordmark stays neutral: the primary action is the one element on this screen that
-        // carries the accent.
         Text(
-            text =
-                buildAnnotatedString {
-                    withStyle(
-                        SpanStyle(
-                            color = FonecheckTheme.colors.textPrimary,
-                            fontWeight = FontWeight.Bold,
-                        ),
-                    ) {
-                        append(appName.take(4))
-                    }
-                    withStyle(
-                        SpanStyle(
-                            color = FonecheckTheme.colors.textPrimary,
-                            fontWeight = FontWeight.Medium,
-                        ),
-                    ) {
-                        append(appName.drop(4))
-                    }
-                },
+            text = appName,
             modifier = Modifier.semantics { heading() },
-            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 26.sp, lineHeight = 32.sp),
+            style = FonecheckTheme.type.screenTitle,
+            color = FonecheckTheme.colors.textPrimary,
             maxLines = 1,
         )
     }
@@ -298,125 +258,23 @@ private fun HeaderActions(
 ) {
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        FonecheckHeaderIconButton(
-            contentDescription = stringResource(R.string.home_history_content_description),
-            onClick = onHistory,
-        ) { color ->
-            HistoryGlyph(color, Modifier.size(26.dp))
-        }
-        FonecheckHeaderIconButton(
-            contentDescription = stringResource(R.string.home_settings_content_description),
-            onClick = onSettings,
-        ) { color ->
+        IconButton(onClick = onHistory) {
             Icon(
-                imageVector = Icons.Rounded.Settings,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(27.dp),
+                imageVector = Icons.AutoMirrored.Filled.List,
+                contentDescription = stringResource(R.string.home_history_content_description),
+                tint = FonecheckTheme.colors.textPrimary,
             )
         }
-    }
-}
-
-@Composable
-private fun FonecheckHeaderIconButton(
-    contentDescription: String,
-    onClick: () -> Unit,
-    content: @Composable (Color) -> Unit,
-) {
-    val lavender = Lavender80
-    val outerShape = RoundedCornerShape(17.dp)
-    val innerShape = RoundedCornerShape(15.dp)
-    Box(
-        modifier =
-            Modifier
-                .size(52.dp)
-                .shadow(8.dp, outerShape, ambientColor = Neutral950, spotColor = Neutral950)
-                .clip(outerShape)
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Lavender80.copy(alpha = 0.52f),
-                            Neutral950,
-                        ),
-                    ),
-                ).clickable(role = Role.Button, onClick = onClick)
-                .semantics {
-                    this.contentDescription = contentDescription
-                    role = Role.Button
-                }.padding(2.dp),
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .clip(innerShape)
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                Neutral850,
-                                Neutral900,
-                            ),
-                        ),
-                    ).border(
-                        1.dp,
-                        Lavender80.copy(alpha = 0.22f),
-                        innerShape,
-                    ),
-            contentAlignment = Alignment.Center,
-        ) {
-            content(lavender)
+        IconButton(onClick = onSettings) {
+            Icon(
+                imageVector = Icons.Filled.Settings,
+                contentDescription = stringResource(R.string.home_settings_content_description),
+                tint = FonecheckTheme.colors.textPrimary,
+            )
         }
-    }
-}
-
-@Composable
-private fun HistoryGlyph(
-    color: Color,
-    modifier: Modifier = Modifier,
-) {
-    Canvas(modifier = modifier) {
-        val strokeWidth = 2.25.dp.toPx()
-        drawArc(
-            color = color,
-            startAngle = -52f,
-            sweepAngle = 292f,
-            useCenter = false,
-            topLeft = Offset(strokeWidth, strokeWidth),
-            size = Size(size.width - strokeWidth * 2, size.height - strokeWidth * 2),
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-        )
-        drawLine(
-            color = color,
-            start = Offset(size.width * 0.22f, size.height * 0.28f),
-            end = Offset(size.width * 0.22f, size.height * 0.48f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round,
-        )
-        drawLine(
-            color = color,
-            start = Offset(size.width * 0.22f, size.height * 0.28f),
-            end = Offset(size.width * 0.40f, size.height * 0.31f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round,
-        )
-        drawLine(
-            color = color,
-            start = center,
-            end = Offset(center.x, size.height * 0.30f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round,
-        )
-        drawLine(
-            color = color,
-            start = center,
-            end = Offset(size.width * 0.68f, size.height * 0.58f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round,
-        )
     }
 }
 
@@ -830,11 +688,11 @@ private fun HomeTopPreview(darkTheme: Boolean) {
     FonecheckTheme(darkTheme = darkTheme) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background,
+            color = FonecheckTheme.colors.background,
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(FonecheckTheme.spacing.md),
+                verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md),
             ) {
                 HomeBrandHeader(onHistory = {}, onSettings = {})
                 LatestFullCheckReadout(report = previewDiagnosticReport(), onClick = {})

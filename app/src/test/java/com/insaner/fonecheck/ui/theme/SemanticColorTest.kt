@@ -37,16 +37,6 @@ class SemanticColorTest {
     }
 
     @Test
-    fun `legacy status colors resolve to the palette roles in both themes`() {
-        assertEquals(LightFonecheckColors.pass, statusColorForTheme(Green400, lightTheme = true))
-        assertEquals(LightFonecheckColors.attention, statusColorForTheme(Yellow400, lightTheme = true))
-        assertEquals(LightFonecheckColors.fail, statusColorForTheme(Red400, lightTheme = true))
-        assertEquals(DarkFonecheckColors.pass, statusColorForTheme(Green400, lightTheme = false))
-        assertEquals(DarkFonecheckColors.attention, statusColorForTheme(Yellow400, lightTheme = false))
-        assertEquals(DarkFonecheckColors.fail, statusColorForTheme(Red400, lightTheme = false))
-    }
-
-    @Test
     fun `the strong rule is the primary ink of its own ramp`() {
         bothThemes().forEach { colors ->
             assertEquals(colors.textPrimary, colors.ruleStrong)

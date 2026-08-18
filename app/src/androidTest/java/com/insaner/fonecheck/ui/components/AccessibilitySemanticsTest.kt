@@ -1,7 +1,6 @@
 package com.insaner.fonecheck.ui.components
 
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -46,50 +45,4 @@ class AccessibilitySemanticsTest {
         composeRule.onNodeWithText("Collapsed", useUnmergedTree = true).assertDoesNotExist()
     }
 
-    @Test
-    fun expandableSectionExposesHeadingStateAndTouchTarget() {
-        composeRule.setContent {
-            FonecheckTheme {
-                TestSectionCard(
-                    icon = "BAT",
-                    title = "Battery",
-                    statusText = "Pass",
-                    statusColor = Color.Green,
-                    isExpanded = false,
-                    onClick = {},
-                    modifier = Modifier.testTag("section"),
-                ) {}
-            }
-        }
-
-        composeRule
-            .onNodeWithTag("section")
-            .assertHeightIsAtLeast(48.dp)
-            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.StateDescription))
-        composeRule
-            .onNodeWithText("Battery", useUnmergedTree = true)
-            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
-    }
-
-    @Test
-    fun statusBadgeExposesTextAsStateDescription() {
-        composeRule.setContent {
-            FonecheckTheme {
-                StatusBadge(
-                    text = "Pass",
-                    color = Color.Green,
-                    modifier = Modifier.testTag("status"),
-                )
-            }
-        }
-
-        composeRule
-            .onNodeWithTag("status")
-            .assert(
-                SemanticsMatcher.expectValue(
-                    SemanticsProperties.StateDescription,
-                    "Pass",
-                ),
-            )
-    }
 }

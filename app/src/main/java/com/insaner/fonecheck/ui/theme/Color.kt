@@ -32,28 +32,7 @@ internal val AccentFillDark = Color(0xFFE8A33D) // 9.07:1
 internal val FailDark = Color(0xFFE8736B) // 6.61:1
 internal val OnAccentDark = Color(0xFF1A1206) // 8.59:1 against AccentFillDark
 
-// Legacy tokens. Screens still name these directly; each one is deleted in the task that migrates
-// the last screen using it. Status colors resolve to the palette above through readableStatusColor.
-val Aqua40 = Color(0xFF00716D)
-val Aqua80 = Color(0xFF48D8D2)
-val Blue400 = Aqua80
-val Lavender40 = Color(0xFF6846A5)
-val Lavender80 = Color(0xFFC9B2FF)
-val Coral80 = Color(0xFFFFB4A9)
-
-val Neutral950 = Color(0xFF0D0F14)
-val Neutral900 = Color(0xFF15181F)
-val Neutral850 = Color(0xFF1C2028)
-val Neutral800 = Color(0xFF242A34)
-val Neutral700 = Color(0xFF343B48)
-val Neutral600 = Color(0xFF48515F)
-val Neutral500 = Color(0xFF697383)
-val Neutral400 = Color(0xFF8993A2)
-val Neutral300 = Color(0xFFAEB6C4)
-val Neutral200 = Color(0xFFD0D6E0)
-val Neutral100 = Color(0xFFF4F6FA)
-val Neutral50 = Color(0xFFFBFCFE)
-
+// Interactive Display test stimuli are intentionally outside the app-chrome palette. Their
+// colours and geometry are part of the test input and must not change with the theme.
 val Green400 = Color(0xFF62D991)
 val Yellow400 = Color(0xFFF0C75E)
-val Red400 = Color(0xFFFF7474)
