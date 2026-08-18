@@ -13,6 +13,7 @@ fun ManualResultButtons(
     passLabel: String,
     onResult: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -22,11 +23,13 @@ fun ManualResultButtons(
             label = problemLabel,
             onClick = { onResult(false) },
             modifier = Modifier.weight(1f),
+            enabled = enabled,
         )
         PrimaryButton(
             label = passLabel,
             onClick = { onResult(true) },
             modifier = Modifier.weight(1f),
+            enabled = enabled,
         )
     }
 }

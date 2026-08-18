@@ -1001,29 +1001,23 @@
     <string name="display_resolution_source_physical">physical metrics</string>
 
     <!-- Vibration Test Screen -->
-    <string name="vibration_motor_title">Motor Test</string>
+    <string name="vibration_motor_title">Motor test</string>
     <string name="vibration_short">Short</string>
     <string name="vibration_long">Long</string>
     <string name="vibration_pattern">Pattern</string>
     <string name="vibration_did_you_feel">Did you feel it?</string>
     <string name="vibration_yes">Yes</string>
     <string name="vibration_no">No</string>
-    <string name="vibration_haptic_title">Haptic Capabilities</string>
-    <string name="vibration_amplitude_control">Amplitude Control</string>
-    <string name="vibration_effects_supported">Effects Supported</string>
-    <string name="vibration_primitives_supported">Primitives Supported</string>
-    <string name="vibration_has_vibrator">Has Vibrator</string>
-    <string name="vibration_motor_icon">VIB</string>
-    <string name="vibration_haptic_icon">HAP</string>
+    <string name="vibration_haptic_title">Haptic capabilities</string>
+    <string name="vibration_amplitude_control">Amplitude control</string>
+    <string name="vibration_effects_supported">Supported effects</string>
+    <string name="vibration_primitives_supported">Supported primitives</string>
+    <string name="vibration_has_vibrator">Vibrator</string>
     <string name="vibration_ready">Ready</string>
     <string name="vibration_felt">Felt</string>
     <string name="vibration_not_felt">Not felt</string>
     <string name="vibration_skipped">Skipped</string>
     <string name="vibration_none">None</string>
-    <plurals name="vibration_effect_count">
-        <item quantity="one">%1$d effect</item>
-        <item quantity="other">%1$d effects</item>
-    </plurals>
     <string name="vibration_stop">Stop vibration</string>
     <string name="vibration_skip">Skip physical confirmation</string>
     <string name="vibration_unavailable">Android reports that this device has no vibrator.</string>
@@ -1046,21 +1040,21 @@
 
     <!-- Button Test Screen -->
     <string name="button_test_title">Volume buttons</string>
-    <string name="button_test_icon">BTN</string>
-    <string name="button_volume_up">Volume Up</string>
-    <string name="button_volume_down">Volume Down</string>
-    <string name="button_power">Power Button</string>
+    <string name="button_status_label">Status</string>
+    <string name="button_volume_up">Volume up</string>
+    <string name="button_volume_down">Volume down</string>
+    <string name="button_power">Power button</string>
     <string name="button_detected">Detected</string>
-    <string name="button_not_detected">Not Detected</string>
+    <string name="button_not_detected">Not detected</string>
     <string name="button_power_note">Android apps cannot reliably test the power button, so it is not included in this test.</string>
     <string name="button_power_unavailable">Unavailable to apps</string>
-    <string name="button_start_test">Start Test</string>
+    <string name="button_start_test">Start test</string>
     <string name="button_stop">Stop</string>
     <string name="button_skip">Skip</string>
     <string name="button_retry">Try again</string>
     <string name="button_reset">Reset</string>
     <string name="button_status_ready">Ready</string>
-    <string name="button_status_progress">%1$d of 2 detected</string>
+    <string name="button_status_progress">%1$s of %2$s detected</string>
     <string name="button_status_complete">Complete</string>
     <string name="button_status_timed_out">Timed out</string>
     <string name="button_status_skipped">Skipped</string>
@@ -1068,16 +1062,14 @@
 
     <!-- Biometric Test Screen -->
     <string name="biometric_capabilities_title">Capabilities</string>
-    <string name="biometric_capability_icon">BIO</string>
-    <string name="biometric_auth_icon">AUTH</string>
     <string name="biometric_fingerprint_hardware">Fingerprint feature</string>
     <string name="biometric_face_hardware">Face feature</string>
     <string name="biometric_strong">Strong (Class 3)</string>
     <string name="biometric_weak">Weak (Class 2)</string>
-    <string name="biometric_device_credential">Device Credential</string>
+    <string name="biometric_device_credential">Device credential</string>
     <string name="biometric_credential_excluded">Device credential is shown as device context only. It is never accepted by this biometric test.</string>
-    <string name="biometric_test_auth">Test Authentication</string>
-    <string name="biometric_auth_success">Authentication Successful</string>
+    <string name="biometric_test_auth">Test authentication</string>
+    <string name="biometric_auth_success">Authentication successful</string>
     <string name="biometric_auth_error">Error: %1$s</string>
     <string name="biometric_not_available">Biometric authentication not available</string>
     <string name="biometric_available">Available and enrolled</string>

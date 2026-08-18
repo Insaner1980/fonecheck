@@ -1005,17 +1005,11 @@
     <string name="vibration_effects_supported">Tuetut efektit</string>
     <string name="vibration_primitives_supported">Tuetut primitiivit</string>
     <string name="vibration_has_vibrator">Värinämoottori</string>
-    <string name="vibration_motor_icon">VÄR</string>
-    <string name="vibration_haptic_icon">HAP</string>
     <string name="vibration_ready">Valmis</string>
     <string name="vibration_felt">Tuntui</string>
     <string name="vibration_not_felt">Ei tuntunut</string>
     <string name="vibration_skipped">Ohitettu</string>
     <string name="vibration_none">Ei mitään</string>
-    <plurals name="vibration_effect_count">
-        <item quantity="one">%1$d efekti</item>
-        <item quantity="other">%1$d efektiä</item>
-    </plurals>
     <string name="vibration_stop">Pysäytä värinä</string>
     <string name="vibration_skip">Ohita fyysinen vahvistus</string>
     <string name="vibration_unavailable">Android ilmoittaa, ettei laitteessa ole värinämoottoria.</string>
@@ -1038,7 +1032,7 @@
 
     <!-- Button Test Screen -->
     <string name="button_test_title">Äänenvoimakkuuspainikkeet</string>
-    <string name="button_test_icon">BTN</string>
+    <string name="button_status_label">Tila</string>
     <string name="button_volume_up">Ääni ylös</string>
     <string name="button_volume_down">Ääni alas</string>
     <string name="button_power">Virtapainike</string>
@@ -1052,7 +1046,7 @@
     <string name="button_retry">Yritä uudelleen</string>
     <string name="button_reset">Nollaa</string>
     <string name="button_status_ready">Valmis</string>
-    <string name="button_status_progress">%1$d / 2 havaittu</string>
+    <string name="button_status_progress">%1$s / %2$s havaittu</string>
     <string name="button_status_complete">Valmis</string>
     <string name="button_status_timed_out">Aika päättyi</string>
     <string name="button_status_skipped">Ohitettu</string>
@@ -1060,8 +1054,6 @@
 
     <!-- Biometric Test Screen -->
     <string name="biometric_capabilities_title">Ominaisuudet</string>
-    <string name="biometric_capability_icon">BIO</string>
-    <string name="biometric_auth_icon">AUTH</string>
     <string name="biometric_fingerprint_hardware">Sormenjälkiominaisuus</string>
     <string name="biometric_face_hardware">Kasvotunnistusominaisuus</string>
     <string name="biometric_strong">Vahva (luokka 3)</string>
