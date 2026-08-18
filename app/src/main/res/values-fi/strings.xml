@@ -258,12 +258,13 @@
     <string name="sensor_description">Avaa jokainen saatavilla oleva testi ja seuraa ohjetta. Läpäisy vaatii rajatun näytteen tai liikevasteen.</string>
     <string name="sensor_count">Havaitut anturit</string>
     <string name="sensor_guided_completed">Läpäistyt ohjatut testit</string>
-    <string name="sensor_guided_progress">%1$d / %2$d</string>
+    <string name="sensor_guided_progress">%1$s / %2$s</string>
     <string name="sensor_listener_error">Anturin kuuntelua ei voitu käynnistää. Yritä testiä uudelleen.</string>
     <string name="sensor_not_available_description">Tätä anturia ei ole saatavilla tällä laitteella.</string>
     <string name="sensor_skip_test">Ohita testi</string>
     <string name="sensor_status_sampling">Näytteistetään</string>
     <string name="sensor_status_skipped">Ohitettu</string>
+    <string name="sensor_status_label">Tila</string>
     <string name="status_not_available">Ei saatavilla</string>
     <string name="status_not_tested">Ei testattu</string>
     <string name="status_pass">Läpäisty</string>
@@ -286,9 +287,9 @@
     <string name="sensor_unit_magnetic_field">µT</string>
     <string name="sensor_unit_pressure">hPa</string>
     <string name="sensor_unit_steps">askelta</string>
-    <string name="sensor_version_format">v%1$d</string>
+    <string name="sensor_version_format">v%1$s</string>
     <string name="sensor_power_format">%1$s mA</string>
-    <string name="sensor_delay_format">%1$d µs</string>
+    <string name="sensor_delay_format">%1$s µs</string>
     <string name="sensor_type_accelerometer">Kiihtyvyysanturi</string>
     <string name="sensor_type_gyroscope">Gyroskooppi</string>
     <string name="sensor_type_gravity">Painovoima-anturi</string>
@@ -308,8 +309,8 @@
     <string name="sensor_orientation">Johdettu asentovaste</string>
     <string name="sensor_orientation_observed">Havaittu</string>
     <plurals name="sensor_samples">
-        <item quantity="one">%1$d näyte</item>
-        <item quantity="other">%1$d näytettä</item>
+        <item quantity="one">%1$s näyte</item>
+        <item quantity="other">%1$s näytettä</item>
     </plurals>
     <string name="sensor_info_title">Anturin tiedot</string>
     <string name="sensor_challenges_title">Haasteet</string>
@@ -342,6 +343,15 @@
     <string name="conn_not_available">Ei saatavilla</string>
     <string name="conn_supported">Tuettu</string>
     <string name="conn_not_supported">Ei tuettu</string>
+    <string name="conn_status_label">Tila</string>
+    <string name="conn_refresh">Päivitä yhteys- ja verkkotiedot</string>
+    <string name="conn_dbm_format">%1$s dBm</string>
+    <string name="conn_signal_level_format">%1$s / %2$s</string>
+    <string name="conn_mhz_format">%1$s MHz</string>
+    <string name="conn_ghz_format">%1$s GHz</string>
+    <string name="conn_frequency_band_format">%1$s MHz (%2$s)</string>
+    <string name="conn_mbps_format">%1$s Mbps</string>
+    <string name="conn_mcc_mnc_format">%1$s / %2$s</string>
 
     <!-- WiFi -->
     <string name="conn_wifi_title">Wi-Fi</string>
@@ -391,7 +401,7 @@
     <string name="conn_gps_accuracy_format">±%1$s m</string>
     <string name="conn_gps_altitude_format">%1$s m</string>
     <string name="conn_gps_speed_format">%1$s m/s</string>
-    <string name="conn_gps_satellite_ratio">%1$d / %2$d</string>
+    <string name="conn_gps_satellite_ratio">%1$s / %2$s</string>
     <string name="conn_gps_cn0_format">%1$s</string>
     <string name="conn_gps_latitude">Leveysaste</string>
     <string name="conn_gps_longitude">Pituusaste</string>
@@ -401,11 +411,13 @@
     <string name="conn_gps_satellites_visible">Näkyvät satelliitit</string>
     <string name="conn_gps_satellites_used">Käytetyt satelliitit</string>
     <string name="conn_gps_satellite_info">Satelliittitiedot</string>
+    <string name="conn_gps_satellite_label">Satelliitti %1$s · %2$s</string>
+    <string name="conn_gps_satellite_value">%1$s dB-Hz · käytössä: %2$s</string>
     <string name="conn_gps_constellation">Järjestelmä</string>
     <string name="conn_gps_used">Käytössä</string>
     <plurals name="conn_gps_more_sats">
-        <item quantity="one">+ %1$d lisää</item>
-        <item quantity="other">+ %1$d lisää</item>
+        <item quantity="one">+ %1$s lisää</item>
+        <item quantity="other">+ %1$s lisää</item>
     </plurals>
     <string name="conn_gps_start_fix">Aloita GPS-lukitus</string>
     <string name="conn_gps_retest">Testaa uudelleen</string>

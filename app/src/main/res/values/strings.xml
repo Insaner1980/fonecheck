@@ -258,20 +258,21 @@
     <string name="camera_retry">Try again</string>
 
     <!-- Sensor Test Screen -->
-    <string name="sensor_summary_title">Sensor Overview</string>
+    <string name="sensor_summary_title">Sensor overview</string>
     <string name="sensor_description">Open each available test and follow its guidance. A pass requires a bounded sample or motion response.</string>
-    <string name="sensor_count">Sensors Detected</string>
+    <string name="sensor_count">Sensors detected</string>
     <string name="sensor_guided_completed">Guided tests passed</string>
-    <string name="sensor_guided_progress">%1$d of %2$d</string>
+    <string name="sensor_guided_progress">%1$s of %2$s</string>
     <string name="sensor_listener_error">The sensor listener could not be started. Try the test again.</string>
     <string name="sensor_not_available_description">This sensor is not available on this device.</string>
     <string name="sensor_skip_test">Skip test</string>
     <string name="sensor_status_sampling">Sampling</string>
     <string name="sensor_status_skipped">Skipped</string>
+    <string name="sensor_status_label">Status</string>
     <string name="status_not_available">Not available</string>
     <string name="status_not_tested">Not tested</string>
     <string name="status_pass">Pass</string>
-    <string name="sensor_live_values">Live Values</string>
+    <string name="sensor_live_values">Live values</string>
     <string name="sensor_accuracy">Accuracy</string>
     <string name="sensor_accuracy_unreliable">Unreliable</string>
     <string name="sensor_accuracy_low">Low</string>
@@ -290,9 +291,9 @@
     <string name="sensor_unit_magnetic_field">µT</string>
     <string name="sensor_unit_pressure">hPa</string>
     <string name="sensor_unit_steps">steps</string>
-    <string name="sensor_version_format">v%1$d</string>
+    <string name="sensor_version_format">v%1$s</string>
     <string name="sensor_power_format">%1$s mA</string>
-    <string name="sensor_delay_format">%1$d µs</string>
+    <string name="sensor_delay_format">%1$s µs</string>
     <string name="sensor_type_accelerometer">Accelerometer</string>
     <string name="sensor_type_gyroscope">Gyroscope</string>
     <string name="sensor_type_gravity">Gravity</string>
@@ -312,19 +313,19 @@
     <string name="sensor_orientation">Derived orientation response</string>
     <string name="sensor_orientation_observed">Observed</string>
     <plurals name="sensor_samples">
-        <item quantity="one">%1$d sample</item>
-        <item quantity="other">%1$d samples</item>
+        <item quantity="one">%1$s sample</item>
+        <item quantity="other">%1$s samples</item>
     </plurals>
-    <string name="sensor_info_title">Sensor Info</string>
+    <string name="sensor_info_title">Sensor info</string>
     <string name="sensor_challenges_title">Challenges</string>
     <string name="sensor_name">Name</string>
     <string name="sensor_vendor">Vendor</string>
     <string name="sensor_version">Version</string>
     <string name="sensor_resolution">Resolution</string>
-    <string name="sensor_max_range">Max Range</string>
+    <string name="sensor_max_range">Max range</string>
     <string name="sensor_power">Power</string>
-    <string name="sensor_min_delay">Min Delay</string>
-    <string name="sensor_wake_up">Wake-Up</string>
+    <string name="sensor_min_delay">Min delay</string>
+    <string name="sensor_wake_up">Wake-up</string>
     <string name="sensor_on_change">On-change</string>
 
     <string name="sensor_challenge_passed">Passed!</string>
@@ -336,16 +337,25 @@
     <string name="sensor_challenge_rotate">Rotate your phone!</string>
 
     <string name="sensor_btn_shake">Shake</string>
-    <string name="sensor_btn_tilt_left">Tilt Left</string>
-    <string name="sensor_btn_tilt_right">Tilt Right</string>
-    <string name="sensor_btn_face_down">Face Down</string>
-    <string name="sensor_btn_face_up">Face Up</string>
+    <string name="sensor_btn_tilt_left">Tilt left</string>
+    <string name="sensor_btn_tilt_right">Tilt right</string>
+    <string name="sensor_btn_face_down">Face down</string>
+    <string name="sensor_btn_face_up">Face up</string>
     <string name="sensor_btn_rotate">Rotate</string>
 
     <!-- Connectivity Test Screen -->
-    <string name="conn_not_available">Not Available</string>
+    <string name="conn_not_available">Not available</string>
     <string name="conn_supported">Supported</string>
-    <string name="conn_not_supported">Not Supported</string>
+    <string name="conn_not_supported">Not supported</string>
+    <string name="conn_status_label">Status</string>
+    <string name="conn_refresh">Refresh connectivity information</string>
+    <string name="conn_dbm_format">%1$s dBm</string>
+    <string name="conn_signal_level_format">%1$s / %2$s</string>
+    <string name="conn_mhz_format">%1$s MHz</string>
+    <string name="conn_ghz_format">%1$s GHz</string>
+    <string name="conn_frequency_band_format">%1$s MHz (%2$s)</string>
+    <string name="conn_mbps_format">%1$s Mbps</string>
+    <string name="conn_mcc_mnc_format">%1$s / %2$s</string>
 
     <!-- WiFi -->
     <string name="conn_wifi_title">Wi-Fi</string>
@@ -353,11 +363,11 @@
     <string name="conn_wifi_not_connected">Not connected to a Wi-Fi network.</string>
     <string name="conn_wifi_ssid">SSID</string>
     <string name="conn_wifi_signal">Signal</string>
-    <string name="conn_wifi_signal_level">Signal Level</string>
+    <string name="conn_wifi_signal_level">Signal level</string>
     <string name="conn_wifi_frequency">Frequency</string>
     <string name="conn_wifi_link_speed">Negotiated Wi-Fi link speed</string>
-    <string name="conn_wifi_standard">Wi-Fi Standard</string>
-    <string name="conn_wifi_ip">IP Address</string>
+    <string name="conn_wifi_standard">Wi-Fi standard</string>
+    <string name="conn_wifi_ip">IP address</string>
     <string name="conn_wifi_gateway">Gateway</string>
     <string name="conn_wifi_dns1">DNS 1</string>
     <string name="conn_wifi_dns2">DNS 2</string>
@@ -368,66 +378,68 @@
     <string name="conn_bt_status">Status</string>
     <string name="conn_bt_name">Name</string>
     <string name="conn_bt_ble">Bluetooth LE</string>
-    <string name="conn_bt_bonded">Paired Devices</string>
+    <string name="conn_bt_bonded">Paired devices</string>
 
     <!-- NFC -->
     <string name="conn_nfc_title">NFC</string>
     <string name="conn_nfc_not_supported">NFC hardware not available on this device.</string>
     <string name="conn_nfc_status">Status</string>
-    <string name="conn_nfc_hce">Host Card Emulation</string>
+    <string name="conn_nfc_hce">Host card emulation</string>
     <string name="conn_nfc_capability_only">This reports NFC capability and enabled state only; it does not verify a physical NFC exchange.</string>
 
     <!-- GPS -->
     <string name="conn_gps_title">GPS</string>
     <string name="conn_gps_not_supported">GPS hardware not available on this device.</string>
-    <string name="conn_gps_provider">GPS Provider</string>
+    <string name="conn_gps_provider">GPS provider</string>
     <string name="conn_gps_status">Status</string>
     <string name="conn_gps_ready">Ready</string>
     <string name="conn_gps_searching">Searching…</string>
     <string name="conn_gps_fixed">Fixed</string>
-    <string name="conn_gps_failed">Timed Out</string>
+    <string name="conn_gps_failed">Timed out</string>
     <string name="conn_gps_start_failed">Could not start</string>
     <string name="conn_gps_privacy_ephemeral">Exact location is shown only on this screen and is not saved in the report.</string>
     <string name="conn_gps_elapsed">Elapsed</string>
-    <string name="conn_gps_fix_time">Fix Time</string>
+    <string name="conn_gps_fix_time">Fix time</string>
     <string name="conn_gps_fix_duration_format">%1$s s</string>
     <string name="conn_gps_coordinate_format">%1$s°</string>
     <string name="conn_gps_accuracy_format">±%1$s m</string>
     <string name="conn_gps_altitude_format">%1$s m</string>
     <string name="conn_gps_speed_format">%1$s m/s</string>
-    <string name="conn_gps_satellite_ratio">%1$d / %2$d</string>
+    <string name="conn_gps_satellite_ratio">%1$s / %2$s</string>
     <string name="conn_gps_cn0_format">%1$s</string>
     <string name="conn_gps_latitude">Latitude</string>
     <string name="conn_gps_longitude">Longitude</string>
     <string name="conn_gps_accuracy">Accuracy</string>
     <string name="conn_gps_altitude">Altitude</string>
     <string name="conn_gps_speed">Speed</string>
-    <string name="conn_gps_satellites_visible">Satellites Visible</string>
-    <string name="conn_gps_satellites_used">Satellites Used</string>
-    <string name="conn_gps_satellite_info">Satellite Details</string>
+    <string name="conn_gps_satellites_visible">Satellites visible</string>
+    <string name="conn_gps_satellites_used">Satellites used</string>
+    <string name="conn_gps_satellite_info">Satellite details</string>
+    <string name="conn_gps_satellite_label">Satellite %1$s · %2$s</string>
+    <string name="conn_gps_satellite_value">%1$s dB-Hz · used: %2$s</string>
     <string name="conn_gps_constellation">Constellation</string>
     <string name="conn_gps_used">Fix</string>
     <plurals name="conn_gps_more_sats">
-        <item quantity="one">+ %1$d more</item>
-        <item quantity="other">+ %1$d more</item>
+        <item quantity="one">+ %1$s more</item>
+        <item quantity="other">+ %1$s more</item>
     </plurals>
-    <string name="conn_gps_start_fix">Start GPS Fix</string>
+    <string name="conn_gps_start_fix">Start GPS fix</string>
     <string name="conn_gps_retest">Re-test</string>
 
     <!-- Mobile Network -->
-    <string name="conn_mobile_title">Mobile Network</string>
+    <string name="conn_mobile_title">Mobile network</string>
     <string name="conn_mobile_not_supported">Telephony hardware not available on this device.</string>
-    <string name="conn_mobile_status">Data State</string>
+    <string name="conn_mobile_status">Data state</string>
     <string name="conn_mobile_data_connected">Connected</string>
     <string name="conn_mobile_data_connecting">Connecting</string>
     <string name="conn_mobile_data_disconnected">Disconnected</string>
     <string name="conn_mobile_data_suspended">Suspended</string>
     <string name="conn_mobile_operator">Operator</string>
-    <string name="conn_mobile_sim_operator">SIM Operator</string>
-    <string name="conn_mobile_phone_type">Phone Type</string>
-    <string name="conn_mobile_network_type">Network Type</string>
+    <string name="conn_mobile_sim_operator">SIM operator</string>
+    <string name="conn_mobile_phone_type">Phone type</string>
+    <string name="conn_mobile_network_type">Network type</string>
     <string name="conn_mobile_signal">Signal</string>
-    <string name="conn_mobile_signal_level">Signal Level</string>
+    <string name="conn_mobile_signal_level">Signal level</string>
     <string name="conn_mobile_roaming">Roaming</string>
     <string name="conn_mobile_cell_id">Cell ID</string>
     <string name="conn_mobile_mcc_mnc">MCC / MNC</string>

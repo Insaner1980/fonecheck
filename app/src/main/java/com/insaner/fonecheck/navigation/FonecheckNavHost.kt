@@ -77,7 +77,7 @@ fun FonecheckNavHost(
             SensorTestScreen()
         }
         composable<ConnectivityTest> {
-            ConnectivityTestScreen()
+            ConnectivityTestScreen(onTopBarActionChange = onTopBarActionChange)
         }
         composable<BatteryTest> {
             BatteryTestScreen()
