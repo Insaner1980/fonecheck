@@ -6,20 +6,12 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,8 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -42,11 +32,19 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.data.preferences.AppThemeMode
-import com.insaner.fonecheck.ui.components.InfoRow
-import com.insaner.fonecheck.ui.components.SectionBox
-import com.insaner.fonecheck.ui.components.StandardCard
+import com.insaner.fonecheck.ui.components.DataRow
+import com.insaner.fonecheck.ui.components.HairlineRule
+import com.insaner.fonecheck.ui.components.LongValueRow
+import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.PrimaryButton
+import com.insaner.fonecheck.ui.components.SecondaryButton
+import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.components.StatusText
+import com.insaner.fonecheck.ui.components.TestScreenContent
+import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.startExternalActivity
-import com.insaner.fonecheck.ui.theme.Green400
+import com.insaner.fonecheck.ui.theme.FonecheckTheme
+import com.insaner.fonecheck.ui.theme.SemanticTone
 
 @Composable
 fun SettingsRoute(
@@ -59,7 +57,12 @@ fun SettingsRoute(
     val currentOnOpenOnboarding by rememberUpdatedState(onOpenOnboarding)
     val context = LocalContext.current
     val packageInfo = remember { context.packageManager.getPackageInfo(context.packageName, 0) }
-    val appVersion = "${packageInfo.versionName} (${PackageInfoCompat.getLongVersionCode(packageInfo)})"
+    val appVersion =
+        stringResource(
+            R.string.report_app_version_value,
+            packageInfo.versionName,
+            uiNumber(PackageInfoCompat.getLongVersionCode(packageInfo)),
+        )
     val externalAppUnavailable = stringResource(R.string.external_app_unavailable)
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshPermissions() }
     LaunchedEffect(state.openOnboarding) {
@@ -117,22 +120,15 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     var confirmDeleteAll by remember { mutableStateOf(false) }
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item {
-            Text(
-                text = stringResource(R.string.settings_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-            )
-        }
+    TestScreenContent(modifier = modifier) {
         state.error?.let { error ->
             item {
-                Text(
-                    text =
+                Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm)) {
+                    StatusText(
+                        text = stringResource(R.string.state_error_title),
+                        tone = SemanticTone.FAIL,
+                    )
+                    Note(
                         stringResource(
                             if (error == "delete_reports_failed") {
                                 R.string.settings_delete_error
@@ -140,21 +136,21 @@ fun SettingsScreen(
                                 R.string.settings_error
                             },
                         ),
-                    color = MaterialTheme.colorScheme.error,
-                )
+                    )
+                }
             }
         }
-        item { AppearanceCard(state, onThemeMode, onTestWarnings) }
-        item { PermissionCard(state.permissions, onOpenAppSettings) }
+        item { AppearanceSection(state, onThemeMode, onTestWarnings) }
+        item { PermissionSection(state.permissions, onOpenAppSettings) }
         item {
-            ReportsCard(
+            ReportsSection(
                 reportCount = state.reportCount,
                 isDeleting = state.isDeletingReports,
                 onDeleteAll = { confirmDeleteAll = true },
             )
         }
         item {
-            LinkCard(
+            LinkSection(
                 onOpenPrivacy = onOpenPrivacy,
                 onOpenSupport = onOpenSupport,
                 onOpenLicenses = onOpenLicenses,
@@ -162,22 +158,13 @@ fun SettingsScreen(
             )
         }
         item {
-            StandardCard {
-                Column(
-                    modifier = Modifier.padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.settings_about),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    InfoRow(stringResource(R.string.settings_version), appVersion)
-                    Text(
-                        text = stringResource(R.string.settings_disclaimer),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+            Column {
+                SectionHeader(stringResource(R.string.settings_about))
+                LongValueRow(
+                    label = stringResource(R.string.settings_version),
+                    value = appVersion,
+                )
+                Note(stringResource(R.string.settings_disclaimer))
             }
         }
     }
@@ -185,74 +172,67 @@ fun SettingsScreen(
     if (confirmDeleteAll) {
         AlertDialog(
             onDismissRequest = { confirmDeleteAll = false },
-            title = { Text(stringResource(R.string.settings_delete_all_title)) },
-            text = { Text(stringResource(R.string.settings_delete_all_message)) },
+            title = {
+                Text(
+                    text = stringResource(R.string.settings_delete_all_title),
+                    style = FonecheckTheme.type.screenTitle,
+                    color = FonecheckTheme.colors.textPrimary,
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.settings_delete_all_message),
+                    style = FonecheckTheme.type.note,
+                    color = FonecheckTheme.colors.textMuted,
+                )
+            },
             confirmButton = {
-                Button(
+                PrimaryButton(
+                    label = stringResource(R.string.settings_delete_all_confirm),
                     onClick = {
                         confirmDeleteAll = false
                         onDeleteAll()
                     },
                     modifier = Modifier.testTag("settings_confirm_delete_all"),
-                ) {
-                    Text(stringResource(R.string.settings_delete_all_confirm))
-                }
+                )
             },
             dismissButton = {
-                TextButton(onClick = { confirmDeleteAll = false }) {
-                    Text(stringResource(R.string.settings_delete_all_cancel))
-                }
+                SecondaryButton(
+                    label = stringResource(R.string.settings_delete_all_cancel),
+                    onClick = { confirmDeleteAll = false },
+                )
             },
         )
     }
 }
 
 @Composable
-private fun AppearanceCard(
+private fun AppearanceSection(
     state: SettingsState,
     onThemeMode: (AppThemeMode) -> Unit,
     onTestWarnings: (Boolean) -> Unit,
 ) {
-    StandardCard {
-        Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+    Column {
+        SectionHeader(stringResource(R.string.settings_appearance))
+        Note(stringResource(R.string.settings_theme))
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
         ) {
-            Text(
-                text = stringResource(R.string.settings_appearance),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(stringResource(R.string.settings_theme))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ThemeChip(AppThemeMode.SYSTEM, state.preferences.themeMode, onThemeMode)
-                ThemeChip(AppThemeMode.LIGHT, state.preferences.themeMode, onThemeMode)
-                ThemeChip(AppThemeMode.DARK, state.preferences.themeMode, onThemeMode)
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.settings_test_warnings))
-                    Text(
-                        text = stringResource(R.string.settings_test_warnings_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Switch(
-                    checked = state.preferences.testWarningsEnabled,
-                    onCheckedChange = onTestWarnings,
-                    modifier = Modifier.testTag("settings_test_warnings"),
-                )
-            }
+            ThemeChoice(AppThemeMode.SYSTEM, state.preferences.themeMode, onThemeMode)
+            ThemeChoice(AppThemeMode.LIGHT, state.preferences.themeMode, onThemeMode)
+            ThemeChoice(AppThemeMode.DARK, state.preferences.themeMode, onThemeMode)
         }
+        SettingToggleRow(
+            checked = state.preferences.testWarningsEnabled,
+            onCheckedChange = onTestWarnings,
+        )
     }
 }
 
 @Composable
-private fun ThemeChip(
+private fun ThemeChoice(
     mode: AppThemeMode,
     selected: AppThemeMode,
     onThemeMode: (AppThemeMode) -> Unit,
@@ -265,47 +245,74 @@ private fun ThemeChip(
                 AppThemeMode.DARK -> R.string.settings_theme_dark
             },
         )
-    FilterChip(
-        selected = selected == mode,
-        onClick = { onThemeMode(mode) },
-        label = { Text(label) },
-        modifier = Modifier.testTag("settings_theme_${mode.name.lowercase()}"),
-    )
+    if (selected == mode) {
+        PrimaryButton(
+            label = label,
+            onClick = { onThemeMode(mode) },
+            modifier = Modifier.testTag("settings_theme_${mode.name.lowercase()}"),
+        )
+    } else {
+        SecondaryButton(
+            label = label,
+            onClick = { onThemeMode(mode) },
+            modifier = Modifier.testTag("settings_theme_${mode.name.lowercase()}"),
+        )
+    }
 }
 
 @Composable
-private fun PermissionCard(
+private fun SettingToggleRow(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = FonecheckTheme.spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.settings_test_warnings),
+                    style = FonecheckTheme.type.rowLabel,
+                    color = FonecheckTheme.colors.textSecondary,
+                )
+                Text(
+                    text = stringResource(R.string.settings_test_warnings_description),
+                    style = FonecheckTheme.type.note,
+                    color = FonecheckTheme.colors.textMuted,
+                )
+            }
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                modifier = Modifier.testTag("settings_test_warnings"),
+            )
+        }
+        HairlineRule()
+    }
+}
+
+@Composable
+private fun PermissionSection(
     permissions: SettingsPermissionSnapshot,
     onOpenAppSettings: () -> Unit,
 ) {
-    StandardCard {
-        Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.settings_permissions),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                text = stringResource(R.string.settings_permissions_description),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            SectionBox {
-                PermissionRow(R.string.settings_permission_camera, permissions.camera)
-                PermissionRow(R.string.settings_permission_microphone, permissions.microphone)
-                PermissionRow(R.string.settings_permission_phone, permissions.phone)
-                PermissionRow(R.string.settings_permission_location, permissions.location)
-                PermissionRow(R.string.settings_permission_bluetooth, permissions.bluetooth)
-            }
-            OutlinedButton(
-                onClick = onOpenAppSettings,
-                modifier = Modifier.fillMaxWidth().testTag("settings_open_app_settings"),
-            ) {
-                Text(stringResource(R.string.settings_open_app_settings))
-            }
-        }
+    Column {
+        SectionHeader(stringResource(R.string.settings_permissions))
+        Note(stringResource(R.string.settings_permissions_description))
+        PermissionRow(R.string.settings_permission_camera, permissions.camera)
+        PermissionRow(R.string.settings_permission_microphone, permissions.microphone)
+        PermissionRow(R.string.settings_permission_phone, permissions.phone)
+        PermissionRow(R.string.settings_permission_location, permissions.location)
+        PermissionRow(R.string.settings_permission_bluetooth, permissions.bluetooth)
+        SecondaryButton(
+            label = stringResource(R.string.settings_open_app_settings),
+            onClick = onOpenAppSettings,
+            modifier = Modifier.fillMaxWidth().testTag("settings_open_app_settings"),
+        )
     }
 }
 
@@ -314,7 +321,7 @@ private fun PermissionRow(
     label: Int,
     granted: Boolean,
 ) {
-    InfoRow(
+    DataRow(
         label = stringResource(label),
         value =
             stringResource(
@@ -324,64 +331,45 @@ private fun PermissionRow(
                     R.string.settings_permission_not_granted
                 },
             ),
-        valueColor = if (granted) Green400 else MaterialTheme.colorScheme.onSurfaceVariant,
+        tone = if (granted) SemanticTone.PASS else SemanticTone.NEUTRAL,
     )
 }
 
 @Composable
-private fun ReportsCard(
+private fun ReportsSection(
     reportCount: Int,
     isDeleting: Boolean,
     onDeleteAll: () -> Unit,
 ) {
-    StandardCard {
-        Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.settings_reports),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-            )
-            InfoRow(stringResource(R.string.settings_report_count), reportCount.toString())
-            OutlinedButton(
-                onClick = onDeleteAll,
-                enabled = reportCount > 0 && !isDeleting,
-                modifier = Modifier.fillMaxWidth().testTag("settings_delete_all"),
-            ) {
-                Text(stringResource(R.string.settings_delete_all))
-            }
-        }
+    Column {
+        SectionHeader(stringResource(R.string.settings_reports))
+        DataRow(
+            label = stringResource(R.string.settings_report_count),
+            value = uiNumber(reportCount),
+        )
+        SecondaryButton(
+            label = stringResource(R.string.settings_delete_all),
+            onClick = onDeleteAll,
+            enabled = reportCount > 0 && !isDeleting,
+            modifier = Modifier.fillMaxWidth().testTag("settings_delete_all"),
+        )
     }
 }
 
 @Composable
-private fun LinkCard(
+private fun LinkSection(
     onOpenPrivacy: () -> Unit,
     onOpenSupport: () -> Unit,
     onOpenLicenses: () -> Unit,
     onReopenOnboarding: () -> Unit,
 ) {
-    StandardCard {
-        Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.settings_privacy_section),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                text = stringResource(R.string.settings_local_only),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            SettingsLink(R.string.settings_privacy, "settings_privacy", onOpenPrivacy)
-            SettingsLink(R.string.settings_support, "settings_support", onOpenSupport)
-            SettingsLink(R.string.settings_licenses, "settings_licenses", onOpenLicenses)
-            SettingsLink(R.string.settings_onboarding, "settings_onboarding", onReopenOnboarding)
-        }
+    Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm)) {
+        SectionHeader(stringResource(R.string.settings_privacy_section))
+        Note(stringResource(R.string.settings_local_only))
+        SettingsLink(R.string.settings_privacy, "settings_privacy", onOpenPrivacy)
+        SettingsLink(R.string.settings_support, "settings_support", onOpenSupport)
+        SettingsLink(R.string.settings_licenses, "settings_licenses", onOpenLicenses)
+        SettingsLink(R.string.settings_onboarding, "settings_onboarding", onReopenOnboarding)
     }
 }
 
@@ -391,12 +379,11 @@ private fun SettingsLink(
     testTag: String,
     onClick: () -> Unit,
 ) {
-    OutlinedButton(
+    SecondaryButton(
+        label = stringResource(label),
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().testTag(testTag),
-    ) {
-        Text(stringResource(label))
-    }
+    )
 }
 
 private const val PRIVACY_URL = "https://finnvek.com/privacy/"

@@ -783,7 +783,7 @@
     <string name="licenses_description">fonecheck sisältää avoimen lähdekoodin kirjastoja. Komponenttiluettelo ja sovellettavat lisenssiehdot on pakattu alle sekä julkaisuversioon.</string>
     <string name="licenses_notices_heading">Kolmannen osapuolen ilmoitukset</string>
     <string name="onboarding_title">Aloittaminen</string>
-    <string name="onboarding_progress">Vaihe %1$d/%2$d</string>
+    <string name="onboarding_progress">Vaihe %1$s/%2$s</string>
     <string name="onboarding_skip">Ohita</string>
     <string name="onboarding_previous">Takaisin</string>
     <string name="onboarding_next">Seuraava</string>
