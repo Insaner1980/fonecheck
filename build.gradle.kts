@@ -2,7 +2,7 @@ buildscript {
     val jacksonVersion = "2.22.1"
     val protobufVersion = "4.35.1"
     val bouncyCastleVersion = "1.85"
-    val jsoupVersion = "1.23.1"
+    val jsoupVersion = "1.23.2"
 
     configurations.classpath {
         resolutionStrategy {
