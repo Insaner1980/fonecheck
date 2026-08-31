@@ -1,7 +1,5 @@
 package com.insaner.fonecheck.ui.screens.home
 
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,71 +10,42 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.DateRange
-import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.Warning
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -93,6 +62,7 @@ import com.insaner.fonecheck.domain.model.DiagnosticEvidence
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceSource
+import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.ReportAppContext
 import com.insaner.fonecheck.domain.model.ReportDeviceContext
 import com.insaner.fonecheck.domain.model.ReportKind
@@ -100,35 +70,23 @@ import com.insaner.fonecheck.domain.model.ReportSchemaVersion
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
-import com.insaner.fonecheck.navigation.DiagnosticDestination
 import com.insaner.fonecheck.navigation.History
 import com.insaner.fonecheck.navigation.Report
 import com.insaner.fonecheck.navigation.Settings
-import com.insaner.fonecheck.navigation.diagnosticDestinations
-import com.insaner.fonecheck.ui.components.StandardCard
-import com.insaner.fonecheck.ui.theme.Aqua40
-import com.insaner.fonecheck.ui.theme.Aqua80
-import com.insaner.fonecheck.ui.theme.Coral80
+import com.insaner.fonecheck.ui.components.HairlineRule
+import com.insaner.fonecheck.ui.components.IndeterminateRule
+import com.insaner.fonecheck.ui.components.SecondaryButton
+import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.components.StrongRule
+import com.insaner.fonecheck.ui.format.formatTechnicalUiDateTime
+import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
-import com.insaner.fonecheck.ui.theme.Green400
-import com.insaner.fonecheck.ui.theme.JetBrainsMono
-import com.insaner.fonecheck.ui.theme.Lavender40
-import com.insaner.fonecheck.ui.theme.Lavender80
-import com.insaner.fonecheck.ui.theme.Neutral100
-import com.insaner.fonecheck.ui.theme.Neutral300
-import com.insaner.fonecheck.ui.theme.Neutral50
-import com.insaner.fonecheck.ui.theme.Neutral600
-import com.insaner.fonecheck.ui.theme.Neutral700
-import com.insaner.fonecheck.ui.theme.Neutral800
-import com.insaner.fonecheck.ui.theme.Neutral850
-import com.insaner.fonecheck.ui.theme.Neutral900
-import com.insaner.fonecheck.ui.theme.Neutral950
-import com.insaner.fonecheck.ui.theme.Red400
+import kotlinx.coroutines.delay
 import java.text.NumberFormat
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
+import java.util.Locale
 
 @Composable
 fun HomeScreen(
@@ -138,6 +96,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val latestFullCheck by viewModel.latestFullCheck.collectAsStateWithLifecycle()
+    val currentTime = remember(latestFullCheck) { Instant.now() }
 
     HomeContent(
         latestFullCheck = latestFullCheck,
@@ -145,6 +104,7 @@ fun HomeScreen(
         onRunAllTests = onRunAllTests,
         onRetryLatestFullCheck = viewModel::retry,
         modifier = modifier,
+        currentTime = currentTime,
     )
 }
 
@@ -155,174 +115,181 @@ internal fun HomeContent(
     onRunAllTests: () -> Unit,
     modifier: Modifier = Modifier,
     onRetryLatestFullCheck: () -> Unit = {},
+    currentTime: Instant = Instant.now(),
 ) {
-    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-        val columnCount = homeGridColumnCount(maxWidth.value)
-        val horizontalPadding = if (maxWidth < 600.dp) 16.dp else 24.dp
-        val itemSpacing = if (maxWidth < 600.dp) 12.dp else 16.dp
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(columnCount),
-            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-            contentPadding =
-                PaddingValues(
-                    start = horizontalPadding,
-                    top = 12.dp,
-                    end = horizontalPadding,
-                    bottom = 32.dp,
-                ),
-            horizontalArrangement = Arrangement.spacedBy(itemSpacing),
-            verticalArrangement = Arrangement.spacedBy(itemSpacing),
-        ) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
+    LazyColumn(
+        modifier = modifier.fillMaxSize().background(FonecheckTheme.colors.panel),
+        contentPadding =
+            PaddingValues(
+                start = FonecheckTheme.spacing.md,
+                top = FonecheckTheme.spacing.sm,
+                end = FonecheckTheme.spacing.md,
+                bottom = FonecheckTheme.spacing.xl,
+            ),
+    ) {
+        item {
+            Box(modifier = Modifier.padding(bottom = FonecheckTheme.spacing.md)) {
                 HomeBrandHeader(
                     onHistory = { onNavigate(History) },
                     onSettings = { onNavigate(Settings) },
                 )
             }
+        }
 
-            item(span = { GridItemSpan(maxLineSpan) }) {
+        item {
+            Box(modifier = Modifier.padding(bottom = FonecheckTheme.spacing.md)) {
                 LatestFullCheckSection(
                     state = latestFullCheck,
                     onOpenReport = { reportId -> onNavigate(Report(reportId)) },
                     onRetry = onRetryLatestFullCheck,
+                    currentTime = currentTime,
                 )
             }
+        }
 
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Button(
+        item {
+            Box(modifier = Modifier.padding(bottom = FonecheckTheme.spacing.lg)) {
+                HomeRunButton(
+                    label = stringResource(R.string.home_start_full_check),
                     onClick = onRunAllTests,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 56.dp),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                        ),
-                    shape = MaterialTheme.shapes.medium,
-                ) {
-                    Text(
-                        text = stringResource(R.string.home_run_all),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-            }
-
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Column(modifier = Modifier.padding(top = 12.dp, bottom = 2.dp)) {
-                    Text(
-                        text = stringResource(R.string.home_categories_title),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = stringResource(R.string.home_categories_subtitle),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-
-            items(
-                items = diagnosticDestinations,
-                key = { it.labelResId },
-            ) { category ->
-                CategoryGridItem(
-                    category = category,
-                    label = stringResource(category.labelResId),
-                    onClick = { onNavigate(category.route) },
+                    modifier = Modifier.fillMaxWidth(),
                 )
+            }
+        }
+
+        item {
+            Column {
+                HomeStatusPanel(
+                    state = latestFullCheck,
+                    onNavigate = onNavigate,
+                )
+                if (latestFullCheck is LatestFullCheckState.Available) {
+                    Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+                    InstrumentTickRule()
+                }
             }
         }
     }
 }
 
-internal fun homeGridColumnCount(availableWidthDp: Float): Int =
-    when {
-        availableWidthDp < 600f -> 2
-        availableWidthDp < 840f -> 3
-        else -> 4
+@Composable
+internal fun HomeSectionHeader(
+    label: String,
+    modifier: Modifier = Modifier,
+    trailing: String? = null,
+    stackedTrailing: Boolean = false,
+) {
+    if (!stackedTrailing || trailing == null) {
+        SectionHeader(
+            label = label,
+            trailing = trailing,
+            modifier = modifier,
+            ruleColor = FonecheckTheme.colors.edge,
+            ruleThickness = 3.dp,
+        )
+    } else {
+        val locale = LocalLocale.current.platformLocale
+        Column(modifier = modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(bottom = FonecheckTheme.spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.xs),
+            ) {
+                Text(
+                    text = label.uppercase(locale),
+                    style = FonecheckTheme.type.sectionLabel,
+                    color = FonecheckTheme.colors.textMuted,
+                    modifier =
+                        Modifier.semantics {
+                            heading()
+                            contentDescription = label
+                        },
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Visible,
+                )
+                Text(
+                    text = trailing,
+                    style = FonecheckTheme.type.sectionLabel,
+                    color = FonecheckTheme.colors.textMuted,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Visible,
+                )
+            }
+            StrongRule(color = FonecheckTheme.colors.edge, thickness = 3.dp)
+        }
     }
+}
 
 internal fun latestReportUsesStackedLayout(
     availableWidthDp: Float,
     fontScale: Float,
-): Boolean = availableWidthDp < 312f || fontScale > 1.3f
+): Boolean = availableWidthDp < 312f || fontScale > HOME_LARGE_FONT_SCALE_THRESHOLD
+
+internal const val HOME_LOADING_INDICATOR_DELAY_MILLIS = 300L
+
+internal val HOME_REPORT_STALE_AFTER: Duration = Duration.ofHours(24)
+
+internal data class HomeReportRecency(
+    val isStale: Boolean,
+    val elapsedDays: Long,
+)
+
+internal fun homeReportRecency(
+    completedAt: Instant,
+    currentTime: Instant,
+): HomeReportRecency {
+    val age = Duration.between(completedAt, currentTime).coerceAtLeast(Duration.ZERO)
+    return HomeReportRecency(
+        isStale = age >= HOME_REPORT_STALE_AFTER,
+        elapsedDays = age.toDays(),
+    )
+}
+
+internal fun homeUiLanguageLocale(locale: Locale): Locale = uiLanguageLocale(locale)
+
+internal fun formatHomeCompletedAt(
+    value: Instant,
+    locale: Locale,
+    zoneId: ZoneId = ZoneId.systemDefault(),
+): String = formatTechnicalUiDateTime(value, locale, zoneId)
+
+internal fun homePaddedCount(value: Int): String = value.toString().padStart(2, '0')
 
 @Composable
 private fun HomeBrandHeader(
     onHistory: () -> Unit,
     onSettings: () -> Unit,
 ) {
-    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        val fontScale = LocalDensity.current.fontScale
-        val stackActions = maxWidth < 480.dp && fontScale > 1.3f
-        if (stackActions) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                HomeBrand()
-                HeaderActions(
-                    onHistory = onHistory,
-                    onSettings = onSettings,
-                    modifier = Modifier.align(Alignment.End),
-                )
-            }
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                HomeBrand(modifier = Modifier.weight(1f))
-                HeaderActions(onHistory = onHistory, onSettings = onSettings)
-            }
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            HomeBrand(modifier = Modifier.weight(1f))
+            HeaderActions(onHistory = onHistory, onSettings = onSettings)
         }
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+        InstrumentTickRule()
     }
 }
 
 @Composable
 private fun HomeBrand(modifier: Modifier = Modifier) {
     val appName = stringResource(R.string.app_name)
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Image(
-            painter = painterResource(R.drawable.fonecheck_mark),
-            contentDescription = null,
-            modifier = Modifier.size(56.dp),
-            contentScale = ContentScale.Fit,
-        )
-        Text(
-            text =
-                buildAnnotatedString {
-                    withStyle(
-                        SpanStyle(
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold,
-                        ),
-                    ) {
-                        append(appName.take(4))
-                    }
-                    withStyle(
-                        SpanStyle(
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontWeight = FontWeight.Medium,
-                        ),
-                    ) {
-                        append(appName.drop(4))
-                    }
-                },
-            modifier = Modifier.semantics { heading() },
-            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 26.sp, lineHeight = 32.sp),
-            maxLines = 1,
-        )
-    }
+    val density = LocalDensity.current
+    Text(
+        text = appName,
+        modifier = modifier.semantics { heading() },
+        style =
+            FonecheckTheme.type.screenTitle.copy(
+                fontSize = with(density) { 28.dp.toSp() },
+                lineHeight = with(density) { 34.dp.toSp() },
+            ),
+        color = FonecheckTheme.colors.textPrimary,
+        maxLines = 1,
+    )
 }
 
 @Composable
@@ -333,125 +300,72 @@ private fun HeaderActions(
 ) {
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        FonecheckHeaderIconButton(
+        HeaderActionButton(
+            imageVector = Icons.AutoMirrored.Filled.List,
             contentDescription = stringResource(R.string.home_history_content_description),
             onClick = onHistory,
-        ) { color ->
-            HistoryGlyph(color, Modifier.size(26.dp))
-        }
-        FonecheckHeaderIconButton(
+        )
+        HeaderActionButton(
+            imageVector = Icons.Filled.Settings,
             contentDescription = stringResource(R.string.home_settings_content_description),
             onClick = onSettings,
-        ) { color ->
-            Icon(
-                imageVector = Icons.Rounded.Settings,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(27.dp),
+        )
+    }
+}
+
+@Composable
+private fun InstrumentTickRule() {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(FonecheckTheme.spacing.sm)
+                .clearAndSetSemantics { },
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        repeat(INSTRUMENT_TICK_COUNT) {
+            Box(
+                modifier =
+                    Modifier
+                        .width(3.dp)
+                        .height(FonecheckTheme.spacing.sm)
+                        .background(FonecheckTheme.colors.edge),
             )
         }
     }
 }
 
+private const val INSTRUMENT_TICK_COUNT = 32
+
 @Composable
-private fun FonecheckHeaderIconButton(
+private fun HeaderActionButton(
+    imageVector: ImageVector,
     contentDescription: String,
     onClick: () -> Unit,
-    content: @Composable (Color) -> Unit,
 ) {
-    val lavender = Lavender80
-    val outerShape = RoundedCornerShape(17.dp)
-    val innerShape = RoundedCornerShape(15.dp)
-    Box(
-        modifier =
-            Modifier
-                .size(52.dp)
-                .shadow(8.dp, outerShape, ambientColor = Neutral950, spotColor = Neutral950)
-                .clip(outerShape)
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Lavender80.copy(alpha = 0.52f),
-                            Neutral950,
-                        ),
-                    ),
-                ).clickable(role = Role.Button, onClick = onClick)
-                .semantics {
-                    this.contentDescription = contentDescription
-                    role = Role.Button
-                }.padding(2.dp),
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier.size(FonecheckTheme.spacing.minTouchTarget),
     ) {
         Box(
             modifier =
                 Modifier
-                    .fillMaxSize()
-                    .clip(innerShape)
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                Neutral850,
-                                Neutral900,
-                            ),
-                        ),
-                    ).border(
-                        1.dp,
-                        Lavender80.copy(alpha = 0.22f),
-                        innerShape,
+                    .size(36.dp)
+                    .border(
+                        width = 2.dp,
+                        color = FonecheckTheme.colors.edge,
                     ),
             contentAlignment = Alignment.Center,
         ) {
-            content(lavender)
+            Icon(
+                imageVector = imageVector,
+                contentDescription = contentDescription,
+                tint = FonecheckTheme.colors.textPrimary,
+            )
         }
-    }
-}
-
-@Composable
-private fun HistoryGlyph(
-    color: Color,
-    modifier: Modifier = Modifier,
-) {
-    Canvas(modifier = modifier) {
-        val strokeWidth = 2.25.dp.toPx()
-        drawArc(
-            color = color,
-            startAngle = -52f,
-            sweepAngle = 292f,
-            useCenter = false,
-            topLeft = Offset(strokeWidth, strokeWidth),
-            size = Size(size.width - strokeWidth * 2, size.height - strokeWidth * 2),
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-        )
-        drawLine(
-            color = color,
-            start = Offset(size.width * 0.22f, size.height * 0.28f),
-            end = Offset(size.width * 0.22f, size.height * 0.48f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round,
-        )
-        drawLine(
-            color = color,
-            start = Offset(size.width * 0.22f, size.height * 0.28f),
-            end = Offset(size.width * 0.40f, size.height * 0.31f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round,
-        )
-        drawLine(
-            color = color,
-            start = center,
-            end = Offset(center.x, size.height * 0.30f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round,
-        )
-        drawLine(
-            color = color,
-            start = center,
-            end = Offset(size.width * 0.68f, size.height * 0.58f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round,
-        )
     }
 }
 
@@ -460,24 +374,24 @@ private fun LatestFullCheckSection(
     state: LatestFullCheckState,
     onOpenReport: (String) -> Unit,
     onRetry: () -> Unit,
+    currentTime: Instant,
 ) {
+    val unavailableValue = stringResource(R.string.value_unavailable_short)
     when (state) {
         LatestFullCheckState.Loading ->
-            LatestFullCheckStateCard(
-                title = stringResource(R.string.home_latest_title),
+            LatestFullCheckMessage(
                 message = stringResource(R.string.home_latest_loading),
                 tag = "home_latest_loading",
-                isLoading = true,
+                loading = true,
             )
         LatestFullCheckState.Empty ->
-            LatestFullCheckStateCard(
-                title = stringResource(R.string.home_latest_empty_title),
-                message = stringResource(R.string.home_latest_empty_message),
+            LatestFullCheckMessage(
+                message = stringResource(R.string.home_latest_empty_title),
                 tag = "home_latest_empty",
+                trailing = unavailableValue,
             )
         is LatestFullCheckState.Unavailable ->
-            LatestFullCheckStateCard(
-                title = stringResource(R.string.home_latest_unavailable_title),
+            LatestFullCheckMessage(
                 message =
                     stringResource(
                         when (state.reason) {
@@ -486,138 +400,138 @@ private fun LatestFullCheckSection(
                         },
                     ),
                 tag = "home_latest_unavailable",
+                trailing = unavailableValue,
             )
         LatestFullCheckState.Error ->
-            LatestFullCheckStateCard(
-                title = stringResource(R.string.home_latest_error_title),
+            LatestFullCheckMessage(
                 message = stringResource(R.string.home_latest_error_message),
                 tag = "home_latest_error",
+                trailing = unavailableValue,
                 actionLabel = stringResource(R.string.home_latest_retry),
                 onAction = onRetry,
                 assertive = true,
             )
         is LatestFullCheckState.Available ->
-            LatestFullCheckCard(
+            LatestFullCheckReadout(
                 report = state.report,
                 onClick = { onOpenReport(state.report.stableId) },
+                currentTime = currentTime,
             )
     }
 }
 
+/**
+ * Every state that is not a finished report: the section header, one line saying what is going on,
+ * and for a failed load the action that retries it. No zeroes and no invented figures.
+ */
 @Composable
-private fun LatestFullCheckStateCard(
-    title: String,
+private fun LatestFullCheckMessage(
     message: String,
     tag: String,
-    isLoading: Boolean = false,
+    trailing: String? = null,
+    loading: Boolean = false,
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
     assertive: Boolean = false,
 ) {
-    LayeredReportSurface(
+    val showLoadingIndicator by
+        produceState(initialValue = false, key1 = loading) {
+            if (loading) {
+                delay(HOME_LOADING_INDICATOR_DELAY_MILLIS)
+                value = true
+            }
+        }
+    Column(
         modifier =
             Modifier
+                .fillMaxWidth()
                 .testTag(tag)
                 .semantics {
                     liveRegion = if (assertive) LiveRegionMode.Assertive else LiveRegionMode.Polite
                 },
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = Aqua80,
-                        strokeWidth = 2.dp,
-                    )
-                }
-                Text(
-                    text = title,
-                    modifier = Modifier.semantics { heading() },
-                    style = MaterialTheme.typography.titleLarge,
-                    color = Neutral100,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Neutral300,
-            )
-            if (actionLabel != null && onAction != null) {
-                Button(onClick = onAction) {
-                    Text(actionLabel)
-                }
+        HomeSectionHeader(
+            label = stringResource(R.string.home_latest_title),
+            trailing = trailing,
+            stackedTrailing = LocalDensity.current.fontScale > HOME_LARGE_FONT_SCALE_THRESHOLD,
+        )
+        if (showLoadingIndicator) {
+            Box(modifier = Modifier.testTag("home_latest_loading_indicator")) {
+                IndeterminateRule()
             }
         }
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+        Text(
+            text = message,
+            style = FonecheckTheme.type.rowLabel,
+            color = FonecheckTheme.colors.textSecondary,
+        )
+        if (actionLabel != null && onAction != null) {
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+            SecondaryButton(label = actionLabel, onClick = onAction)
+        }
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+        HairlineRule(color = FonecheckTheme.colors.rule)
     }
 }
 
+/**
+ * The finished report as a readout: how many categories passed, the shape of the run as a segment
+ * per category, and the two figures that qualify it. The whole block opens the full report.
+ */
 @Composable
-@Suppress("kotlin:S3776") // Responsive layout and accessibility variants are explicit presentation branches.
-private fun LatestFullCheckCard(
+private fun LatestFullCheckReadout(
     report: DiagnosticReport,
     onClick: () -> Unit,
+    currentTime: Instant,
 ) {
     val presentation = remember(report) { HomeReportPresentation.from(report) }
-    val configuration = LocalConfiguration.current
-    val locale = configuration.locales[0]
+    val recency = remember(report.completedAt, currentTime) { homeReportRecency(report.completedAt, currentTime) }
+    val locale = homeUiLanguageLocale(LocalLocale.current.platformLocale)
     val numberFormat = remember(locale) { NumberFormat.getIntegerInstance(locale) }
     val percentFormat = remember(locale) { NumberFormat.getPercentInstance(locale) }
-    val dateFormatter =
-        remember(locale) {
-            DateTimeFormatter
-                .ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
-                .withLocale(locale)
-                .withZone(ZoneId.systemDefault())
+    val completedAtValue =
+        remember(report.completedAt, locale) {
+            formatHomeCompletedAt(report.completedAt, locale)
         }
-    val completedAt =
+    val coverageValue =
         stringResource(
-            R.string.home_latest_completed_at,
-            dateFormatter.format(report.completedAt),
+            R.string.home_latest_coverage_value,
+            percentFormat.format(report.coverage.percentage / 100.0),
         )
-    val categoriesValue =
-        stringResource(
-            R.string.home_latest_categories_value,
-            numberFormat.format(presentation.completedCategories),
-            numberFormat.format(presentation.totalCategories),
-        )
-    val coverageValue = percentFormat.format(report.coverage.percentage / 100.0)
-    val attentionValue = numberFormat.format(presentation.attentionCount)
+    val elapsedDays = recency.elapsedDays.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+    val elapsedValue =
+        if (recency.isStale) {
+            pluralStringResource(R.plurals.home_latest_days_ago, elapsedDays, elapsedDays)
+        } else {
+            null
+        }
+    val completedDescription = stringResource(R.string.home_latest_completed_at, completedAtValue)
+    val timingDescription =
+        if (elapsedValue != null) {
+            stringResource(
+                R.string.home_latest_past_state_description,
+                elapsedValue,
+                completedAtValue,
+            )
+        } else {
+            completedDescription
+        }
     val attentionSummary =
         if (presentation.attentionCount == 0) {
             stringResource(R.string.home_latest_no_attention)
         } else {
             pluralStringResource(
-                R.plurals.home_latest_attention_count,
+                R.plurals.home_latest_evidence_attention_summary,
                 presentation.attentionCount,
                 presentation.attentionCount,
             )
         }
-    val attentionStateDescription =
-        if (presentation.attentionCount == 0) {
-            attentionSummary
-        } else {
-            pluralStringResource(
-                R.plurals.home_latest_attention_summary,
-                presentation.attentionCount,
-                presentation.attentionCount,
-            )
-        }
-    val statusText = reportStatusText(report, presentation)
-    val reportSummary =
-        ReportSummaryContent(
-            statusText = statusText,
-            attentionSummary = attentionSummary,
-            completedAt = completedAt,
-            attentionCount = presentation.attentionCount,
-            failureCount = presentation.failureItemCount,
+    val passedDescription =
+        stringResource(
+            R.string.home_latest_passed_description,
+            numberFormat.format(presentation.passCount),
+            numberFormat.format(presentation.totalCategories),
         )
     val categoryStatusDescription =
         stringResource(
@@ -629,122 +543,81 @@ private fun LatestFullCheckCard(
             numberFormat.format(presentation.notAvailableCount),
             numberFormat.format(presentation.notTestedCount),
         )
-    val scoreDescription =
-        report.score.value?.let { score ->
-            stringResource(R.string.home_latest_score_description, numberFormat.format(score))
-        } ?: stringResource(
-            R.string.home_latest_no_score_description,
-            stringResource(scoreStateLabel(report.score.state)),
-        )
+    // The verdict word no longer appears on the screen, but it still opens the spoken description.
     val cardStateDescription =
         stringResource(
             R.string.home_latest_state_description,
-            statusText,
-            scoreDescription,
-            attentionStateDescription,
+            reportStatusText(report, presentation),
+            passedDescription,
+            coverageValue,
+            attentionSummary,
+            timingDescription,
             categoryStatusDescription,
         )
 
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
         val fontScale = LocalDensity.current.fontScale
+        val largeFontLayout = fontScale > HOME_LARGE_FONT_SCALE_THRESHOLD
         val stacked = latestReportUsesStackedLayout(maxWidth.value, fontScale)
-        val cardShape = RoundedCornerShape(if (maxWidth < 600.dp) 28.dp else 34.dp)
-        val horizontalPadding = if (maxWidth < 600.dp) 20.dp else 32.dp
-        val verticalPadding = if (maxWidth < 600.dp) 26.dp else 34.dp
-        val gaugeSize =
-            when {
-                stacked -> minOf(240.dp, 180.dp * fontScale)
-                maxWidth >= 600.dp -> 220.dp
-                maxWidth >= 400.dp -> 172.dp
-                else -> 132.dp
-            }
-        Card(
-            onClick = onClick,
+        Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .testTag("home_latest_report_card")
-                    .semantics { stateDescription = cardStateDescription },
-            shape = cardShape,
-            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp, pressedElevation = 4.dp),
+                    .semantics { stateDescription = cardStateDescription }
+                    .clickable(role = Role.Button, onClick = onClick),
         ) {
+            HomeSectionHeader(
+                label =
+                    stringResource(
+                        if (recency.isStale) {
+                            R.string.home_latest_past_title
+                        } else {
+                            R.string.home_latest_title
+                        },
+                    ),
+                trailing = elapsedValue ?: completedAtValue,
+                stackedTrailing = largeFontLayout,
+            )
+            if (recency.isStale) {
+                Text(
+                    text = completedDescription,
+                    style = FonecheckTheme.type.note,
+                    color = FonecheckTheme.colors.textMuted,
+                    modifier = Modifier.padding(top = FonecheckTheme.spacing.xs),
+                )
+            }
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
             Column(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .background(
-                            Brush.linearGradient(
-                                listOf(
-                                    Neutral800,
-                                    Neutral900,
-                                ),
-                            ),
-                        ).border(
-                            width = 1.dp,
-                            color = Lavender80.copy(alpha = 0.44f),
-                            shape = cardShape,
-                        ).padding(horizontal = horizontalPadding, vertical = verticalPadding),
-                verticalArrangement = Arrangement.spacedBy(18.dp),
+                        .background(FonecheckTheme.colors.windowBg)
+                        .border(3.dp, FonecheckTheme.colors.windowFrame)
+                        .padding(FonecheckTheme.spacing.md),
             ) {
-                if (stacked) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(18.dp),
-                    ) {
-                        FonecheckScoreGauge(
-                            score = report.score.value,
-                            scoreState = report.score.state,
-                            modifier = Modifier.size(gaugeSize),
-                        )
-                        ReportSummary(
-                            content = reportSummary,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 188.dp),
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        FonecheckScoreGauge(
-                            score = report.score.value,
-                            scoreState = report.score.state,
-                            modifier = Modifier.size(gaugeSize),
-                        )
-                        ReportSummary(
-                            content = reportSummary,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
-
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(1.dp)
-                            .background(
-                                Brush.horizontalGradient(
-                                    listOf(
-                                        Color.Transparent,
-                                        Lavender80.copy(alpha = 0.32f),
-                                        Neutral300.copy(alpha = 0.20f),
-                                        Color.Transparent,
-                                    ),
-                                ),
-                            ),
+                Text(
+                    text =
+                        stringResource(R.string.home_latest_passed_label)
+                            .uppercase(LocalLocale.current.platformLocale),
+                    style = FonecheckTheme.type.sectionLabel,
+                    color = FonecheckTheme.colors.windowDim,
                 )
-
-                ReportMetrics(
+                Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+                PassedReadout(
+                    passed = homePaddedCount(presentation.passCount),
+                    total =
+                        stringResource(
+                            R.string.home_latest_passed_total,
+                            numberFormat.format(presentation.totalCategories),
+                        ),
                     stacked = stacked,
-                    categoriesValue = categoriesValue,
-                    coverageValue = coverageValue,
-                    attentionValue = attentionValue,
-                    attentionCount = presentation.attentionCount,
-                    failureCount = presentation.failureItemCount,
+                )
+                Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+                LatestCheckInfoLine(
+                    coverage = coverageValue,
+                    coveragePercentage = report.coverage.percentage,
+                    attention = attentionSummary,
                 )
             }
         }
@@ -752,291 +625,95 @@ private fun LatestFullCheckCard(
 }
 
 @Composable
-private fun LayeredReportSurface(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
+private fun PassedReadout(
+    passed: String,
+    total: String,
+    stacked: Boolean,
 ) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(30.dp),
-        color = Color.Transparent,
-        shadowElevation = 9.dp,
+    if (stacked) {
+        Column {
+            PassedFigure(passed)
+            TotalFigure(total)
+        }
+    } else {
+        Row(verticalAlignment = Alignment.Bottom) {
+            PassedFigure(passed)
+            Spacer(modifier = Modifier.width(FonecheckTheme.spacing.md))
+            TotalFigure(total)
+        }
+    }
+}
+
+@Composable
+private fun PassedFigure(value: String) {
+    Text(
+        text = value,
+        style =
+            FonecheckTheme.type.readout.copy(
+                fontSize = 56.sp,
+                lineHeight = 60.sp,
+            ),
+        color = FonecheckTheme.colors.windowText,
+        maxLines = 1,
+    )
+}
+
+@Composable
+private fun TotalFigure(value: String) {
+    Text(
+        text = value.uppercase(LocalLocale.current.platformLocale),
+        style = FonecheckTheme.type.readoutUnit,
+        color = FonecheckTheme.colors.windowDim,
+        modifier = Modifier.padding(bottom = FonecheckTheme.spacing.sm),
+        maxLines = 1,
+    )
+}
+
+@Composable
+private fun HomeCoverageBar(percentage: Int) {
+    val fraction = percentage.coerceIn(0, 100) / 100f
+    Box(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(12.dp)
+                .background(FonecheckTheme.colors.windowTrack)
+                .clearAndSetSemantics { },
     ) {
         Box(
             modifier =
                 Modifier
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                Lavender80.copy(alpha = 0.68f),
-                                Neutral700,
-                                Neutral950,
-                            ),
-                        ),
-                    ).padding(7.dp),
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(23.dp))
-                        .background(Brush.linearGradient(listOf(Neutral850, Neutral900)))
-                        .border(
-                            1.dp,
-                            Neutral600.copy(alpha = 0.72f),
-                            RoundedCornerShape(23.dp),
-                        ),
-            ) {
-                content()
-            }
-        }
+                    .fillMaxWidth(fraction)
+                    .height(12.dp)
+                    .background(FonecheckTheme.colors.windowText),
+        )
     }
 }
 
 @Composable
-private fun ReportSummary(
-    content: ReportSummaryContent,
-    modifier: Modifier = Modifier,
+private fun LatestCheckInfoLine(
+    coverage: String,
+    coveragePercentage: Int,
+    attention: String,
 ) {
-    val attentionColor =
-        when {
-            content.failureCount > 0 -> Red400
-            content.attentionCount > 0 -> Coral80
-            else -> Green400
-        }
-    val statusColor =
-        when {
-            content.failureCount > 0 -> Red400
-            content.attentionCount > 0 -> Coral80
-            else -> Aqua80
-        }
     Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Text(
-            text = stringResource(R.string.home_latest_title),
-            modifier = Modifier.semantics { heading() },
-            style = MaterialTheme.typography.titleMedium,
-            color = Lavender80,
-            fontWeight = FontWeight.Bold,
+            text = coverage.uppercase(LocalLocale.current.platformLocale),
+            style = FonecheckTheme.type.sectionLabel,
+            color = FonecheckTheme.colors.windowDim,
+            modifier = Modifier.semantics { contentDescription = coverage },
         )
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+        HomeCoverageBar(coveragePercentage)
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.xs))
         Text(
-            text = content.statusText,
-            style =
-                MaterialTheme.typography.headlineLarge.copy(
-                    fontSize = 32.sp,
-                    lineHeight = 36.sp,
-                    shadow = Shadow(Neutral950.copy(alpha = 0.72f), Offset(0f, 2f), 3f),
-                ),
-            color = statusColor,
-            fontWeight = FontWeight.Bold,
-            maxLines = 3,
+            text = attention.uppercase(LocalLocale.current.platformLocale),
+            style = FonecheckTheme.type.sectionLabel,
+            color = FonecheckTheme.colors.windowDim,
+            modifier = Modifier.semantics { contentDescription = attention },
         )
-        ReportSummaryRow(
-            text = content.attentionSummary,
-            kind =
-                if (content.attentionCount > 0) {
-                    SummaryGlyphKind.Attention
-                } else {
-                    SummaryGlyphKind.Clear
-                },
-            accent = attentionColor,
-        )
-        ReportSummaryRow(
-            text = content.completedAt,
-            kind = SummaryGlyphKind.Calendar,
-            accent = Lavender80,
-        )
-    }
-}
-
-private data class ReportSummaryContent(
-    val statusText: String,
-    val attentionSummary: String,
-    val completedAt: String,
-    val attentionCount: Int,
-    val failureCount: Int,
-)
-
-private enum class SummaryGlyphKind {
-    Attention,
-    Clear,
-    Calendar,
-}
-
-@Composable
-private fun ReportSummaryRow(
-    text: String,
-    kind: SummaryGlyphKind,
-    accent: Color,
-) {
-    val icon =
-        when (kind) {
-            SummaryGlyphKind.Attention -> Icons.Rounded.Warning
-            SummaryGlyphKind.Clear -> Icons.Rounded.CheckCircle
-            SummaryGlyphKind.Calendar -> Icons.Rounded.DateRange
-        }
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(9.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = accent,
-            modifier = Modifier.size(24.dp),
-        )
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium,
-            color = Neutral300,
-        )
-    }
-}
-
-@Composable
-private fun FonecheckScoreGauge(
-    score: Int?,
-    scoreState: ScoreState,
-    modifier: Modifier = Modifier,
-) {
-    val locale = LocalConfiguration.current.locales[0]
-    val scoreNumberFormat = remember(locale) { NumberFormat.getIntegerInstance(locale) }
-    val scoreText =
-        score?.let(scoreNumberFormat::format)
-            ?: stringResource(R.string.home_latest_no_score)
-    val scoreDescription =
-        score?.let {
-            stringResource(
-                R.string.home_latest_score_description,
-                scoreNumberFormat.format(it),
-            )
-        }
-            ?: stringResource(
-                R.string.home_latest_no_score_description,
-                stringResource(scoreStateLabel(scoreState)),
-            )
-    val scoreTextStyle =
-        if (score == null) {
-            MaterialTheme.typography.titleMedium.copy(
-                fontFamily = JetBrainsMono,
-                shadow = Shadow(Neutral950.copy(alpha = 0.72f), Offset(0f, 2f), 3f),
-            )
-        } else {
-            MaterialTheme.typography.displayLarge.copy(
-                fontFamily = JetBrainsMono,
-                fontSize = 56.sp,
-                lineHeight = 64.sp,
-                shadow = Shadow(Neutral950.copy(alpha = 0.72f), Offset(0f, 3f), 4f),
-            )
-        }
-
-    Box(
-        modifier =
-            modifier
-                .aspectRatio(1f)
-                .testTag("home_score_gauge")
-                .semantics { stateDescription = scoreDescription },
-        contentAlignment = Alignment.Center,
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize().padding(8.dp)) {
-            val strokeWidth = size.minDimension * 0.105f
-            val shadowWidth = strokeWidth + 3.dp.toPx()
-            val arcTopLeft = Offset(strokeWidth / 2, strokeWidth / 2)
-            val arcSize = Size(size.width - strokeWidth, size.height - strokeWidth)
-            val startAngle = 135f
-            val totalSweep = 270f
-            val scoreSweep = totalSweep * ((score ?: 0).coerceIn(0, 100) / 100f)
-
-            drawArc(
-                color = Neutral950.copy(alpha = 0.66f),
-                startAngle = startAngle,
-                sweepAngle = totalSweep,
-                useCenter = false,
-                topLeft = arcTopLeft + Offset(0f, 2.dp.toPx()),
-                size = arcSize,
-                style = Stroke(width = shadowWidth, cap = StrokeCap.Round),
-            )
-            drawArc(
-                color = Lavender40.copy(alpha = 0.38f),
-                startAngle = startAngle,
-                sweepAngle = totalSweep,
-                useCenter = false,
-                topLeft = arcTopLeft,
-                size = arcSize,
-                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-            )
-            if (score != null && scoreSweep > 0f) {
-                drawArc(
-                    brush =
-                        Brush.sweepGradient(
-                            colors = listOf(Aqua40, Aqua80, Aqua80, Aqua40),
-                            center = center,
-                        ),
-                    startAngle = startAngle,
-                    sweepAngle = scoreSweep,
-                    useCenter = false,
-                    topLeft = arcTopLeft,
-                    size = arcSize,
-                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-                )
-                drawArc(
-                    color = Neutral50.copy(alpha = 0.24f),
-                    startAngle = startAngle + 2f,
-                    sweepAngle = (scoreSweep - 4f).coerceAtLeast(0f),
-                    useCenter = false,
-                    topLeft = arcTopLeft + Offset(0f, -strokeWidth * 0.10f),
-                    size = arcSize,
-                    style = Stroke(width = 1.25.dp.toPx(), cap = StrokeCap.Round),
-                )
-            }
-        }
-        Text(
-            text = scoreText,
-            modifier = Modifier.padding(horizontal = 26.dp),
-            style = scoreTextStyle,
-            color = Neutral100,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            maxLines = if (score == null) 2 else 1,
-        )
-    }
-}
-
-@Preview(name = "Score gauge - dark", widthDp = 180, heightDp = 216)
-@Composable
-private fun FonecheckScoreGaugeDarkPreview() {
-    FonecheckScoreGaugePreview(darkTheme = true)
-}
-
-@Preview(name = "Score gauge - light", widthDp = 180, heightDp = 216)
-@Composable
-private fun FonecheckScoreGaugeLightPreview() {
-    FonecheckScoreGaugePreview(darkTheme = false)
-}
-
-@Composable
-private fun FonecheckScoreGaugePreview(
-    darkTheme: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    FonecheckTheme(darkTheme = darkTheme) {
-        Surface(
-            modifier = modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background,
-        ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                FonecheckScoreGauge(
-                    score = 93,
-                    scoreState = ScoreState.COMPLETE,
-                    modifier = Modifier.size(180.dp),
-                )
-            }
-        }
     }
 }
 
@@ -1057,14 +734,23 @@ private fun HomeTopPreview(darkTheme: Boolean) {
     FonecheckTheme(darkTheme = darkTheme) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background,
+            color = FonecheckTheme.colors.panel,
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(FonecheckTheme.spacing.md),
+                verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md),
             ) {
                 HomeBrandHeader(onHistory = {}, onSettings = {})
-                LatestFullCheckCard(report = previewDiagnosticReport(), onClick = {})
+                LatestFullCheckReadout(
+                    report = previewDiagnosticReport(),
+                    onClick = {},
+                    currentTime = Instant.parse("2026-08-20T13:18:00Z"),
+                )
+                HomeRunButton(
+                    label = stringResource(R.string.home_start_full_check),
+                    onClick = {},
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
     }
@@ -1128,290 +814,6 @@ private fun previewDiagnosticReport(): DiagnosticReport {
 }
 
 @Composable
-private fun ReportMetrics(
-    stacked: Boolean,
-    categoriesValue: String,
-    coverageValue: String,
-    attentionValue: String,
-    attentionCount: Int,
-    failureCount: Int,
-) {
-    val metrics =
-        listOf(
-            ReportMetric(
-                label = stringResource(R.string.home_latest_categories),
-                value = categoriesValue,
-                accent = Lavender80,
-                kind = ReportMetricKind.Categories,
-            ),
-            ReportMetric(
-                label = stringResource(R.string.home_latest_coverage),
-                value = coverageValue,
-                accent = Aqua80,
-                kind = ReportMetricKind.Coverage,
-            ),
-            ReportMetric(
-                label = stringResource(R.string.home_latest_needs_attention),
-                value = attentionValue,
-                accent =
-                    when {
-                        failureCount > 0 -> Red400
-                        attentionCount > 0 -> Coral80
-                        else -> Green400
-                    },
-                kind =
-                    if (attentionCount > 0) {
-                        ReportMetricKind.Attention
-                    } else {
-                        ReportMetricKind.Clear
-                    },
-            ),
-        )
-
-    if (stacked) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            metrics.forEachIndexed { index, metric ->
-                if (index > 0) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .height(1.dp)
-                                .background(Neutral600.copy(alpha = 0.46f)),
-                    )
-                }
-                ReportMetricItem(
-                    metric = metric,
-                    horizontal = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
-    } else {
-        Row(
-            modifier = Modifier.fillMaxWidth().heightIn(min = 92.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            metrics.forEachIndexed { index, metric ->
-                if (index > 0) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .width(1.dp)
-                                .height(72.dp)
-                                .background(Neutral600.copy(alpha = 0.56f)),
-                    )
-                }
-                ReportMetricItem(
-                    metric = metric,
-                    horizontal = false,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
-    }
-}
-
-private data class ReportMetric(
-    val label: String,
-    val value: String,
-    val accent: Color,
-    val kind: ReportMetricKind,
-)
-
-private enum class ReportMetricKind {
-    Categories,
-    Coverage,
-    Attention,
-    Clear,
-}
-
-@Composable
-private fun ReportMetricItem(
-    metric: ReportMetric,
-    horizontal: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    val description =
-        stringResource(
-            R.string.home_latest_metric_state_description,
-            metric.label,
-            metric.value,
-        )
-
-    if (horizontal) {
-        Row(
-            modifier =
-                modifier
-                    .semantics { stateDescription = description }
-                    .padding(horizontal = 6.dp, vertical = 2.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            ReportMetricIcon(
-                kind = metric.kind,
-                accent = metric.accent,
-                size = 36.dp,
-            )
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                ReportMetricValue(metric.value)
-                ReportMetricLabel(metric.label, TextAlign.Start)
-            }
-        }
-    } else {
-        Column(
-            modifier =
-                modifier
-                    .semantics { stateDescription = description }
-                    .padding(horizontal = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            ReportMetricIcon(
-                kind = metric.kind,
-                accent = metric.accent,
-                size = 34.dp,
-            )
-            ReportMetricValue(metric.value)
-            ReportMetricLabel(metric.label, TextAlign.Center)
-        }
-    }
-}
-
-@Composable
-private fun ReportMetricIcon(
-    kind: ReportMetricKind,
-    accent: Color,
-    size: Dp,
-) {
-    when (kind) {
-        ReportMetricKind.Categories ->
-            Canvas(modifier = Modifier.size(size)) {
-                val tileSize = this.size.minDimension * 0.35f
-                val gap = this.size.minDimension * 0.12f
-                val start = (this.size.minDimension - tileSize * 2 - gap) / 2
-                val cornerRadius = CornerRadius(tileSize * 0.24f)
-                repeat(2) { row ->
-                    repeat(2) { column ->
-                        val topLeft =
-                            Offset(
-                                x = start + column * (tileSize + gap),
-                                y = start + row * (tileSize + gap),
-                            )
-                        drawRoundRect(
-                            color = Neutral950.copy(alpha = 0.62f),
-                            topLeft = topLeft + Offset(0f, 1.5.dp.toPx()),
-                            size = Size(tileSize, tileSize),
-                            cornerRadius = cornerRadius,
-                        )
-                        drawRoundRect(
-                            brush = Brush.linearGradient(listOf(accent, Lavender40)),
-                            topLeft = topLeft,
-                            size = Size(tileSize, tileSize),
-                            cornerRadius = cornerRadius,
-                        )
-                        drawRoundRect(
-                            color = Neutral50.copy(alpha = 0.18f),
-                            topLeft = topLeft,
-                            size = Size(tileSize, tileSize),
-                            cornerRadius = cornerRadius,
-                            style = Stroke(width = 1.dp.toPx()),
-                        )
-                    }
-                }
-            }
-        ReportMetricKind.Coverage ->
-            Canvas(modifier = Modifier.size(size)) {
-                val center = this.center
-                val outerRadius = this.size.minDimension * 0.42f
-                val innerRadius = this.size.minDimension * 0.25f
-                val strokeWidth = 2.5.dp.toPx()
-                drawCircle(
-                    color = Neutral950.copy(alpha = 0.62f),
-                    radius = outerRadius,
-                    center = center + Offset(0f, 1.5.dp.toPx()),
-                    style = Stroke(width = strokeWidth + 2.dp.toPx()),
-                )
-                drawCircle(
-                    color = accent,
-                    radius = outerRadius,
-                    center = center,
-                    style = Stroke(width = strokeWidth),
-                )
-                drawCircle(
-                    color = accent.copy(alpha = 0.62f),
-                    radius = innerRadius,
-                    center = center,
-                    style = Stroke(width = strokeWidth),
-                )
-                drawLine(
-                    color = accent,
-                    start = center,
-                    end = Offset(this.size.width * 0.72f, this.size.height * 0.28f),
-                    strokeWidth = strokeWidth,
-                    cap = StrokeCap.Round,
-                )
-                drawCircle(
-                    color = accent,
-                    radius = this.size.minDimension * 0.10f,
-                    center = center,
-                )
-                drawCircle(
-                    color = Neutral900,
-                    radius = this.size.minDimension * 0.045f,
-                    center = center,
-                )
-            }
-        ReportMetricKind.Attention ->
-            Icon(
-                imageVector = Icons.Rounded.Warning,
-                contentDescription = null,
-                tint = accent,
-                modifier = Modifier.size(size),
-            )
-        ReportMetricKind.Clear ->
-            Icon(
-                imageVector = Icons.Rounded.CheckCircle,
-                contentDescription = null,
-                tint = accent,
-                modifier = Modifier.size(size),
-            )
-    }
-}
-
-@Composable
-private fun ReportMetricValue(value: String) {
-    Text(
-        text = value,
-        style =
-            MaterialTheme.typography.titleLarge.copy(
-                fontFamily = JetBrainsMono,
-                fontSize = 20.sp,
-                lineHeight = 26.sp,
-                shadow = Shadow(Neutral950.copy(alpha = 0.72f), Offset(0f, 2f), 3f),
-            ),
-        color = Neutral100,
-        fontWeight = FontWeight.Bold,
-        textAlign = TextAlign.Center,
-        maxLines = 1,
-    )
-}
-
-@Composable
-private fun ReportMetricLabel(
-    label: String,
-    textAlign: TextAlign,
-) {
-    Text(
-        text = label,
-        style = MaterialTheme.typography.bodySmall,
-        color = Neutral300,
-        textAlign = textAlign,
-        maxLines = 2,
-    )
-}
-
-@Composable
 private fun reportStatusText(
     report: DiagnosticReport,
     presentation: HomeReportPresentation,
@@ -1429,16 +831,8 @@ private fun reportStatusText(
         },
     )
 
-private fun scoreStateLabel(state: ScoreState): Int =
-    when (state) {
-        ScoreState.COMPLETE -> R.string.report_score_complete
-        ScoreState.PARTIAL -> R.string.report_score_partial
-        ScoreState.INCOMPLETE -> R.string.report_score_incomplete
-    }
-
 private data class HomeReportPresentation(
     val totalCategories: Int,
-    val completedCategories: Int,
     val passCount: Int,
     val warningCategoryCount: Int,
     val failureCategoryCount: Int,
@@ -1456,13 +850,6 @@ private data class HomeReportPresentation(
             val evidence = categories.flatMap { it.evidence }
             return HomeReportPresentation(
                 totalCategories = categories.size,
-                completedCategories =
-                    categories.count {
-                        it.aggregateStatus == DiagnosticStatus.PASS ||
-                            it.aggregateStatus == DiagnosticStatus.WARNING ||
-                            it.aggregateStatus == DiagnosticStatus.FAIL ||
-                            it.aggregateStatus == DiagnosticStatus.INFO
-                    },
                 passCount = categories.count { it.aggregateStatus == DiagnosticStatus.PASS },
                 warningCategoryCount = categories.count { it.aggregateStatus == DiagnosticStatus.WARNING },
                 failureCategoryCount = categories.count { it.aggregateStatus == DiagnosticStatus.FAIL },
@@ -1471,48 +858,6 @@ private data class HomeReportPresentation(
                 notTestedCount = categories.count { it.aggregateStatus == DiagnosticStatus.NOT_TESTED },
                 warningItemCount = evidence.count { it.status == DiagnosticStatus.WARNING },
                 failureItemCount = evidence.count { it.status == DiagnosticStatus.FAIL },
-            )
-        }
-    }
-}
-
-@Composable
-private fun CategoryGridItem(
-    category: DiagnosticDestination,
-    label: String,
-    onClick: () -> Unit,
-) {
-    StandardCard(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(
-            modifier =
-                Modifier
-                    .padding(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 16.dp),
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(126.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Image(
-                    painter = painterResource(category.imageResId),
-                    contentDescription = null,
-                    modifier = Modifier.size(118.dp),
-                    contentScale = ContentScale.Fit,
-                )
-            }
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
             )
         }
     }

@@ -3,15 +3,8 @@ package com.insaner.fonecheck.ui.screens.export
 import android.content.ClipData
 import android.content.Intent
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,17 +12,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
-import com.insaner.fonecheck.ui.components.InfoRow
+import com.insaner.fonecheck.ui.components.LongValueRow
+import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.PrimaryButton
 import com.insaner.fonecheck.ui.components.ReportStateScreen
 import com.insaner.fonecheck.ui.components.ScreenStateType
-import com.insaner.fonecheck.ui.components.StandardCard
+import com.insaner.fonecheck.ui.components.SecondaryButton
+import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.components.StatusText
+import com.insaner.fonecheck.ui.components.TestScreenContent
+import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.startExternalActivity
+import com.insaner.fonecheck.ui.theme.SemanticTone
 
 @Composable
 fun ReportExportRoute(
@@ -58,8 +56,7 @@ fun ReportExportRoute(
                         context,
                         externalAppUnavailable,
                         Toast.LENGTH_SHORT,
-                    )
-                    .show()
+                    ).show()
             }
             viewModel.consumeShareRequest()
         }
@@ -139,81 +136,78 @@ private fun ExportReady(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.fillMaxSize().padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.export_title),
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(
-            text = stringResource(R.string.export_description),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        StandardCard {
-            Column(
-                modifier = Modifier.padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                InfoRow(stringResource(R.string.report_identifier), state.report.stableId)
-                InfoRow(
-                    stringResource(R.string.pdf_report_format),
-                    state.report.schemaVersion.value
-                        .toString(),
+    TestScreenContent(modifier = modifier) {
+        item { Note(stringResource(R.string.export_description)) }
+        item {
+            Column {
+                SectionHeader(stringResource(R.string.report_saved_title))
+                LongValueRow(
+                    label = stringResource(R.string.report_identifier),
+                    value = state.report.stableId,
                 )
-                Text(
-                    text = stringResource(R.string.export_local_only),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                LongValueRow(
+                    label = stringResource(R.string.pdf_report_format),
+                    value = uiNumber(state.report.schemaVersion.value),
                 )
-                Text(
-                    text = stringResource(R.string.export_pdf_description),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = stringResource(R.string.export_json_description),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+                Note(stringResource(R.string.export_local_only))
             }
         }
         state.error?.let {
-            Text(
-                text =
-                    stringResource(
-                        if (it == "json_export_failed") {
-                            R.string.export_json_error
-                        } else {
-                            R.string.export_pdf_error
-                        },
-                    ),
-                color = MaterialTheme.colorScheme.error,
+            item {
+                Column {
+                    StatusText(
+                        text = stringResource(R.string.state_error_title),
+                        tone = SemanticTone.FAIL,
+                    )
+                    Note(
+                        stringResource(
+                            if (it == "json_export_failed") {
+                                R.string.export_json_error
+                            } else {
+                                R.string.export_pdf_error
+                            },
+                        ),
+                    )
+                }
+            }
+        }
+        item {
+            Column {
+                SectionHeader(stringResource(R.string.export_pdf_section))
+                Note(stringResource(R.string.export_pdf_description))
+                PrimaryButton(
+                    label =
+                        stringResource(
+                            if (state.isGenerating) {
+                                R.string.export_generating
+                            } else {
+                                R.string.export_pdf
+                            },
+                        ),
+                    onClick = onExportPdf,
+                    enabled = !state.isGenerating,
+                    modifier = Modifier.fillMaxWidth().testTag("export_pdf"),
+                )
+            }
+        }
+        item {
+            Column {
+                SectionHeader(stringResource(R.string.export_json_section))
+                Note(stringResource(R.string.export_json_description))
+                SecondaryButton(
+                    label = stringResource(R.string.export_json),
+                    onClick = onExportJson,
+                    enabled = !state.isGenerating,
+                    modifier = Modifier.fillMaxWidth().testTag("export_json"),
+                )
+            }
+        }
+        item {
+            SecondaryButton(
+                label = stringResource(R.string.report_back),
+                onClick = onBack,
+                modifier = Modifier.fillMaxWidth(),
             )
-        }
-        Button(
-            onClick = onExportPdf,
-            enabled = !state.isGenerating,
-            modifier = Modifier.fillMaxWidth().testTag("export_pdf"),
-        ) {
-            Text(
-                stringResource(
-                    if (state.isGenerating) R.string.export_generating else R.string.export_pdf,
-                ),
-            )
-        }
-        OutlinedButton(
-            onClick = onExportJson,
-            enabled = !state.isGenerating,
-            modifier = Modifier.fillMaxWidth().testTag("export_json"),
-        ) {
-            Text(stringResource(R.string.export_json))
-        }
-        OutlinedButton(
-            onClick = onBack,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(R.string.report_back))
         }
     }
 }

@@ -8,20 +8,25 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.insaner.fonecheck.ui.theme.FonecheckTheme
 
 @Composable
 fun TestScreenContent(
     modifier: Modifier = Modifier,
+    liveStateUpdatedAtEpochMillis: Long? = null,
     content: LazyListScope.() -> Unit,
 ) {
     LazyColumn(
         modifier =
             modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(vertical = 16.dp),
-        content = content,
-    )
+                .padding(horizontal = FonecheckTheme.spacing.md),
+        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg),
+        contentPadding = PaddingValues(vertical = FonecheckTheme.spacing.md),
+    ) {
+        content()
+        if (liveStateUpdatedAtEpochMillis != null) {
+            item { LiveStateTimestamp(liveStateUpdatedAtEpochMillis) }
+        }
+    }
 }

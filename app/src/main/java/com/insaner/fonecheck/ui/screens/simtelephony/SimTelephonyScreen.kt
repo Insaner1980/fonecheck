@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,7 +16,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
@@ -29,19 +29,30 @@ import com.insaner.fonecheck.domain.model.SimFormFactorCode
 import com.insaner.fonecheck.domain.model.SimInventoryCode
 import com.insaner.fonecheck.domain.model.SimSlotInfo
 import com.insaner.fonecheck.domain.model.SimSlotStateCode
+import com.insaner.fonecheck.domain.observation.DeviceObservation
+import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
+import com.insaner.fonecheck.domain.observation.isUnusedSimSlot
 import com.insaner.fonecheck.domain.permission.PermissionKind
-import com.insaner.fonecheck.ui.components.InfoCard
-import com.insaner.fonecheck.ui.components.InfoRow
+import com.insaner.fonecheck.ui.TopBarAction
+import com.insaner.fonecheck.ui.components.DataRow
+import com.insaner.fonecheck.ui.components.HairlineRule
+import com.insaner.fonecheck.ui.components.IndeterminateRule
+import com.insaner.fonecheck.ui.components.LiveStateTimestamp
+import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.ObservationReasonNote
 import com.insaner.fonecheck.ui.components.PermissionStatusCard
-import com.insaner.fonecheck.ui.components.RefreshButton
-import com.insaner.fonecheck.ui.components.ScreenStateCard
-import com.insaner.fonecheck.ui.components.ScreenStateType
-import com.insaner.fonecheck.ui.components.StatusRow
+import com.insaner.fonecheck.ui.components.RegisterRefreshTopBarAction
+import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
+import com.insaner.fonecheck.ui.theme.FonecheckTheme
+import com.insaner.fonecheck.ui.theme.SemanticTone
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 
 @Composable
 fun SimTelephonyScreen(
     modifier: Modifier = Modifier,
+    onTopBarActionChange: (TopBarAction?) -> Unit = {},
     viewModel: SimTelephonyViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -68,14 +79,20 @@ fun SimTelephonyScreen(
     LaunchedEffect(phonePermission.state) {
         viewModel.refresh()
     }
+    RegisterRefreshTopBarAction(
+        contentDescriptionResId = R.string.sim_refresh,
+        enabled = !state.isLoading,
+        onRefresh = viewModel::refresh,
+        onTopBarActionChange = onTopBarActionChange,
+    )
 
     Column(
         modifier =
             modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(FonecheckTheme.spacing.md),
+        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg),
     ) {
         PermissionStatusCard(
             state = phonePermission.state,
@@ -85,69 +102,128 @@ fun SimTelephonyScreen(
         )
 
         if (state.isLoading && state.info == null) {
-            ScreenStateCard(
-                type = ScreenStateType.LOADING,
-                message = stringResource(R.string.sim_loading),
-            )
+            Column {
+                IndeterminateRule()
+                Note(
+                    text = stringResource(R.string.sim_loading),
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                )
+            }
         }
 
         state.info?.let { info ->
-            InfoCard(title = stringResource(R.string.sim_telephony_title)) {
-                StatusRow(
+            val liveStateUpdatedAtEpochMillis = remember(info) { System.currentTimeMillis() }
+            val inventoryClassification =
+                DeviceObservationClassifier.classify(DeviceObservation.SimInventory(info.inventory))
+            SimSection(label = stringResource(R.string.sim_telephony_title)) {
+                DataRow(
                     label = stringResource(R.string.sim_inventory_label),
                     value = inventoryLabel(info.inventory),
-                    isHighlighted =
-                        info.inventory != SimInventoryCode.SINGLE_SIM &&
-                            info.inventory != SimInventoryCode.MULTIPLE_SIM,
+                    showDivider = inventoryClassification.reason == null,
                 )
-                InfoRow(stringResource(R.string.label_phone_type), phoneTypeLabel(info.phoneType))
-                InfoRow(stringResource(R.string.label_phone_count), info.phoneCount.toString())
-                InfoRow(stringResource(R.string.label_data_network), networkLabel(info.dataNetworkType))
+                ObservationReasonNote(inventoryClassification)
+                if (inventoryClassification.reason != null) HairlineRule()
+                DataRow(
+                    label = stringResource(R.string.label_phone_type),
+                    value = phoneTypeLabel(info.phoneType),
+                )
+                DataRow(
+                    label = stringResource(R.string.label_active_modem_count),
+                    value = uiNumber(info.phoneCount),
+                )
+                DataRow(
+                    label = stringResource(R.string.label_data_network),
+                    value = networkLabel(info.dataNetworkType),
+                    showDivider = info.phoneStatePermissionGranted || !hasTelephony,
+                )
                 if (!info.phoneStatePermissionGranted && hasTelephony) {
-                    Text(
-                        text = stringResource(R.string.sim_limited_mode),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
+                    Note(stringResource(R.string.sim_limited_mode))
+                    HairlineRule()
                 }
             }
 
-            info.simSlots.forEach { slot -> SimSlotCard(slot) }
+            info.simSlots.forEach { slot ->
+                SimSlotSection(
+                    slot = slot,
+                    inventory = info.inventory,
+                )
+            }
+            LiveStateTimestamp(liveStateUpdatedAtEpochMillis)
         }
 
         state.error?.let {
-            ScreenStateCard(
-                type = ScreenStateType.ERROR,
-                message = stringResource(R.string.sim_capture_error_description),
-                actionLabel = stringResource(R.string.sim_refresh),
-                onAction = viewModel::refresh,
-            )
-        }
-
-        if (state.error == null) {
-            RefreshButton(
-                label = stringResource(R.string.sim_refresh),
-                enabled = !state.isLoading,
-                onClick = viewModel::refresh,
+            Note(
+                text = stringResource(R.string.sim_capture_error_description),
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
             )
         }
     }
 }
 
 @Composable
-private fun SimSlotCard(slot: SimSlotInfo) {
-    InfoCard(title = stringResource(R.string.sim_slot_title, slot.slotIndex + 1)) {
-        StatusRow(
-            label = stringResource(R.string.label_sim_status),
-            value = slotStateLabel(slot.state),
-            isHighlighted = slot.state != SimSlotStateCode.READY && slot.state != SimSlotStateCode.ABSENT,
+private fun SimSlotSection(
+    slot: SimSlotInfo,
+    inventory: SimInventoryCode,
+) {
+    val isUnused = isUnusedSlot(inventory, slot)
+    val classification =
+        DeviceObservationClassifier.classify(
+            DeviceObservation.SimSlot(slot.state, unused = isUnused),
         )
-        InfoRow(stringResource(R.string.sim_activity_label), activityLabel(slot.activity))
-        InfoRow(stringResource(R.string.sim_form_factor_label), formFactorLabel(slot.formFactor))
-        InfoRow(stringResource(R.string.label_operator), slot.operatorName ?: unavailableLabel())
-        InfoRow(stringResource(R.string.label_country), slot.countryIso ?: unavailableLabel())
-        InfoRow(stringResource(R.string.label_network_type), networkLabel(slot.networkType))
+    SimSection(
+        label = stringResource(R.string.sim_slot_title, uiNumber(slot.slotIndex + 1)),
+    ) {
+        DataRow(
+            label = stringResource(R.string.label_sim_status),
+            value =
+                if (isUnused) {
+                    stringResource(R.string.sim_state_unused)
+                } else {
+                    slotStateLabel(slot.state)
+                },
+            tone = if (isUnused) SemanticTone.NEUTRAL else classification.toSemanticTone(),
+            showDivider = classification.reason == null,
+        )
+        ObservationReasonNote(classification)
+        if (classification.reason != null) HairlineRule()
+        if (!isUnused) {
+            DataRow(
+                label = stringResource(R.string.sim_activity_label),
+                value = activityLabel(slot.activity),
+            )
+            DataRow(
+                label = stringResource(R.string.sim_form_factor_label),
+                value = formFactorLabel(slot.formFactor),
+            )
+            DataRow(
+                label = stringResource(R.string.label_operator),
+                value = slot.operatorName?.takeIf(String::isNotBlank),
+            )
+            DataRow(
+                label = stringResource(R.string.label_country),
+                value = slot.countryIso?.takeIf(String::isNotBlank),
+            )
+            DataRow(
+                label = stringResource(R.string.label_network_type),
+                value = networkLabel(slot.networkType),
+            )
+        }
+    }
+}
+
+internal fun isUnusedSlot(
+    inventory: SimInventoryCode,
+    slot: SimSlotInfo,
+): Boolean = isUnusedSimSlot(inventory, slot)
+
+@Composable
+private fun SimSection(
+    label: String,
+    content: @Composable () -> Unit,
+) {
+    Column {
+        SectionHeader(label)
+        content()
     }
 }
 
@@ -224,6 +300,3 @@ private fun networkLabel(value: NetworkGenerationCode): String =
             NetworkGenerationCode.UNKNOWN -> R.string.sim_value_unknown
         },
     )
-
-@Composable
-private fun unavailableLabel(): String = stringResource(R.string.device_value_unavailable)

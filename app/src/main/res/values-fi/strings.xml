@@ -4,11 +4,13 @@
     <string name="state_loading_title">Ladataan</string>
     <string name="state_empty_title">Ei vielä sisältöä</string>
     <string name="state_unavailable_title">Ei saatavilla</string>
-    <string name="state_not_tested_title">Ei testattu</string>
     <string name="state_permission_denied_title">Lupa tarvitaan</string>
     <string name="state_error_title">Jokin meni pieleen</string>
+    <string name="value_unavailable_short">n/a</string>
+    <string name="copy_value_action">Kopioi arvo</string>
     <!-- Device Info Screen -->
     <string name="device_info_title">Laite</string>
+    <string name="device_identity_title">Tunnistetiedot</string>
     <string name="os_info_title">Käyttöjärjestelmä</string>
     <string name="drm_info_title">DRM</string>
     <string name="security_info_title">Turvallisuus</string>
@@ -17,6 +19,7 @@
     <string name="label_manufacturer">Valmistaja</string>
     <string name="label_brand">Tuotemerkki</string>
     <string name="label_product">Tuote</string>
+    <string name="label_serial_number">Sarjanumero</string>
     <string name="label_android_version">Android-versio</string>
     <string name="label_api_level">API-taso</string>
     <string name="label_security_patch">Tietoturvapäivitys</string>
@@ -28,14 +31,26 @@
     <string name="label_root_artifact">Tunnettu root-jälki</string>
     <string name="device_root_artifact_detected">Havaittu</string>
     <string name="device_root_artifact_not_detected">Ei havaittu</string>
+    <string name="device_root_finding_note">Luetteloa vastaava tiedosto on tutkimisen arvoinen havainto, mutta se ei yksin todista, että laite olisi vaarantunut.</string>
     <string name="device_root_heuristic_disclaimer">Tämä rajattu tarkistus etsii vain lyhyttä luetteloa tunnetuista tiedostoista. Havaitsematta jääminen ei todista, että laite olisi vaarantumaton.</string>
     <string name="device_value_unavailable">Ei saatavilla</string>
-    <string name="device_captured_at">Kerätty</string>
+    <string name="device_value_restricted">Rajoitettu</string>
+    <string name="device_serial_restricted_note">Android ei anna tälle sovellukselle pääsyä laitteen sarjanumeroon.</string>
+    <string name="device_captured_at">Kerätty %1$s</string>
+    <string name="live_state_label">Reaaliaikaiset tiedot</string>
+    <string name="live_state_updated_at">Päivitetty %1$s</string>
     <string name="device_refresh">Päivitä laitetiedot</string>
     <string name="device_capture_error_description">fonecheck ei voinut päivittää laitteen tilannekuvaa. Viimeisin onnistunut tilannekuva pysyy näkyvissä.</string>
     <string name="device_loading">Luetaan laitteen tietoja…</string>
     <string name="label_developer_options">Kehittäjäasetukset</string>
+    <string name="device_developer_options_note">Kehittäjäasetukset ovat tavallisia kehityskäytössä olevassa puhelimessa. Ne kannattaa poistaa käytöstä ennen puhelimen myymistä tai luovuttamista eteenpäin.</string>
     <string name="label_usb_debugging">USB-virheenkorjaus</string>
+    <string name="device_usb_debugging_note">USB-virheenkorjaus on tavallista kehityskäytössä olevassa puhelimessa. Se kannattaa poistaa käytöstä ennen puhelimen myymistä tai luovuttamista eteenpäin.</string>
+    <string name="device_clipboard_label">Laitteen tilannekuva</string>
+    <string name="device_copied_confirmation">Kopioitu leikepöydälle</string>
+    <string name="device_copy_all">Kopioi kaikki</string>
+    <string name="device_export">Vie</string>
+    <string name="device_share_title">Vie laitteen tilannekuva</string>
 
     <string name="status_yes">Kyllä</string>
     <string name="status_no">Ei</string>
@@ -52,8 +67,7 @@
     <string name="perf_cpu_model">Malli</string>
     <string name="perf_cpu_architecture">Arkkitehtuuri</string>
     <string name="perf_cpu_cores">Ytimet</string>
-    <string name="perf_cpu_clock_speeds">Kellotaajuudet</string>
-    <string name="perf_cpu_core_label">Ydin %1$d</string>
+    <string name="perf_cpu_core_label">Ydin %1$s</string>
     <string name="perf_cpu_freq_range">%1$s (%2$s – %3$s)</string>
     <string name="perf_ram_title">Keskusmuisti</string>
     <string name="perf_ram_total">Yhteensä</string>
@@ -63,7 +77,7 @@
     <string name="perf_gpu_renderer">Renderöijä</string>
     <string name="perf_gpu_vendor">Valmistaja</string>
     <string name="perf_gpu_vulkan_feature">Vulkan-ominaisuus ilmoitettu</string>
-    <string name="perf_cpu_frequency_value">%1$d MHz</string>
+    <string name="perf_cpu_frequency_value">%1$s MHz</string>
     <string name="perf_info_error_description">fonecheck ei voinut päivittää laitteistotietoja. Viimeisin onnistunut tilannekuva pysyy näkyvissä.</string>
     <string name="perf_info_loading">Luetaan suorituskyky- ja laitteistotietoja…</string>
     <string name="perf_refresh_info">Päivitä laitteistotiedot</string>
@@ -78,11 +92,11 @@
     <string name="perf_benchmark_cpu_rate">CPU-suoritusteho</string>
     <string name="perf_benchmark_cpu_rate_value">%1$s operaatiota/s</string>
     <string name="perf_benchmark_memory_rate">Muistin läpimeno</string>
-    <string name="perf_benchmark_memory_rate_value">%1$.1f MiB/s</string>
+    <string name="perf_benchmark_memory_rate_value">%1$s MiB/s</string>
     <string name="perf_benchmark_workload">Käsitelty muisti</string>
-    <string name="perf_benchmark_workload_value">%1$d MiB</string>
+    <string name="perf_benchmark_workload_value">%1$s MiB</string>
     <string name="perf_benchmark_duration">Mitattu kesto</string>
-    <string name="perf_benchmark_duration_value">%1$d ms</string>
+    <string name="perf_benchmark_duration_value">%1$s ms</string>
     <string name="perf_benchmark_thermal_before">Lämpötilanhallinnan tila ennen</string>
     <string name="perf_benchmark_thermal_after">Lämpötilanhallinnan tila jälkeen</string>
     <string name="perf_benchmark_memory_unavailable">Muistin läpimenoa ei saatu, koska rajattua muistipuskuria ei voitu varata.</string>
@@ -96,9 +110,9 @@
 
     <!-- SIM & Telephony Screen -->
     <string name="sim_telephony_title">Puhelinverkko</string>
-    <string name="sim_slot_title">SIM-paikka %1$d</string>
+    <string name="sim_slot_title">SIM-paikka %1$s</string>
     <string name="label_phone_type">Puhelintyyppi</string>
-    <string name="label_phone_count">Puhelinten määrä</string>
+    <string name="label_active_modem_count">Aktiiviset modeemit</string>
     <string name="label_data_network">Dataverkko</string>
     <string name="label_sim_status">Tila</string>
     <string name="label_operator">Operaattori</string>
@@ -122,6 +136,7 @@
     <string name="sim_state_pin_required">PIN vaaditaan</string>
     <string name="sim_state_puk_required">PUK vaaditaan</string>
     <string name="sim_state_not_ready">Ei valmis</string>
+    <string name="sim_state_unused">Ei käytössä</string>
     <string name="sim_state_permanently_disabled">Poistettu pysyvästi käytöstä</string>
     <string name="sim_state_card_io_error">Kortin I/O-virhe</string>
     <string name="sim_state_card_restricted">Korttia rajoitettu</string>
@@ -134,7 +149,7 @@
     <string name="sim_network_4g">4G</string>
     <string name="sim_network_5g">5G</string>
     <string name="sim_value_unknown">Tuntematon</string>
-    <string name="sim_limited_mode">Ilman Puhelin-käyttöoikeutta näytetään rajatut tiedot. SIM-tunnisteita ei koskaan tallenneta.</string>
+    <string name="sim_limited_mode">Ilman puhelimen käyttöoikeutta näytetään rajatut tiedot. SIM-tunnisteita ei koskaan tallenneta.</string>
     <string name="sim_capture_error_description">Puhelinverkkotietoja ei voitu lukea. Voit yrittää uudelleen.</string>
     <string name="sim_loading">Luetaan puhelinverkkotietoja…</string>
     <string name="sim_refresh">Päivitä puhelinverkkotiedot</string>
@@ -159,7 +174,7 @@
     <string name="audio_stop_recording">Lopeta nauhoitus</string>
     <string name="audio_playback">Toista</string>
     <string name="audio_level">Suhteellinen tulotaso</string>
-    <string name="audio_relative_level_value">%.0f%%</string>
+    <string name="audio_relative_level_value">%1$s%%</string>
     <string name="audio_relative_level_disclaimer">Vain suhteellinen PCM-amplitudi, ei kalibroitu äänenpaine- tai äänekkyysmittaus. Tallenne säilyy vain muistissa ja poistetaan testin sulkeutuessa.</string>
     <string name="audio_manual_confirmation">Vahvista kuulemasi. Laitetunnistus ei yksin todista kuuluvaa ääntä.</string>
     <string name="audio_manual_problem">Kuulin ongelman</string>
@@ -184,23 +199,30 @@
     <string name="audio_reset">Nollaa</string>
 
     <!-- Camera Test Screen -->
-    <string name="camera_capture_title">Kameran kuvaus</string>
+    <string name="camera_capture_title">Kameratesti</string>
     <string name="camera_capture_description">Avaa etu- tai takakamera, esikatsele ja ota kuva resoluution tarkistamiseksi.</string>
     <string name="camera_rear">Takakamera</string>
     <string name="camera_front">Etukamera</string>
+    <string name="camera_external">Ulkoinen kamera</string>
+    <string name="camera_open_rear">Avaa takakamera</string>
+    <string name="camera_open_front">Avaa etukamera</string>
+    <string name="camera_open_external">Avaa ulkoinen kamera</string>
+    <string name="camera_open_unknown">Avaa kamera</string>
+    <string name="camera_duplicate_selection">%1$s (kamera %2$s)</string>
     <string name="camera_capture">Kuvaa</string>
     <string name="camera_stop">Pysäytä</string>
     <string name="camera_captured">Kuvattu</string>
+    <string name="camera_capture_result">%1$s (%2$s)</string>
 
-    <string name="camera_flash_title">Salama / Taskulamppu</string>
-    <string name="camera_flash_description">Kytke kameran salama päälle varmistaaksesi taskulampun toimivuuden.</string>
+    <string name="camera_torch_title">Taskulampputesti</string>
+    <string name="camera_torch_description">Sytytä taskulamppu ja varmista, että se toimii.</string>
+    <string name="camera_torch">Taskulamppu</string>
     <string name="camera_flash_on">Päällä</string>
     <string name="camera_flash_off">Pois</string>
     <string name="camera_flash_na">Ei saatavilla</string>
-    <string name="camera_flash_not_tested">Ei testattu</string>
-    <string name="camera_flash_turn_on">Päälle</string>
-    <string name="camera_flash_turn_off">Pois päältä</string>
-    <string name="camera_no_flash">Tässä laitteessa ei ole salamaa.</string>
+    <string name="camera_torch_turn_on">Sytytä taskulamppu</string>
+    <string name="camera_torch_turn_off">Sammuta taskulamppu</string>
+    <string name="camera_no_torch">Tässä laitteessa ei ole taskulamppua.</string>
 
     <string name="camera_max_resolution">Enimmäisresoluutio</string>
     <string name="camera_sensor_size">Kennon koko</string>
@@ -218,40 +240,39 @@
     <string name="camera_af_continuous_picture">Jatkuva kuva</string>
     <string name="camera_af_edof">Laajennettu syväterävyys</string>
     <string name="camera_dimensions_value">%1$d × %2$d</string>
-    <string name="camera_megapixels_value">%1$.1f MP</string>
+    <string name="camera_megapixels_value">%1$s MP</string>
     <string name="camera_show_technical_details">Näytä tekniset tiedot</string>
     <string name="camera_hide_technical_details">Piilota tekniset tiedot</string>
-    <string name="camera_capabilities_title">Kameran %1$s ominaisuudet</string>
-    <string name="camera_selector_label">Kamera %1$s · %2$s · %3$s</string>
-    <string name="camera_external">Ulkoinen kamera</string>
+    <string name="camera_identifier">Kamera %1$s</string>
+    <string name="camera_type">Kameratyyppi</string>
+    <string name="camera_physical_ids">Fyysisten kameroiden tunnisteet</string>
     <string name="camera_unknown">Tuntematon</string>
     <string name="camera_class_standard">tavallinen</string>
     <string name="camera_class_logical">looginen monikamera</string>
     <string name="camera_class_physical">itsenäisesti valittava fyysinen kamera</string>
     <string name="camera_class_external">ulkoinen</string>
-    <string name="camera_confirm_question">Toimivatko valitun kameran esikatselu ja kuvaus oikein?</string>
+    <string name="camera_confirm_question">Toimivatko esikatselu ja kuva?</string>
     <string name="camera_confirm_problem">Ongelma</string>
     <string name="camera_confirm_pass">Vahvista</string>
     <string name="camera_inventory_label">Julkiset kamerat</string>
     <string name="camera_logical_count_label">Loogiset kamerat</string>
-    <string name="camera_no_public_cameras">Android ei ilmoittanut yhtään julkisesti valittavaa kameraa.</string>
-    <string name="camera_operation_failed">Kameratoiminto epäonnistui. Sulje esikatselu ja yritä uudelleen.</string>
     <string name="camera_loading">Luetaan kameran ominaisuuksia…</string>
     <string name="camera_retry">Yritä uudelleen</string>
 
     <!-- Sensor Test Screen -->
     <string name="sensor_summary_title">Anturien yhteenveto</string>
     <string name="sensor_description">Avaa jokainen saatavilla oleva testi ja seuraa ohjetta. Läpäisy vaatii rajatun näytteen tai liikevasteen.</string>
-    <string name="sensor_count">Havaitut anturit</string>
-    <string name="sensor_guided_completed">Läpäistyt ohjatut testit</string>
-    <string name="sensor_guided_progress">%1$d / %2$d</string>
-    <string name="sensor_listener_error">Anturin kuuntelua ei voitu käynnistää. Yritä testiä uudelleen.</string>
+    <string name="sensor_count">Androidin anturimerkinnät</string>
+    <string name="sensor_guided_completed">Läpäistyt ohjatut testityypit</string>
+    <string name="sensor_guided_progress">%1$s / %2$s</string>
+    <string name="sensor_guided_title">Ohjatut testit</string>
     <string name="sensor_not_available_description">Tätä anturia ei ole saatavilla tällä laitteella.</string>
     <string name="sensor_skip_test">Ohita testi</string>
     <string name="sensor_status_sampling">Näytteistetään</string>
     <string name="sensor_status_skipped">Ohitettu</string>
+    <string name="sensor_status_label">Tila</string>
     <string name="status_not_available">Ei saatavilla</string>
-    <string name="status_not_tested">Ei testattu</string>
+    <string name="status_not_measured">Ei mitattu</string>
     <string name="status_pass">Läpäisty</string>
     <string name="sensor_live_values">Reaaliaikaiset arvot</string>
     <string name="sensor_accuracy">Tarkkuus</string>
@@ -272,9 +293,9 @@
     <string name="sensor_unit_magnetic_field">µT</string>
     <string name="sensor_unit_pressure">hPa</string>
     <string name="sensor_unit_steps">askelta</string>
-    <string name="sensor_version_format">v%1$d</string>
-    <string name="sensor_power_format">%1$.2f mA</string>
-    <string name="sensor_delay_format">%1$d µs</string>
+    <string name="sensor_version_format">v%1$s</string>
+    <string name="sensor_power_format">%1$s mA</string>
+    <string name="sensor_delay_format">%1$s µs</string>
     <string name="sensor_type_accelerometer">Kiihtyvyysanturi</string>
     <string name="sensor_type_gyroscope">Gyroskooppi</string>
     <string name="sensor_type_gravity">Painovoima-anturi</string>
@@ -294,8 +315,8 @@
     <string name="sensor_orientation">Johdettu asentovaste</string>
     <string name="sensor_orientation_observed">Havaittu</string>
     <plurals name="sensor_samples">
-        <item quantity="one">%1$d näyte</item>
-        <item quantity="other">%1$d näytettä</item>
+        <item quantity="one">%1$s näyte</item>
+        <item quantity="other">%1$s näytettä</item>
     </plurals>
     <string name="sensor_info_title">Anturin tiedot</string>
     <string name="sensor_challenges_title">Haasteet</string>
@@ -328,6 +349,14 @@
     <string name="conn_not_available">Ei saatavilla</string>
     <string name="conn_supported">Tuettu</string>
     <string name="conn_not_supported">Ei tuettu</string>
+    <string name="conn_refresh">Päivitä yhteys- ja verkkotiedot</string>
+    <string name="conn_dbm_format">%1$s dBm</string>
+    <string name="conn_signal_level_format">%1$s / %2$s</string>
+    <string name="conn_mhz_format">%1$s MHz</string>
+    <string name="conn_ghz_format">%1$s GHz</string>
+    <string name="conn_frequency_band_format">%1$s MHz (%2$s)</string>
+    <string name="conn_mbps_format">%1$s Mbps</string>
+    <string name="conn_mcc_mnc_format">%1$s / %2$s</string>
 
     <!-- WiFi -->
     <string name="conn_wifi_title">Wi-Fi</string>
@@ -347,7 +376,7 @@
     <!-- Bluetooth -->
     <string name="conn_bluetooth_title">Bluetooth</string>
     <string name="conn_bt_not_supported">Bluetooth-laitteistoa ei ole tässä laitteessa.</string>
-    <string name="conn_bt_status">Tila</string>
+    <string name="conn_bt_status">Bluetoothin tila</string>
     <string name="conn_bt_name">Nimi</string>
     <string name="conn_bt_ble">Bluetooth LE</string>
     <string name="conn_bt_bonded">Paritetut laitteet</string>
@@ -355,7 +384,7 @@
     <!-- NFC -->
     <string name="conn_nfc_title">NFC</string>
     <string name="conn_nfc_not_supported">NFC-laitteistoa ei ole tässä laitteessa.</string>
-    <string name="conn_nfc_status">Tila</string>
+    <string name="conn_nfc_status">NFC:n tila</string>
     <string name="conn_nfc_hce">Host Card Emulation</string>
     <string name="conn_nfc_capability_only">Tämä näyttää vain NFC-tuen ja käyttötilan; se ei varmista fyysistä NFC-tiedonsiirtoa.</string>
 
@@ -363,8 +392,7 @@
     <string name="conn_gps_title">GPS</string>
     <string name="conn_gps_not_supported">GPS-laitteistoa ei ole tässä laitteessa.</string>
     <string name="conn_gps_provider">GPS-palvelu</string>
-    <string name="conn_gps_status">Tila</string>
-    <string name="conn_gps_ready">Valmis</string>
+    <string name="conn_gps_status">GPS-testi</string>
     <string name="conn_gps_searching">Etsitään…</string>
     <string name="conn_gps_fixed">Lukittu</string>
     <string name="conn_gps_failed">Aikakatkaisu</string>
@@ -372,13 +400,12 @@
     <string name="conn_gps_privacy_ephemeral">Tarkka sijainti näkyy vain tässä näkymässä eikä sitä tallenneta raporttiin.</string>
     <string name="conn_gps_elapsed">Kulunut aika</string>
     <string name="conn_gps_fix_time">Lukitusaika</string>
-    <string name="conn_gps_fix_duration_format">%1$.1f s</string>
-    <string name="conn_gps_coordinate_format">%1$.6f°</string>
-    <string name="conn_gps_accuracy_format">±%1$.1f m</string>
-    <string name="conn_gps_altitude_format">%1$.1f m</string>
-    <string name="conn_gps_speed_format">%1$.1f m/s</string>
-    <string name="conn_gps_satellite_ratio">%1$d / %2$d</string>
-    <string name="conn_gps_cn0_format">%1$.1f</string>
+    <string name="conn_gps_fix_duration_format">%1$s s</string>
+    <string name="conn_gps_coordinate_format">%1$s°</string>
+    <string name="conn_gps_accuracy_format">±%1$s m</string>
+    <string name="conn_gps_altitude_format">%1$s m</string>
+    <string name="conn_gps_speed_format">%1$s m/s</string>
+    <string name="conn_gps_satellite_ratio">%1$s / %2$s</string>
     <string name="conn_gps_latitude">Leveysaste</string>
     <string name="conn_gps_longitude">Pituusaste</string>
     <string name="conn_gps_accuracy">Tarkkuus</string>
@@ -387,11 +414,13 @@
     <string name="conn_gps_satellites_visible">Näkyvät satelliitit</string>
     <string name="conn_gps_satellites_used">Käytetyt satelliitit</string>
     <string name="conn_gps_satellite_info">Satelliittitiedot</string>
-    <string name="conn_gps_constellation">Järjestelmä</string>
-    <string name="conn_gps_used">Käytössä</string>
+    <string name="conn_gps_satellite_label">Satelliitti %1$s (%2$s)</string>
+    <string name="conn_gps_satellite_value">%1$s dB-Hz (%2$s)</string>
+    <string name="conn_gps_satellite_used_in_fix">käytetään paikannukseen</string>
+    <string name="conn_gps_satellite_not_used_in_fix">ei käytetä paikannukseen</string>
     <plurals name="conn_gps_more_sats">
-        <item quantity="one">+ %1$d lisää</item>
-        <item quantity="other">+ %1$d lisää</item>
+        <item quantity="one">+ %1$s lisää</item>
+        <item quantity="other">+ %1$s lisää</item>
     </plurals>
     <string name="conn_gps_start_fix">Aloita GPS-lukitus</string>
     <string name="conn_gps_retest">Testaa uudelleen</string>
@@ -400,6 +429,8 @@
     <string name="conn_mobile_title">Mobiiliverkko</string>
     <string name="conn_mobile_not_supported">Puhelinlaitteistoa ei ole tässä laitteessa.</string>
     <string name="conn_mobile_status">Datayhteys</string>
+    <string name="conn_mobile_summary_connected">Datayhteys käytössä</string>
+    <string name="conn_mobile_summary_disconnected">Ei datayhteyttä</string>
     <string name="conn_mobile_data_connected">Yhdistetty</string>
     <string name="conn_mobile_data_connecting">Yhdistetään</string>
     <string name="conn_mobile_data_disconnected">Ei yhdistetty</string>
@@ -424,11 +455,10 @@
     <string name="batt_level">Varaustaso</string>
     <string name="batt_voltage">Jännite</string>
     <string name="batt_temperature">Lämpötila</string>
-    <string name="batt_health_label">Androidin ilmoittama tila</string>
     <string name="batt_technology">Teknologia</string>
     <string name="batt_value_percent">%1$d%%</string>
     <string name="batt_value_millivolts">%1$d mV</string>
-    <string name="batt_value_celsius">%1$.1f °C</string>
+    <string name="batt_value_celsius">%1$s °C</string>
 
     <!-- Health statuses -->
     <string name="batt_health_good">Hyvä</string>
@@ -443,7 +473,7 @@
     <string name="batt_charging_status">Tila</string>
     <string name="batt_plug_type">Liitäntätyyppi</string>
     <string name="batt_charging_current">Virta</string>
-    <string name="batt_value_milliamps">%1$.1f mA</string>
+    <string name="batt_value_milliamps">%1$s mA</string>
     <string name="batt_current_direction">Suunta</string>
     <string name="batt_current_interpretation">Virran tulkinta</string>
     <string name="batt_current_direction_charging">Lataa</string>
@@ -499,7 +529,7 @@
     <string name="thermal_listener_failed">Reaaliaikaista lämpötilanhallinnan seurantaa ei voitu käynnistää.</string>
     <string name="thermal_headroom_title">Lämpötilanhallinnan headroom</string>
     <string name="thermal_headroom_current">Tämänhetkinen arvio</string>
-    <string name="thermal_headroom_value">%1$.2f</string>
+    <string name="thermal_headroom_value">%1$s</string>
     <string name="thermal_headroom_requires_api30">Vaatii Android 11+</string>
     <string name="thermal_headroom_note">Arvo 1,0 on laitteen voimakkaan rajoituksen kynnys. Tämä yksikötön arvio ei ole lämpötila, eikä sitä välttämättä saada tuetullakaan Android-versiolla.</string>
     <string name="thermal_battery_title">Akun lämpötila</string>
@@ -516,21 +546,26 @@
     <string name="storage_available">Vapaana</string>
     <string name="storage_usage">Käyttöaste</string>
     <string name="storage_percent_value">%1$s%%</string>
+    <string name="storage_usage_unit">% käytetty</string>
     <string name="storage_internal_access">Sovelluksen yksityinen tallennustila</string>
+    <string name="storage_access_title">Tallennustilan käyttö</string>
+    <string name="storage_private_access">Sovelluksen yksityinen tallennustila</string>
     <string name="storage_accessible">Käytettävissä</string>
     <string name="storage_info_error">Tallennustilan tietoja ei voitu lukea.</string>
     <string name="storage_loading">Luetaan sovelluksen käytettävissä olevan tallennustilan tietoja…</string>
     <string name="storage_volumes_title">Sovelluksen käytettävissä olevat jaetut taltiot</string>
     <string name="storage_no_shared_volumes">Sovelluksen käytettävissä ei ole tällä hetkellä jaettua taltiota.</string>
-    <string name="storage_volume_primary">Ensisijainen jaettu taltio</string>
+    <string name="storage_volume_primary">Ensisijainen jaettu tallennustila</string>
     <string name="storage_volume_number">Jaettu taltio %1$d</string>
     <string name="storage_mounted_state">Tila</string>
     <string name="storage_removable">Irrotettava</string>
+    <string name="storage_removable_storage">Irrotettava tallennustila</string>
     <string name="storage_state_mounted">Liitetty</string>
     <string name="storage_state_read_only">Liitetty vain luku -tilassa</string>
     <string name="storage_state_unavailable">Ei liitetty</string>
-    <string name="storage_benchmark_title">Sovelluksen yksityinen tallennustilatesti</string>
+    <string name="storage_benchmark_title">Tallennustilan nopeustesti</string>
     <string name="storage_benchmark_description">Kirjoittaa ja lukee yhden 64 MiB:n väliaikaistiedoston fonecheckin yksityisessä välimuistissa ja poistaa sen. Testin voi perua tai ohittaa.</string>
+    <string name="storage_benchmark_running">Tallennustilatesti on käynnissä</string>
     <string name="storage_benchmark_start">Suorita testi</string>
     <string name="storage_benchmark_run_again">Suorita uudelleen</string>
     <string name="storage_benchmark_cancel">Peru testi</string>
@@ -540,15 +575,16 @@
     <string name="storage_benchmark_insufficient_space">Testiä ei suoritettu, koska sovelluksen välimuistissa ei ole riittävästi vapaata tilaa väliaikaistiedostolle ja turvavaralle.</string>
     <string name="storage_benchmark_error">Tallennustilatestiä ei voitu suorittaa loppuun.</string>
     <string name="storage_benchmark_data_mismatch">Väliaikaistiedoston luettu koko ja tarkistussumma eivät vastanneet odotettua.</string>
-    <string name="storage_benchmark_cleanup_error">Testi valmistui, mutta Android ei voinut vahvistaa väliaikaistiedoston poistamista.</string>
+    <string name="storage_benchmark_cleanup_error">fonecheck ei voinut vahvistaa vertailumittauksen väliaikaistiedoston poistamista.</string>
     <string name="storage_benchmark_write_rate">Peräkkäinen kirjoitus</string>
     <string name="storage_benchmark_read_rate">Peräkkäinen luku</string>
-    <string name="storage_rate_value">%1$.1f MiB/s</string>
+    <string name="storage_rate_value">%1$s MiB/s</string>
     <string name="storage_benchmark_data_size">Tietomäärä</string>
     <string name="storage_benchmark_buffer_size">Puskurin koko</string>
     <string name="storage_benchmark_duration">Mitattu kesto</string>
     <string name="storage_duration_value">%1$d ms</string>
     <string name="storage_benchmark_location">Sijainti</string>
+    <string name="storage_benchmark_captured">Mitattu</string>
     <string name="storage_app_cache">Sovelluksen yksityinen välimuisti</string>
     <string name="storage_benchmark_cleanup">Väliaikaistiedoston siivous</string>
     <string name="storage_cleanup_complete">Valmis</string>
@@ -556,20 +592,19 @@
     <string name="storage_benchmark_required_space">Väliaikainen tietomäärä</string>
     <string name="storage_benchmark_available_before">Vapaana ennen testiä</string>
     <string name="storage_benchmark_conditions">Tulos kuvaa vain tätä sovelluksen välimuistissa tehtyä ajoa. Käyttöjärjestelmän välimuisti, lämpötila, taustatoiminta ja laitteen tila voivat vaikuttaa nopeuteen.</string>
-    <string name="storage_limitations_title">Mitä tämä tarkistus ei mittaa</string>
+    <string name="storage_limitations_title">Rajoitukset</string>
     <string name="storage_limitations_description">Nopeus ei kerro fyysisen flash-muistin kunnosta tai kulumisesta. fonecheck ei tarkastele käyttäjän tiedostoja eikä käytä yleistä hyväksytty/hylätty-nopeusrajaa.</string>
     <string name="storage_refresh">Päivitä tallennustilan tiedot</string>
 
     <!-- Home Screen -->
-    <string name="home_run_all">Aja kaikki testit</string>
+    <string name="full_check_title">Full Check</string>
+    <string name="home_start_full_check">Aloita Full Check</string>
     <string name="home_history_content_description">Avaa raporttihistoria</string>
     <string name="home_settings_content_description">Avaa asetukset</string>
     <string name="home_latest_title">Viimeisin Full Check</string>
+    <string name="home_latest_past_title">Viimeisin Full Check</string>
     <string name="home_latest_loading">Viimeisintä Full Check -raporttia ladataan…</string>
     <string name="home_latest_empty_title">Ei vielä Full Check -raporttia</string>
-    <string name="home_latest_empty_message">Luo ensimmäinen tallennettu yhteenveto suorittamalla Full Check.</string>
-    <string name="home_latest_unavailable_title">Viimeisin Full Check ei ole saatavilla</string>
-    <string name="home_latest_error_title">Viimeisintä Full Check -raporttia ei voitu ladata</string>
     <string name="home_latest_error_message">Tallennetun raportin yhteenvetoa ei voitu päivittää.</string>
     <string name="home_latest_retry">Yritä uudelleen</string>
     <string name="home_latest_status_good">Hyvä</string>
@@ -577,37 +612,37 @@
     <string name="home_latest_status_fail">Ongelmia raportoitu</string>
     <string name="home_latest_status_info">Valmis, lisätietoja</string>
     <string name="home_latest_status_unavailable">Osa tarkistuksista ei ole saatavilla</string>
-    <string name="home_latest_status_not_tested">Osa tarkistuksista jäi testaamatta</string>
+    <string name="home_latest_status_not_tested">Osa tarkistuksista jäi mittaamatta</string>
     <string name="home_latest_no_attention">Ei huomiota vaativia kohteita</string>
-    <plurals name="home_latest_attention_summary">
-        <item quantity="one">%1$d kohde vaatii huomiota</item>
-        <item quantity="other">%1$d kohdetta vaatii huomiota</item>
-    </plurals>
-    <plurals name="home_latest_attention_count">
-        <item quantity="one">%1$d kohde</item>
-        <item quantity="other">%1$d kohdetta</item>
+    <plurals name="home_latest_evidence_attention_summary">
+        <item quantity="one">%1$d havainto vaatii huomiota</item>
+        <item quantity="other">%1$d havaintoa vaatii huomiota</item>
     </plurals>
     <string name="home_latest_completed_at">Valmistui %1$s</string>
-    <string name="home_latest_categories">Kategoriat</string>
-    <string name="home_latest_coverage">Kattavuus</string>
-    <string name="home_latest_needs_attention">Vaatii huomiota</string>
-    <string name="home_latest_categories_value">%1$s / %2$s</string>
-    <string name="home_latest_no_score">Ei pisteitä</string>
-    <string name="home_latest_score_description">Pisteet %1$s / 100</string>
-    <string name="home_latest_no_score_description">Pisteitä ei ole. Tila: %1$s</string>
-    <string name="home_latest_category_statuses">Kategorioiden tilat: läpäisty %1$s, varoitus %2$s, hylätty %3$s, tieto %4$s, ei saatavilla %5$s, ei testattu %6$s.</string>
-    <string name="home_latest_state_description">%1$s. %2$s. %3$s. %4$s</string>
-    <string name="home_latest_metric_state_description">%1$s: %2$s</string>
+    <plurals name="home_latest_days_ago">
+        <item quantity="one">%1$d päivä sitten</item>
+        <item quantity="other">%1$d päivää sitten</item>
+    </plurals>
+    <string name="home_latest_past_state_description">Viimeisin Full Check, %1$s. Valmistui %2$s</string>
+    <string name="home_latest_passed_label">Läpäistyt kategoriat</string>
+    <string name="home_latest_passed_total">/ %1$s</string>
+    <string name="home_latest_passed_description">Läpäistyjä kategorioita %1$s / %2$s</string>
+    <string name="home_latest_coverage_value">Tarkistuksen kattavuus %1$s</string>
+    <string name="home_latest_category_statuses">Kategorioiden tilat: läpäisty %1$s, varoitus %2$s, hylätty %3$s, info %4$s, ei saatavilla %5$s, ei mitattu %6$s.</string>
+    <string name="home_latest_state_description">%1$s. %2$s. %3$s. %4$s. %5$s. %6$s</string>
     <string name="run_all_preflight_title">Ennen koko tarkistusta</string>
     <string name="run_all_preflight_description">Tarkista, mitä fonecheck tekee, ennen kuin yhtään lupapyyntöä näytetään.</string>
+    <string name="run_all_preflight_what_happens_title">Mitä tapahtuu</string>
     <string name="run_all_preflight_interactions">Tarkistat näytön ja käytät tuettuja kamera-, liike-, äänenvoimakkuuspainike-, värinä-, kaiutin- ja biometriikkatarkistuksia.</string>
-    <string name="run_all_preflight_audio_vibration">Valittu äänitesti toistaa lyhyen kaiutinäänen ja tallentaa lyhyen mikrofoninäytteen suhteellista tasolukemaa varten. Värinä voi tuntua voimakkaalta.</string>
+    <string name="run_all_preflight_audio_vibration">Jos valitset äänitestit, kaiutintesti toistaa lyhyen äänen ja mikrofonitesti tallentaa lyhyen näytteen suhteellista tasolukemaa varten. Värinä voi tuntua voimakkaalta.</string>
     <string name="run_all_preflight_storage">Tallennustilatesti kirjoittaa, lukee ja poistaa yhden väliaikaisen 64 MiB:n tiedoston fonecheckin yksityisessä välimuistissa.</string>
+    <string name="run_all_preflight_permissions_control_title">Luvat ja hallinta</string>
     <string name="run_all_preflight_permissions">Luvat pyydetään seuraavalla ruudulla vain tarvittaessa. Epääminen rajaa kattavuutta mutta ei hylkää tai estä koko tarkistusta.</string>
     <string name="run_all_preflight_unsupported">Puuttuva laitteisto merkitään soveltumattomaksi. Jokaisen vuorovaikutteisen tarkistuksen voi ohittaa tai keskeyttää.</string>
+    <string name="run_all_preflight_privacy_title">Tietosuoja</string>
     <string name="run_all_preflight_local_report">Raporttitiedot pysyvät tällä laitteella eikä niitä lähetetä verkkoon. Raakaääntä, kamerakuvia, tarkkaa sijaintia, verkkonimiä tai solutunnisteita ei tallenneta.</string>
     <string name="run_all_preflight_no_network">Internet- tai verkkonopeustestiä ei suoriteta.</string>
-    <string name="run_all_preflight_choices_title">Sisällytettävä valinnainen työ</string>
+    <string name="run_all_preflight_choices_title">Valinnaiset testit</string>
     <string name="run_all_preflight_speaker_option">Kaiutinääni ja vahvistus</string>
     <string name="run_all_preflight_microphone_option">Lyhyt mikrofoninäyte</string>
     <string name="run_all_preflight_camera_option">Kameran esikatselu ja kuvanotto</string>
@@ -618,7 +653,7 @@
     <string name="run_all_permissions_continue">Jatka käytettävissä olevilla oikeuksilla</string>
     <string name="run_all_automatic_title">Puhelinta testataan</string>
     <string name="run_all_automatic_description">Laitetiedot luetaan ja rajatut suorituskyky- sekä sovelluksen yksityiset tallennustilatarkistukset suoritetaan. Väliaikainen 64 MiB:n tiedosto poistetaan tarkistuksen jälkeen.</string>
-    <string name="run_all_interactive_progress">Pikatarkistus %1$d/%2$d</string>
+    <string name="run_all_interactive_progress">Pikatarkistus %1$s/%2$s</string>
     <string name="run_all_display_title">Tarkista näyttö</string>
     <string name="run_all_display_description">Tarkista jokaisesta tasaväristä kuolleet pikselit, kirkkaat pisteet, varjot ja kuvan kiinnipalaminen.</string>
     <string name="run_all_next_color">Näytä seuraava väri</string>
@@ -632,7 +667,7 @@
     <string name="run_all_no_tone">Ääntä ei kuulu</string>
     <string name="run_all_camera_title">Kameroita testataan</string>
     <string name="run_all_camera_description">Jokaiselle julkiselle kameralle avataan esikatselu ja otetaan yksi kuva automaattisesti.</string>
-    <string name="run_all_camera_progress">Kamera %1$d/%2$d</string>
+    <string name="run_all_camera_progress">Kamera %1$s/%2$s</string>
     <string name="run_all_sensor_title">Testaa liikeanturi</string>
     <string name="run_all_sensor_description">Ravista puhelinta kevyesti. Testi jatkuu automaattisesti, kun liike havaitaan.</string>
     <string name="run_all_vibration_title">Tunsitko värinän?</string>
@@ -645,46 +680,43 @@
     <string name="run_all_biometrics_description">Käytä vain biometriikan hyväksyvää järjestelmäkehotetta. PIN-koodia, kuviota tai salasanaa ei hyväksytä biometriseksi tulokseksi.</string>
     <string name="run_all_skip">Ohita tämä tarkistus</string>
     <string name="run_all_cancel">Keskeytä Full Check</string>
-    <string name="run_all_stage_timeout">Tarkistus aikakatkaistiin. Yritä uudelleen tai jatka ohittamalla se.</string>
-    <string name="run_all_stage_error">Tarkistusta ei voitu jatkaa. Yritä uudelleen tai ohita se.</string>
     <string name="run_all_results_title">Puhelimesi raportti</string>
     <string name="run_all_results_description">Automaattiset ja vuorovaikutteiset tarkistukset on ryhmitelty alle kategorioittain.</string>
     <string name="run_all_overall_score">Kokonaispisteet</string>
+    <string name="report_score_unit">/ 100</string>
     <plurals name="run_all_warning_count">
-        <item quantity="one">%1$d varoitus</item>
-        <item quantity="other">%1$d varoitusta</item>
+        <item quantity="one">%1$s varoitus</item>
+        <item quantity="other">%1$s varoitusta</item>
     </plurals>
     <plurals name="run_all_failed_count">
-        <item quantity="one">%1$d ongelma</item>
-        <item quantity="other">%1$d ongelmaa</item>
+        <item quantity="one">%1$s ongelma</item>
+        <item quantity="other">%1$s ongelmaa</item>
     </plurals>
     <plurals name="run_all_unavailable_count">
-        <item quantity="one">%1$d ei saatavilla</item>
-        <item quantity="other">%1$d ei saatavilla</item>
+        <item quantity="one">%1$s ei saatavilla</item>
+        <item quantity="other">%1$s ei saatavilla</item>
     </plurals>
     <string name="run_all_needs_attention">Vaatii huomiota</string>
     <string name="run_all_completed">Valmiit</string>
     <string name="run_all_not_completed">Ei suoritettu</string>
-    <string name="run_all_view_details">Näytä tiedot</string>
-    <string name="run_all_hide_details">Piilota tiedot</string>
     <string name="run_all_open_test">Avaa yksittäinen testi</string>
     <string name="run_all_done">Valmis</string>
     <string name="run_all_saving_report">Valmista raporttia tallennetaan tälle laitteelle…</string>
     <string name="run_all_save_failed">Valmista raporttia ei voitu tallentaa. Mitattu snapshot on lukittu, eikä tallennuksen uusiminen suorita testejä uudelleen.</string>
     <string name="run_all_retry_save">Yritä tallennusta uudelleen</string>
     <string name="report_saved_title">Tallennettu raportti</string>
-    <string name="report_saved_description">Tämä näkymä näyttää vain raportin valmistuessa tallennetun muuttumattoman evidenssin.</string>
+    <string name="report_saved_description">Tämä näkymä näyttää vain raportin valmistuessa tallennetut havainnot. Tiedot eivät päivity jälkikäteen.</string>
     <string name="report_kind">Raportin tyyppi</string>
     <string name="report_kind_full">Full Check</string>
     <string name="report_kind_category">Kategorian uusintatesti</string>
     <string name="report_device">Laite</string>
     <string name="report_android">Android</string>
-    <string name="report_android_value">%1$s (API %2$d)</string>
+    <string name="report_android_value">%1$s (API %2$s)</string>
     <string name="report_app_version">Sovellusversio</string>
-    <string name="report_app_version_value">%1$s (%2$d)</string>
+    <string name="report_app_version_value">%1$s (%2$s)</string>
     <string name="report_completed_at">Valmistunut</string>
     <string name="report_duration">Kesto</string>
-    <string name="report_duration_value">%1$d min %2$d s</string>
+    <string name="report_duration_value">%1$s min %2$s s</string>
     <string name="report_identifier">Raportin tunniste</string>
     <string name="report_score_complete">Täysi kattavuus</string>
     <string name="report_score_partial">Osittainen kattavuus</string>
@@ -692,12 +724,12 @@
     <string name="report_reason_error">Tarkistusta ei voitu suorittaa loppuun</string>
     <string name="report_reason_android_version_unsupported">Tämä Android-versio ei tue tarkistusta</string>
     <string name="report_coverage">Kattavuus</string>
-    <string name="report_coverage_value">%1$d%% · Tarkistukset: %2$d/%3$d</string>
-    <string name="report_pass_count">%1$d läpäisty</string>
-    <string name="report_info_count">Tietoja: %1$d</string>
-    <string name="report_not_tested_count">%1$d ei testattu</string>
-    <string name="report_view_saved_evidence">Näytä tallennettu evidenssi</string>
-    <string name="report_hide_saved_evidence">Piilota tallennettu evidenssi</string>
+    <string name="report_coverage_value">%1$s%%</string>
+    <string name="report_checks">Tarkistukset</string>
+    <string name="report_checks_value">%1$s/%2$s</string>
+    <string name="report_pass_count">%1$s läpäisty</string>
+    <string name="report_info_count">Info: %1$s</string>
+    <string name="report_not_tested_count">%1$s ei mitattu</string>
     <string name="report_retest">Testaa uudelleen</string>
     <string name="report_retest_title">Testaa %1$s uudelleen</string>
     <string name="report_retest_description">Uusi tulos tallennetaan erillisenä kategoriakohtaisena raporttina. Alkuperäinen raportti ei muutu.</string>
@@ -705,7 +737,9 @@
     <string name="report_retest_cancel">Peruuta</string>
     <string name="report_retest_unavailable">Tämä diagnostiikkakategoria ei ole käytettävissä.</string>
     <string name="report_back">Takaisin</string>
-    <string name="report_no_saved_evidence">Tälle kategorialle ei tallennettu evidenssiä.</string>
+    <string name="report_no_saved_evidence">Tälle kategorialle ei tallennettu havaintoja.</string>
+    <string name="report_evidence_value">Arvo</string>
+    <string name="report_evidence_source">Lähde</string>
     <string name="report_evidence_reason">Syy: %1$s</string>
     <string name="report_source_automatic">Automaattinen mittaus</string>
     <string name="report_source_android_api">Android API</string>
@@ -724,6 +758,10 @@
     <string name="settings_theme_system">Järjestelmä</string>
     <string name="settings_theme_light">Vaalea</string>
     <string name="settings_theme_dark">Tumma</string>
+    <string name="settings_language">Kieli</string>
+    <string name="settings_language_system">Järjestelmä</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_finnish">Suomi</string>
     <string name="settings_test_warnings">Näytä testivaroitukset</string>
     <string name="settings_test_warnings_description">Pidä turvallisuus- ja rajoitusilmoitukset näkyvissä ennen vuorovaikutteisia diagnostiikkoja.</string>
     <string name="settings_permissions">Luvat</string>
@@ -759,7 +797,7 @@
     <string name="licenses_description">fonecheck sisältää avoimen lähdekoodin kirjastoja. Komponenttiluettelo ja sovellettavat lisenssiehdot on pakattu alle sekä julkaisuversioon.</string>
     <string name="licenses_notices_heading">Kolmannen osapuolen ilmoitukset</string>
     <string name="onboarding_title">Aloittaminen</string>
-    <string name="onboarding_progress">Vaihe %1$d/%2$d</string>
+    <string name="onboarding_progress">Vaihe %1$s/%2$s</string>
     <string name="onboarding_skip">Ohita</string>
     <string name="onboarding_previous">Takaisin</string>
     <string name="onboarding_next">Seuraava</string>
@@ -789,13 +827,19 @@
     <string name="history_delete_error">Raporttia ei voitu poistaa. Se säilyy historiassa.</string>
     <string name="history_retry">Yritä uudelleen</string>
     <string name="history_full_check">Full Check</string>
-    <string name="history_partial_check">Osittainen Full Check</string>
-    <string name="history_incomplete_check">Keskeneräinen Full Check</string>
-    <string name="history_category_retest">Kategorian uusintatesti · %1$s</string>
+    <string name="history_category_retest">Kategorian uusintatesti</string>
     <string name="history_unavailable_report">Raportti ei ole käytettävissä</string>
+    <string name="history_status">Tila</string>
+    <string name="history_status_complete">Valmis</string>
+    <string name="history_status_partial">Osittainen</string>
+    <string name="history_status_incomplete">Keskeneräinen</string>
+    <string name="history_status_unavailable">Ei käytettävissä</string>
+    <string name="history_completed">Valmistui</string>
     <string name="history_score">Pisteet</string>
     <string name="history_coverage">Kattavuus</string>
-    <string name="history_issue_summary">Varoitukset: %1$d · Ongelmat: %2$d</string>
+    <string name="history_coverage_value">%1$s%%</string>
+    <string name="history_warnings">Varoitukset</string>
+    <string name="history_issues">Ongelmat</string>
     <string name="history_open">Avaa</string>
     <string name="history_compare">Vertaa</string>
     <string name="history_compare_selected">Valittu</string>
@@ -825,15 +869,17 @@
     <string name="pdf_captured">Tallennettu</string>
     <string name="pdf_disclaimer">Erot ja mittaukset eivät todista laitteen fyysistä kuntoa.</string>
     <string name="pdf_unit_samples">näytettä</string>
-    <string name="pdf_counts_value">Valmiit: %1$d, ei testattu: %2$d, ei saatavilla: %3$d, varoitukset: %4$d, ongelmat: %5$d</string>
+    <string name="pdf_counts_value">Valmiit: %1$d, ei mitattu: %2$d, ei saatavilla: %3$d, varoitukset: %4$d, ongelmat: %5$d</string>
     <string name="pdf_page">Sivu %1$d / %2$d</string>
     <string name="export_title">Vie raportti</string>
     <string name="export_description">Luo paikallinen kopio tästä muuttumattomasta tallennetusta raportista.</string>
     <string name="export_local_only">Tiedosto luodaan paikallisesti sovelluksen väliaikaiseen tallennustilaan. Mitään ei lähetetä verkkoon.</string>
-    <string name="export_pdf_description">PDF sisältää raportin metadatan, pisteet, kattavuuden, kategoriat, tallennetun evidenssin, versiot ja mittausten rajoitteet.</string>
+    <string name="export_pdf_section">PDF</string>
+    <string name="export_pdf_description">PDF sisältää raportin metadatan, pisteet, kattavuuden, kategoriat, tallennetut havainnot, versiot ja mittausten rajoitteet.</string>
     <string name="export_pdf">Luo ja jaa PDF</string>
     <string name="export_generating">Luodaan PDF-tiedostoa…</string>
     <string name="export_pdf_error">PDF-tiedostoa ei voitu luoda. Voit yrittää uudelleen.</string>
+    <string name="export_json_section">JSON</string>
     <string name="export_json_description">JSON on versionoitu koneluettava raportti, jossa ovat vakaat tunnisteet, tyypitetyt arvot, tilat, lähteet, luottamustasot ja aikaleimat.</string>
     <string name="export_json">Luo ja jaa JSON</string>
     <string name="export_json_error">JSON-tiedostoa ei voitu luoda. Voit yrittää uudelleen.</string>
@@ -843,19 +889,20 @@
     <string name="export_load_error">Tallennettua raporttia ei voitu ladata vientiä varten.</string>
     <string name="comparison_title">Raporttien vertailu</string>
     <string name="comparison_description">Ensimmäinen raportti → toinen raportti</string>
-    <string name="comparison_disclaimer">Tallennetun evidenssin erot eivät todista fyysistä kulumista tai laitteen kunnon muutosta.</string>
+    <string name="comparison_limitations">Tulkinta</string>
+    <string name="comparison_disclaimer">Tallennettujen havaintojen erot eivät todista fyysistä kulumista tai laitteen kunnon muutosta.</string>
+    <string name="comparison_categories">Kategoriat</string>
+    <string name="comparison_check">Tarkistus</string>
     <string name="comparison_first_report">Ensimmäinen raportti</string>
     <string name="comparison_second_report">Toinen raportti</string>
-    <string name="comparison_app_version">Sovellus %1$s (%2$d)</string>
-    <string name="comparison_report_version">Raporttimuoto %1$d</string>
     <string name="comparison_score">Pisteet</string>
     <string name="comparison_score_value">%1$s → %2$s</string>
-    <string name="comparison_score_delta">Pisteiden muutos: %+1$d</string>
+    <string name="comparison_score_delta">Pisteiden muutos: %1$s</string>
     <string name="comparison_score_no_delta">Numeerista piste-eroa ei ole saatavilla.</string>
-    <string name="comparison_score_incompatible">Pisteitä ei voi verrata, koska pisteversiot poikkeavat toisistaan (%1$d ja %2$d).</string>
+    <string name="comparison_score_incompatible">Pisteitä ei voi verrata, koska pisteversiot poikkeavat toisistaan (%1$s ja %2$s).</string>
     <string name="comparison_coverage">Kattavuus</string>
-    <string name="comparison_coverage_value">%1$d%% → %2$d%%</string>
-    <string name="comparison_coverage_delta">Kattavuuden muutos: %+1$d prosenttiyksikköä</string>
+    <string name="comparison_coverage_value">%1$s%% → %2$s%%</string>
+    <string name="comparison_coverage_delta">Kattavuuden muutos: %1$s prosenttiyksikköä</string>
     <string name="comparison_coverage_incompatible">Kattavuuden raporttimuodot poikkeavat, joten numeerista muutosta ei näytetä.</string>
     <string name="comparison_category_status">%1$s → %2$s</string>
     <string name="comparison_missing">Puuttuu</string>
@@ -878,9 +925,8 @@
     <string name="run_all_status_pass">Läpäisty</string>
     <string name="run_all_status_warning">Varoitus</string>
     <string name="run_all_status_fail">Hylätty</string>
-    <string name="run_all_status_info">Tieto</string>
+    <string name="run_all_status_info">Info</string>
     <string name="run_all_status_unavailable">Ei saatavilla</string>
-    <string name="run_all_status_not_tested">Ei testattu</string>
     <string name="run_all_summary_pass">Tarkistukset onnistuivat</string>
     <string name="run_all_summary_info">Tiedot tallennettu</string>
     <string name="run_all_summary_warning">Osa tarkistuksista vaatii huomiota</string>
@@ -893,12 +939,15 @@
     <string name="run_all_check_headphones">Liitetyt kuulokkeet</string>
     <string name="run_all_check_motion_sensor">Liikevaste</string>
     <string name="run_all_check_volume_buttons">Äänenvoimakkuuspainikkeet</string>
-    <string name="run_all_detail_temperature">%1$.1f °C</string>
+    <string name="run_all_detail_temperature">%1$s °C</string>
     <string name="run_all_permission_missing">Oikeutta ei myönnetty</string>
     <string name="run_all_manual_failed">Käyttäjä ilmoitti ongelmasta</string>
     <string name="run_all_manual_skipped">Vuorovaikutteinen tarkistus ohitettiin</string>
-    <string name="home_categories_title">Testikategoriat</string>
-    <string name="home_categories_subtitle">Valitse tarkasteltava tai testattava kategoria</string>
+    <string name="home_status_panel_title">Tilapaneeli</string>
+    <plurals name="home_status_channel_count">
+        <item quantity="one">%1$s kategoria</item>
+        <item quantity="other">%1$s kategoriaa</item>
+    </plurals>
 
     <string name="home_cat_device">Laite</string>
     <string name="home_cat_performance">Suorituskyky</string>
@@ -912,7 +961,7 @@
     <string name="home_cat_thermal">Lämpötila</string>
     <string name="home_cat_storage">Tallennustila</string>
     <string name="home_cat_vibration">Värinä</string>
-    <string name="home_cat_buttons">Äänenvoimakkuuspainikkeet</string>
+    <string name="home_cat_buttons">Äänenvoimakkuus</string>
     <string name="home_cat_biometrics">Biometriikka</string>
 
     <!-- Display Test Screen -->
@@ -927,7 +976,9 @@
     <string name="display_wide_color">Laaja väriavaruus</string>
     <string name="display_brightness">Kirkkaus</string>
     <string name="display_auto_brightness">Automaattinen kirkkaus</string>
+    <string name="display_status_label">Tila</string>
     <string name="display_start_test">Aloita testi</string>
+    <string name="display_refresh_info">Päivitä näytön tiedot</string>
     <string name="display_visual_title">Pikseli- ja tasaisuustesti</string>
     <string name="display_visual_description">Tarkista punainen, vihreä, sininen, valkoinen, musta ja harmaaliukuväri kuolleiden tai juuttuneiden pikseleiden, varjojen ja kuvanpidätyksen varalta.</string>
     <string name="display_visual_question">Näyttivätkö kaikki kentät tasaisilta ja puhtailta?</string>
@@ -942,19 +993,20 @@
     <string name="display_pattern_white">Valkoinen kenttä</string>
     <string name="display_pattern_black">Musta kenttä</string>
     <string name="display_pattern_gray_gradient">Harmaaliukuväri</string>
-    <string name="display_status_ready">Valmis</string>
     <string name="display_status_passed">Läpäisty</string>
     <string name="display_status_issue">Ongelma löytyi</string>
     <string name="display_status_complete">Valmis</string>
     <string name="display_touch_cells">Ruudukon kattavuus</string>
     <string name="display_multi_touch_peak">Samanaikaisten kosketusten enimmäismäärä</string>
-    <string name="display_touch_progress">Ruudukko %1$d/%2$d · aktiivisia kosketuksia %3$d · enintään %4$d</string>
+    <string name="display_touch_active">Aktiiviset kosketukset</string>
+    <string name="display_touch_maximum">Kosketusten enimmäismäärä</string>
+    <string name="display_touch_progress">Ruudukosta on katettu %1$s/%2$s ruutua. Aktiivisten kosketusten määrä on %3$s. Kosketusten enimmäismäärä on %4$s.</string>
     <string name="display_touch_grid_description">Kosketustestin ruudukko. Vedä koko alueen yli ja aseta useita sormia näytölle samanaikaisesti.</string>
     <string name="display_touch_complete">Viimeistele testi</string>
-    <string name="display_resolution_value">%1$d × %2$d px (%3$s)</string>
-    <string name="display_density_value">%1$d dpi</string>
-    <string name="display_refresh_rate_value">%1$.0f Hz</string>
-    <string name="display_value_ratio">%1$d / %2$d</string>
+    <string name="display_resolution_value">%1$s × %2$s px (%3$s)</string>
+    <string name="display_density_value">%1$s dpi</string>
+    <string name="display_refresh_rate_value">%1$s Hz</string>
+    <string name="display_value_ratio">%1$s / %2$s</string>
     <string name="display_resolution_source_window">sovellusikkuna</string>
     <string name="display_resolution_source_mode">näyttötila</string>
     <string name="display_resolution_source_physical">fyysinen mitta</string>
@@ -972,17 +1024,10 @@
     <string name="vibration_effects_supported">Tuetut efektit</string>
     <string name="vibration_primitives_supported">Tuetut primitiivit</string>
     <string name="vibration_has_vibrator">Värinämoottori</string>
-    <string name="vibration_motor_icon">VÄR</string>
-    <string name="vibration_haptic_icon">HAP</string>
-    <string name="vibration_ready">Valmis</string>
     <string name="vibration_felt">Tuntui</string>
     <string name="vibration_not_felt">Ei tuntunut</string>
     <string name="vibration_skipped">Ohitettu</string>
     <string name="vibration_none">Ei mitään</string>
-    <plurals name="vibration_effect_count">
-        <item quantity="one">%1$d efekti</item>
-        <item quantity="other">%1$d efektiä</item>
-    </plurals>
     <string name="vibration_stop">Pysäytä värinä</string>
     <string name="vibration_skip">Ohita fyysinen vahvistus</string>
     <string name="vibration_unavailable">Android ilmoittaa, ettei laitteessa ole värinämoottoria.</string>
@@ -1005,12 +1050,11 @@
 
     <!-- Button Test Screen -->
     <string name="button_test_title">Äänenvoimakkuuspainikkeet</string>
-    <string name="button_test_icon">BTN</string>
+    <string name="button_status_label">Tila</string>
     <string name="button_volume_up">Ääni ylös</string>
     <string name="button_volume_down">Ääni alas</string>
     <string name="button_power">Virtapainike</string>
     <string name="button_detected">Havaittu</string>
-    <string name="button_not_detected">Ei havaittu</string>
     <string name="button_power_note">Android-sovellus ei voi testata virtapainiketta luotettavasti, joten se ei sisälly tähän testiin.</string>
     <string name="button_power_unavailable">Ei sovellusten käytettävissä</string>
     <string name="button_start_test">Aloita testi</string>
@@ -1018,8 +1062,7 @@
     <string name="button_skip">Ohita</string>
     <string name="button_retry">Yritä uudelleen</string>
     <string name="button_reset">Nollaa</string>
-    <string name="button_status_ready">Valmis</string>
-    <string name="button_status_progress">%1$d / 2 havaittu</string>
+    <string name="button_status_progress">%1$s / %2$s havaittu</string>
     <string name="button_status_complete">Valmis</string>
     <string name="button_status_timed_out">Aika päättyi</string>
     <string name="button_status_skipped">Ohitettu</string>
@@ -1027,8 +1070,6 @@
 
     <!-- Biometric Test Screen -->
     <string name="biometric_capabilities_title">Ominaisuudet</string>
-    <string name="biometric_capability_icon">BIO</string>
-    <string name="biometric_auth_icon">AUTH</string>
     <string name="biometric_fingerprint_hardware">Sormenjälkiominaisuus</string>
     <string name="biometric_face_hardware">Kasvotunnistusominaisuus</string>
     <string name="biometric_strong">Vahva (luokka 3)</string>
@@ -1046,7 +1087,6 @@
     <string name="biometric_security_update_required">Tietoturvapäivitys vaaditaan</string>
     <string name="biometric_unsupported">Android-versio ei tue toimintoa</string>
     <string name="biometric_unknown">Saatavuus ei ole tiedossa</string>
-    <string name="biometric_ready">Valmis</string>
     <string name="biometric_in_progress">Järjestelmäkehote on aktiivinen</string>
     <string name="biometric_not_recognized">Ei tunnistettu</string>
     <string name="biometric_cancelled">Peruutettu</string>
@@ -1060,6 +1100,7 @@
     <string name="biometric_prompt_cancel">Peruuta</string>
 
     <!-- Käyttöoikeudet -->
+    <string name="permission_section_title">Käyttöoikeus</string>
     <string name="permission_status_not_requested">Käyttöoikeutta ei ole pyydetty</string>
     <string name="permission_status_granted">Käyttöoikeus myönnetty</string>
     <string name="permission_status_denied">Käyttöoikeus evätty</string>
@@ -1075,6 +1116,74 @@
     <string name="permission_rationale_location">Android vaatii sijainnin käyttöoikeuden lähellä olevien Wi-Fi- ja GPS-diagnostiikkatietojen lukemiseen.</string>
     <string name="permission_rationale_phone">Puhelimen käyttöoikeutta käytetään SIM- ja mobiiliverkon diagnostiikkatietojen lukemiseen.</string>
     <string name="permission_rationale_bluetooth">Lähellä olevien laitteiden käyttöoikeutta käytetään Bluetooth-diagnostiikkatietojen lukemiseen Android 12:ssa ja sitä uudemmissa.</string>
+
+    <!-- Laitehavaintojen syyt -->
+    <string name="observation_reason_cpu_reading_unavailable">Android ei palauttanut käyttökelpoista suoritinydinten määrää.</string>
+    <string name="observation_reason_ram_reading_unavailable">Android ei palauttanut käyttökelpoista kokonaismuistin arvoa.</string>
+    <string name="observation_reason_gpu_reading_unavailable">OpenGL ei palauttanut renderöijän nimeä.</string>
+    <string name="observation_reason_display_reading_unavailable">Android ei palauttanut käyttökelpoisia näytön mittoja.</string>
+    <string name="observation_reason_sim_inventory_unknown">Android ei näyttänyt tarpeeksi SIM-tietoja nykyisen SIM-kokoonpanon määrittämiseen.</string>
+    <string name="observation_reason_sim_not_present">SIM-korttia ei havaittu. Aseta tai aktivoi SIM mobiilipalvelun mittaamista varten.</string>
+    <string name="observation_reason_sim_inactive">SIM on paikallaan mutta ei aktiivinen. Aktivoi se mobiilipalvelun mittaamista varten.</string>
+    <string name="observation_reason_sim_slot_unknown">Android ei näyttänyt tämän SIM-paikan tilaa.</string>
+    <string name="observation_reason_sim_network_locked">SIM on lukittu tiettyyn verkkoon. Ota yhteys operaattoriin, jos sen pitäisi toimia tässä puhelimessa.</string>
+    <string name="observation_reason_sim_pin_required">SIM odottaa PIN-koodia. Avaa se Androidin asetuksissa mobiilipalvelun käyttämiseksi.</string>
+    <string name="observation_reason_sim_puk_required">SIM on lukittu virheellisten PIN-yritysten jälkeen. Käytä operaattorin toimittamaa PUK-koodia.</string>
+    <string name="observation_reason_sim_not_ready">Android ilmoittaa, ettei SIM ole valmis. Odota alustusta ja tarkista uudelleen.</string>
+    <string name="observation_reason_sim_permanently_disabled">SIM on poistettu pysyvästi käytöstä. Vaihda se tai ota yhteys operaattoriin.</string>
+    <string name="observation_reason_sim_card_io_error">Android ilmoittaa I/O-viasta, mutta fonecheck ei pysty erottamaan, onko vika SIM-kortissa vai puhelimen lukijassa.</string>
+    <string name="observation_reason_sim_card_restricted">Android ilmoittaa SIMin olevan rajoitettu. Ota yhteys operaattoriin, jos mobiilipalvelun pitäisi olla käytettävissä.</string>
+    <string name="observation_reason_camera_measurement_error">fonecheck ei voinut käynnistää tai suorittaa kameramittausta. Tarkista kameran käyttöoikeus ja yritä uudelleen.</string>
+    <string name="observation_reason_sensor_measurement_error">fonecheck ei voinut rekisteröidä anturikuuntelijaa. Sulje muut anturitestit ja yritä uudelleen.</string>
+    <string name="observation_reason_gps_disabled">GPS on pois käytöstä. Ota sijainti käyttöön GPS-mittausta varten.</string>
+    <string name="observation_reason_gps_not_run">GPS-paikannusta ei suoritettu. Käynnistä paikannus satelliittipaikannuksen mittaamiseksi.</string>
+    <string name="observation_reason_gps_in_progress">GPS-paikannus on vielä käynnissä. Odota sen valmistumista ennen tuloksen käyttämistä.</string>
+    <string name="observation_reason_gps_timeout">GPS-paikannusta ei saatu ennen aikakatkaisua. Siirry avoimeen paikkaan ja yritä uudelleen.</string>
+    <string name="observation_reason_gps_start_failed">Android ei voinut käynnistää sijaintipäivityksiä. Tarkista sijainnin käyttöoikeus ja GPS ja yritä uudelleen.</string>
+    <string name="observation_reason_battery_health_unavailable">Android ei näyttänyt tunnistettua akun terveystilaa.</string>
+    <string name="observation_reason_battery_overheat">Android ilmoittaa akun olevan parhaillaan ylikuumentunut. Anna puhelimen jäähtyä.</string>
+    <string name="observation_reason_battery_dead">Android ilmoittaa akun olevan kuollut. Akku tarvitsee huoltoa tai vaihdon.</string>
+    <string name="observation_reason_battery_over_voltage">Android ilmoittaa akun ylijännitteestä. Lopeta lataaminen ja tarkastuta akku sekä latausjärjestelmä.</string>
+    <string name="observation_reason_battery_unspecified_failure">Android ilmoittaa määrittelemättömästä akkuviasta. Akku tarvitsee tarkastuksen.</string>
+    <string name="observation_reason_battery_cold">Android ilmoittaa akun olevan parhaillaan kylmä. Anna puhelimen lämmetä huoneenlämpöön.</string>
+    <string name="observation_reason_battery_temperature_unavailable">Android ei näyttänyt käyttökelpoista akun lämpötilaa.</string>
+    <string name="observation_reason_battery_temperature_cold">Akun lämpötila on nyt alle 0 °C. Anna puhelimen lämmetä huoneenlämpöön.</string>
+    <string name="observation_reason_battery_temperature_high">Akun lämpötila on nyt yli 45 °C. Irrota laturi ja anna puhelimen jäähtyä.</string>
+    <string name="observation_reason_battery_temperature_critical">Akun lämpötila on nyt vähintään 50 °C. Irrota laturi ja anna puhelimen jäähtyä ennen jatkamista.</string>
+    <string name="observation_reason_thermal_status_unavailable">Tämä Android-versio tai laite ei näytä lämpötilatilaa fonecheckille.</string>
+    <string name="observation_reason_thermal_management_active">Android käyttää parhaillaan lämmönhallintaa. Anna puhelimen levätä.</string>
+    <string name="observation_reason_thermal_severe_without_app_load">Android käyttää voimakasta lämpörajoitusta, vaikka fonecheck ei lisää lämpökuormaa. Anna puhelimen jäähtyä.</string>
+    <string name="observation_reason_button_test_not_run">Painiketestiä ei suoritettu. Käynnistä se ja paina jokaista pyydettyä painiketta.</string>
+    <string name="observation_reason_button_test_in_progress">Painiketesti on vielä käynnissä. Paina jokaista pyydettyä painiketta ennen ajan loppumista.</string>
+    <string name="observation_reason_button_test_timeout">Painiketesti päättyi ennen kaikkien pyydettyjen painallusten tallentumista. Suorita testi uudelleen ja paina jokaista painiketta.</string>
+    <string name="observation_reason_biometric_not_run">Biometristä tunnistautumista ei suoritettu. Käynnistä järjestelmäkehote mittausta varten.</string>
+    <string name="observation_reason_biometric_in_progress">Biometrinen kehote on vielä aktiivinen. Suorita tai peruuta se ennen tuloksen käyttämistä.</string>
+    <string name="observation_reason_biometric_not_recognized">Annettua biometristä tunnistetta ei tunnistettu. Yritä uudelleen rekisteröidyllä tunnisteella.</string>
+    <string name="observation_reason_biometric_cancelled">Biometrinen tunnistautuminen peruutettiin ennen tuloksen saamista.</string>
+    <string name="observation_reason_biometric_lockout">Android on lukinnut biometrisen tunnistautumisen tilapäisesti toistuvien yritysten jälkeen. Odota tai avaa puhelin toisella tavalla.</string>
+    <string name="observation_reason_biometric_not_enrolled">Biometristä tunnistetta ei ole rekisteröity. Lisää tunniste Androidin asetuksissa mittausta varten.</string>
+    <string name="observation_reason_biometric_security_update_required">Android vaatii tietoturvapäivityksen ennen biometrisen tunnistautumisen mittaamista.</string>
+    <string name="observation_reason_biometric_unavailable">Android ei näytä käytettävissä olevaa biometristä tunnistinta tätä mittausta varten.</string>
+    <string name="observation_reason_biometric_error">Android päätti biometrisen tunnistautumisen luokittelemattomaan virheeseen. Yritä mittausta uudelleen.</string>
+    <string name="observation_reason_permission_not_requested">Tarvittavaa käyttöoikeutta ei ole pyydetty. Salli se mittausta varten.</string>
+    <string name="observation_reason_permission_denied">Tarvittava käyttöoikeus evättiin. Salli se mittausta varten.</string>
+    <string name="observation_reason_permission_open_settings">Tarvittava käyttöoikeus on pois käytöstä. Salli se sovelluksen asetuksissa mittausta varten.</string>
+    <string name="observation_reason_permission_partial">Vain osa tarvittavasta käyttöoikeudesta myönnettiin. Salli jäljellä oleva käyttö sovelluksen asetuksissa.</string>
+    <string name="observation_reason_hardware_unavailable">Tämä laite ei näytä mittaukseen tarvittavaa laitteistoa.</string>
+    <string name="observation_reason_value_not_exposed">Android ei näytä tätä arvoa tällä laitteella.</string>
+    <string name="observation_reason_android_version_unsupported">Tämä Android-versio ei näytä mittaukseen tarvittavaa rajapintaa.</string>
+    <string name="observation_reason_platform_restriction">Android ei salli tavallisen sovelluksen tehdä tätä mittausta.</string>
+    <string name="observation_reason_test_not_run">Tätä testiä ei suoritettu. Suorita se tuloksen saamiseksi.</string>
+    <string name="observation_reason_measurement_in_progress">Mittaus on vielä käynnissä. Odota sen valmistumista ennen tuloksen käyttämistä.</string>
+    <string name="observation_reason_test_skipped">Tämä testi ohitettiin. Suorita se tuloksen saamiseksi.</string>
+    <string name="observation_reason_test_cancelled">Tämä testi peruutettiin ennen tuloksen saamista.</string>
+    <string name="observation_reason_measurement_timeout">Mittaus ei valmistunut ennen aikakatkaisua. Yritä uudelleen.</string>
+    <string name="observation_reason_measurement_error">fonecheck ei voinut suorittaa tätä mittausta. Yritä uudelleen.</string>
+    <string name="observation_reason_insufficient_space">Sovelluksen välimuistissa ei ole tarpeeksi vapaata tilaa mittaukselle. Vapauta tilaa ja yritä uudelleen.</string>
+    <string name="observation_reason_user_confirmed_display_failure">Vahvistit testissä näkyvän näyttöongelman.</string>
+    <string name="observation_reason_user_confirmed_audio_failure">Vahvistit testissä ääniongelman.</string>
+    <string name="observation_reason_user_confirmed_camera_failure">Vahvistit testissä kamerakuvan ongelman.</string>
+    <string name="observation_reason_user_confirmed_vibration_failure">Vahvistit, ettei värinämoottorin toimintaa tuntunut testissä.</string>
     <!-- Saavutettavuus -->
     <string name="accessibility_expanded">Laajennettu</string>
     <string name="accessibility_collapsed">Tiivistetty</string>

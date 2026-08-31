@@ -2,6 +2,7 @@ package com.insaner.fonecheck.ui.screens.settings
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -23,7 +24,9 @@ class LicensesScreenTest {
             FonecheckTheme { LicensesScreen() }
         }
 
-        composeRule.onNodeWithText(context.getString(R.string.licenses_notices_heading)).assertIsDisplayed()
+        composeRule
+            .onNodeWithContentDescription(context.getString(R.string.licenses_notices_heading))
+            .assertIsDisplayed()
         composeRule.onNodeWithText("Apache License", substring = true).assertExists()
     }
 }

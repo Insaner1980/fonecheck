@@ -2,14 +2,9 @@ package com.insaner.fonecheck.ui.screens.biometrics
 
 import androidx.activity.compose.LocalActivity
 import androidx.biometric.BiometricPrompt
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -18,21 +13,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
-import com.insaner.fonecheck.ui.components.DetailInfoRow
-import com.insaner.fonecheck.ui.components.SectionBox
+import com.insaner.fonecheck.ui.classification.classifyBiometric
+import com.insaner.fonecheck.ui.classification.classifyBiometricCapability
+import com.insaner.fonecheck.ui.components.DataRow
+import com.insaner.fonecheck.ui.components.DisclosureSection
+import com.insaner.fonecheck.ui.components.HairlineRule
+import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.ObservationReasonNote
+import com.insaner.fonecheck.ui.components.PrimaryButton
 import com.insaner.fonecheck.ui.components.TestScreenContent
-import com.insaner.fonecheck.ui.components.TestSectionCard
-import com.insaner.fonecheck.ui.theme.Blue400
-import com.insaner.fonecheck.ui.theme.Green400
-import com.insaner.fonecheck.ui.theme.Neutral500
-import com.insaner.fonecheck.ui.theme.Red400
-import com.insaner.fonecheck.ui.theme.Yellow400
-import com.insaner.fonecheck.ui.theme.readableStatusColor
+import com.insaner.fonecheck.ui.theme.FonecheckTheme
+import com.insaner.fonecheck.ui.theme.SemanticTone
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 
 @Composable
 fun BiometricTestScreen(
@@ -40,6 +36,7 @@ fun BiometricTestScreen(
     viewModel: BiometricTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val liveStateUpdatedAtEpochMillis = remember(state) { System.currentTimeMillis() }
     val activity = LocalActivity.current as? FragmentActivity
     var biometricPrompt by remember { mutableStateOf<BiometricPrompt?>(null) }
 
@@ -87,19 +84,13 @@ fun BiometricTestScreen(
         }
     }
 
-    TestScreenContent(modifier = modifier) {
+    TestScreenContent(modifier = modifier, liveStateUpdatedAtEpochMillis = liveStateUpdatedAtEpochMillis) {
         item {
-            TestSectionCard(
-                icon = stringResource(R.string.biometric_capability_icon),
-                title = stringResource(R.string.biometric_capabilities_title),
-                statusText = capabilityStatusLabel(state.capability),
-                statusColor =
-                    when {
-                        state.capability.strongAvailable -> Green400
-                        state.capability.weakAvailable -> Yellow400
-                        else -> Neutral500
-                    },
-                isExpanded = state.expandedSection == BiometricSection.CAPABILITIES,
+            DisclosureSection(
+                label = stringResource(R.string.biometric_capabilities_title),
+                summary = capabilityStatusLabel(state.capability),
+                tone = SemanticTone.NEUTRAL,
+                expanded = state.expandedSection == BiometricSection.CAPABILITIES,
                 onClick = { viewModel.toggleSection(BiometricSection.CAPABILITIES) },
             ) {
                 CapabilitiesDetails(state.capability)
@@ -107,12 +98,12 @@ fun BiometricTestScreen(
         }
 
         item {
-            TestSectionCard(
-                icon = stringResource(R.string.biometric_auth_icon),
-                title = stringResource(R.string.biometric_test_auth),
-                statusText = authResultLabel(state.authResult),
-                statusColor = authResultColor(state.authResult),
-                isExpanded = state.expandedSection == BiometricSection.AUTH_TEST,
+            val classification = classifyBiometric(state.authResult)
+            DisclosureSection(
+                label = stringResource(R.string.biometric_test_auth),
+                summary = authResultLabel(state.authResult),
+                tone = classification.toSemanticTone(),
+                expanded = state.expandedSection == BiometricSection.AUTH_TEST,
                 onClick = { viewModel.toggleSection(BiometricSection.AUTH_TEST) },
             ) {
                 AuthTestSection(
@@ -126,38 +117,41 @@ fun BiometricTestScreen(
 
 @Composable
 private fun CapabilitiesDetails(capability: BiometricCapability) {
-    SectionBox {
-        DetailInfoRow(
-            stringResource(R.string.biometric_fingerprint_hardware),
-            yesNoLabel(capability.fingerprintHardware),
-            valueColor = if (capability.fingerprintHardware) Green400 else Neutral500,
+    val strongClassification = classifyBiometricCapability(capability.strongStatus)
+    val weakClassification = classifyBiometricCapability(capability.weakStatus)
+    val sharedReason = strongClassification.reason?.takeIf { it == weakClassification.reason }
+    Column {
+        DataRow(
+            label = stringResource(R.string.biometric_fingerprint_hardware),
+            value = yesNoLabel(capability.fingerprintHardware),
         )
-        DetailInfoRow(
-            stringResource(R.string.biometric_face_hardware),
-            yesNoLabel(capability.faceHardware),
-            valueColor = if (capability.faceHardware) Green400 else Neutral500,
+        DataRow(
+            label = stringResource(R.string.biometric_face_hardware),
+            value = yesNoLabel(capability.faceHardware),
         )
-        DetailInfoRow(
-            stringResource(R.string.biometric_strong),
-            biometricAvailabilityLabel(capability.strongStatus),
-            valueColor = if (capability.strongAvailable) Green400 else Neutral500,
+        DataRow(
+            label = stringResource(R.string.biometric_strong),
+            value = biometricAvailabilityLabel(capability.strongStatus),
+            showDivider = sharedReason != null || strongClassification.reason == null,
         )
-        DetailInfoRow(
-            stringResource(R.string.biometric_weak),
-            biometricAvailabilityLabel(capability.weakStatus),
-            valueColor = if (capability.weakAvailable) Green400 else Neutral500,
+        if (sharedReason == null) {
+            ObservationReasonNote(strongClassification)
+            if (strongClassification.reason != null) HairlineRule()
+        }
+        DataRow(
+            label = stringResource(R.string.biometric_weak),
+            value = biometricAvailabilityLabel(capability.weakStatus),
+            showDivider = sharedReason == null && weakClassification.reason == null,
         )
-        DetailInfoRow(
-            stringResource(R.string.biometric_device_credential),
-            yesNoLabel(capability.deviceCredentialAvailable),
-            valueColor = if (capability.deviceCredentialAvailable) Green400 else Neutral500,
+        ObservationReasonNote(
+            if (sharedReason != null) strongClassification else weakClassification,
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = stringResource(R.string.biometric_credential_excluded),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        if (sharedReason != null || weakClassification.reason != null) HairlineRule()
+        DataRow(
+            label = stringResource(R.string.biometric_device_credential),
+            value = yesNoLabel(capability.deviceCredentialAvailable),
         )
+        Note(text = stringResource(R.string.biometric_credential_excluded))
     }
 }
 
@@ -166,46 +160,31 @@ private fun AuthTestSection(
     state: BiometricTestState,
     onAuthenticate: () -> Unit,
 ) {
-    SectionBox {
-        if (state.authResult != AuthResult.NONE) {
-            Text(
-                text = authResultDescription(state),
-                style = MaterialTheme.typography.bodyMedium,
-                color = readableStatusColor(authResultColor(state.authResult)),
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-        Text(
-            text = stringResource(R.string.biometric_success_disclaimer),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Button(
-            onClick = onAuthenticate,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Blue400),
-            shape = RoundedCornerShape(8.dp),
-            enabled = state.capability.weakAvailable && !state.promptActive,
-        ) {
-            Text(
-                stringResource(
-                    if (state.authResult.isTerminal) {
-                        R.string.biometric_retry
-                    } else {
-                        R.string.biometric_test_auth
-                    },
-                ),
-            )
-        }
-        if (!state.capability.weakAvailable) {
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = biometricAvailabilityLabel(state.capability.weakStatus),
-                style = MaterialTheme.typography.bodySmall,
-                color = Neutral500,
-            )
-        }
+    ObservationReasonNote(classifyBiometric(state.authResult))
+    when {
+        state.authResult == AuthResult.ERROR && !state.authErrorMessage.isNullOrBlank() ->
+            Note(text = stringResource(R.string.biometric_auth_error, state.authErrorMessage.orEmpty()))
+
+        state.authResult == AuthResult.NOT_RECOGNIZED ->
+            Note(text = stringResource(R.string.biometric_nonterminal_guidance))
+    }
+
+    Note(text = stringResource(R.string.biometric_success_disclaimer))
+    PrimaryButton(
+        label =
+            stringResource(
+                if (state.authResult.isTerminal) {
+                    R.string.biometric_retry
+                } else {
+                    R.string.biometric_test_auth
+                },
+            ),
+        onClick = onAuthenticate,
+        modifier = Modifier.fillMaxWidth(),
+        enabled = state.capability.weakAvailable && !state.promptActive,
+    )
+    if (!state.capability.weakAvailable) {
+        Note(text = biometricAvailabilityLabel(state.capability.weakStatus))
     }
 }
 
@@ -235,7 +214,7 @@ private fun biometricAvailabilityLabel(status: BiometricAvailability): String =
 private fun authResultLabel(result: AuthResult): String =
     stringResource(
         when (result) {
-            AuthResult.NONE -> R.string.biometric_ready
+            AuthResult.NONE -> R.string.status_not_measured
             AuthResult.IN_PROGRESS -> R.string.biometric_in_progress
             AuthResult.NOT_RECOGNIZED -> R.string.biometric_not_recognized
             AuthResult.SUCCESS -> R.string.biometric_auth_success
@@ -247,28 +226,7 @@ private fun authResultLabel(result: AuthResult): String =
         },
     )
 
-@Composable
-private fun authResultDescription(state: BiometricTestState): String =
-    if (state.authResult == AuthResult.ERROR && !state.authErrorMessage.isNullOrBlank()) {
-        stringResource(R.string.biometric_auth_error, state.authErrorMessage)
-    } else {
-        authResultLabel(state.authResult)
-    }
+internal fun authResultTone(result: AuthResult): SemanticTone = classifyBiometric(result).toSemanticTone()
 
 @Composable
 private fun yesNoLabel(value: Boolean): String = stringResource(if (value) R.string.status_yes else R.string.status_no)
-
-private fun authResultColor(result: AuthResult) =
-    when (result) {
-        AuthResult.SUCCESS -> Green400
-        AuthResult.NOT_RECOGNIZED,
-        AuthResult.LOCKED_OUT,
-        -> Yellow400
-        AuthResult.ERROR -> Red400
-        AuthResult.NONE,
-        AuthResult.IN_PROGRESS,
-        AuthResult.CANCELLED,
-        AuthResult.NO_ENROLLMENT,
-        AuthResult.UNAVAILABLE,
-        -> Neutral500
-    }

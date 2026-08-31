@@ -58,7 +58,18 @@ class RunAllResultsScreenTest {
         composeRule.onNodeWithText(context.getString(R.string.run_all_results_title)).assertIsDisplayed()
         composeRule.onNodeWithText("42").assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.getString(R.string.home_cat_battery))
+            .onNodeWithText(context.getString(R.string.report_coverage))
+            .performScrollTo()
+            .assertIsDisplayed()
+        composeRule
+            .onNodeWithText(context.getString(R.string.report_coverage_value, "100"))
+            .assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.report_checks)).assertIsDisplayed()
+        composeRule
+            .onNodeWithText(context.getString(R.string.report_checks_value, "1", "1"))
+            .assertIsDisplayed()
+        composeRule
+            .onNodeWithText(context.getString(R.string.home_cat_battery), ignoreCase = true)
             .performScrollTo()
             .assertIsDisplayed()
         composeRule

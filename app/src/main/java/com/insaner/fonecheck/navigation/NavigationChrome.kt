@@ -38,7 +38,7 @@ internal fun navigationChromeFor(destination: NavDestination?): NavigationChrome
         destination.matches(ButtonTest::class) -> NavigationChrome(R.string.home_cat_buttons, showBackAction = true)
         destination.matches(BiometricTest::class) ->
             NavigationChrome(R.string.home_cat_biometrics, showBackAction = true)
-        destination.matches(RunAllTests::class) -> NavigationChrome(R.string.home_run_all, showBackAction = true)
+        destination.matches(RunAllTests::class) -> NavigationChrome(R.string.full_check_title, showBackAction = true)
         destination.matches(Settings::class) -> NavigationChrome(R.string.settings_title, showBackAction = true)
         destination.matches(Licenses::class) -> NavigationChrome(R.string.licenses_title, showBackAction = true)
         destination.matches(Onboarding::class) ->

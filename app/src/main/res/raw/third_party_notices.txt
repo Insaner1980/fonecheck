@@ -12,6 +12,7 @@ The release runtime includes the following open-source component families:
 - Compose Stability Runtime.
 - Google AutoValue annotations, ListenableFuture, JSpecify, javax.inject
   and JSR-305 annotations.
+- Google Material Symbols.
 
 These components are distributed under the Apache License, Version 2.0.
 Component-specific notices that remain in the packaged dependencies are also

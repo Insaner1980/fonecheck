@@ -15,10 +15,13 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewModelScope
 import com.insaner.fonecheck.di.IoDispatcher
+import com.insaner.fonecheck.ui.format.formatUiNumber
+import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
@@ -85,6 +88,12 @@ class CameraTestViewModel
     ) : AndroidViewModel(application) {
         private val cameraManager = application.getSystemService(CameraManager::class.java)
         private val cameraExecutor = Executors.newSingleThreadExecutor()
+        private val uiLocale =
+            uiLanguageLocale(
+                ContextCompat
+                    .getContextForLanguage(application)
+                    .resources.configuration.locales[0],
+            )
 
         private val _state = MutableStateFlow(CameraTestState())
         val state: StateFlow<CameraTestState> = _state
@@ -154,7 +163,12 @@ class CameraTestViewModel
             val maxResStr =
                 maxRes
                     ?.let {
-                        "${it.width} × ${it.height} (${formatCameraMegapixels(it.width.toLong() * it.height)})"
+                        val megapixels =
+                            formatCameraMegapixels(
+                                pixelCount = it.width.toLong() * it.height,
+                                locale = uiLocale,
+                            )
+                        "${it.width} × ${it.height} ($megapixels)"
                     }.orEmpty()
 
             val fpsRanges =
@@ -172,20 +186,22 @@ class CameraTestViewModel
             val focalLengths =
                 chars
                     .get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)
-                    ?.map { String.format(Locale.getDefault(), "%.2f mm", it) }
+                    ?.map { "${formatUiNumber(it, uiLocale, 2, 2)} mm" }
                     ?: emptyList()
 
             val zoomRange =
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
                     val range = chars.get(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE)
                     if (range != null) {
-                        String.format(Locale.getDefault(), "%.1f× – %.1f×", range.lower, range.upper)
+                        "${formatUiNumber(range.lower, uiLocale, 1, 1)}× – " +
+                            "${formatUiNumber(range.upper, uiLocale, 1, 1)}×"
                     } else {
-                        String.format(Locale.getDefault(), "%.1f×", 1.0)
+                        "${formatUiNumber(1.0, uiLocale, 1, 1)}×"
                     }
                 } else {
                     val maxZoom = chars.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM) ?: 1f
-                    String.format(Locale.getDefault(), "%.1f× – %.1f×", 1.0, maxZoom)
+                    "${formatUiNumber(1.0, uiLocale, 1, 1)}× – " +
+                        "${formatUiNumber(maxZoom, uiLocale, 1, 1)}×"
                 }
 
             val sensorSizeRect = chars.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE)
@@ -469,5 +485,5 @@ class CameraTestViewModel
 
 internal fun formatCameraMegapixels(
     pixelCount: Long,
-    locale: Locale = Locale.getDefault(),
-): String = String.format(locale, "%.1f MP", pixelCount / 1_000_000.0)
+    locale: Locale = uiLanguageLocale(Locale.getDefault()),
+): String = "${formatUiNumber(pixelCount / 1_000_000.0, locale, 1, 1)} MP"

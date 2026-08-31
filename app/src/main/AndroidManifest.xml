@@ -29,6 +29,7 @@
     <uses-feature android:name="android.hardware.fingerprint" android:required="false" />
     <uses-feature android:name="android.hardware.biometrics.face" android:required="false" />
 
+    <!-- localeConfig is for API 33+; AppCompat handles app languages on older Android versions. -->
     <application
         android:name=".FonecheckApp"
         android:allowBackup="false"
@@ -37,11 +38,14 @@
         android:fullBackupContent="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:localeConfig="@xml/locales_config"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Fonecheck">
+        android:theme="@style/Theme.Fonecheck"
+        tools:ignore="UnusedAttribute">
 
         <activity
             android:name=".ui.MainActivity"
+            android:configChanges="locale|layoutDirection"
             android:exported="true"
             android:theme="@style/Theme.Fonecheck.Starting">
             <intent-filter>
@@ -49,6 +53,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
 
         <provider
             android:name=".export.FonecheckFileProvider"

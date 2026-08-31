@@ -3,14 +3,8 @@ package com.insaner.fonecheck.ui.screens.comparison
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
+import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,11 +12,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
@@ -34,20 +26,21 @@ import com.insaner.fonecheck.domain.comparison.ReportComparison
 import com.insaner.fonecheck.domain.comparison.ScoreComparison
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.navigation.diagnosticDestinations
-import com.insaner.fonecheck.ui.components.InfoRow
+import com.insaner.fonecheck.ui.components.DataRow
+import com.insaner.fonecheck.ui.components.DisclosureHeader
+import com.insaner.fonecheck.ui.components.LongValueRow
+import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.ReportStateScreen
 import com.insaner.fonecheck.ui.components.ScreenStateType
-import com.insaner.fonecheck.ui.components.SectionBox
-import com.insaner.fonecheck.ui.components.StandardCard
-import com.insaner.fonecheck.ui.components.TestSectionCard
-import com.insaner.fonecheck.ui.theme.Green400
-import com.insaner.fonecheck.ui.theme.Neutral400
-import com.insaner.fonecheck.ui.theme.Red400
-import com.insaner.fonecheck.ui.theme.Yellow400
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.util.Locale
+import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.components.StatusText
+import com.insaner.fonecheck.ui.components.TestScreenContent
+import com.insaner.fonecheck.ui.format.formatUiDateTime
+import com.insaner.fonecheck.ui.format.uiLanguageLocale
+import com.insaner.fonecheck.ui.format.uiNumber
+import com.insaner.fonecheck.ui.theme.FonecheckTheme
+import com.insaner.fonecheck.ui.theme.SemanticTone
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 
 @Composable
 fun ReportComparisonRoute(
@@ -82,7 +75,7 @@ fun ReportComparisonScreen(
             )
 
         is ReportComparisonState.Content ->
-            ComparisonContent(state.comparison, onBack, modifier)
+            ComparisonContent(state.comparison, modifier)
 
         ReportComparisonState.NotFound ->
             ReportStateScreen(
@@ -116,180 +109,165 @@ fun ReportComparisonScreen(
 @Composable
 private fun ComparisonContent(
     comparison: ReportComparison,
-    onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var expandedCategory by rememberSaveable { mutableStateOf<String?>(null) }
-    val dateFormatter =
-        remember {
-            DateTimeFormatter
-                .ofLocalizedDateTime(FormatStyle.MEDIUM)
-                .withLocale(Locale.getDefault())
-                .withZone(ZoneId.systemDefault())
+    val locale = uiLanguageLocale(LocalLocale.current.platformLocale)
+    val beforeCompletedAt =
+        remember(comparison.beforeCompletedAt, locale) {
+            formatUiDateTime(comparison.beforeCompletedAt, locale)
         }
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item {
-            Text(
-                text = stringResource(R.string.comparison_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                text = stringResource(R.string.comparison_description),
-                modifier = Modifier.padding(top = 4.dp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+    val afterCompletedAt =
+        remember(comparison.afterCompletedAt, locale) {
+            formatUiDateTime(comparison.afterCompletedAt, locale)
         }
-        item { ReportPairCard(comparison, dateFormatter) }
-        item { ScoreCard(comparison) }
+
+    TestScreenContent(modifier = modifier) {
+        item { Note(stringResource(R.string.comparison_description)) }
+        item { ReportPairSections(comparison, beforeCompletedAt, afterCompletedAt) }
+        item { ScoreSection(comparison) }
         item {
-            StandardCard {
-                Text(
-                    text = stringResource(R.string.comparison_disclaimer),
-                    modifier = Modifier.padding(18.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            Column {
+                SectionHeader(stringResource(R.string.comparison_limitations))
+                Note(stringResource(R.string.comparison_disclaimer))
+            }
+        }
+        item { SectionHeader(stringResource(R.string.comparison_categories)) }
+        items(
+            items = comparison.categories,
+            key = { it.categoryId.stableId },
+        ) { category ->
+            Box(modifier = Modifier.testTag("comparison_category")) {
+                ComparisonCategorySection(
+                    category = category,
+                    isExpanded = expandedCategory == category.categoryId.stableId,
+                    onClick = {
+                        expandedCategory =
+                            category.categoryId.stableId.takeUnless { it == expandedCategory }
+                    },
                 )
-            }
-        }
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                comparison.categories.forEach { category ->
-                    Box(modifier = Modifier.testTag("comparison_category")) {
-                        ComparisonCategoryCard(
-                            category = category,
-                            isExpanded = expandedCategory == category.categoryId.stableId,
-                            onClick = {
-                                expandedCategory =
-                                    category.categoryId.stableId.takeUnless { it == expandedCategory }
-                            },
-                        )
-                    }
-                }
-            }
-        }
-        item {
-            OutlinedButton(
-                onClick = onBack,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(stringResource(R.string.report_back))
             }
         }
     }
 }
 
 @Composable
-private fun ReportPairCard(
+private fun ReportPairSections(
     comparison: ReportComparison,
-    dateFormatter: DateTimeFormatter,
+    beforeCompletedAt: String,
+    afterCompletedAt: String,
 ) {
-    StandardCard {
-        Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            SectionBox {
-                InfoRow(stringResource(R.string.comparison_first_report), comparison.beforeId)
-                Text(dateFormatter.format(comparison.beforeCompletedAt))
-                Text(
-                    stringResource(
-                        R.string.comparison_app_version,
-                        comparison.beforeApp.versionName,
-                        comparison.beforeApp.versionCode,
-                    ),
-                )
-                Text(
-                    stringResource(
-                        R.string.comparison_report_version,
-                        comparison.beforeSchemaVersion.value,
-                    ),
-                )
-            }
-            SectionBox {
-                InfoRow(stringResource(R.string.comparison_second_report), comparison.afterId)
-                Text(dateFormatter.format(comparison.afterCompletedAt))
-                Text(
-                    stringResource(
-                        R.string.comparison_app_version,
-                        comparison.afterApp.versionName,
-                        comparison.afterApp.versionCode,
-                    ),
-                )
-                Text(
-                    stringResource(
-                        R.string.comparison_report_version,
-                        comparison.afterSchemaVersion.value,
-                    ),
-                )
-            }
-        }
+    Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg)) {
+        ReportMetadataSection(
+            label = stringResource(R.string.comparison_first_report),
+            reportId = comparison.beforeId,
+            completedAt = beforeCompletedAt,
+            appVersion =
+                stringResource(
+                    R.string.report_app_version_value,
+                    comparison.beforeApp.versionName,
+                    uiNumber(comparison.beforeApp.versionCode),
+                ),
+            reportVersion = uiNumber(comparison.beforeSchemaVersion.value),
+        )
+        ReportMetadataSection(
+            label = stringResource(R.string.comparison_second_report),
+            reportId = comparison.afterId,
+            completedAt = afterCompletedAt,
+            appVersion =
+                stringResource(
+                    R.string.report_app_version_value,
+                    comparison.afterApp.versionName,
+                    uiNumber(comparison.afterApp.versionCode),
+                ),
+            reportVersion = uiNumber(comparison.afterSchemaVersion.value),
+        )
     }
 }
 
 @Composable
-private fun ScoreCard(comparison: ReportComparison) {
-    StandardCard {
-        Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.comparison_score),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-            )
-            when (val score = comparison.score) {
-                is ScoreComparison.Compatible -> {
-                    InfoRow(
-                        label = stringResource(R.string.comparison_score),
-                        value =
-                            stringResource(
-                                R.string.comparison_score_value,
-                                score.before?.toString() ?: "—",
-                                score.after?.toString() ?: "—",
-                            ),
-                    )
-                    Text(
-                        score.delta?.let { stringResource(R.string.comparison_score_delta, it) }
-                            ?: stringResource(R.string.comparison_score_no_delta),
-                    )
-                }
+private fun ReportMetadataSection(
+    label: String,
+    reportId: String,
+    completedAt: String,
+    appVersion: String,
+    reportVersion: String,
+) {
+    Column {
+        SectionHeader(label)
+        LongValueRow(
+            label = stringResource(R.string.report_identifier),
+            value = reportId,
+        )
+        LongValueRow(
+            label = stringResource(R.string.report_completed_at),
+            value = completedAt,
+        )
+        LongValueRow(
+            label = stringResource(R.string.report_app_version),
+            value = appVersion,
+        )
+        DataRow(
+            label = stringResource(R.string.pdf_report_format),
+            value = reportVersion,
+        )
+    }
+}
 
-                is ScoreComparison.Incompatible ->
-                    Text(
+@Composable
+private fun ScoreSection(comparison: ReportComparison) {
+    val unavailable = stringResource(R.string.value_unavailable_short)
+    Column {
+        SectionHeader(stringResource(R.string.comparison_score))
+        when (val score = comparison.score) {
+            is ScoreComparison.Compatible -> {
+                DataRow(
+                    label = stringResource(R.string.comparison_score),
+                    value =
                         stringResource(
-                            R.string.comparison_score_incompatible,
-                            score.beforeVersion.value,
-                            score.afterVersion.value,
+                            R.string.comparison_score_value,
+                            score.before?.let { uiNumber(it) } ?: unavailable,
+                            score.after?.let { uiNumber(it) } ?: unavailable,
                         ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                )
+                Note(
+                    score.delta?.let {
+                        stringResource(R.string.comparison_score_delta, signedUiNumber(it))
+                    } ?: stringResource(R.string.comparison_score_no_delta),
+                )
             }
-            InfoRow(
-                label = stringResource(R.string.comparison_coverage),
-                value =
+
+            is ScoreComparison.Incompatible ->
+                Note(
                     stringResource(
-                        R.string.comparison_coverage_value,
-                        comparison.coverage.before,
-                        comparison.coverage.after,
+                        R.string.comparison_score_incompatible,
+                        uiNumber(score.beforeVersion.value),
+                        uiNumber(score.afterVersion.value),
                     ),
-            )
-            Text(
-                comparison.coverage.delta?.let {
-                    stringResource(R.string.comparison_coverage_delta, it)
-                } ?: stringResource(R.string.comparison_coverage_incompatible),
-            )
+                )
         }
+        DataRow(
+            label = stringResource(R.string.comparison_coverage),
+            value =
+                stringResource(
+                    R.string.comparison_coverage_value,
+                    uiNumber(comparison.coverage.before),
+                    uiNumber(comparison.coverage.after),
+                ),
+        )
+        Note(
+            comparison.coverage.delta?.let {
+                stringResource(R.string.comparison_coverage_delta, signedUiNumber(it))
+            } ?: stringResource(R.string.comparison_coverage_incompatible),
+        )
     }
 }
 
 @Composable
-private fun ComparisonCategoryCard(
+private fun signedUiNumber(value: Int): String = if (value > 0) "+${uiNumber(value)}" else uiNumber(value)
+
+@Composable
+private fun ComparisonCategorySection(
     category: CategoryComparison,
     isExpanded: Boolean,
     onClick: () -> Unit,
@@ -299,64 +277,59 @@ private fun ComparisonCategoryCard(
             .firstOrNull { it.category == category.categoryId }
             ?.let { stringResource(it.labelResId) }
             ?: category.categoryId.stableId
-    TestSectionCard(
-        icon =
-            category.categoryId.stableId
-                .take(2)
-                .uppercase(Locale.ROOT),
-        title = label,
-        statusText =
-            stringResource(
-                R.string.comparison_category_status,
-                statusLabel(category.beforeStatus),
-                statusLabel(category.afterStatus),
-            ),
-        statusColor = statusColor(category.afterStatus),
-        isExpanded = isExpanded,
-        onClick = onClick,
-        modifier = Modifier.testTag("comparison_category_${category.categoryId.stableId}"),
-    ) {
-        if (category.evidence.isEmpty()) {
-            Text(
-                stringResource(R.string.comparison_no_checks),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        } else {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                category.evidence.forEach { EvidenceRow(it) }
+    Column {
+        DisclosureHeader(
+            label = label,
+            summary =
+                stringResource(
+                    R.string.comparison_category_status,
+                    statusLabel(category.beforeStatus),
+                    statusLabel(category.afterStatus),
+                ),
+            expanded = isExpanded,
+            onClick = onClick,
+            tone = category.afterStatus?.toSemanticTone() ?: SemanticTone.NEUTRAL,
+            modifier = Modifier.testTag("comparison_category_${category.categoryId.stableId}"),
+        )
+        if (isExpanded) {
+            Column(modifier = Modifier.padding(top = FonecheckTheme.spacing.sm)) {
+                if (category.evidence.isEmpty()) {
+                    Note(stringResource(R.string.comparison_no_checks))
+                } else {
+                    category.evidence.forEach { EvidenceRows(it) }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun EvidenceRow(evidence: EvidenceComparison) {
-    SectionBox {
-        Text(
-            text = evidence.checkId,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
+private fun EvidenceRows(evidence: EvidenceComparison) {
+    LongValueRow(
+        label = stringResource(R.string.comparison_check),
+        value = evidence.checkId,
+    )
+    DataRow(
+        label = stringResource(changeLabel(evidence.change)),
+        value =
+            stringResource(
+                R.string.comparison_category_status,
+                statusLabel(evidence.before?.status),
+                statusLabel(evidence.after?.status),
+            ),
+        tone = evidence.after?.status?.toSemanticTone() ?: SemanticTone.NEUTRAL,
+    )
+    if (evidence.attentionChange != AttentionChange.NONE) {
+        StatusText(
+            text = stringResource(attentionLabel(evidence.attentionChange)),
+            tone = evidence.after?.status?.toSemanticTone() ?: SemanticTone.NEUTRAL,
+            modifier = Modifier.padding(vertical = FonecheckTheme.spacing.sm),
         )
-        InfoRow(
-            label = stringResource(changeLabel(evidence.change)),
-            value =
-                stringResource(
-                    R.string.comparison_category_status,
-                    statusLabel(evidence.before?.status),
-                    statusLabel(evidence.after?.status),
-                ),
-            valueColor = statusColor(evidence.after?.status),
-        )
-        if (evidence.attentionChange != AttentionChange.NONE) {
-            Text(
-                text = stringResource(attentionLabel(evidence.attentionChange)),
-                style = MaterialTheme.typography.bodySmall,
-                color = statusColor(evidence.after?.status),
-            )
-        }
     }
 }
 
+// CPD-OFF
+// Comparison and Home use different labels for unavailable and missing report data.
 @Composable
 private fun statusLabel(status: DiagnosticStatus?): String =
     stringResource(
@@ -366,18 +339,11 @@ private fun statusLabel(status: DiagnosticStatus?): String =
             DiagnosticStatus.FAIL -> R.string.run_all_status_fail
             DiagnosticStatus.INFO -> R.string.run_all_status_info
             DiagnosticStatus.NOT_AVAILABLE -> R.string.run_all_status_unavailable
-            DiagnosticStatus.NOT_TESTED -> R.string.run_all_status_not_tested
+            DiagnosticStatus.NOT_TESTED -> R.string.status_not_measured
             null -> R.string.comparison_missing
         },
     )
-
-private fun statusColor(status: DiagnosticStatus?): Color =
-    when (status) {
-        DiagnosticStatus.PASS -> Green400
-        DiagnosticStatus.WARNING -> Yellow400
-        DiagnosticStatus.FAIL -> Red400
-        else -> Neutral400
-    }
+// CPD-ON
 
 private fun changeLabel(change: EvidenceChange): Int =
     when (change) {

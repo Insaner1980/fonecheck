@@ -4,54 +4,53 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.permission.PermissionKind
 import com.insaner.fonecheck.domain.permission.PermissionState
-import com.insaner.fonecheck.ui.components.DetailInfoRow
+import com.insaner.fonecheck.ui.TopBarAction
+import com.insaner.fonecheck.ui.classification.classifyGpsFix
+import com.insaner.fonecheck.ui.classification.classifyGpsProvider
+import com.insaner.fonecheck.ui.components.DataRow
+import com.insaner.fonecheck.ui.components.DisclosureSection
+import com.insaner.fonecheck.ui.components.IndeterminateRule
+import com.insaner.fonecheck.ui.components.LongValueRow
+import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.ObservationReasonNote
 import com.insaner.fonecheck.ui.components.PermissionStatusCard
-import com.insaner.fonecheck.ui.components.SectionBox
+import com.insaner.fonecheck.ui.components.PrimaryButton
+import com.insaner.fonecheck.ui.components.RegisterRefreshTopBarAction
+import com.insaner.fonecheck.ui.components.SecondaryButton
+import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.TestScreenContent
-import com.insaner.fonecheck.ui.components.TestSectionCard
+import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
-import com.insaner.fonecheck.ui.theme.Blue400
-import com.insaner.fonecheck.ui.theme.Green400
-import com.insaner.fonecheck.ui.theme.JetBrainsMono
-import com.insaner.fonecheck.ui.theme.Neutral500
-import com.insaner.fonecheck.ui.theme.Neutral700
-import com.insaner.fonecheck.ui.theme.Red400
-import com.insaner.fonecheck.ui.theme.Yellow400
+import com.insaner.fonecheck.ui.theme.FonecheckTheme
+import com.insaner.fonecheck.ui.theme.SemanticTone
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 
 @Composable
 @Suppress("ViewModelForwarding", "ktlint:compose:vm-forwarding-check", "kotlin:S3776")
 fun ConnectivityTestScreen(
     modifier: Modifier = Modifier,
+    onTopBarActionChange: (TopBarAction?) -> Unit = {},
     viewModel: ConnectivityTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val liveStateUpdatedAtEpochMillis = remember(state) { System.currentTimeMillis() }
     val bluetoothPermission =
         rememberPermissionController(
             kind = PermissionKind.BLUETOOTH,
@@ -89,6 +88,13 @@ fun ConnectivityTestScreen(
             viewModel.onPermissionsGranted()
         }
 
+    RegisterRefreshTopBarAction(
+        contentDescriptionResId = R.string.conn_refresh,
+        enabled = state.gps.fixStatus != GpsFixStatus.SEARCHING,
+        onRefresh = viewModel::refreshAll,
+        onTopBarActionChange = onTopBarActionChange,
+    )
+
     LaunchedEffect(
         bluetoothPermission.state,
         locationPermission.state,
@@ -104,55 +110,24 @@ fun ConnectivityTestScreen(
         onDispose(viewModel::cancelGpsFix)
     }
 
-    TestScreenContent(modifier = modifier) {
-        // WiFi
+    TestScreenContent(modifier = modifier, liveStateUpdatedAtEpochMillis = liveStateUpdatedAtEpochMillis) {
         item {
-            TestSectionCard(
-                icon = "WiFi",
+            ConnectivitySectionBlock(
                 title = stringResource(R.string.conn_wifi_title),
-                statusText =
-                    if (state.wifi.isConnected) {
-                        stringResource(R.string.audio_connected)
-                    } else if (state.wifi.isAvailable) {
-                        stringResource(R.string.audio_disconnected)
-                    } else {
-                        stringResource(R.string.conn_not_available)
-                    },
-                statusColor =
-                    when {
-                        state.wifi.isConnected -> Green400
-                        state.wifi.isAvailable -> Yellow400
-                        else -> Red400
-                    },
+                status = wifiSummary(state.wifi),
                 isExpanded = state.expandedSection == ConnectivitySection.WIFI,
-                onClick = { viewModel.toggleSection(ConnectivitySection.WIFI) },
+                onToggle = { viewModel.toggleSection(ConnectivitySection.WIFI) },
             ) {
                 WifiDetails(state.wifi)
             }
         }
 
-        // Bluetooth
         item {
-            TestSectionCard(
-                icon = "BT",
+            ConnectivitySectionBlock(
                 title = stringResource(R.string.conn_bluetooth_title),
-                statusText =
-                    when {
-                        !state.bluetooth.isAvailable -> stringResource(R.string.conn_not_available)
-                        bluetoothPermission.state != PermissionState.GRANTED &&
-                            bluetoothPermission.state != PermissionState.NOT_REQUIRED ->
-                            stringResource(R.string.run_all_permission_missing)
-                        state.bluetooth.isEnabled == true -> stringResource(R.string.status_enabled)
-                        else -> stringResource(R.string.status_disabled)
-                    },
-                statusColor =
-                    when {
-                        state.bluetooth.isEnabled == true -> Green400
-                        state.bluetooth.isAvailable -> Yellow400
-                        else -> Red400
-                    },
+                status = bluetoothSummary(state.bluetooth, bluetoothPermission.state),
                 isExpanded = state.expandedSection == ConnectivitySection.BLUETOOTH,
-                onClick = { viewModel.toggleSection(ConnectivitySection.BLUETOOTH) },
+                onToggle = { viewModel.toggleSection(ConnectivitySection.BLUETOOTH) },
             ) {
                 BluetoothDetails(
                     bluetooth = state.bluetooth,
@@ -166,66 +141,24 @@ fun ConnectivityTestScreen(
             }
         }
 
-        // NFC
         item {
-            TestSectionCard(
-                icon = "NFC",
+            ConnectivitySectionBlock(
                 title = stringResource(R.string.conn_nfc_title),
-                statusText =
-                    when {
-                        !state.nfc.isAvailable -> stringResource(R.string.conn_not_available)
-                        state.nfc.isEnabled -> stringResource(R.string.status_enabled)
-                        else -> stringResource(R.string.status_disabled)
-                    },
-                statusColor =
-                    when {
-                        state.nfc.isEnabled -> Green400
-                        state.nfc.isAvailable -> Yellow400
-                        else -> Red400
-                    },
+                status = nfcSummary(state.nfc),
                 isExpanded = state.expandedSection == ConnectivitySection.NFC,
-                onClick = { viewModel.toggleSection(ConnectivitySection.NFC) },
+                onToggle = { viewModel.toggleSection(ConnectivitySection.NFC) },
             ) {
                 NfcDetails(state.nfc)
             }
         }
 
-        // GPS
         item {
-            TestSectionCard(
-                icon = "GPS",
+            ConnectivitySectionBlock(
                 title = stringResource(R.string.conn_gps_title),
-                statusText =
-                    when (state.gps.fixStatus) {
-                        GpsFixStatus.FIXED -> stringResource(R.string.conn_gps_fixed)
-                        GpsFixStatus.SEARCHING -> stringResource(R.string.conn_gps_searching)
-                        GpsFixStatus.FAILED -> stringResource(R.string.conn_gps_failed)
-                        GpsFixStatus.NOT_STARTED -> {
-                            when {
-                                !state.gps.isAvailable -> stringResource(R.string.conn_not_available)
-                                state.gps.isEnabled -> stringResource(R.string.conn_gps_ready)
-                                else -> stringResource(R.string.status_disabled)
-                            }
-                        }
-                    },
-                statusColor =
-                    when (state.gps.fixStatus) {
-                        GpsFixStatus.FIXED -> Green400
-                        GpsFixStatus.SEARCHING -> Yellow400
-                        GpsFixStatus.FAILED ->
-                            if (state.gps.failure == GpsFailureCode.TIMEOUT) Yellow400 else Red400
-                        GpsFixStatus.NOT_STARTED -> {
-                            if (state.gps.isAvailable && state.gps.isEnabled) {
-                                Blue400
-                            } else if (state.gps.isAvailable) {
-                                Yellow400
-                            } else {
-                                Red400
-                            }
-                        }
-                    },
+                status = gpsSummary(state.gps),
+                statusTone = state.gps.summaryTone(),
                 isExpanded = state.expandedSection == ConnectivitySection.GPS,
-                onClick = { viewModel.toggleSection(ConnectivitySection.GPS) },
+                onToggle = { viewModel.toggleSection(ConnectivitySection.GPS) },
             ) {
                 GpsDetails(
                     gps = state.gps,
@@ -240,25 +173,12 @@ fun ConnectivityTestScreen(
             }
         }
 
-        // Mobile Network
         item {
-            TestSectionCard(
-                icon = "CEL",
+            ConnectivitySectionBlock(
                 title = stringResource(R.string.conn_mobile_title),
-                statusText =
-                    when {
-                        !state.mobileNetwork.isAvailable -> stringResource(R.string.conn_not_available)
-                        state.mobileNetwork.isConnected -> stringResource(R.string.audio_connected)
-                        else -> stringResource(R.string.audio_disconnected)
-                    },
-                statusColor =
-                    when {
-                        state.mobileNetwork.isConnected -> Green400
-                        state.mobileNetwork.isAvailable -> Yellow400
-                        else -> Red400
-                    },
+                status = mobileSummary(state.mobileNetwork),
                 isExpanded = state.expandedSection == ConnectivitySection.MOBILE_NETWORK,
-                onClick = { viewModel.toggleSection(ConnectivitySection.MOBILE_NETWORK) },
+                onToggle = { viewModel.toggleSection(ConnectivitySection.MOBILE_NETWORK) },
             ) {
                 MobileNetworkDetails(
                     mobile = state.mobileNetwork,
@@ -274,179 +194,151 @@ fun ConnectivityTestScreen(
     }
 }
 
-// ── Detail InfoRow (local — bodySmall with weights, differs from shared InfoRow) ─
-
-// ── WiFi Details ────────────────────────────────────────────────────────────────
+@Composable
+private fun ConnectivitySectionBlock(
+    title: String,
+    status: String,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
+    statusTone: SemanticTone = SemanticTone.NEUTRAL,
+    content: @Composable () -> Unit,
+) = DisclosureSection(
+    label = title,
+    summary = status,
+    expanded = isExpanded,
+    onClick = onToggle,
+    tone = statusTone,
+    content = content,
+)
 
 @Composable
 private fun WifiDetails(wifi: WifiState) {
-    SectionBox {
-        if (!wifi.isAvailable) {
-            Text(
-                text = stringResource(R.string.conn_wifi_not_supported),
-                style = MaterialTheme.typography.bodySmall,
-                color = Neutral500,
-            )
-            return@SectionBox
+    Column {
+        when {
+            !wifi.isAvailable -> Note(text = stringResource(R.string.conn_wifi_not_supported))
+            !wifi.isConnected -> Note(text = stringResource(R.string.conn_wifi_not_connected))
+            else -> {
+                LongValueRow(
+                    label = stringResource(R.string.conn_wifi_ssid),
+                    value = wifi.ssid,
+                )
+                DataRow(
+                    label = stringResource(R.string.conn_wifi_signal),
+                    value = wifi.signalStrengthDbm?.let { stringResource(R.string.conn_dbm_format, uiNumber(it)) },
+                )
+                DataRow(
+                    label = stringResource(R.string.conn_wifi_signal_level),
+                    value =
+                        wifi.signalLevel?.let {
+                            stringResource(
+                                R.string.conn_signal_level_format,
+                                uiNumber(it),
+                                uiNumber(MAX_SIGNAL_LEVEL),
+                            )
+                        },
+                )
+                LongValueRow(
+                    label = stringResource(R.string.conn_wifi_frequency),
+                    value = wifi.frequencyMhz?.let { wifiFrequency(it) },
+                )
+                DataRow(
+                    label = stringResource(R.string.conn_wifi_link_speed),
+                    value = wifi.linkSpeedMbps?.let { stringResource(R.string.conn_mbps_format, uiNumber(it)) },
+                )
+                LongValueRow(
+                    label = stringResource(R.string.conn_wifi_standard),
+                    value = wifi.wifiStandard,
+                )
+                LongValueRow(label = stringResource(R.string.conn_wifi_ip), value = wifi.ipAddress)
+                LongValueRow(label = stringResource(R.string.conn_wifi_gateway), value = wifi.gateway)
+                LongValueRow(label = stringResource(R.string.conn_wifi_dns1), value = wifi.dns1)
+                LongValueRow(label = stringResource(R.string.conn_wifi_dns2), value = wifi.dns2)
+            }
         }
-
-        if (!wifi.isConnected) {
-            Text(
-                text = stringResource(R.string.conn_wifi_not_connected),
-                style = MaterialTheme.typography.bodySmall,
-                color = Neutral500,
-            )
-            return@SectionBox
-        }
-
-        wifi.ssid?.let { DetailInfoRow(stringResource(R.string.conn_wifi_ssid), it) }
-        wifi.signalStrengthDbm?.let {
-            DetailInfoRow(
-                stringResource(R.string.conn_wifi_signal),
-                "$it dBm",
-                valueColor =
-                    when {
-                        it >= -50 -> Green400
-                        it >= -60 -> Green400
-                        it >= -70 -> Yellow400
-                        else -> Red400
-                    },
-            )
-        }
-        wifi.signalLevel?.let {
-            DetailInfoRow(stringResource(R.string.conn_wifi_signal_level), "$it / 4")
-        }
-        wifi.frequencyMhz?.let {
-            val band =
-                when {
-                    it >= 5925 -> "6 GHz"
-                    it >= 4900 -> "5 GHz"
-                    it >= 2400 -> "2.4 GHz"
-                    else -> null
-                }
-            DetailInfoRow(
-                stringResource(R.string.conn_wifi_frequency),
-                if (band == null) "$it MHz" else "$it MHz ($band)",
-            )
-        }
-        wifi.linkSpeedMbps?.let {
-            DetailInfoRow(stringResource(R.string.conn_wifi_link_speed), "$it Mbps")
-        }
-        wifi.wifiStandard?.let {
-            DetailInfoRow(stringResource(R.string.conn_wifi_standard), it)
-        }
-        wifi.ipAddress?.let { DetailInfoRow(stringResource(R.string.conn_wifi_ip), it) }
-        wifi.gateway?.let { DetailInfoRow(stringResource(R.string.conn_wifi_gateway), it) }
-        wifi.dns1?.let { DetailInfoRow(stringResource(R.string.conn_wifi_dns1), it) }
-        wifi.dns2?.let { DetailInfoRow(stringResource(R.string.conn_wifi_dns2), it) }
     }
 }
 
-// ── Bluetooth Details ───────────────────────────────────────────────────────────
-
 @Composable
-@Suppress("kotlin:S3776") // The card renders mutually exclusive Bluetooth states.
+@Suppress("kotlin:S3776") // The section renders mutually exclusive Bluetooth states.
 private fun BluetoothDetails(
     bluetooth: BluetoothState,
     permissionState: PermissionState,
     onRequestPermission: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md)) {
         PermissionStatusCard(
             state = permissionState,
             rationale = stringResource(R.string.permission_rationale_bluetooth),
             onRequest = onRequestPermission,
             onOpenSettings = onOpenSettings,
         )
-        SectionBox {
-            if (!bluetooth.isAvailable) {
-                Text(
-                    text = stringResource(R.string.conn_bt_not_supported),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Neutral500,
-                )
-                return@SectionBox
-            }
+        if (!bluetooth.isAvailable) {
+            Note(text = stringResource(R.string.conn_bt_not_supported))
+            return@Column
+        }
 
-            val canReadProtectedData =
-                permissionState == PermissionState.GRANTED ||
-                    permissionState == PermissionState.NOT_REQUIRED
-            if (canReadProtectedData && bluetooth.isEnabled != null) {
-                DetailInfoRow(
-                    stringResource(R.string.conn_bt_status),
-                    if (bluetooth.isEnabled == true) {
-                        stringResource(R.string.status_enabled)
-                    } else {
-                        stringResource(R.string.status_disabled)
-                    },
-                    valueColor = if (bluetooth.isEnabled == true) Green400 else Yellow400,
-                )
-                bluetooth.name?.let { DetailInfoRow(stringResource(R.string.conn_bt_name), it) }
-            }
-            DetailInfoRow(
-                stringResource(R.string.conn_bt_ble),
+        val canReadProtectedData =
+            permissionState == PermissionState.GRANTED ||
+                permissionState == PermissionState.NOT_REQUIRED
+        DataRow(
+            label = stringResource(R.string.conn_bt_status),
+            value =
+                bluetooth.isEnabled?.takeIf { canReadProtectedData }?.let {
+                    if (it) stringResource(R.string.status_enabled) else stringResource(R.string.status_disabled)
+                },
+        )
+        LongValueRow(
+            label = stringResource(R.string.conn_bt_name),
+            value = if (canReadProtectedData) bluetooth.name else null,
+        )
+        DataRow(
+            label = stringResource(R.string.conn_bt_ble),
+            value =
                 if (bluetooth.bleSupported) {
                     stringResource(R.string.conn_supported)
                 } else {
                     stringResource(R.string.conn_not_supported)
                 },
-                valueColor = if (bluetooth.bleSupported) Green400 else Neutral500,
-            )
-            if (canReadProtectedData) {
-                DetailInfoRow(
-                    stringResource(R.string.conn_bt_bonded),
-                    "${bluetooth.bondedDeviceCount}",
-                )
-            }
-        }
+        )
+        DataRow(
+            label = stringResource(R.string.conn_bt_bonded),
+            value = uiNumber(bluetooth.bondedDeviceCount).takeIf { canReadProtectedData },
+        )
     }
 }
-
-// ── NFC Details ─────────────────────────────────────────────────────────────────
 
 @Composable
 private fun NfcDetails(nfc: NfcState) {
-    SectionBox {
+    Column {
         if (!nfc.isAvailable) {
-            Text(
-                text = stringResource(R.string.conn_nfc_not_supported),
-                style = MaterialTheme.typography.bodySmall,
-                color = Neutral500,
-            )
-            return@SectionBox
+            Note(text = stringResource(R.string.conn_nfc_not_supported))
+            return@Column
         }
-
-        DetailInfoRow(
-            stringResource(R.string.conn_nfc_status),
-            if (nfc.isEnabled) {
-                stringResource(R.string.status_enabled)
-            } else {
-                stringResource(R.string.status_disabled)
-            },
-            valueColor = if (nfc.isEnabled) Green400 else Red400,
+        DataRow(
+            label = stringResource(R.string.conn_nfc_status),
+            value =
+                if (nfc.isEnabled) {
+                    stringResource(R.string.status_enabled)
+                } else {
+                    stringResource(R.string.status_disabled)
+                },
         )
-        DetailInfoRow(
-            stringResource(R.string.conn_nfc_hce),
-            if (nfc.supportsHostCardEmulation) {
-                stringResource(R.string.conn_supported)
-            } else {
-                stringResource(R.string.conn_not_supported)
-            },
-            valueColor = if (nfc.supportsHostCardEmulation) Green400 else Neutral500,
+        DataRow(
+            label = stringResource(R.string.conn_nfc_hce),
+            value =
+                if (nfc.supportsHostCardEmulation) {
+                    stringResource(R.string.conn_supported)
+                } else {
+                    stringResource(R.string.conn_not_supported)
+                },
         )
-        Text(
-            text = stringResource(R.string.conn_nfc_capability_only),
-            style = MaterialTheme.typography.bodySmall,
-            color = Neutral500,
-        )
+        Note(text = stringResource(R.string.conn_nfc_capability_only))
     }
 }
 
-// ── GPS Details ─────────────────────────────────────────────────────────────────
-
 @Composable
-@Suppress("kotlin:S3776") // The card renders mutually exclusive GPS states.
+@Suppress("kotlin:S3776") // The section renders mutually exclusive GPS states.
 private fun GpsDetails(
     gps: GpsState,
     permissionState: PermissionState,
@@ -454,370 +346,360 @@ private fun GpsDetails(
     onRequestPermission: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md)) {
         PermissionStatusCard(
             state = permissionState,
             rationale = stringResource(R.string.permission_rationale_location),
             onRequest = onRequestPermission,
             onOpenSettings = onOpenSettings,
         )
-        SectionBox {
-            if (!gps.isAvailable) {
-                Text(
-                    text = stringResource(R.string.conn_gps_not_supported),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Neutral500,
-                )
-                return@SectionBox
-            }
+        if (!gps.isAvailable) {
+            Note(text = stringResource(R.string.conn_gps_not_supported))
+            return@Column
+        }
 
-            DetailInfoRow(
-                stringResource(R.string.conn_gps_provider),
+        val providerClassification = classifyGpsProvider(gps.isEnabled)
+        DataRow(
+            label = stringResource(R.string.conn_gps_provider),
+            value =
                 if (gps.isEnabled) {
                     stringResource(R.string.status_enabled)
                 } else {
                     stringResource(R.string.status_disabled)
                 },
-                valueColor = if (gps.isEnabled) Green400 else Red400,
-            )
+        )
+        ObservationReasonNote(providerClassification)
 
+        when (gps.fixStatus) {
+            GpsFixStatus.NOT_STARTED -> Unit
+            GpsFixStatus.SEARCHING -> SearchingGpsRows(gps)
+            GpsFixStatus.FIXED -> FixedGpsRows(gps)
+            GpsFixStatus.FAILED -> FailedGpsRow(gps.failure)
+        }
+
+        if (gps.satellites.isNotEmpty()) {
+            SatelliteSection(gps.satellites)
+        }
+
+        if (permissionState == PermissionState.GRANTED) {
             when (gps.fixStatus) {
-                GpsFixStatus.NOT_STARTED -> Unit
+                GpsFixStatus.NOT_STARTED, GpsFixStatus.FAILED -> {
+                    PrimaryButton(
+                        label = stringResource(R.string.conn_gps_start_fix),
+                        onClick = viewModel::startGpsFix,
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = gps.isEnabled,
+                    )
+                }
                 GpsFixStatus.SEARCHING -> {
-                    DetailInfoRow(
-                        stringResource(R.string.conn_gps_status),
-                        stringResource(R.string.conn_gps_searching),
-                        valueColor = Yellow400,
-                    )
-                    DetailInfoRow(
-                        stringResource(R.string.conn_gps_elapsed),
-                        stringResource(R.string.conn_gps_fix_duration_format, gps.elapsedSearchMs / 1000.0),
-                    )
-                    DetailInfoRow(
-                        stringResource(R.string.conn_gps_satellites_visible),
-                        "${gps.satelliteCount}",
-                    )
-                    DetailInfoRow(
-                        stringResource(R.string.conn_gps_satellites_used),
-                        "${gps.satellitesUsed}",
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    LinearProgressIndicator(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .height(4.dp)
-                                .clip(RoundedCornerShape(2.dp)),
-                        color = Yellow400,
-                        trackColor = Neutral700,
+                    SecondaryButton(
+                        label = stringResource(R.string.audio_stop),
+                        onClick = viewModel::cancelGpsFix,
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
                 GpsFixStatus.FIXED -> {
-                    DetailInfoRow(
-                        stringResource(R.string.conn_gps_status),
-                        stringResource(R.string.conn_gps_fixed),
-                        valueColor = Green400,
-                    )
-                    gps.fixTimeMs?.let {
-                        DetailInfoRow(
-                            stringResource(R.string.conn_gps_fix_time),
-                            stringResource(R.string.conn_gps_fix_duration_format, it / 1000.0),
-                            valueColor =
-                                when {
-                                    it < 5000 -> Green400
-                                    it < 15000 -> Yellow400
-                                    else -> Red400
-                                },
-                        )
-                    }
-                    gps.latitude?.let {
-                        DetailInfoRow(
-                            stringResource(R.string.conn_gps_latitude),
-                            stringResource(R.string.conn_gps_coordinate_format, it),
-                        )
-                    }
-                    gps.longitude?.let {
-                        DetailInfoRow(
-                            stringResource(R.string.conn_gps_longitude),
-                            stringResource(R.string.conn_gps_coordinate_format, it),
-                        )
-                    }
-                    gps.accuracy?.let {
-                        DetailInfoRow(
-                            stringResource(R.string.conn_gps_accuracy),
-                            stringResource(R.string.conn_gps_accuracy_format, it),
-                            valueColor =
-                                when {
-                                    it < 5f -> Green400
-                                    it < 20f -> Yellow400
-                                    else -> Red400
-                                },
-                        )
-                    }
-                    gps.altitude?.let {
-                        DetailInfoRow(
-                            stringResource(R.string.conn_gps_altitude),
-                            stringResource(R.string.conn_gps_altitude_format, it),
-                        )
-                    }
-                    gps.speed?.let {
-                        DetailInfoRow(
-                            stringResource(R.string.conn_gps_speed),
-                            stringResource(R.string.conn_gps_speed_format, it),
-                        )
-                    }
-                    DetailInfoRow(
-                        stringResource(R.string.conn_gps_satellites_used),
-                        stringResource(
-                            R.string.conn_gps_satellite_ratio,
-                            gps.satellitesUsed,
-                            gps.satelliteCount,
-                        ),
-                    )
-                }
-                GpsFixStatus.FAILED -> {
-                    DetailInfoRow(
-                        stringResource(R.string.conn_gps_status),
-                        stringResource(
-                            if (gps.failure == GpsFailureCode.START_FAILED) {
-                                R.string.conn_gps_start_failed
-                            } else {
-                                R.string.conn_gps_failed
-                            },
-                        ),
-                        valueColor = if (gps.failure == GpsFailureCode.TIMEOUT) Yellow400 else Red400,
+                    SecondaryButton(
+                        label = stringResource(R.string.conn_gps_retest),
+                        onClick = viewModel::startGpsFix,
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
         }
+        Note(text = stringResource(R.string.conn_gps_privacy_ephemeral))
+    }
+}
 
-        // Satellite list when we have them
-        if (gps.satellites.isNotEmpty()) {
-            SectionBox {
-                Text(
-                    text = stringResource(R.string.conn_gps_satellite_info),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
-                // Header
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        "#",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Neutral500,
-                        modifier = Modifier.weight(0.5f),
-                    )
-                    Text(
-                        stringResource(R.string.conn_gps_constellation),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Neutral500,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Text(
-                        "C/N\u2080",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Neutral500,
-                        modifier = Modifier.weight(0.7f),
-                        textAlign = TextAlign.End,
-                    )
-                    Text(
-                        stringResource(R.string.conn_gps_used),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Neutral500,
-                        modifier = Modifier.weight(0.5f),
-                        textAlign = TextAlign.End,
-                    )
-                }
-                Spacer(modifier = Modifier.height(4.dp))
-                gps.satellites.take(12).forEach { sat ->
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 1.dp),
-                    ) {
-                        Text(
-                            "${sat.svid}",
-                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = JetBrainsMono),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.weight(0.5f),
-                        )
-                        Text(
-                            sat.constellation,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Text(
-                            stringResource(R.string.conn_gps_cn0_format, sat.cn0DbHz),
-                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = JetBrainsMono),
-                            color =
-                                when {
-                                    sat.cn0DbHz >= 30 -> Green400
-                                    sat.cn0DbHz >= 20 -> Yellow400
-                                    else -> Red400
-                                },
-                            modifier = Modifier.weight(0.7f),
-                            textAlign = TextAlign.End,
-                        )
-                        Text(
-                            if (sat.usedInFix) "\u2713" else "\u2013",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (sat.usedInFix) Green400 else Neutral500,
-                            modifier = Modifier.weight(0.5f),
-                            textAlign = TextAlign.End,
-                        )
-                    }
-                }
-                if (gps.satellites.size > 12) {
-                    val hiddenSatelliteCount = gps.satellites.size - 12
-                    Text(
-                        text =
-                            pluralStringResource(
-                                R.plurals.conn_gps_more_sats,
-                                hiddenSatelliteCount,
-                                hiddenSatelliteCount,
-                            ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Neutral500,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
-                }
-            }
+@Composable
+private fun SearchingGpsRows(gps: GpsState) {
+    val classification = classifyGpsFix(gps.fixStatus, gps.failure)
+    DataRow(
+        label = stringResource(R.string.conn_gps_status),
+        value = stringResource(R.string.conn_gps_searching),
+        tone = classification.toSemanticTone(),
+    )
+    ObservationReasonNote(classification)
+    DataRow(
+        label = stringResource(R.string.conn_gps_elapsed),
+        value =
+            stringResource(
+                R.string.conn_gps_fix_duration_format,
+                uiNumber(gps.elapsedSearchMs / 1000.0, 1, 1),
+            ),
+    )
+    DataRow(
+        label = stringResource(R.string.conn_gps_satellites_visible),
+        value = uiNumber(gps.satelliteCount),
+    )
+    DataRow(
+        label = stringResource(R.string.conn_gps_satellites_used),
+        value = uiNumber(gps.satellitesUsed),
+    )
+    Spacer(modifier = Modifier.height(FonecheckTheme.spacing.xs))
+    IndeterminateRule()
+}
+
+@Composable
+private fun FixedGpsRows(gps: GpsState) {
+    val classification = classifyGpsFix(gps.fixStatus, gps.failure)
+    DataRow(
+        label = stringResource(R.string.conn_gps_status),
+        value = stringResource(R.string.conn_gps_fixed),
+        tone = classification.toSemanticTone(),
+    )
+    gps.fixTimeMs?.let {
+        DataRow(
+            label = stringResource(R.string.conn_gps_fix_time),
+            value =
+                stringResource(
+                    R.string.conn_gps_fix_duration_format,
+                    uiNumber(it / 1000.0, 1, 1),
+                ),
+        )
+    }
+    gps.latitude?.let {
+        LongValueRow(
+            label = stringResource(R.string.conn_gps_latitude),
+            value = stringResource(R.string.conn_gps_coordinate_format, uiNumber(it, 6, 6)),
+        )
+    }
+    gps.longitude?.let {
+        LongValueRow(
+            label = stringResource(R.string.conn_gps_longitude),
+            value = stringResource(R.string.conn_gps_coordinate_format, uiNumber(it, 6, 6)),
+        )
+    }
+    gps.accuracy?.let {
+        DataRow(
+            label = stringResource(R.string.conn_gps_accuracy),
+            value = stringResource(R.string.conn_gps_accuracy_format, uiNumber(it, 1, 1)),
+        )
+    }
+    gps.altitude?.let {
+        DataRow(
+            label = stringResource(R.string.conn_gps_altitude),
+            value = stringResource(R.string.conn_gps_altitude_format, uiNumber(it, 1, 1)),
+        )
+    }
+    gps.speed?.let {
+        DataRow(
+            label = stringResource(R.string.conn_gps_speed),
+            value = stringResource(R.string.conn_gps_speed_format, uiNumber(it, 1, 1)),
+        )
+    }
+    DataRow(
+        label = stringResource(R.string.conn_gps_satellites_used),
+        value =
+            stringResource(
+                R.string.conn_gps_satellite_ratio,
+                uiNumber(gps.satellitesUsed),
+                uiNumber(gps.satelliteCount),
+            ),
+    )
+}
+
+@Composable
+private fun FailedGpsRow(failure: GpsFailureCode?) {
+    val classification = classifyGpsFix(GpsFixStatus.FAILED, failure)
+    DataRow(
+        label = stringResource(R.string.conn_gps_status),
+        value =
+            stringResource(
+                if (failure == GpsFailureCode.START_FAILED) {
+                    R.string.conn_gps_start_failed
+                } else {
+                    R.string.conn_gps_failed
+                },
+            ),
+        tone = classification.toSemanticTone(),
+    )
+    ObservationReasonNote(classification)
+}
+
+@Composable
+internal fun SatelliteSection(satellites: List<GpsSatelliteInfo>) {
+    Column {
+        SectionHeader(label = stringResource(R.string.conn_gps_satellite_info))
+        satellites.take(MAX_VISIBLE_SATELLITES).forEach { satellite ->
+            LongValueRow(
+                label =
+                    stringResource(
+                        R.string.conn_gps_satellite_label,
+                        uiNumber(satellite.svid),
+                        satellite.constellation,
+                    ),
+                value =
+                    stringResource(
+                        R.string.conn_gps_satellite_value,
+                        uiNumber(satellite.cn0DbHz, 1, 1),
+                        if (satellite.usedInFix) {
+                            stringResource(R.string.conn_gps_satellite_used_in_fix)
+                        } else {
+                            stringResource(R.string.conn_gps_satellite_not_used_in_fix)
+                        },
+                    ),
+            )
         }
-
-        // Action buttons
-        if (gps.isAvailable) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                if (permissionState == PermissionState.GRANTED) {
-                    when (gps.fixStatus) {
-                        GpsFixStatus.NOT_STARTED, GpsFixStatus.FAILED -> {
-                            Button(
-                                onClick = { viewModel.startGpsFix() },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = Blue400),
-                                shape = RoundedCornerShape(8.dp),
-                                enabled = gps.isEnabled,
-                            ) {
-                                Text(stringResource(R.string.conn_gps_start_fix))
-                            }
-                        }
-                        GpsFixStatus.SEARCHING -> {
-                            OutlinedButton(
-                                onClick = { viewModel.cancelGpsFix() },
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(8.dp),
-                            ) {
-                                Text(stringResource(R.string.audio_stop))
-                            }
-                        }
-                        GpsFixStatus.FIXED -> {
-                            Button(
-                                onClick = { viewModel.startGpsFix() },
-                                modifier = Modifier.weight(1f),
-                                colors =
-                                    ButtonDefaults.buttonColors(
-                                        containerColor = Neutral700,
-                                        contentColor = MaterialTheme.colorScheme.onSurface,
-                                    ),
-                                shape = RoundedCornerShape(8.dp),
-                            ) {
-                                Text(stringResource(R.string.conn_gps_retest))
-                            }
-                        }
-                    }
-                }
-            }
-            Text(
-                text = stringResource(R.string.conn_gps_privacy_ephemeral),
-                style = MaterialTheme.typography.bodySmall,
-                color = Neutral500,
+        if (satellites.size > MAX_VISIBLE_SATELLITES) {
+            val hiddenSatelliteCount = satellites.size - MAX_VISIBLE_SATELLITES
+            Note(
+                text =
+                    pluralStringResource(
+                        R.plurals.conn_gps_more_sats,
+                        hiddenSatelliteCount,
+                        uiNumber(hiddenSatelliteCount),
+                    ),
             )
         }
     }
 }
 
-// ── Mobile Network Details ──────────────────────────────────────────────────────
-
 @Composable
-@Suppress("kotlin:S3776") // The card renders mutually exclusive mobile-network states.
+@Suppress("kotlin:S3776") // The section renders mutually exclusive mobile-network states.
 private fun MobileNetworkDetails(
     mobile: MobileNetworkState,
     permissionState: PermissionState,
     onRequestPermission: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    val mcc = mobile.mcc
+    val mnc = mobile.mnc
+
+    Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md)) {
         PermissionStatusCard(
             state = permissionState,
             rationale = stringResource(R.string.permission_rationale_phone),
             onRequest = onRequestPermission,
             onOpenSettings = onOpenSettings,
         )
-        SectionBox {
-            if (!mobile.isAvailable) {
-                Text(
-                    text = stringResource(R.string.conn_mobile_not_supported),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Neutral500,
-                )
-                return@SectionBox
-            }
-
-            DetailInfoRow(
-                stringResource(R.string.conn_mobile_status),
-                mobile.dataState?.displayName() ?: "\u2014",
-                valueColor = if (mobile.isConnected) Green400 else null,
-            )
-            mobile.operatorName?.let {
-                DetailInfoRow(stringResource(R.string.conn_mobile_operator), it)
-            }
-            mobile.simOperatorName?.let {
-                DetailInfoRow(stringResource(R.string.conn_mobile_sim_operator), it)
-            }
-            mobile.phoneType?.let {
-                DetailInfoRow(stringResource(R.string.conn_mobile_phone_type), it)
-            }
-            mobile.networkType?.let {
-                DetailInfoRow(stringResource(R.string.conn_mobile_network_type), it)
-            }
-            mobile.signalStrengthDbm?.let {
-                DetailInfoRow(
-                    stringResource(R.string.conn_mobile_signal),
-                    "$it dBm",
-                    valueColor =
-                        when {
-                            it >= -80 -> Green400
-                            it >= -100 -> Yellow400
-                            else -> Red400
-                        },
-                )
-            }
-            mobile.signalLevel?.let {
-                DetailInfoRow(stringResource(R.string.conn_mobile_signal_level), "$it / 4")
-            }
-            mobile.isRoaming?.let { isRoaming ->
-                DetailInfoRow(
-                    stringResource(R.string.conn_mobile_roaming),
-                    if (isRoaming) {
-                        stringResource(R.string.status_yes)
-                    } else {
-                        stringResource(R.string.status_no)
-                    },
-                    valueColor = if (isRoaming) Yellow400 else Green400,
-                )
-            }
-            mobile.cellId?.let {
-                DetailInfoRow(stringResource(R.string.conn_mobile_cell_id), it)
-            }
-            if (mobile.mcc != null && mobile.mnc != null) {
-                DetailInfoRow(stringResource(R.string.conn_mobile_mcc_mnc), "${mobile.mcc}/${mobile.mnc}")
-            }
+        if (!mobile.isAvailable) {
+            Note(text = stringResource(R.string.conn_mobile_not_supported))
+            return@Column
         }
+
+        DataRow(
+            label = stringResource(R.string.conn_mobile_status),
+            value = mobile.dataState?.displayName(),
+        )
+        LongValueRow(label = stringResource(R.string.conn_mobile_operator), value = mobile.operatorName)
+        LongValueRow(label = stringResource(R.string.conn_mobile_sim_operator), value = mobile.simOperatorName)
+        LongValueRow(label = stringResource(R.string.conn_mobile_phone_type), value = mobile.phoneType)
+        LongValueRow(label = stringResource(R.string.conn_mobile_network_type), value = mobile.networkType)
+        DataRow(
+            label = stringResource(R.string.conn_mobile_signal),
+            value = mobile.signalStrengthDbm?.let { stringResource(R.string.conn_dbm_format, uiNumber(it)) },
+        )
+        DataRow(
+            label = stringResource(R.string.conn_mobile_signal_level),
+            value =
+                mobile.signalLevel?.let {
+                    stringResource(
+                        R.string.conn_signal_level_format,
+                        uiNumber(it),
+                        uiNumber(MAX_SIGNAL_LEVEL),
+                    )
+                },
+        )
+        DataRow(
+            label = stringResource(R.string.conn_mobile_roaming),
+            value =
+                mobile.isRoaming?.let {
+                    if (it) stringResource(R.string.status_yes) else stringResource(R.string.status_no)
+                },
+        )
+        LongValueRow(label = stringResource(R.string.conn_mobile_cell_id), value = mobile.cellId)
+        LongValueRow(
+            label = stringResource(R.string.conn_mobile_mcc_mnc),
+            value =
+                if (mcc != null && mnc != null) {
+                    stringResource(R.string.conn_mcc_mnc_format, mcc, mnc)
+                } else {
+                    null
+                },
+        )
+    }
+}
+
+@Composable
+private fun wifiSummary(wifi: WifiState): String =
+    when {
+        wifi.isConnected -> stringResource(R.string.audio_connected)
+        wifi.isAvailable -> stringResource(R.string.audio_disconnected)
+        else -> stringResource(R.string.conn_not_available)
+    }
+
+@Composable
+private fun bluetoothSummary(
+    bluetooth: BluetoothState,
+    permissionState: PermissionState,
+): String =
+    when {
+        !bluetooth.isAvailable -> stringResource(R.string.conn_not_available)
+        permissionState != PermissionState.GRANTED && permissionState != PermissionState.NOT_REQUIRED ->
+            stringResource(R.string.run_all_permission_missing)
+        bluetooth.isEnabled == true -> stringResource(R.string.status_enabled)
+        else -> stringResource(R.string.status_disabled)
+    }
+
+@Composable
+private fun nfcSummary(nfc: NfcState): String =
+    when {
+        !nfc.isAvailable -> stringResource(R.string.conn_not_available)
+        nfc.isEnabled -> stringResource(R.string.status_enabled)
+        else -> stringResource(R.string.status_disabled)
+    }
+
+@Composable
+private fun gpsSummary(gps: GpsState): String =
+    when (gps.fixStatus) {
+        GpsFixStatus.FIXED -> stringResource(R.string.conn_gps_fixed)
+        GpsFixStatus.SEARCHING -> stringResource(R.string.conn_gps_searching)
+        GpsFixStatus.FAILED ->
+            stringResource(
+                if (gps.failure == GpsFailureCode.START_FAILED) {
+                    R.string.conn_gps_start_failed
+                } else {
+                    R.string.conn_gps_failed
+                },
+            )
+        GpsFixStatus.NOT_STARTED ->
+            when {
+                !gps.isAvailable -> stringResource(R.string.conn_not_available)
+                gps.isEnabled -> stringResource(R.string.status_enabled)
+                else -> stringResource(R.string.status_disabled)
+            }
+    }
+
+private fun GpsState.summaryTone(): SemanticTone =
+    if (fixStatus == GpsFixStatus.NOT_STARTED && !isEnabled) {
+        classifyGpsProvider(enabled = false).toSemanticTone()
+    } else {
+        classifyGpsFix(fixStatus, failure).toSemanticTone()
+    }
+
+@Composable
+private fun mobileSummary(mobile: MobileNetworkState): String =
+    when {
+        !mobile.isAvailable -> stringResource(R.string.conn_not_available)
+        mobile.isConnected -> stringResource(R.string.conn_mobile_summary_connected)
+        else -> stringResource(R.string.conn_mobile_summary_disconnected)
+    }
+
+@Composable
+private fun wifiFrequency(frequencyMhz: Int): String {
+    val frequency = uiNumber(frequencyMhz)
+    val band =
+        when {
+            frequencyMhz >= 5925 -> stringResource(R.string.conn_ghz_format, uiNumber(6))
+            frequencyMhz >= 4900 -> stringResource(R.string.conn_ghz_format, uiNumber(5))
+            frequencyMhz >= 2400 -> stringResource(R.string.conn_ghz_format, uiNumber(2.4, 1, 1))
+            else -> null
+        }
+    return if (band == null) {
+        stringResource(R.string.conn_mhz_format, frequency)
+    } else {
+        stringResource(R.string.conn_frequency_band_format, frequency, band)
     }
 }
 
@@ -832,3 +714,6 @@ private fun MobileDataStateCode.displayName(): String =
             MobileDataStateCode.UNKNOWN -> R.string.sim_value_unknown
         },
     )
+
+private const val MAX_SIGNAL_LEVEL = 4
+private const val MAX_VISIBLE_SATELLITES = 12

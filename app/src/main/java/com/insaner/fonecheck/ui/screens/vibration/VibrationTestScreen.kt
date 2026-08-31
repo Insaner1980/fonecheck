@@ -1,34 +1,34 @@
 package com.insaner.fonecheck.ui.screens.vibration
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
-import com.insaner.fonecheck.ui.components.DetailInfoRow
-import com.insaner.fonecheck.ui.components.SectionBox
+import com.insaner.fonecheck.ui.classification.classifyVibrationResult
+import com.insaner.fonecheck.ui.components.DataRow
+import com.insaner.fonecheck.ui.components.DisclosureSection
+import com.insaner.fonecheck.ui.components.LongValueRow
+import com.insaner.fonecheck.ui.components.ManualResultButtons
+import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.ObservationReasonNote
+import com.insaner.fonecheck.ui.components.PrimaryButton
+import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.TestScreenContent
-import com.insaner.fonecheck.ui.components.TestSectionCard
-import com.insaner.fonecheck.ui.theme.Blue400
-import com.insaner.fonecheck.ui.theme.Green400
-import com.insaner.fonecheck.ui.theme.Neutral500
-import com.insaner.fonecheck.ui.theme.Red400
+import com.insaner.fonecheck.ui.theme.FonecheckTheme
+import com.insaner.fonecheck.ui.theme.SemanticTone
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 
 @Composable
 fun VibrationTestScreen(
@@ -36,25 +36,23 @@ fun VibrationTestScreen(
     viewModel: VibrationTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val liveStateUpdatedAtEpochMillis = remember(state) { System.currentTimeMillis() }
     VibrationLifecycleEffect(onCancelVibration = viewModel::cancelVibration)
 
-    TestScreenContent(modifier = modifier) {
+    TestScreenContent(modifier = modifier, liveStateUpdatedAtEpochMillis = liveStateUpdatedAtEpochMillis) {
         item {
-            TestSectionCard(
-                icon = stringResource(R.string.vibration_motor_icon),
-                title = stringResource(R.string.vibration_motor_title),
-                statusText = vibrationResultLabel(state.motor.result),
-                statusColor =
-                    when (state.motor.result) {
-                        VibrationMotorResult.FELT -> Green400
-                        VibrationMotorResult.NOT_FELT -> Red400
-                        VibrationMotorResult.SKIPPED,
-                        null,
-                        -> Neutral500
-                    },
-                isExpanded = state.expandedSection == VibrationSection.MOTOR,
+            val classification = classifyVibrationResult(state.motor.result)
+            DisclosureSection(
+                label = stringResource(R.string.vibration_motor_title),
+                summary = vibrationResultLabel(state.motor.result),
+                tone = classification.toSemanticTone(),
+                expanded = state.expandedSection == VibrationSection.MOTOR,
                 onClick = { viewModel.toggleSection(VibrationSection.MOTOR) },
             ) {
+                ObservationReasonNote(
+                    classification = classification,
+                    valueExplainsNotMeasuredState = state.motor.result == null,
+                )
                 MotorTestDetails(
                     state = state,
                     onShort = viewModel::vibrateShort,
@@ -69,21 +67,18 @@ fun VibrationTestScreen(
         }
 
         item {
-            TestSectionCard(
-                icon = stringResource(R.string.vibration_haptic_icon),
-                title = stringResource(R.string.vibration_haptic_title),
-                statusText =
-                    if (state.haptic.hasVibrator) {
-                        pluralStringResource(
-                            R.plurals.vibration_effect_count,
-                            state.haptic.supportedEffectsCount,
-                            state.haptic.supportedEffectsCount,
-                        )
-                    } else {
-                        stringResource(R.string.vibration_none)
-                    },
-                statusColor = if (state.haptic.hasVibrator) Blue400 else Neutral500,
-                isExpanded = state.expandedSection == VibrationSection.HAPTIC,
+            DisclosureSection(
+                label = stringResource(R.string.vibration_haptic_title),
+                summary =
+                    stringResource(
+                        if (state.haptic.hasVibrator) {
+                            R.string.conn_supported
+                        } else {
+                            R.string.conn_not_supported
+                        },
+                    ),
+                tone = SemanticTone.NEUTRAL,
+                expanded = state.expandedSection == VibrationSection.HAPTIC,
                 onClick = { viewModel.toggleSection(VibrationSection.HAPTIC) },
             ) {
                 HapticDetails(state.haptic)
@@ -105,145 +100,139 @@ private fun MotorTestDetails(
     onSkip: () -> Unit,
 ) {
     val enabled = state.haptic.hasVibrator
-    SectionBox {
-        Text(
-            text = stringResource(R.string.vibration_strength_warning),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(modifier = Modifier.height(12.dp))
+
+    Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md)) {
+        Note(text = stringResource(R.string.vibration_strength_warning))
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
         ) {
-            VibrationButton(stringResource(R.string.vibration_short), enabled, onShort, Modifier.weight(1f))
-            VibrationButton(stringResource(R.string.vibration_long), enabled, onLong, Modifier.weight(1f))
-            VibrationButton(stringResource(R.string.vibration_pattern), enabled, onPattern, Modifier.weight(1f))
-        }
-        OutlinedButton(
-            onClick = onStop,
-            enabled = state.isPlaying,
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            shape = RoundedCornerShape(8.dp),
-        ) {
-            Text(stringResource(R.string.vibration_stop))
-        }
-        if (!enabled) {
-            Text(
-                text = stringResource(R.string.vibration_unavailable),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp),
+            VibrationPatternButton(
+                label = stringResource(R.string.vibration_short),
+                isActive = state.isPlaying && state.lastPattern == VibrationPattern.SHORT,
+                enabled = enabled,
+                onClick = onShort,
+                modifier = Modifier.weight(1f),
+            )
+            VibrationPatternButton(
+                label = stringResource(R.string.vibration_long),
+                isActive = state.isPlaying && state.lastPattern == VibrationPattern.LONG,
+                enabled = enabled,
+                onClick = onLong,
+                modifier = Modifier.weight(1f),
+            )
+            VibrationPatternButton(
+                label = stringResource(R.string.vibration_pattern),
+                isActive = state.isPlaying && state.lastPattern == VibrationPattern.PATTERN,
+                enabled = enabled,
+                onClick = onPattern,
+                modifier = Modifier.weight(1f),
             )
         }
-        Spacer(modifier = Modifier.height(12.dp))
+        SecondaryButton(
+            label = stringResource(R.string.vibration_stop),
+            onClick = onStop,
+            enabled = state.isPlaying,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        if (!enabled) {
+            Note(text = stringResource(R.string.vibration_unavailable))
+        }
         Text(
             text = stringResource(R.string.vibration_did_you_feel),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = FonecheckTheme.type.rowLabel,
+            color = FonecheckTheme.colors.textSecondary,
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            OutlinedButton(
-                onClick = onConfirmSuccess,
-                enabled = enabled,
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(8.dp),
-            ) {
-                Text(stringResource(R.string.vibration_yes))
-            }
-            OutlinedButton(
-                onClick = onConfirmFailure,
-                enabled = enabled,
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(8.dp),
-            ) {
-                Text(stringResource(R.string.vibration_no))
-            }
-        }
-        OutlinedButton(
+        ManualResultButtons(
+            problemLabel = stringResource(R.string.vibration_no),
+            passLabel = stringResource(R.string.vibration_yes),
+            onResult = { felt -> if (felt) onConfirmSuccess() else onConfirmFailure() },
+            enabled = enabled,
+        )
+        SecondaryButton(
+            label = stringResource(R.string.vibration_skip),
             onClick = onSkip,
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            shape = RoundedCornerShape(8.dp),
-        ) {
-            Text(stringResource(R.string.vibration_skip))
-        }
-        Text(
-            text = stringResource(R.string.vibration_accessibility_note),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp),
+            modifier = Modifier.fillMaxWidth(),
         )
+        Note(text = stringResource(R.string.vibration_accessibility_note))
     }
 }
 
 @Composable
-private fun VibrationButton(
+private fun VibrationPatternButton(
     label: String,
+    isActive: Boolean,
     enabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = modifier,
-        colors = ButtonDefaults.buttonColors(containerColor = Blue400),
-        shape = RoundedCornerShape(8.dp),
-    ) {
-        Text(label)
+    val buttonModifier = modifier.semantics { selected = isActive }
+    if (isActive) {
+        PrimaryButton(
+            label = label,
+            onClick = onClick,
+            enabled = enabled,
+            modifier = buttonModifier,
+        )
+    } else {
+        SecondaryButton(
+            label = label,
+            onClick = onClick,
+            enabled = enabled,
+            modifier = buttonModifier,
+        )
     }
 }
 
 @Composable
 private fun HapticDetails(haptic: HapticCapabilityState) {
-    SectionBox {
-        DetailInfoRow(
-            stringResource(R.string.vibration_has_vibrator),
-            if (haptic.hasVibrator) stringResource(R.string.status_yes) else stringResource(R.string.status_no),
-            valueColor = if (haptic.hasVibrator) Green400 else Red400,
+    Column {
+        DataRow(
+            label = stringResource(R.string.vibration_has_vibrator),
+            value = yesNoLabel(haptic.hasVibrator),
         )
-        DetailInfoRow(
-            stringResource(R.string.vibration_amplitude_control),
-            if (haptic.hasAmplitudeControl) {
-                stringResource(R.string.conn_supported)
-            } else {
-                stringResource(R.string.conn_not_supported)
-            },
-            valueColor = if (haptic.hasAmplitudeControl) Green400 else Neutral500,
+        DataRow(
+            label = stringResource(R.string.vibration_amplitude_control),
+            value =
+                stringResource(
+                    if (haptic.hasAmplitudeControl) {
+                        R.string.conn_supported
+                    } else {
+                        R.string.conn_not_supported
+                    },
+                ),
         )
-        DetailInfoRow(
-            stringResource(R.string.vibration_effects_supported),
-            if (haptic.effectsApiSupported) {
-                haptic.supportedEffectsCount.toString()
-            } else {
-                stringResource(R.string.vibration_api_requires_android_11)
-            },
+        HapticCapabilityList(
+            label = stringResource(R.string.vibration_effects_supported),
+            apiSupported = haptic.effectsApiSupported,
+            values = haptic.supportedEffects.map { vibrationEffectLabel(it) },
         )
-        haptic.supportedEffects.forEach { effect ->
-            DetailInfoRow("", vibrationEffectLabel(effect))
-        }
-        DetailInfoRow(
-            stringResource(R.string.vibration_primitives_supported),
-            if (haptic.primitivesApiSupported) {
-                haptic.supportedPrimitivesCount.toString()
-            } else {
-                stringResource(R.string.vibration_api_requires_android_11)
-            },
+        HapticCapabilityList(
+            label = stringResource(R.string.vibration_primitives_supported),
+            apiSupported = haptic.primitivesApiSupported,
+            values = haptic.supportedPrimitives.map { vibrationPrimitiveLabel(it) },
         )
-        haptic.supportedPrimitives.forEach { primitive ->
-            DetailInfoRow("", vibrationPrimitiveLabel(primitive))
-        }
-        Text(
-            text = stringResource(R.string.vibration_capability_note),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp),
-        )
+        Note(text = stringResource(R.string.vibration_capability_note))
     }
+}
+
+@Composable
+private fun HapticCapabilityList(
+    label: String,
+    apiSupported: Boolean,
+    values: List<String>,
+) {
+    val emptyLabel = stringResource(R.string.vibration_none)
+    LongValueRow(
+        label = label,
+        value =
+            if (apiSupported) {
+                values.joinToString().ifEmpty { emptyLabel }
+            } else {
+                null
+            },
+        unavailableLabel = stringResource(R.string.vibration_api_requires_android_11),
+    )
 }
 
 @Composable
@@ -253,9 +242,12 @@ private fun vibrationResultLabel(result: VibrationMotorResult?): String =
             VibrationMotorResult.FELT -> R.string.vibration_felt
             VibrationMotorResult.NOT_FELT -> R.string.vibration_not_felt
             VibrationMotorResult.SKIPPED -> R.string.vibration_skipped
-            null -> R.string.vibration_ready
+            null -> R.string.status_not_measured
         },
     )
+
+internal fun vibrationResultTone(result: VibrationMotorResult?): SemanticTone =
+    classifyVibrationResult(result).toSemanticTone()
 
 @Composable
 private fun vibrationEffectLabel(effect: VibrationEffectCode): String =
@@ -282,3 +274,6 @@ private fun vibrationPrimitiveLabel(primitive: VibrationPrimitiveCode): String =
             VibrationPrimitiveCode.LOW_TICK -> R.string.vibration_primitive_low_tick
         },
     )
+
+@Composable
+private fun yesNoLabel(value: Boolean): String = stringResource(if (value) R.string.status_yes else R.string.status_no)

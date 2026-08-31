@@ -205,7 +205,7 @@ class RunAllTestsViewModelTest {
         }
 
         assertEquals(RunAllStage.SENSORS, viewModel.state.value.stage)
-        assertEquals(true, viewModel.state.value.manualChecks.camera)
+        assertTrue(viewModel.state.value.manualChecks.cameraCompleted)
         assertEquals(RunAllStageOutcome.PASSED, viewModel.state.value.stageOutcomes[RunAllStage.CAMERA])
     }
 

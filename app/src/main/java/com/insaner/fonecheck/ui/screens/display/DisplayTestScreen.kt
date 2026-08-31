@@ -8,25 +8,22 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,20 +42,31 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.insaner.fonecheck.R
-import com.insaner.fonecheck.ui.components.DetailInfoRow
-import com.insaner.fonecheck.ui.components.ManualResultButtons
-import com.insaner.fonecheck.ui.components.SectionBox
-import com.insaner.fonecheck.ui.components.TestScreenContent
-import com.insaner.fonecheck.ui.components.TestSectionCard
-import com.insaner.fonecheck.ui.theme.Blue400
+import com.insaner.fonecheck.domain.observation.DeviceObservation
+import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
+import com.insaner.fonecheck.domain.observation.MeasurementKind
+import com.insaner.fonecheck.domain.observation.MeasurementOutcome
+import com.insaner.fonecheck.ui.TopBarAction
+import com.insaner.fonecheck.ui.classification.classifyDisplayConfirmation
+import com.insaner.fonecheck.ui.components.DataRow
+import com.insaner.fonecheck.ui.components.HairlineRule
+import com.insaner.fonecheck.ui.components.LiveStateTimestamp
+import com.insaner.fonecheck.ui.components.LongValueRow
+import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.ObservationReasonNote
+import com.insaner.fonecheck.ui.components.PrimaryButton
+import com.insaner.fonecheck.ui.components.RegisterRefreshTopBarAction
+import com.insaner.fonecheck.ui.components.SecondaryButton
+import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.components.shouldShowObservationReason
+import com.insaner.fonecheck.ui.format.uiNumber
+import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.Green400
-import com.insaner.fonecheck.ui.theme.Neutral500
-import com.insaner.fonecheck.ui.theme.Red400
 import com.insaner.fonecheck.ui.theme.Yellow400
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 import kotlinx.coroutines.delay
 
 internal const val DISPLAY_TOUCH_GRID_TAG = "display_touch_grid"
@@ -69,11 +77,19 @@ internal const val DISPLAY_EXIT_BUTTON_TAG = "display_exit_button"
 fun DisplayTestScreen(
     modifier: Modifier = Modifier,
     onFullscreenChange: (Boolean) -> Unit = {},
+    onTopBarActionChange: (TopBarAction?) -> Unit = {},
     viewModel: DisplayTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val isFullscreen = state.visual.isActive || state.touch.isActive
     val currentOnFullscreenChange by rememberUpdatedState(onFullscreenChange)
+
+    RegisterRefreshTopBarAction(
+        contentDescriptionResId = R.string.display_refresh_info,
+        enabled = true,
+        onRefresh = viewModel::refreshInfo,
+        onTopBarActionChange = onTopBarActionChange,
+    )
 
     DisposableEffect(isFullscreen) {
         currentOnFullscreenChange(isFullscreen)
@@ -125,141 +141,162 @@ private fun DisplayOverview(
     viewModel: DisplayTestViewModel,
     modifier: Modifier = Modifier,
 ) {
-    TestScreenContent(modifier = modifier) {
-        item {
-            TestSectionCard(
-                icon = "DSP",
-                title = stringResource(R.string.display_info_title),
-                statusText = "${state.info.widthPx}×${state.info.heightPx}",
-                statusColor = Blue400,
-                isExpanded = state.expandedSection == DisplaySection.INFO,
-                onClick = { viewModel.toggleSection(DisplaySection.INFO) },
-            ) {
-                DisplayInfoDetails(state.info)
-            }
+    val liveStateUpdatedAtEpochMillis = remember(state) { System.currentTimeMillis() }
+    Column(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(FonecheckTheme.spacing.md),
+        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg),
+    ) {
+        val visualClassification = classifyDisplayResult(state.visual.result)
+        DisplaySection(label = stringResource(R.string.display_info_title)) {
+            DisplayInfoDetails(state.info)
         }
-        item {
-            TestSectionCard(
-                icon = "PXL",
-                title = stringResource(R.string.display_visual_title),
-                statusText = manualResultLabel(state.visual.result),
-                statusColor = manualResultColor(state.visual.result),
-                isExpanded = state.expandedSection == DisplaySection.VISUAL,
-                onClick = { viewModel.toggleSection(DisplaySection.VISUAL) },
-            ) {
-                TestLaunchSection(
-                    description = stringResource(R.string.display_visual_description),
-                    onStart = viewModel::startVisualTest,
+        DisplaySection(label = stringResource(R.string.display_visual_title)) {
+            val valueExplainsReason = state.visual.result == null
+            val reasonVisible =
+                shouldShowObservationReason(visualClassification, valueExplainsReason)
+            DataRow(
+                label = stringResource(R.string.display_status_label),
+                value = manualResultLabel(state.visual.result),
+                tone = visualClassification.toSemanticTone(),
+                showDivider = !reasonVisible,
+            )
+            ObservationReasonNote(
+                classification = visualClassification,
+                valueExplainsNotMeasuredState = valueExplainsReason,
+            )
+            if (reasonVisible) HairlineRule()
+            Note(stringResource(R.string.display_visual_description))
+            SecondaryButton(
+                label = stringResource(R.string.display_start_test),
+                onClick = viewModel::startVisualTest,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        DisplaySection(label = stringResource(R.string.display_touch_title)) {
+            val touchClassification =
+                classifyMeasurement(
+                    if (state.touch.isComplete) MeasurementOutcome.MEASURED else MeasurementOutcome.NOT_RUN,
+                )
+            val valueExplainsReason = !state.touch.isComplete
+            val reasonVisible =
+                shouldShowObservationReason(touchClassification, valueExplainsReason)
+            DataRow(
+                label = stringResource(R.string.display_status_label),
+                value =
+                    stringResource(
+                        if (state.touch.isComplete) {
+                            R.string.display_status_complete
+                        } else {
+                            R.string.status_not_measured
+                        },
+                    ),
+                tone = touchClassification.toSemanticTone(),
+                showDivider = !reasonVisible,
+            )
+            ObservationReasonNote(
+                classification = touchClassification,
+                valueExplainsNotMeasuredState = valueExplainsReason,
+            )
+            if (reasonVisible) HairlineRule()
+            if (state.touch.isComplete) {
+                DataRow(
+                    label = stringResource(R.string.display_touch_cells),
+                    value =
+                        stringResource(
+                            R.string.display_value_ratio,
+                            uiNumber(state.touch.touchedCells.size),
+                            uiNumber(touchCellCount()),
+                        ),
+                )
+                DataRow(
+                    label = stringResource(R.string.display_multi_touch_peak),
+                    value = uiNumber(state.touch.maxPointerCount),
                 )
             }
+            Note(stringResource(R.string.display_touch_desc))
+            SecondaryButton(
+                label = stringResource(R.string.display_start_test),
+                onClick = viewModel::startTouchTest,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
-        item {
-            TestSectionCard(
-                icon = "TCH",
-                title = stringResource(R.string.display_touch_title),
-                statusText =
-                    if (state.touch.isComplete) {
-                        stringResource(R.string.display_status_complete)
-                    } else {
-                        stringResource(R.string.display_status_ready)
-                    },
-                statusColor = if (state.touch.isComplete) Green400 else Neutral500,
-                isExpanded = state.expandedSection == DisplaySection.TOUCH,
-                onClick = { viewModel.toggleSection(DisplaySection.TOUCH) },
-            ) {
-                SectionBox {
-                    Text(
-                        text = stringResource(R.string.display_touch_desc),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    if (state.touch.isComplete) {
-                        Spacer(Modifier.height(8.dp))
-                        DetailInfoRow(
-                            stringResource(R.string.display_touch_cells),
-                            stringResource(
-                                R.string.display_value_ratio,
-                                state.touch.touchedCells.size,
-                                touchCellCount(),
-                            ),
-                        )
-                        DetailInfoRow(
-                            stringResource(R.string.display_multi_touch_peak),
-                            state.touch.maxPointerCount.toString(),
-                        )
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Button(
-                        onClick = viewModel::startTouchTest,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(stringResource(R.string.display_start_test))
-                    }
-                }
-            }
-        }
+        LiveStateTimestamp(liveStateUpdatedAtEpochMillis)
     }
 }
 
 @Composable
 private fun DisplayInfoDetails(info: DisplayInfoState) {
-    SectionBox {
-        DetailInfoRow(
-            stringResource(R.string.display_resolution),
-            stringResource(
-                R.string.display_resolution_value,
-                info.widthPx,
-                info.heightPx,
-                resolutionSourceLabel(info.resolutionSource),
+    val resolutionClassification =
+        DeviceObservationClassifier.classify(
+            DeviceObservation.Measurement(
+                MeasurementKind.DISPLAY,
+                if (info.widthPx > 0 && info.heightPx > 0) {
+                    MeasurementOutcome.MEASURED
+                } else {
+                    MeasurementOutcome.UNAVAILABLE
+                },
             ),
         )
-        DetailInfoRow(
-            stringResource(R.string.display_density),
-            stringResource(R.string.display_density_value, info.densityDpi),
-        )
-        DetailInfoRow(
-            stringResource(R.string.display_refresh_rate),
-            stringResource(R.string.display_refresh_rate_value, info.refreshRate),
-        )
-        DetailInfoRow(
-            stringResource(R.string.display_hdr),
-            supportedLabel(info.hdrSupported),
-            valueColor = if (info.hdrSupported) Green400 else Neutral500,
-        )
-        DetailInfoRow(
-            stringResource(R.string.display_wide_color),
-            supportedLabel(info.wideColorGamut),
-            valueColor = if (info.wideColorGamut) Green400 else Neutral500,
-        )
-        DetailInfoRow(
-            stringResource(R.string.display_brightness),
-            stringResource(R.string.display_value_ratio, info.currentBrightness, 255),
-        )
-        DetailInfoRow(
-            stringResource(R.string.display_auto_brightness),
-            stringResource(if (info.autoBrightness) R.string.status_enabled else R.string.status_disabled),
-        )
-    }
+    LongValueRow(
+        label = stringResource(R.string.display_resolution),
+        value =
+            if (info.widthPx > 0 && info.heightPx > 0) {
+                stringResource(
+                    R.string.display_resolution_value,
+                    uiNumber(info.widthPx),
+                    uiNumber(info.heightPx),
+                    resolutionSourceLabel(info.resolutionSource),
+                )
+            } else {
+                null
+            },
+        showDivider = resolutionClassification.reason == null,
+    )
+    ObservationReasonNote(resolutionClassification)
+    if (resolutionClassification.reason != null) HairlineRule()
+    DataRow(
+        label = stringResource(R.string.display_density),
+        value = stringResource(R.string.display_density_value, uiNumber(info.densityDpi)),
+    )
+    DataRow(
+        label = stringResource(R.string.display_refresh_rate),
+        value = stringResource(R.string.display_refresh_rate_value, uiNumber(info.refreshRate)),
+    )
+    DataRow(
+        label = stringResource(R.string.display_hdr),
+        value = supportedLabel(info.hdrSupported),
+    )
+    DataRow(
+        label = stringResource(R.string.display_wide_color),
+        value = supportedLabel(info.wideColorGamut),
+    )
+    DataRow(
+        label = stringResource(R.string.display_brightness),
+        value =
+            stringResource(
+                R.string.display_value_ratio,
+                uiNumber(info.currentBrightness),
+                uiNumber(255),
+            ),
+    )
+    DataRow(
+        label = stringResource(R.string.display_auto_brightness),
+        value = stringResource(if (info.autoBrightness) R.string.status_enabled else R.string.status_disabled),
+    )
 }
 
 @Composable
-private fun TestLaunchSection(
-    description: String,
-    onStart: () -> Unit,
+private fun DisplaySection(
+    label: String,
+    content: @Composable () -> Unit,
 ) {
-    SectionBox {
-        Text(
-            text = description,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(
-            onClick = onStart,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(R.string.display_start_test))
-        }
+    Column {
+        SectionHeader(label)
+        content()
     }
 }
 
@@ -285,67 +322,71 @@ private fun VisualTestOverlay(
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .windowInsetsPadding(WindowInsets.safeDrawing),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-            shadowElevation = 12.dp,
+            color = FonecheckTheme.colors.background,
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.padding(FonecheckTheme.spacing.md),
+                verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TextButton(
+                    SecondaryButton(
+                        label = stringResource(R.string.display_exit_test),
                         onClick = onExit,
                         modifier = Modifier.testTag(DISPLAY_EXIT_BUTTON_TAG),
-                    ) {
-                        Text(stringResource(R.string.display_exit_test))
-                    }
+                    )
                     Text(
                         text =
                             stringResource(
                                 R.string.display_value_ratio,
-                                state.patternIndex + 1,
-                                DisplayPattern.entries.size,
+                                uiNumber(state.patternIndex + 1),
+                                uiNumber(DisplayPattern.entries.size),
                             ),
-                        style = MaterialTheme.typography.labelLarge,
+                        style = FonecheckTheme.type.sectionLabel,
+                        color = FonecheckTheme.colors.textMuted,
                     )
                 }
                 Text(
                     text = patternLabel(pattern),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    style = FonecheckTheme.type.screenTitle,
+                    color = FonecheckTheme.colors.textPrimary,
                 )
                 if (isLast) {
-                    Text(
-                        text = stringResource(R.string.display_visual_question),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    ManualResultButtons(
-                        problemLabel = stringResource(R.string.display_found_problem),
-                        passLabel = stringResource(R.string.display_looks_good),
-                        onResult = onResult,
-                    )
+                    Note(stringResource(R.string.display_visual_question))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
+                    ) {
+                        SecondaryButton(
+                            label = stringResource(R.string.display_found_problem),
+                            onClick = { onResult(false) },
+                            modifier = Modifier.weight(1f),
+                        )
+                        PrimaryButton(
+                            label = stringResource(R.string.display_looks_good),
+                            onClick = { onResult(true) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                 } else {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
                     ) {
-                        OutlinedButton(
+                        SecondaryButton(
+                            label = stringResource(R.string.display_previous_pattern),
                             onClick = onPrevious,
                             enabled = state.patternIndex > 0,
                             modifier = Modifier.weight(1f),
-                        ) {
-                            Text(stringResource(R.string.display_previous_pattern))
-                        }
-                        Button(
+                        )
+                        PrimaryButton(
+                            label = stringResource(R.string.display_next_pattern),
                             onClick = onNext,
                             modifier = Modifier.weight(1f),
-                        ) {
-                            Text(stringResource(R.string.display_next_pattern))
-                        }
+                        )
                     }
                 }
             }
@@ -367,19 +408,19 @@ internal fun TouchTestOverlay(
     val progressDescription =
         stringResource(
             R.string.display_touch_progress,
-            state.touchedCells.size,
-            touchCellCount(),
-            state.activePointers.size,
-            state.maxPointerCount,
+            uiNumber(state.touchedCells.size),
+            uiNumber(touchCellCount()),
+            uiNumber(state.activePointers.size),
+            uiNumber(state.maxPointerCount),
         )
     Column(
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
+                .background(FonecheckTheme.colors.background)
                 .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(FonecheckTheme.spacing.md),
+        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -389,20 +430,31 @@ internal fun TouchTestOverlay(
             Text(
                 text = stringResource(R.string.display_touch_title),
                 modifier = Modifier.semantics { heading() },
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
+                style = FonecheckTheme.type.screenTitle,
+                color = FonecheckTheme.colors.textPrimary,
             )
-            TextButton(
+            SecondaryButton(
+                label = stringResource(R.string.display_exit_test),
                 onClick = onExit,
                 modifier = Modifier.testTag(DISPLAY_EXIT_BUTTON_TAG),
-            ) {
-                Text(stringResource(R.string.display_exit_test))
-            }
+            )
         }
-        Text(
-            text = progressDescription,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        DataRow(
+            label = stringResource(R.string.display_touch_cells),
+            value =
+                stringResource(
+                    R.string.display_value_ratio,
+                    uiNumber(state.touchedCells.size),
+                    uiNumber(touchCellCount()),
+                ),
+        )
+        DataRow(
+            label = stringResource(R.string.display_touch_active),
+            value = uiNumber(state.activePointers.size),
+        )
+        DataRow(
+            label = stringResource(R.string.display_touch_maximum),
+            value = uiNumber(state.maxPointerCount),
         )
         Canvas(
             modifier =
@@ -457,21 +509,19 @@ internal fun TouchTestOverlay(
         }
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
         ) {
-            OutlinedButton(
+            SecondaryButton(
+                label = stringResource(R.string.display_touch_reset),
                 onClick = onReset,
                 modifier = Modifier.weight(1f),
-            ) {
-                Text(stringResource(R.string.display_touch_reset))
-            }
-            Button(
+            )
+            PrimaryButton(
+                label = stringResource(R.string.display_touch_complete),
                 onClick = onComplete,
                 enabled = state.touchedCells.isNotEmpty(),
                 modifier = Modifier.weight(1f),
-            ) {
-                Text(stringResource(R.string.display_touch_complete))
-            }
+            )
         }
     }
 }
@@ -558,16 +608,15 @@ private fun manualResultLabel(value: Boolean?): String =
         when (value) {
             true -> R.string.display_status_passed
             false -> R.string.display_status_issue
-            null -> R.string.display_status_ready
+            null -> R.string.status_not_measured
         },
     )
 
-private fun manualResultColor(value: Boolean?): Color =
-    when (value) {
-        true -> Green400
-        false -> Red400
-        null -> Neutral500
-    }
+private fun classifyDisplayResult(value: Boolean?) =
+    value?.let(::classifyDisplayConfirmation) ?: classifyMeasurement(MeasurementOutcome.NOT_RUN)
+
+private fun classifyMeasurement(outcome: MeasurementOutcome) =
+    DeviceObservationClassifier.classify(DeviceObservation.Measurement(MeasurementKind.GENERIC, outcome))
 
 @Composable
 private fun supportedLabel(supported: Boolean): String =

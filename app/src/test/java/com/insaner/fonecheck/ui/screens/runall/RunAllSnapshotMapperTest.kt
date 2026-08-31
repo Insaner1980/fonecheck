@@ -15,7 +15,11 @@ import com.insaner.fonecheck.domain.model.NetworkGenerationCode
 import com.insaner.fonecheck.domain.model.PerformanceBenchmarkResult
 import com.insaner.fonecheck.domain.model.PerformanceInfo
 import com.insaner.fonecheck.domain.model.PhoneTypeCode
+import com.insaner.fonecheck.domain.model.SimActivityCode
+import com.insaner.fonecheck.domain.model.SimFormFactorCode
 import com.insaner.fonecheck.domain.model.SimInventoryCode
+import com.insaner.fonecheck.domain.model.SimSlotInfo
+import com.insaner.fonecheck.domain.model.SimSlotStateCode
 import com.insaner.fonecheck.domain.model.SimTelephonyInfo
 import com.insaner.fonecheck.domain.model.TelephonyHardwareCode
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
@@ -141,7 +145,7 @@ class RunAllSnapshotMapperTest {
             evidence["display.visual"],
         )
         assertEquals(DiagnosticStatus.FAIL, evidence.getValue("audio.speaker").status)
-        assertEquals(EvidenceReasonCode.USER_CONFIRMED_FAILURE, evidence.getValue("audio.speaker").reason)
+        assertEquals(EvidenceReasonCode("user_confirmed_audio_failure"), evidence.getValue("audio.speaker").reason)
         assertEquals(EvidenceValue.BooleanValue(false), evidence.getValue("audio.speaker").value)
         assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue("camera.capture").status)
         assertEquals(EvidenceReasonCode.PERMISSION_DENIED, evidence.getValue("camera.capture").reason)
@@ -176,8 +180,34 @@ class RunAllSnapshotMapperTest {
 
         assertEquals(DiagnosticStatus.WARNING, evidence.status)
         assertEquals(Confidence.LOW, evidence.confidence)
-        assertEquals(EvidenceReasonCode.DEGRADED, evidence.reason)
+        assertEquals(EvidenceReasonCode("root_artifact_present"), evidence.reason)
         assertEquals(EvidenceValue.StableTextCodeValue("known_artifact_detected"), evidence.value)
+    }
+
+    @Test
+    fun developerOptionsAndUsbDebuggingUseTheSameNotedClassificationAsDeviceDetails() {
+        val evidence =
+            mappedEvidence(
+                snapshots =
+                    diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                        device =
+                            deviceInfo().copy(
+                                developerOptionsEnabled = true,
+                                usbDebuggingEnabled = true,
+                            ),
+                    ),
+            )
+
+        assertEquals(DiagnosticStatus.WARNING, evidence.getValue("device.developer_options").status)
+        assertEquals(
+            EvidenceReasonCode("developer_options_enabled"),
+            evidence.getValue("device.developer_options").reason,
+        )
+        assertEquals(DiagnosticStatus.WARNING, evidence.getValue("device.usb_debugging").status)
+        assertEquals(
+            EvidenceReasonCode("usb_debugging_enabled"),
+            evidence.getValue("device.usb_debugging").reason,
+        )
     }
 
     @Test
@@ -196,7 +226,8 @@ class RunAllSnapshotMapperTest {
                 ).flatMap { it.evidence }
                 .associateBy { it.checkId.value }
 
-        assertEquals(DiagnosticStatus.INFO, deniedEvidence.getValue("sim.inventory").status)
+        assertEquals(DiagnosticStatus.NOT_TESTED, deniedEvidence.getValue("sim.inventory").status)
+        assertEquals(EvidenceReasonCode("sim_inactive"), deniedEvidence.getValue("sim.inventory").reason)
         assertEquals(
             EvidenceValue.StableTextCodeValue("inactive_sim"),
             deniedEvidence.getValue("sim.inventory").value,
@@ -220,6 +251,40 @@ class RunAllSnapshotMapperTest {
         assertEquals(DiagnosticStatus.NOT_AVAILABLE, noHardware.getValue("sim.inventory").status)
         assertEquals(Applicability.NOT_APPLICABLE, noHardware.getValue("sim.inventory").applicability)
         assertEquals(DiagnosticStatus.NOT_AVAILABLE, noHardware.getValue("sim.network").status)
+    }
+
+    @Test
+    fun simUnknownPinAndCardIoStatesKeepMeasurementAndFaultSemanticsSeparate() {
+        val unknown =
+            mappedEvidence(
+                snapshots =
+                    diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                        sim = simInfo(SimInventoryCode.UNKNOWN),
+                    ),
+            ).getValue("sim.inventory")
+        assertEquals(DiagnosticStatus.NOT_AVAILABLE, unknown.status)
+        assertEquals(EvidenceReasonCode("sim_inventory_unknown"), unknown.reason)
+
+        val slots =
+            listOf(
+                simSlot(slotIndex = 0, state = SimSlotStateCode.PIN_REQUIRED),
+                simSlot(slotIndex = 1, state = SimSlotStateCode.CARD_IO_ERROR),
+            )
+        val slotEvidence =
+            mappedEvidence(
+                snapshots =
+                    diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                        sim =
+                            simInfo(SimInventoryCode.MULTIPLE_SIM).copy(
+                                simSlots = slots,
+                                phoneCount = slots.size,
+                            ),
+                    ),
+            )
+        assertEquals(DiagnosticStatus.NOT_TESTED, slotEvidence.getValue("sim.slot_0_state").status)
+        assertEquals(EvidenceReasonCode("sim_pin_required"), slotEvidence.getValue("sim.slot_0_state").reason)
+        assertEquals(DiagnosticStatus.FAIL, slotEvidence.getValue("sim.slot_1_state").status)
+        assertEquals(EvidenceReasonCode("sim_card_io_error"), slotEvidence.getValue("sim.slot_1_state").reason)
     }
 
     @Test
@@ -285,6 +350,34 @@ class RunAllSnapshotMapperTest {
     }
 
     @Test
+    fun missingPlatformReadingsAreNotMeasuredAndDoNotPublishBadPlaceholderValues() {
+        val evidence =
+            mappedEvidence(
+                snapshots =
+                    diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                        performance =
+                            performanceInfo().copy(
+                                cpuCores = 0,
+                                totalRamBytes = null,
+                                glRenderer = "",
+                            ),
+                        display = DisplayTestState(info = DisplayInfoState(widthPx = 0, heightPx = 0)),
+                    ),
+            )
+
+        mapOf(
+            "performance.cpu" to "cpu_reading_unavailable",
+            "performance.ram" to "ram_reading_unavailable",
+            "performance.gpu" to "gpu_reading_unavailable",
+            "display.info" to "display_reading_unavailable",
+        ).forEach { (id, reason) ->
+            assertEquals(DiagnosticStatus.NOT_AVAILABLE, evidence.getValue(id).status)
+            assertEquals(EvidenceReasonCode(reason), evidence.getValue(id).reason)
+            assertEquals(null, evidence.getValue(id).value)
+        }
+    }
+
+    @Test
     fun sensorEvidenceNamesEveryGuidedSensorAndOnlyPassesCompletedTests() {
         val guidedTests =
             GuidedSensorCatalog
@@ -309,7 +402,7 @@ class RunAllSnapshotMapperTest {
                                     sensorCount = 2,
                                 ),
                         ),
-                    manual = ManualCheckResults(sensors = true),
+                    manual = ManualCheckResults(sensorsCompleted = true),
                     permissions = RunAllPermissions(),
                     capturedAt = Instant.parse("2026-08-08T12:00:00Z"),
                 ).single { it.categoryId == DiagnosticCategoryId.SENSORS }
@@ -324,11 +417,34 @@ class RunAllSnapshotMapperTest {
             assertEquals("samples", unit?.value)
         }
         assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue("sensors.light").status)
-        assertEquals(EvidenceReasonCode.SKIPPED, evidence.getValue("sensors.light").reason)
+        assertEquals(EvidenceReasonCode("test_skipped"), evidence.getValue("sensors.light").reason)
         assertEquals(DiagnosticStatus.NOT_AVAILABLE, evidence.getValue("sensors.gyroscope").status)
         assertEquals(EvidenceSource.DERIVED, evidence.getValue("sensors.orientation").source)
         assertEquals(DiagnosticStatus.INFO, evidence.getValue("sensors.orientation").status)
         assertEquals(EvidenceSource.AUTOMATIC_MEASUREMENT, evidence.getValue("sensors.motion").source)
+    }
+
+    @Test
+    fun cameraAndSensorApiErrorsAreMeasurementFailuresInsteadOfDeviceFaults() {
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots =
+                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                            camera = CameraTestState(error = "camera_operation_failed"),
+                            sensors = SensorTestState(error = "sensor_listener_error"),
+                        ),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(camera = true),
+                    hardware = RunAllHardwareProfile.ALL_AVAILABLE,
+                    capturedAt = Instant.parse("2026-08-08T12:00:00Z"),
+                ).flatMap { it.evidence }
+                .associateBy { it.checkId.value }
+
+        assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue("camera.capture").status)
+        assertEquals(EvidenceReasonCode("camera_measurement_error"), evidence.getValue("camera.capture").reason)
+        assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue("sensors.motion").status)
+        assertEquals(EvidenceReasonCode("sensor_measurement_error"), evidence.getValue("sensors.motion").reason)
     }
 
     @Test
@@ -392,7 +508,7 @@ class RunAllSnapshotMapperTest {
     }
 
     @Test
-    fun gpsTimeoutIsADegradedObservationInsteadOfAHardwareFailureClaim() {
+    fun gpsTimeoutIsNotMeasuredInsteadOfAHardwareFailureClaim() {
         val evidence =
             RunAllSnapshotMapper
                 .map(
@@ -416,9 +532,45 @@ class RunAllSnapshotMapperTest {
                 .associateBy { it.checkId.value }
                 .getValue("connectivity.gps")
 
-        assertEquals(DiagnosticStatus.WARNING, evidence.status)
+        assertEquals(DiagnosticStatus.NOT_TESTED, evidence.status)
         assertEquals(Confidence.LOW, evidence.confidence)
-        assertEquals(EvidenceReasonCode.TIMEOUT, evidence.reason)
+        assertEquals(EvidenceReasonCode("gps_timeout"), evidence.reason)
+    }
+
+    @Test
+    fun gpsDisabledAndStartFailureAreNotMeasuredWithActionableReasons() {
+        val base = diagnosticSnapshotsWithSensitiveConnectivity()
+        val disabled =
+            mappedEvidence(
+                snapshots =
+                    base.copy(
+                        connectivity =
+                            ConnectivityTestState(
+                                gps = GpsState(isAvailable = true, isEnabled = false),
+                            ),
+                    ),
+            ).getValue("connectivity.gps")
+        assertEquals(DiagnosticStatus.NOT_TESTED, disabled.status)
+        assertEquals(EvidenceReasonCode("gps_disabled"), disabled.reason)
+
+        val startFailed =
+            mappedEvidence(
+                snapshots =
+                    base.copy(
+                        connectivity =
+                            ConnectivityTestState(
+                                gps =
+                                    GpsState(
+                                        isAvailable = true,
+                                        isEnabled = true,
+                                        fixStatus = GpsFixStatus.FAILED,
+                                        failure = GpsFailureCode.START_FAILED,
+                                    ),
+                            ),
+                    ),
+            ).getValue("connectivity.gps")
+        assertEquals(DiagnosticStatus.NOT_TESTED, startFailed.status)
+        assertEquals(EvidenceReasonCode("gps_start_failed"), startFailed.reason)
     }
 
     @Test
@@ -436,9 +588,15 @@ class RunAllSnapshotMapperTest {
         listOf("battery.health", "battery.temperature", "battery.level", "battery.current_now").forEach { id ->
             assertEquals(DiagnosticStatus.NOT_AVAILABLE, evidence.getValue(id).status)
             assertEquals(Confidence.UNAVAILABLE, evidence.getValue(id).confidence)
-            assertEquals(null, evidence.getValue(id).reason)
             assertEquals(null, evidence.getValue(id).value)
         }
+        assertEquals(EvidenceReasonCode("battery_health_unavailable"), evidence.getValue("battery.health").reason)
+        assertEquals(
+            EvidenceReasonCode("battery_temperature_unavailable"),
+            evidence.getValue("battery.temperature").reason,
+        )
+        assertEquals(EvidenceReasonCode("value_not_exposed"), evidence.getValue("battery.level").reason)
+        assertEquals(EvidenceReasonCode("value_not_exposed"), evidence.getValue("battery.current_now").reason)
         assertEquals(
             EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED,
             evidence.getValue("battery.cycle_count").reason,
@@ -504,6 +662,36 @@ class RunAllSnapshotMapperTest {
     }
 
     @Test
+    fun batteryFaultAndCurrentTemperatureNoteRemainDistinct() {
+        val evidence =
+            mappedEvidence(
+                snapshots =
+                    diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                        battery =
+                            BatteryTestState(
+                                basic =
+                                    BasicBatteryState(
+                                        temperatureCelsius = 50f,
+                                        healthStatus = android.os.BatteryManager.BATTERY_HEALTH_GOOD,
+                                    ),
+                                health =
+                                    HealthState(
+                                        healthStatusRaw = android.os.BatteryManager.BATTERY_HEALTH_DEAD,
+                                    ),
+                            ),
+                    ),
+            )
+
+        assertEquals(DiagnosticStatus.FAIL, evidence.getValue("battery.health").status)
+        assertEquals(EvidenceReasonCode("battery_dead"), evidence.getValue("battery.health").reason)
+        assertEquals(DiagnosticStatus.WARNING, evidence.getValue("battery.temperature").status)
+        assertEquals(
+            EvidenceReasonCode("battery_temperature_critical"),
+            evidence.getValue("battery.temperature").reason,
+        )
+    }
+
+    @Test
     fun unsupportedThermalApiIsDifferentFromANormalThermalObservation() {
         val unsupported =
             RunAllSnapshotMapper
@@ -541,7 +729,7 @@ class RunAllSnapshotMapperTest {
                 ).flatMap { it.evidence }
                 .associateBy { it.checkId.value }
 
-        assertEquals(DiagnosticStatus.INFO, normal.getValue("thermal.status").status)
+        assertEquals(DiagnosticStatus.PASS, normal.getValue("thermal.status").status)
         assertEquals(EvidenceValue.StableTextCodeValue("none"), normal.getValue("thermal.status").value)
         assertEquals(
             EvidenceValue.DoubleValue(32.0),
@@ -550,7 +738,7 @@ class RunAllSnapshotMapperTest {
     }
 
     @Test
-    fun thermalHeadroomIsInformationalAndSevereStatusIsARealFailure() {
+    fun thermalHeadroomIsInformationalAndSevereStatusIsProminentNoted() {
         val evidence =
             RunAllSnapshotMapper
                 .map(
@@ -573,8 +761,11 @@ class RunAllSnapshotMapperTest {
                 ).flatMap { it.evidence }
                 .associateBy { it.checkId.value }
 
-        assertEquals(DiagnosticStatus.FAIL, evidence.getValue("thermal.status").status)
-        assertEquals(EvidenceReasonCode.DEGRADED, evidence.getValue("thermal.status").reason)
+        assertEquals(DiagnosticStatus.WARNING, evidence.getValue("thermal.status").status)
+        assertEquals(
+            EvidenceReasonCode("thermal_severe_without_app_load"),
+            evidence.getValue("thermal.status").reason,
+        )
         assertEquals(DiagnosticStatus.INFO, evidence.getValue("thermal.headroom").status)
         assertEquals(Confidence.LOW, evidence.getValue("thermal.headroom").confidence)
         assertEquals(EvidenceValue.DoubleValue(1.1), evidence.getValue("thermal.headroom").value)
@@ -629,11 +820,37 @@ class RunAllSnapshotMapperTest {
         assertEquals(Confidence.LOW, evidence.getValue("storage.sequential_write").confidence)
         assertEquals(EvidenceValue.DoubleValue(120.0), evidence.getValue("storage.sequential_write").value)
         assertEquals(EvidenceValue.DoubleValue(240.0), evidence.getValue("storage.sequential_read").value)
-        assertEquals(EvidenceValue.BooleanValue(true), evidence.getValue("storage.benchmark_cleanup").value)
+        assertFalse(evidence.containsKey("storage.benchmark_cleanup"))
         assertEquals(
             EvidenceValue.StableTextCodeValue("app_cache"),
             evidence.getValue("storage.benchmark_location").value,
         )
+    }
+
+    @Test
+    fun failedTemporaryFileCleanupDoesNotBecomeDeviceEvidence() {
+        val capturedAt = Instant.parse("2026-08-08T12:00:00Z")
+        val result =
+            storageBenchmarkResult(capturedAt).copy(
+                cleanupSucceeded = false,
+                error = StorageBenchmarkErrorCode.CLEANUP_FAILED,
+            )
+        val evidence =
+            mappedEvidence(
+                snapshots =
+                    diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                        storage =
+                            StorageTestState(
+                                benchmarkPhase = StorageBenchmarkPhase.ERROR,
+                                benchmarkResult = result,
+                                benchmarkError = StorageBenchmarkErrorCode.CLEANUP_FAILED,
+                            ),
+                    ),
+                capturedAt = capturedAt,
+            )
+
+        assertEquals(DiagnosticStatus.INFO, evidence.getValue("storage.sequential_write").status)
+        assertFalse(evidence.containsKey("storage.benchmark_cleanup"))
     }
 
     @Test
@@ -736,7 +953,7 @@ class RunAllSnapshotMapperTest {
             )
 
         assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue("buttons.volume").status)
-        assertEquals(EvidenceReasonCode.TIMEOUT, evidence.getValue("buttons.volume").reason)
+        assertEquals(EvidenceReasonCode("button_test_timeout"), evidence.getValue("buttons.volume").reason)
     }
 
     @Test
@@ -756,7 +973,7 @@ class RunAllSnapshotMapperTest {
             RunAllSnapshotMapper
                 .map(
                     snapshots = diagnosticSnapshotsWithSensitiveConnectivity().copy(biometrics = biometrics),
-                    manual = ManualCheckResults(biometrics = true),
+                    manual = ManualCheckResults(),
                     permissions = RunAllPermissions(),
                     capturedAt = Instant.parse("2026-08-08T12:00:00Z"),
                 ).flatMap { it.evidence }
@@ -811,7 +1028,7 @@ class RunAllSnapshotMapperTest {
                     ),
             )
 
-        assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue("biometrics.authentication").status)
+        assertEquals(DiagnosticStatus.WARNING, evidence.getValue("biometrics.authentication").status)
         assertEquals(EvidenceReasonCode.BIOMETRIC_LOCKOUT, evidence.getValue("biometrics.authentication").reason)
     }
 
@@ -835,10 +1052,10 @@ class RunAllSnapshotMapperTest {
                 ).flatMap { it.evidence }
                 .associateBy { it.checkId.value }
 
-        assertEquals(EvidenceReasonCode.SKIPPED, skipped.getValue("audio.speaker").reason)
-        assertEquals(EvidenceReasonCode.SKIPPED, skipped.getValue("audio.microphone").reason)
-        assertEquals(EvidenceReasonCode.SKIPPED, skipped.getValue("camera.capture").reason)
-        assertEquals(EvidenceReasonCode.SKIPPED, skipped.getValue("storage.sequential_write").reason)
+        assertEquals(EvidenceReasonCode("test_skipped"), skipped.getValue("audio.speaker").reason)
+        assertEquals(EvidenceReasonCode("test_skipped"), skipped.getValue("audio.microphone").reason)
+        assertEquals(EvidenceReasonCode("test_skipped"), skipped.getValue("camera.capture").reason)
+        assertEquals(EvidenceReasonCode("test_skipped"), skipped.getValue("storage.sequential_write").reason)
 
         val denied =
             RunAllSnapshotMapper
@@ -900,8 +1117,8 @@ class RunAllSnapshotMapperTest {
                 ).flatMap { it.evidence }
                 .associateBy { it.checkId.value }
 
-        assertEquals(EvidenceReasonCode.TIMEOUT, evidence.getValue("display.visual").reason)
-        assertEquals(EvidenceReasonCode.SKIPPED, evidence.getValue("audio.speaker").reason)
+        assertEquals(EvidenceReasonCode("measurement_timeout"), evidence.getValue("display.visual").reason)
+        assertEquals(EvidenceReasonCode("test_skipped"), evidence.getValue("audio.speaker").reason)
         assertEquals(DiagnosticStatus.NOT_AVAILABLE, evidence.getValue("camera.capture").status)
         assertEquals(EvidenceReasonCode.HARDWARE_UNAVAILABLE, evidence.getValue("camera.capture").reason)
         assertEquals(EvidenceSource.ANDROID_API, evidence.getValue("camera.capture").source)
@@ -988,6 +1205,19 @@ class RunAllSnapshotMapperTest {
             dataNetworkType = NetworkGenerationCode.UNKNOWN,
             phoneStatePermissionGranted = false,
         )
+
+    private fun simSlot(
+        slotIndex: Int,
+        state: SimSlotStateCode,
+    ) = SimSlotInfo(
+        slotIndex = slotIndex,
+        state = state,
+        activity = SimActivityCode.ACTIVE,
+        formFactor = SimFormFactorCode.PHYSICAL,
+        operatorName = null,
+        countryIso = null,
+        networkType = NetworkGenerationCode.UNKNOWN,
+    )
 
     private fun deviceInfo(rootArtifactDetected: Boolean = false) =
         testDeviceInfo(rootArtifactDetected = rootArtifactDetected)

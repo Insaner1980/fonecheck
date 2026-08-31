@@ -3,19 +3,14 @@ package com.insaner.fonecheck.ui.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.permission.PermissionState
-import com.insaner.fonecheck.ui.theme.Green400
-import com.insaner.fonecheck.ui.theme.Neutral500
-import com.insaner.fonecheck.ui.theme.Yellow400
+import com.insaner.fonecheck.ui.classification.classifyPermission
+import com.insaner.fonecheck.ui.theme.FonecheckTheme
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 
 @Composable
 fun PermissionStatusCard(
@@ -25,53 +20,46 @@ fun PermissionStatusCard(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    SectionBox(modifier = modifier) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            StatusBadge(
-                text = permissionStatusText(state),
-                color =
-                    when (state) {
-                        PermissionState.GRANTED -> Green400
-                        PermissionState.DENIED,
-                        PermissionState.SETTINGS_RECOVERY,
-                        PermissionState.PARTIAL,
-                        -> Yellow400
-                        else -> Neutral500
-                    },
-            )
+    val classification = classifyPermission(state)
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
+    ) {
+        SectionHeader(stringResource(R.string.permission_section_title))
+        StatusText(
+            text = permissionStatusText(state),
+            tone = classification.toSemanticTone(),
+        )
+        ObservationReasonNote(classification)
 
-            if (state.showsRationale()) {
-                Text(
-                    text = rationale,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            when (state) {
-                PermissionState.NOT_REQUESTED ->
-                    PermissionButton(
-                        text = stringResource(R.string.permission_action_allow),
-                        onClick = onRequest,
-                    )
-                PermissionState.DENIED ->
-                    PermissionButton(
-                        text = stringResource(R.string.permission_action_retry),
-                        onClick = onRequest,
-                    )
-                PermissionState.SETTINGS_RECOVERY,
-                PermissionState.PARTIAL,
-                ->
-                    PermissionButton(
-                        text = stringResource(R.string.permission_action_open_settings),
-                        onClick = onOpenSettings,
-                    )
-                PermissionState.GRANTED,
-                PermissionState.NOT_REQUIRED,
-                PermissionState.HARDWARE_ABSENT,
-                -> Unit
-            }
+        if (state.showsRationale()) {
+            Note(rationale)
         }
+
+        when (state) {
+            PermissionState.NOT_REQUESTED ->
+                PermissionButton(
+                    text = stringResource(R.string.permission_action_allow),
+                    onClick = onRequest,
+                )
+            PermissionState.DENIED ->
+                PermissionButton(
+                    text = stringResource(R.string.permission_action_retry),
+                    onClick = onRequest,
+                )
+            PermissionState.SETTINGS_RECOVERY,
+            PermissionState.PARTIAL,
+            ->
+                PermissionButton(
+                    text = stringResource(R.string.permission_action_open_settings),
+                    onClick = onOpenSettings,
+                )
+            PermissionState.GRANTED,
+            PermissionState.NOT_REQUIRED,
+            PermissionState.HARDWARE_ABSENT,
+            -> Unit
+        }
+        HairlineRule()
     }
 }
 
@@ -93,16 +81,11 @@ private fun PermissionButton(
     text: String,
     onClick: () -> Unit,
 ) {
-    Button(
+    PrimaryButton(
+        label = text,
         onClick = onClick,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(top = 2.dp),
-        shape = MaterialTheme.shapes.medium,
-    ) {
-        Text(text)
-    }
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 @Composable

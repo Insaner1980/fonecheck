@@ -77,7 +77,7 @@ class ReportDetailScreenTest {
         assertCategoryStatus(DiagnosticCategoryId.SIM, R.string.run_all_status_info)
         assertCategoryStatus(DiagnosticCategoryId.STORAGE, R.string.run_all_status_fail)
         assertCategoryStatus(DiagnosticCategoryId.CAMERA, R.string.run_all_status_unavailable)
-        assertCategoryStatus(DiagnosticCategoryId.AUDIO, R.string.run_all_status_not_tested)
+        assertCategoryStatus(DiagnosticCategoryId.AUDIO, R.string.status_not_measured)
         composeRule
             .onNodeWithText(context.getString(R.string.report_retest))
             .performScrollTo()

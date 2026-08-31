@@ -3,19 +3,11 @@ package com.insaner.fonecheck.ui.screens.onboarding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,15 +18,18 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.PrimaryButton
 import com.insaner.fonecheck.ui.components.ScreenStateCard
 import com.insaner.fonecheck.ui.components.ScreenStateType
-import com.insaner.fonecheck.ui.components.SectionBox
+import com.insaner.fonecheck.ui.components.SecondaryButton
+import com.insaner.fonecheck.ui.components.StrongRule
+import com.insaner.fonecheck.ui.components.TestScreenContent
+import com.insaner.fonecheck.ui.format.uiNumber
+import com.insaner.fonecheck.ui.theme.FonecheckTheme
 
 @Composable
 fun OnboardingRoute(
@@ -61,7 +56,6 @@ fun OnboardingRoute(
 }
 
 @Composable
-@Suppress("kotlin:S3776") // Page-specific controls are mutually exclusive declarative states.
 fun OnboardingScreen(
     state: OnboardingState,
     onPrevious: () -> Unit,
@@ -73,103 +67,107 @@ fun OnboardingScreen(
     val pageIndex = state.pageIndex.coerceIn(0, OnboardingPage.entries.lastIndex)
     val page = OnboardingPage.entries[pageIndex]
     val isLastPage = pageIndex == OnboardingPage.entries.lastIndex
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.onboarding_progress, pageIndex + 1, OnboardingPage.entries.size),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            TextButton(
-                onClick = onSkip,
-                enabled = !state.isSaving,
-                modifier = Modifier.testTag("onboarding_skip"),
-            ) {
-                Text(stringResource(R.string.onboarding_skip))
+    val progress = (pageIndex + 1).toFloat() / OnboardingPage.entries.size
+
+    TestScreenContent(modifier = modifier) {
+        item {
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom,
+                ) {
+                    Text(
+                        text = stringResource(page.titleResId),
+                        style = FonecheckTheme.type.screenTitle,
+                        color = FonecheckTheme.colors.textPrimary,
+                        modifier = Modifier.weight(1f).semantics { heading() },
+                    )
+                    Text(
+                        text =
+                            stringResource(
+                                R.string.onboarding_progress,
+                                uiNumber(pageIndex + 1),
+                                uiNumber(OnboardingPage.entries.size),
+                            ),
+                        style = FonecheckTheme.type.sectionLabel,
+                        color = FonecheckTheme.colors.textMuted,
+                        modifier = Modifier.padding(start = FonecheckTheme.spacing.sm),
+                    )
+                }
+                StrongRule()
             }
         }
-        LinearProgressIndicator(
-            progress = { (pageIndex + 1).toFloat() / OnboardingPage.entries.size },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-        Text(
-            text = stringResource(page.titleResId),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.fillMaxWidth().semantics { heading() },
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = stringResource(page.bodyResId),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center,
-        )
+        item {
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth().height(FonecheckTheme.spacing.segmentHeight),
+                color = FonecheckTheme.colors.primaryButtonBackground,
+                trackColor = FonecheckTheme.colors.segmentTrack,
+            )
+        }
+        item {
+            Text(
+                text = stringResource(page.bodyResId),
+                style = FonecheckTheme.type.rowLabel,
+                color = FonecheckTheme.colors.textSecondary,
+            )
+        }
         if (page == OnboardingPage.PRIVACY || page == OnboardingPage.PERMISSIONS) {
-            SectionBox {
-                Text(
-                    text =
-                        stringResource(
-                            if (page == OnboardingPage.PRIVACY) {
-                                R.string.onboarding_privacy_note
-                            } else {
-                                R.string.onboarding_permissions_note
-                            },
-                        ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
+            item {
+                Note(
+                    stringResource(
+                        if (page == OnboardingPage.PRIVACY) {
+                            R.string.onboarding_privacy_note
+                        } else {
+                            R.string.onboarding_permissions_note
+                        },
+                    ),
                 )
             }
         }
         if (state.saveFailed) {
-            ScreenStateCard(
-                type = ScreenStateType.ERROR,
-                message = stringResource(R.string.onboarding_save_error),
-                actionLabel = stringResource(R.string.onboarding_retry),
-                onAction = onComplete,
-            )
-        }
-        Spacer(modifier = Modifier.height(20.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            OutlinedButton(
-                onClick = onPrevious,
-                enabled = pageIndex > 0 && !state.isSaving,
-                modifier = Modifier.weight(1f).testTag("onboarding_previous"),
-            ) {
-                Text(stringResource(R.string.onboarding_previous))
+            item {
+                ScreenStateCard(
+                    type = ScreenStateType.ERROR,
+                    message = stringResource(R.string.onboarding_save_error),
+                    actionLabel = stringResource(R.string.onboarding_retry),
+                    onAction = onComplete,
+                )
             }
-            Button(
-                onClick = if (isLastPage) onComplete else onNext,
-                enabled = !state.isSaving,
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .testTag(if (isLastPage) "onboarding_complete" else "onboarding_next"),
+        }
+        item {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
             ) {
-                Text(
-                    stringResource(
-                        when {
-                            state.isSaving -> R.string.onboarding_saving
-                            isLastPage -> R.string.onboarding_start
-                            else -> R.string.onboarding_next
-                        },
-                    ),
+                PrimaryButton(
+                    label =
+                        stringResource(
+                            when {
+                                state.isSaving -> R.string.onboarding_saving
+                                isLastPage -> R.string.onboarding_start
+                                else -> R.string.onboarding_next
+                            },
+                        ),
+                    onClick = if (isLastPage) onComplete else onNext,
+                    enabled = !state.isSaving,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .testTag(if (isLastPage) "onboarding_complete" else "onboarding_next"),
+                )
+                SecondaryButton(
+                    label = stringResource(R.string.onboarding_previous),
+                    onClick = onPrevious,
+                    enabled = pageIndex > 0 && !state.isSaving,
+                    modifier = Modifier.fillMaxWidth().testTag("onboarding_previous"),
+                )
+                SecondaryButton(
+                    label = stringResource(R.string.onboarding_skip),
+                    onClick = onSkip,
+                    enabled = !state.isSaving,
+                    modifier = Modifier.fillMaxWidth().testTag("onboarding_skip"),
                 )
             }
         }

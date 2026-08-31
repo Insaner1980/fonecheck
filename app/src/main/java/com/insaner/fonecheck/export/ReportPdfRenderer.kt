@@ -166,8 +166,8 @@ class ReportPdfRenderer
                 durationValue = {
                     context.getString(
                         R.string.report_duration_value,
-                        it.toMinutes(),
-                        it.seconds % 60,
+                        it.toMinutes().toString(),
+                        (it.seconds % 60).toString(),
                     )
                 },
             )
@@ -208,7 +208,7 @@ private fun DiagnosticStatus.labelResource(): Int =
         DiagnosticStatus.WARNING -> R.string.run_all_status_warning
         DiagnosticStatus.INFO -> R.string.run_all_status_info
         DiagnosticStatus.NOT_AVAILABLE -> R.string.run_all_status_unavailable
-        DiagnosticStatus.NOT_TESTED -> R.string.run_all_status_not_tested
+        DiagnosticStatus.NOT_TESTED -> R.string.status_not_measured
     }
 
 private fun ScoreState.labelResource(): Int =

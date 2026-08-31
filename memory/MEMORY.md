@@ -1,5 +1,14 @@
 # fonecheck Architecture Memory
 
+## Visual foundation (instrument redesign)
+
+- `FonecheckTheme` is the single entry point for design tokens: `.colors` (roles, theme-dependent, via `LocalFonecheckColors`), `.type` (`FonecheckType` roles) and `.spacing` (`FonecheckSpacing`, 8dp grid). Both themes are fully custom and Material dynamic colour is never used.
+- The Material `ColorScheme` and `Typography` are *derived* from those roles, not defined separately, so there is one palette and one type scale. Every Material surface and container level collapses onto the background and `surfaceTint` is transparent: there are no cards, no elevation and no shadows.
+- Screens pass a `SemanticTone` (NEUTRAL / PASS / ATTENTION / FAIL), never a `Color`. `DiagnosticStatus.toSemanticTone()` is the only mapping from a diagnostic outcome to a visual role.
+- The foundation components are `SectionHeader`, `DataRow`, `LongValueRow`, `StatusText`, `Note`, `PrimaryButton`, `SecondaryButton`, `SegmentedBar`, `HairlineRule` and `StrongRule`.
+- The redesign is a screen-by-screen migration in progress. The theme switched over in one step, so unmigrated screens still render their old cards, radii and hardcoded `Neutral*` colours on the new background — that roughness is the migration tracker and must not be patched screen by screen. Legacy tokens, `readableStatusColor`, the old card components and the bold font weights are each deleted in the same task that migrates the last screen using them.
+- `app/src/debug/.../ui/preview/FoundationPreviews.kt` is the light and dark specimen sheet for the whole foundation. It is debug-only and never reaches a release build.
+
 ## Automatic run-all diagnostics
 
 - `navigation/DiagnosticDestinations.kt` is the single source of truth for the Home category grid and category metadata used by the result report.

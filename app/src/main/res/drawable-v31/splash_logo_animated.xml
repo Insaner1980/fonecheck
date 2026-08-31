@@ -5,7 +5,10 @@
         android:name="f_group"
         android:animation="@animator/splash_f_motion" />
     <target
-        android:name="f_path"
+        android:name="f_body_path"
+        android:animation="@animator/splash_logo_fade" />
+    <target
+        android:name="f_crossbar_path"
         android:animation="@animator/splash_logo_fade" />
     <target
         android:name="check_group"

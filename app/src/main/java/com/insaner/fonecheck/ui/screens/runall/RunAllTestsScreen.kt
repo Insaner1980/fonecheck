@@ -497,7 +497,7 @@ fun RunAllTestsScreen(
 
     LaunchedEffect(sessionState.stageToken, sensorState.challenge.completed) {
         if (sessionState.stage == RunAllStage.SENSORS && sensorState.challenge.completed) {
-            sessionViewModel.recordSensors(sessionState.stageToken, true)
+            sessionViewModel.recordSensorsPassed(sessionState.stageToken)
         }
     }
 
@@ -526,7 +526,7 @@ fun RunAllTestsScreen(
 
                 else -> return@LaunchedEffect
             }
-        sessionViewModel.recordBiometrics(sessionState.stageToken, succeeded.takeIf { it }, outcome)
+        sessionViewModel.recordBiometricOutcome(sessionState.stageToken, outcome)
     }
 
     DisposableEffect(sessionState.stageToken) {

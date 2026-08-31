@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -44,8 +45,8 @@ class OnboardingScreenTest {
         }
 
         composeRule.onNodeWithText(context.getString(R.string.onboarding_welcome_title)).assertIsDisplayed()
-        composeRule.onNodeWithTag("onboarding_next").performClick()
-        composeRule.onNodeWithTag("onboarding_skip").performClick()
+        composeRule.onNodeWithTag("onboarding_next").performScrollTo().performClick()
+        composeRule.onNodeWithTag("onboarding_skip").performScrollTo().performClick()
         assertTrue(next && skipped)
     }
 

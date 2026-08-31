@@ -50,6 +50,13 @@ android {
         compose = true
     }
 
+    bundle {
+        language {
+            // Both languages must be available to the in-app picker without a download.
+            enableSplit = false
+        }
+    }
+
     room {
         schemaDirectory("$projectDir/schemas")
     }
@@ -159,6 +166,8 @@ dependencyCheck {
 
 dependencies {
     detektPlugins(libs.compose.rules.detekt)
+    // ktlint 1.8.0 depends on the EOL Logback 1.3.x line.
+    add("ktlint", libs.logback.classic)
     ktlintRuleset(libs.compose.rules.ktlint)
     lintChecks(libs.android.security.lints)
 
@@ -168,6 +177,7 @@ dependencies {
     implementation(libs.androidx.startup.runtime)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.appcompat)
 
     // Compose
     implementation(platform(libs.androidx.compose.bom))
