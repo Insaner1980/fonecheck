@@ -11,10 +11,10 @@
 ## Build System
 - Kotlin DSL (`build.gradle.kts`)
 - Version catalog (`gradle/libs.versions.toml`)
-- Kotlin 2.4.10, AGP 9.3.1, Gradle 9.7.0
+- Kotlin 2.4.10, AGP 9.3.2, Gradle 9.7.0
 
 ## Key Dependencies
-- Compose BOM 2026.06.01
+- Compose BOM 2026.08.00
 - Material 3 (+ explicit material-icons-core)
 - Hilt 2.60.1 (KSP 2.3.11)
 - Room 2.8.4 (room-ktx merged into room-runtime)
