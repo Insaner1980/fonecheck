@@ -254,6 +254,7 @@
             <trusting group="com.google.googlejavaformat" name="google-java-format-parent" version="1.33.0"/>
          </trusted-key>
          <trusted-key id="F3184BCD55F4D016E30D4C9BF42E87F9665015C9" group="org.jsoup" name="jsoup" version="1.23.1"/>
+         <trusted-key id="F3184BCD55F4D016E30D4C9BF42E87F9665015C9" group="org.jsoup" name="jsoup" version="1.23.2"/>
          <trusted-key id="F32AF916B428B465924FD322EC18C9AA545D8960" group="io.nlopez.compose.rules"/>
          <trusted-key id="F4DD59C90148BDC52BEB90A4530AA5F25C25011F">
             <trusting group="commons-io"/>
