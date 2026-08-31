@@ -2,11 +2,130 @@ package com.insaner.fonecheck.localization
 
 import androidx.annotation.StringRes
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
+import com.insaner.fonecheck.domain.observation.NotMeasuredKind
+import com.insaner.fonecheck.domain.observation.ObservationClassification
+import com.insaner.fonecheck.domain.observation.ObservationReason
+import com.insaner.fonecheck.domain.observation.ObservationState
 
 @StringRes
 fun evidenceReasonStringRes(reason: EvidenceReasonCode): Int? =
+    ObservationReason.entries
+        .firstOrNull { it.stableCode == reason.value }
+        ?.let(::observationReasonStringRes)
+        ?: legacyEvidenceReasonStringRes(reason)
+
+internal fun EvidenceReasonCode.isRestatedByNotMeasuredValue(): Boolean =
+    this == EvidenceReasonCode.NOT_RUN || value == ObservationReason.TEST_NOT_RUN.stableCode
+
+internal fun shouldShowEvidenceReason(
+    status: DiagnosticStatus,
+    reason: EvidenceReasonCode,
+): Boolean = status != DiagnosticStatus.NOT_TESTED || !reason.isRestatedByNotMeasuredValue()
+
+@StringRes
+@Suppress("CyclomaticComplexMethod") // Exhaustive mapping keeps every observation reason compile-time checked.
+fun observationReasonStringRes(reason: ObservationReason): Int =
+    when (reason) {
+        ObservationReason.ROOT_ARTIFACT_PRESENT -> R.string.device_root_finding_note
+        ObservationReason.DEVELOPER_OPTIONS_ENABLED -> R.string.device_developer_options_note
+        ObservationReason.USB_DEBUGGING_ENABLED -> R.string.device_usb_debugging_note
+        ObservationReason.SERIAL_RESTRICTED -> R.string.device_serial_restricted_note
+        ObservationReason.CPU_READING_UNAVAILABLE -> R.string.observation_reason_cpu_reading_unavailable
+        ObservationReason.RAM_READING_UNAVAILABLE -> R.string.observation_reason_ram_reading_unavailable
+        ObservationReason.GPU_READING_UNAVAILABLE -> R.string.observation_reason_gpu_reading_unavailable
+        ObservationReason.DISPLAY_READING_UNAVAILABLE -> R.string.observation_reason_display_reading_unavailable
+        ObservationReason.SIM_INVENTORY_UNKNOWN -> R.string.observation_reason_sim_inventory_unknown
+        ObservationReason.SIM_NOT_PRESENT -> R.string.observation_reason_sim_not_present
+        ObservationReason.SIM_INACTIVE -> R.string.observation_reason_sim_inactive
+        ObservationReason.SIM_SLOT_UNKNOWN -> R.string.observation_reason_sim_slot_unknown
+        ObservationReason.SIM_NETWORK_LOCKED -> R.string.observation_reason_sim_network_locked
+        ObservationReason.SIM_PIN_REQUIRED -> R.string.observation_reason_sim_pin_required
+        ObservationReason.SIM_PUK_REQUIRED -> R.string.observation_reason_sim_puk_required
+        ObservationReason.SIM_NOT_READY -> R.string.observation_reason_sim_not_ready
+        ObservationReason.SIM_PERMANENTLY_DISABLED -> R.string.observation_reason_sim_permanently_disabled
+        ObservationReason.SIM_CARD_IO_ERROR -> R.string.observation_reason_sim_card_io_error
+        ObservationReason.SIM_CARD_RESTRICTED -> R.string.observation_reason_sim_card_restricted
+        ObservationReason.CAMERA_MEASUREMENT_ERROR -> R.string.observation_reason_camera_measurement_error
+        ObservationReason.SENSOR_MEASUREMENT_ERROR -> R.string.observation_reason_sensor_measurement_error
+        ObservationReason.GPS_DISABLED -> R.string.observation_reason_gps_disabled
+        ObservationReason.GPS_NOT_RUN -> R.string.observation_reason_gps_not_run
+        ObservationReason.GPS_IN_PROGRESS -> R.string.observation_reason_gps_in_progress
+        ObservationReason.GPS_TIMEOUT -> R.string.observation_reason_gps_timeout
+        ObservationReason.GPS_START_FAILED -> R.string.observation_reason_gps_start_failed
+        ObservationReason.BATTERY_HEALTH_UNAVAILABLE -> R.string.observation_reason_battery_health_unavailable
+        ObservationReason.BATTERY_OVERHEAT -> R.string.observation_reason_battery_overheat
+        ObservationReason.BATTERY_DEAD -> R.string.observation_reason_battery_dead
+        ObservationReason.BATTERY_OVER_VOLTAGE -> R.string.observation_reason_battery_over_voltage
+        ObservationReason.BATTERY_UNSPECIFIED_FAILURE ->
+            R.string.observation_reason_battery_unspecified_failure
+        ObservationReason.BATTERY_COLD -> R.string.observation_reason_battery_cold
+        ObservationReason.BATTERY_TEMPERATURE_UNAVAILABLE ->
+            R.string.observation_reason_battery_temperature_unavailable
+        ObservationReason.BATTERY_TEMPERATURE_COLD -> R.string.observation_reason_battery_temperature_cold
+        ObservationReason.BATTERY_TEMPERATURE_HIGH -> R.string.observation_reason_battery_temperature_high
+        ObservationReason.BATTERY_TEMPERATURE_CRITICAL ->
+            R.string.observation_reason_battery_temperature_critical
+        ObservationReason.THERMAL_STATUS_UNAVAILABLE -> R.string.observation_reason_thermal_status_unavailable
+        ObservationReason.THERMAL_MANAGEMENT_ACTIVE -> R.string.observation_reason_thermal_management_active
+        ObservationReason.THERMAL_SEVERE_WITHOUT_APP_LOAD ->
+            R.string.observation_reason_thermal_severe_without_app_load
+        ObservationReason.BUTTON_TEST_NOT_RUN -> R.string.observation_reason_button_test_not_run
+        ObservationReason.BUTTON_TEST_IN_PROGRESS -> R.string.observation_reason_button_test_in_progress
+        ObservationReason.BUTTON_TEST_TIMEOUT -> R.string.observation_reason_button_test_timeout
+        ObservationReason.BIOMETRIC_NOT_RUN -> R.string.observation_reason_biometric_not_run
+        ObservationReason.BIOMETRIC_IN_PROGRESS -> R.string.observation_reason_biometric_in_progress
+        ObservationReason.BIOMETRIC_NOT_RECOGNIZED -> R.string.observation_reason_biometric_not_recognized
+        ObservationReason.BIOMETRIC_CANCELLED -> R.string.observation_reason_biometric_cancelled
+        ObservationReason.BIOMETRIC_LOCKOUT -> R.string.observation_reason_biometric_lockout
+        ObservationReason.BIOMETRIC_NOT_ENROLLED -> R.string.observation_reason_biometric_not_enrolled
+        ObservationReason.BIOMETRIC_SECURITY_UPDATE_REQUIRED ->
+            R.string.observation_reason_biometric_security_update_required
+        ObservationReason.BIOMETRIC_UNAVAILABLE -> R.string.observation_reason_biometric_unavailable
+        ObservationReason.BIOMETRIC_ERROR -> R.string.observation_reason_biometric_error
+        ObservationReason.PERMISSION_NOT_REQUESTED -> R.string.observation_reason_permission_not_requested
+        ObservationReason.PERMISSION_DENIED -> R.string.observation_reason_permission_denied
+        ObservationReason.PERMISSION_OPEN_SETTINGS -> R.string.observation_reason_permission_open_settings
+        ObservationReason.PERMISSION_PARTIAL -> R.string.observation_reason_permission_partial
+        ObservationReason.HARDWARE_UNAVAILABLE -> R.string.observation_reason_hardware_unavailable
+        ObservationReason.VALUE_NOT_EXPOSED -> R.string.observation_reason_value_not_exposed
+        ObservationReason.ANDROID_VERSION_UNSUPPORTED -> R.string.observation_reason_android_version_unsupported
+        ObservationReason.PLATFORM_RESTRICTION -> R.string.observation_reason_platform_restriction
+        ObservationReason.TEST_NOT_RUN -> R.string.observation_reason_test_not_run
+        ObservationReason.MEASUREMENT_IN_PROGRESS -> R.string.observation_reason_measurement_in_progress
+        ObservationReason.TEST_SKIPPED -> R.string.observation_reason_test_skipped
+        ObservationReason.TEST_CANCELLED -> R.string.observation_reason_test_cancelled
+        ObservationReason.MEASUREMENT_TIMEOUT -> R.string.observation_reason_measurement_timeout
+        ObservationReason.MEASUREMENT_ERROR -> R.string.observation_reason_measurement_error
+        ObservationReason.INSUFFICIENT_SPACE -> R.string.observation_reason_insufficient_space
+        ObservationReason.USER_CONFIRMED_DISPLAY_FAILURE ->
+            R.string.observation_reason_user_confirmed_display_failure
+        ObservationReason.USER_CONFIRMED_AUDIO_FAILURE ->
+            R.string.observation_reason_user_confirmed_audio_failure
+        ObservationReason.USER_CONFIRMED_CAMERA_FAILURE ->
+            R.string.observation_reason_user_confirmed_camera_failure
+        ObservationReason.USER_CONFIRMED_VIBRATION_FAILURE ->
+            R.string.observation_reason_user_confirmed_vibration_failure
+    }
+
+@StringRes
+fun observationStatusStringRes(classification: ObservationClassification): Int =
+    when (classification.state) {
+        ObservationState.PASS -> R.string.run_all_status_pass
+        ObservationState.FAULT -> R.string.run_all_status_fail
+        ObservationState.NOTED -> R.string.run_all_status_warning
+        ObservationState.NOT_MEASURED ->
+            if (classification.notMeasuredKind == NotMeasuredKind.UNAVAILABLE) {
+                R.string.run_all_status_unavailable
+            } else {
+                R.string.status_not_measured
+            }
+    }
+
+@StringRes
+private fun legacyEvidenceReasonStringRes(reason: EvidenceReasonCode): Int? =
     when (reason) {
         EvidenceReasonCode.PERMISSION_DENIED -> R.string.run_all_permission_missing
         EvidenceReasonCode.NOT_RUN -> R.string.run_all_summary_not_tested
@@ -53,6 +172,8 @@ private val EVIDENCE_LABEL_RESOURCES =
     mapOf(
         "device.identity" to R.string.device_info_title,
         "device.security" to R.string.label_root_artifact,
+        "device.developer_options" to R.string.label_developer_options,
+        "device.usb_debugging" to R.string.label_usb_debugging,
         "performance.cpu" to R.string.perf_cpu_title,
         "performance.ram" to R.string.perf_ram_title,
         "performance.gpu" to R.string.perf_gpu_title,

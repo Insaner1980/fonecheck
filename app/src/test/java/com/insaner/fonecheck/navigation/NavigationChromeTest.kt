@@ -39,7 +39,7 @@ class NavigationChromeTest {
                 destinationFor<VibrationTest>() to R.string.home_cat_vibration,
                 destinationFor<ButtonTest>() to R.string.home_cat_buttons,
                 destinationFor<BiometricTest>() to R.string.home_cat_biometrics,
-                destinationFor<RunAllTests>() to R.string.home_run_all,
+                destinationFor<RunAllTests>() to R.string.full_check_title,
                 destinationFor<Settings>() to R.string.settings_title,
                 destinationFor<Licenses>() to R.string.licenses_title,
                 destinationFor<Onboarding>() to R.string.onboarding_title,

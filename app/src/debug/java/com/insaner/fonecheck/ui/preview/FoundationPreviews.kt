@@ -15,7 +15,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import com.insaner.fonecheck.R
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.DisclosureHeader
 import com.insaner.fonecheck.ui.components.IndeterminateRule
@@ -116,7 +118,7 @@ private fun SpecimenSummary() {
             )
             Spacer(modifier = Modifier.width(FonecheckTheme.spacing.sm))
             Text(
-                text = "checks passed",
+                text = stringResource(R.string.home_latest_passed_label),
                 style = FonecheckTheme.type.rowLabel,
                 color = FonecheckTheme.colors.textSecondary,
                 modifier = Modifier.padding(bottom = FonecheckTheme.spacing.xs),
@@ -185,7 +187,7 @@ private fun SpecimenStatuses() {
             StatusText(text = "pass", tone = SemanticTone.PASS)
             StatusText(text = "attention", tone = SemanticTone.ATTENTION)
             StatusText(text = "fail", tone = SemanticTone.FAIL)
-            StatusText(text = "not tested", tone = SemanticTone.NEUTRAL)
+            StatusText(text = "not measured", tone = SemanticTone.NEUTRAL)
         }
     }
 }
@@ -196,13 +198,13 @@ private fun SpecimenDisclosures() {
         SectionHeader(label = "Disclosure headers")
         DisclosureHeader(
             label = "GPS",
-            summary = "Ready",
+            summary = "Not measured",
             expanded = false,
             onClick = {},
         )
         DisclosureHeader(
             label = "Accelerometer",
-            summary = "Not tested",
+            summary = "Not measured",
             expanded = false,
             onClick = {},
             strongDivider = false,
@@ -215,7 +217,7 @@ private fun SpecimenDisclosures() {
 private fun SpecimenActions() {
     Column(modifier = Modifier.fillMaxWidth()) {
         PrimaryButton(
-            label = "Run all checks",
+            label = stringResource(R.string.home_start_full_check),
             onClick = {},
             modifier = Modifier.fillMaxWidth(),
         )
@@ -228,7 +230,7 @@ private fun SpecimenActions() {
         }
         Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
         PrimaryButton(
-            label = "Run all checks",
+            label = stringResource(R.string.home_start_full_check),
             onClick = {},
             enabled = false,
             modifier = Modifier.fillMaxWidth(),

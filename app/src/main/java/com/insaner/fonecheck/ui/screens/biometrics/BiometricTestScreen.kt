@@ -2,13 +2,9 @@ package com.insaner.fonecheck.ui.screens.biometrics
 
 import androidx.activity.compose.LocalActivity
 import androidx.biometric.BiometricPrompt
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -21,13 +17,18 @@ import androidx.fragment.app.FragmentActivity
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.ui.classification.classifyBiometric
+import com.insaner.fonecheck.ui.classification.classifyBiometricCapability
 import com.insaner.fonecheck.ui.components.DataRow
-import com.insaner.fonecheck.ui.components.DisclosureHeader
+import com.insaner.fonecheck.ui.components.DisclosureSection
+import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.ObservationReasonNote
 import com.insaner.fonecheck.ui.components.PrimaryButton
 import com.insaner.fonecheck.ui.components.TestScreenContent
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 
 @Composable
 fun BiometricTestScreen(
@@ -35,6 +36,7 @@ fun BiometricTestScreen(
     viewModel: BiometricTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val liveStateUpdatedAtEpochMillis = remember(state) { System.currentTimeMillis() }
     val activity = LocalActivity.current as? FragmentActivity
     var biometricPrompt by remember { mutableStateOf<BiometricPrompt?>(null) }
 
@@ -82,26 +84,27 @@ fun BiometricTestScreen(
         }
     }
 
-    TestScreenContent(modifier = modifier) {
+    TestScreenContent(modifier = modifier, liveStateUpdatedAtEpochMillis = liveStateUpdatedAtEpochMillis) {
         item {
-            BiometricDisclosureSection(
+            DisclosureSection(
                 label = stringResource(R.string.biometric_capabilities_title),
                 summary = capabilityStatusLabel(state.capability),
                 tone = SemanticTone.NEUTRAL,
                 expanded = state.expandedSection == BiometricSection.CAPABILITIES,
-                onToggle = { viewModel.toggleSection(BiometricSection.CAPABILITIES) },
+                onClick = { viewModel.toggleSection(BiometricSection.CAPABILITIES) },
             ) {
                 CapabilitiesDetails(state.capability)
             }
         }
 
         item {
-            BiometricDisclosureSection(
+            val classification = classifyBiometric(state.authResult)
+            DisclosureSection(
                 label = stringResource(R.string.biometric_test_auth),
                 summary = authResultLabel(state.authResult),
-                tone = authResultTone(state.authResult),
+                tone = classification.toSemanticTone(),
                 expanded = state.expandedSection == BiometricSection.AUTH_TEST,
-                onToggle = { viewModel.toggleSection(BiometricSection.AUTH_TEST) },
+                onClick = { viewModel.toggleSection(BiometricSection.AUTH_TEST) },
             ) {
                 AuthTestSection(
                     state = state,
@@ -113,42 +116,10 @@ fun BiometricTestScreen(
 }
 
 @Composable
-private fun BiometricDisclosureSection(
-    label: String,
-    summary: String,
-    tone: SemanticTone,
-    expanded: Boolean,
-    onToggle: () -> Unit,
-    content: @Composable () -> Unit,
-) {
-    Column {
-        DisclosureHeader(
-            label = label,
-            summary = summary,
-            expanded = expanded,
-            onClick = onToggle,
-            tone = tone,
-        )
-        AnimatedVisibility(
-            visible = expanded,
-            enter = expandVertically(),
-            exit = shrinkVertically(),
-        ) {
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = FonecheckTheme.spacing.md),
-                verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md),
-            ) {
-                content()
-            }
-        }
-    }
-}
-
-@Composable
 private fun CapabilitiesDetails(capability: BiometricCapability) {
+    val strongClassification = classifyBiometricCapability(capability.strongStatus)
+    val weakClassification = classifyBiometricCapability(capability.weakStatus)
+    val sharedReason = strongClassification.reason?.takeIf { it == weakClassification.reason }
     Column {
         DataRow(
             label = stringResource(R.string.biometric_fingerprint_hardware),
@@ -161,11 +132,21 @@ private fun CapabilitiesDetails(capability: BiometricCapability) {
         DataRow(
             label = stringResource(R.string.biometric_strong),
             value = biometricAvailabilityLabel(capability.strongStatus),
+            showDivider = sharedReason != null || strongClassification.reason == null,
         )
+        if (sharedReason == null) {
+            ObservationReasonNote(strongClassification)
+            if (strongClassification.reason != null) HairlineRule()
+        }
         DataRow(
             label = stringResource(R.string.biometric_weak),
             value = biometricAvailabilityLabel(capability.weakStatus),
+            showDivider = sharedReason == null && weakClassification.reason == null,
         )
+        ObservationReasonNote(
+            if (sharedReason != null) strongClassification else weakClassification,
+        )
+        if (sharedReason != null || weakClassification.reason != null) HairlineRule()
         DataRow(
             label = stringResource(R.string.biometric_device_credential),
             value = yesNoLabel(capability.deviceCredentialAvailable),
@@ -179,6 +160,7 @@ private fun AuthTestSection(
     state: BiometricTestState,
     onAuthenticate: () -> Unit,
 ) {
+    ObservationReasonNote(classifyBiometric(state.authResult))
     when {
         state.authResult == AuthResult.ERROR && !state.authErrorMessage.isNullOrBlank() ->
             Note(text = stringResource(R.string.biometric_auth_error, state.authErrorMessage.orEmpty()))
@@ -232,7 +214,7 @@ private fun biometricAvailabilityLabel(status: BiometricAvailability): String =
 private fun authResultLabel(result: AuthResult): String =
     stringResource(
         when (result) {
-            AuthResult.NONE -> R.string.biometric_ready
+            AuthResult.NONE -> R.string.status_not_measured
             AuthResult.IN_PROGRESS -> R.string.biometric_in_progress
             AuthResult.NOT_RECOGNIZED -> R.string.biometric_not_recognized
             AuthResult.SUCCESS -> R.string.biometric_auth_success
@@ -244,21 +226,7 @@ private fun authResultLabel(result: AuthResult): String =
         },
     )
 
-internal fun authResultTone(result: AuthResult): SemanticTone =
-    when (result) {
-        AuthResult.SUCCESS -> SemanticTone.PASS
-        AuthResult.NOT_RECOGNIZED,
-        AuthResult.LOCKED_OUT,
-        -> SemanticTone.ATTENTION
-        AuthResult.ERROR -> SemanticTone.FAIL
-        AuthResult.NONE,
-        AuthResult.IN_PROGRESS,
-        AuthResult.CANCELLED,
-        AuthResult.NO_ENROLLMENT,
-        AuthResult.UNAVAILABLE,
-        -> SemanticTone.NEUTRAL
-    }
+internal fun authResultTone(result: AuthResult): SemanticTone = classifyBiometric(result).toSemanticTone()
 
 @Composable
-private fun yesNoLabel(value: Boolean): String =
-    stringResource(if (value) R.string.status_yes else R.string.status_no)
+private fun yesNoLabel(value: Boolean): String = stringResource(if (value) R.string.status_yes else R.string.status_no)

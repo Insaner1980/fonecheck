@@ -8,9 +8,9 @@ class BiometricPresentationPolicyTest {
     @Test
     fun `authentication outcomes map to the shared semantic tones`() {
         assertEquals(SemanticTone.PASS, authResultTone(AuthResult.SUCCESS))
-        assertEquals(SemanticTone.ATTENTION, authResultTone(AuthResult.NOT_RECOGNIZED))
         assertEquals(SemanticTone.ATTENTION, authResultTone(AuthResult.LOCKED_OUT))
-        assertEquals(SemanticTone.FAIL, authResultTone(AuthResult.ERROR))
+        assertEquals(SemanticTone.NEUTRAL, authResultTone(AuthResult.NOT_RECOGNIZED))
+        assertEquals(SemanticTone.NEUTRAL, authResultTone(AuthResult.ERROR))
     }
 
     @Test

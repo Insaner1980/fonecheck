@@ -3,12 +3,14 @@ package com.insaner.fonecheck.ui.screens.settings
 import android.content.Intent
 import android.provider.Settings
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -24,14 +26,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.net.toUri
+import androidx.core.os.LocaleListCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.data.preferences.AppThemeMode
+import com.insaner.fonecheck.localization.AppLanguage
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.LongValueRow
@@ -54,17 +60,23 @@ fun SettingsRoute(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    var selectedLanguage by remember {
+        mutableStateOf(AppLanguage.fromLocale(AppCompatDelegate.getApplicationLocales()[0]))
+    }
     val currentOnOpenOnboarding by rememberUpdatedState(onOpenOnboarding)
     val context = LocalContext.current
     val packageInfo = remember { context.packageManager.getPackageInfo(context.packageName, 0) }
     val appVersion =
         stringResource(
             R.string.report_app_version_value,
-            packageInfo.versionName,
+            packageInfo.versionName.orEmpty(),
             uiNumber(PackageInfoCompat.getLongVersionCode(packageInfo)),
         )
     val externalAppUnavailable = stringResource(R.string.external_app_unavailable)
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshPermissions() }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshPermissions()
+        selectedLanguage = AppLanguage.fromLocale(AppCompatDelegate.getApplicationLocales()[0])
+    }
     LaunchedEffect(state.openOnboarding) {
         if (state.openOnboarding) {
             viewModel.consumeOpenOnboarding()
@@ -75,6 +87,11 @@ fun SettingsRoute(
         state = state,
         appVersion = appVersion,
         onThemeMode = viewModel::setThemeMode,
+        selectedLanguage = selectedLanguage,
+        onLanguage = { language ->
+            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language.languageTag))
+            selectedLanguage = language
+        },
         onTestWarnings = viewModel::setTestWarningsEnabled,
         onOpenAppSettings = {
             val intent =
@@ -110,6 +127,8 @@ fun SettingsScreen(
     state: SettingsState,
     appVersion: String,
     onThemeMode: (AppThemeMode) -> Unit,
+    selectedLanguage: AppLanguage,
+    onLanguage: (AppLanguage) -> Unit,
     onTestWarnings: (Boolean) -> Unit,
     onOpenAppSettings: () -> Unit,
     onDeleteAll: () -> Unit,
@@ -140,7 +159,7 @@ fun SettingsScreen(
                 }
             }
         }
-        item { AppearanceSection(state, onThemeMode, onTestWarnings) }
+        item { AppearanceSection(state, onThemeMode, selectedLanguage, onLanguage, onTestWarnings) }
         item { PermissionSection(state.permissions, onOpenAppSettings) }
         item {
             ReportsSection(
@@ -210,19 +229,58 @@ fun SettingsScreen(
 private fun AppearanceSection(
     state: SettingsState,
     onThemeMode: (AppThemeMode) -> Unit,
+    selectedLanguage: AppLanguage,
+    onLanguage: (AppLanguage) -> Unit,
     onTestWarnings: (Boolean) -> Unit,
 ) {
     Column {
         SectionHeader(stringResource(R.string.settings_appearance))
         Note(stringResource(R.string.settings_theme))
         FlowRow(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().selectableGroup(),
             horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
             verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
         ) {
-            ThemeChoice(AppThemeMode.SYSTEM, state.preferences.themeMode, onThemeMode)
-            ThemeChoice(AppThemeMode.LIGHT, state.preferences.themeMode, onThemeMode)
-            ThemeChoice(AppThemeMode.DARK, state.preferences.themeMode, onThemeMode)
+            AppThemeMode.entries.forEach { mode ->
+                SettingsChoice(
+                    label =
+                        stringResource(
+                            when (mode) {
+                                AppThemeMode.SYSTEM -> R.string.settings_theme_system
+                                AppThemeMode.LIGHT -> R.string.settings_theme_light
+                                AppThemeMode.DARK -> R.string.settings_theme_dark
+                            },
+                        ),
+                    isSelected = state.preferences.themeMode == mode,
+                    testTag = "settings_theme_${mode.name.lowercase()}",
+                    onClick = { onThemeMode(mode) },
+                )
+            }
+        }
+        Note(
+            text = stringResource(R.string.settings_language),
+            modifier = Modifier.padding(top = FonecheckTheme.spacing.md),
+        )
+        FlowRow(
+            modifier = Modifier.fillMaxWidth().selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
+        ) {
+            AppLanguage.entries.forEach { language ->
+                SettingsChoice(
+                    label =
+                        stringResource(
+                            when (language) {
+                                AppLanguage.SYSTEM -> R.string.settings_language_system
+                                AppLanguage.ENGLISH -> R.string.settings_language_english
+                                AppLanguage.FINNISH -> R.string.settings_language_finnish
+                            },
+                        ),
+                    isSelected = selectedLanguage == language,
+                    testTag = "settings_language_${language.name.lowercase()}",
+                    onClick = { onLanguage(language) },
+                )
+            }
         }
         SettingToggleRow(
             checked = state.preferences.testWarningsEnabled,
@@ -232,30 +290,27 @@ private fun AppearanceSection(
 }
 
 @Composable
-private fun ThemeChoice(
-    mode: AppThemeMode,
-    selected: AppThemeMode,
-    onThemeMode: (AppThemeMode) -> Unit,
+private fun SettingsChoice(
+    label: String,
+    isSelected: Boolean,
+    testTag: String,
+    onClick: () -> Unit,
 ) {
-    val label =
-        stringResource(
-            when (mode) {
-                AppThemeMode.SYSTEM -> R.string.settings_theme_system
-                AppThemeMode.LIGHT -> R.string.settings_theme_light
-                AppThemeMode.DARK -> R.string.settings_theme_dark
-            },
-        )
-    if (selected == mode) {
+    val modifier =
+        Modifier
+            .testTag(testTag)
+            .semantics { this.selected = isSelected }
+    if (isSelected) {
         PrimaryButton(
             label = label,
-            onClick = { onThemeMode(mode) },
-            modifier = Modifier.testTag("settings_theme_${mode.name.lowercase()}"),
+            onClick = onClick,
+            modifier = modifier,
         )
     } else {
         SecondaryButton(
             label = label,
-            onClick = { onThemeMode(mode) },
-            modifier = Modifier.testTag("settings_theme_${mode.name.lowercase()}"),
+            onClick = onClick,
+            modifier = modifier,
         )
     }
 }

@@ -8,8 +8,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.permission.PermissionState
+import com.insaner.fonecheck.ui.classification.classifyPermission
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
-import com.insaner.fonecheck.ui.theme.SemanticTone
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 
 @Composable
 fun PermissionStatusCard(
@@ -19,6 +20,7 @@ fun PermissionStatusCard(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val classification = classifyPermission(state)
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
@@ -26,8 +28,9 @@ fun PermissionStatusCard(
         SectionHeader(stringResource(R.string.permission_section_title))
         StatusText(
             text = permissionStatusText(state),
-            tone = permissionStatusTone(state),
+            tone = classification.toSemanticTone(),
         )
+        ObservationReasonNote(classification)
 
         if (state.showsRationale()) {
             Note(rationale)
@@ -84,19 +87,6 @@ private fun PermissionButton(
         modifier = Modifier.fillMaxWidth(),
     )
 }
-
-private fun permissionStatusTone(state: PermissionState): SemanticTone =
-    when (state) {
-        PermissionState.GRANTED -> SemanticTone.PASS
-        PermissionState.DENIED,
-        PermissionState.SETTINGS_RECOVERY,
-        PermissionState.PARTIAL,
-        -> SemanticTone.ATTENTION
-        PermissionState.NOT_REQUESTED,
-        PermissionState.NOT_REQUIRED,
-        PermissionState.HARDWARE_ABSENT,
-        -> SemanticTone.NEUTRAL
-    }
 
 @Composable
 private fun permissionStatusText(state: PermissionState): String =

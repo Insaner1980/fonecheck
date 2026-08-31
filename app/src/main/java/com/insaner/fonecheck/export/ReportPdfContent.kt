@@ -12,6 +12,7 @@ import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.EvidenceUnitCode
 import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.ScoreState
+import com.insaner.fonecheck.localization.shouldShowEvidenceReason
 import java.time.Duration
 import java.time.Instant
 
@@ -146,7 +147,13 @@ data class PdfReportLabels(
                 disclaimer = "Differences and measurements do not prove physical device health.",
                 categoryName = { it.name.lowercase().replaceFirstChar(Char::uppercase) },
                 checkName = { it.value },
-                statusName = { it.name.lowercase() },
+                statusName = {
+                    if (it == DiagnosticStatus.NOT_TESTED) {
+                        "not measured"
+                    } else {
+                        it.name.lowercase()
+                    }
+                },
                 scoreStateName = { it.name.lowercase() },
                 sourceName = { it.name.lowercase() },
                 confidenceName = { it.name.lowercase() },
@@ -155,7 +162,7 @@ data class PdfReportLabels(
                 numberValue = Number::toString,
                 unitName = ::englishUnitName,
                 countsValue = { coverage, warnings, failures ->
-                    "${coverage.completedCount} completed, ${coverage.notTestedCount} not tested, " +
+                    "${coverage.completedCount} completed, ${coverage.notTestedCount} not measured, " +
                         "${coverage.unavailableCount} unavailable, $warnings warnings, $failures failures"
                 },
                 completedValue = Instant::toString,
@@ -199,9 +206,14 @@ object ReportPdfContentBuilder {
             add(PdfTextBlock("${labels.duration}: ${labels.durationValue(duration)}", PdfTextStyle.BODY))
             add(
                 PdfTextBlock(
-                    "${labels.score}: ${report.score.value ?: "—"} · " +
-                        "${labels.scoreState}: ${labels.scoreStateName(report.score.state)}",
+                    "${labels.score}: ${report.score.value ?: "—"}",
                     PdfTextStyle.HEADING,
+                ),
+            )
+            add(
+                PdfTextBlock(
+                    "${labels.scoreState}: ${labels.scoreStateName(report.score.state)}",
+                    PdfTextStyle.BODY,
                 ),
             )
             add(PdfTextBlock("${labels.coverage}: ${report.coverage.percentage}%", PdfTextStyle.HEADING))
@@ -255,7 +267,7 @@ object ReportPdfContentBuilder {
                             PdfTextStyle.BODY,
                         ),
                     )
-                    item.reason?.let {
+                    item.reason?.takeIf { shouldShowEvidenceReason(item.status, it) }?.let {
                         add(PdfTextBlock("${labels.reason}: ${labels.reasonName(it)}", PdfTextStyle.BODY))
                     }
                     add(PdfTextBlock("${labels.captured}: ${item.capturedAt}", PdfTextStyle.BODY))

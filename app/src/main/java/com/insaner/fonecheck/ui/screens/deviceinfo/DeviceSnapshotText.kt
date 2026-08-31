@@ -11,6 +11,10 @@ internal fun buildDeviceSnapshotText(
     zoneId: ZoneId = ZoneId.systemDefault(),
 ): String =
     buildString {
+        val kernelVersion = displayLongValue(context, info.kernelVersion)
+        val basebandVersion = displayLongValue(context, info.basebandVersion)
+        val bootloaderVersion = displayLongValue(context, info.bootloaderVersion)
+
         appendLine(context.getString(R.string.device_info_title))
 
         appendSection(context.getString(R.string.device_identity_title))
@@ -34,15 +38,15 @@ internal fun buildDeviceSnapshotText(
         appendRow(context.getString(R.string.label_build_number), displayValue(context, info.buildNumber))
         appendRow(
             context.getString(R.string.label_kernel),
-            displayLongValue(context, info.kernelVersion),
+            kernelVersion,
         )
         appendRow(
             context.getString(R.string.label_baseband),
-            displayLongValue(context, info.basebandVersion),
+            basebandVersion,
         )
         appendRow(
             context.getString(R.string.label_bootloader),
-            displayLongValue(context, info.bootloaderVersion),
+            bootloaderVersion,
         )
 
         appendSection(context.getString(R.string.drm_info_title))
@@ -79,7 +83,16 @@ internal fun buildDeviceSnapshotText(
         appendLine(context.getString(R.string.device_usb_debugging_note))
 
         appendLine()
-        append(context.getString(R.string.device_captured_at, formatCapturedAt(info.capturedAt, zoneId)))
+        append(
+            context.getString(
+                R.string.device_captured_at,
+                formatCapturedAt(
+                    info.capturedAt,
+                    context.resources.configuration.locales[0],
+                    zoneId,
+                ),
+            ),
+        )
     }
 
 private fun StringBuilder.appendSection(title: String) {

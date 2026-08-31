@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
@@ -51,6 +52,7 @@ fun DataRow(
     showDivider: Boolean = true,
     onValueLongClick: (() -> Unit)? = null,
     longClickLabel: String = stringResource(R.string.copy_value_action),
+    contentVerticalPadding: Dp = FonecheckTheme.spacing.sm,
 ) {
     Column(
         modifier =
@@ -65,7 +67,7 @@ fun DataRow(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(vertical = FonecheckTheme.spacing.sm),
+                    .padding(vertical = contentVerticalPadding),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(

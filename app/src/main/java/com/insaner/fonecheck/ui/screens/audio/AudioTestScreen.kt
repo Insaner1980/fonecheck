@@ -30,7 +30,9 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.permission.PermissionKind
 import com.insaner.fonecheck.domain.permission.PermissionState
+import com.insaner.fonecheck.ui.classification.classifyAudioConfirmation
 import com.insaner.fonecheck.ui.components.DataRow
+import com.insaner.fonecheck.ui.components.LiveStateTimestamp
 import com.insaner.fonecheck.ui.components.ManualResultButtons
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.PermissionStatusCard
@@ -42,6 +44,7 @@ import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 import kotlinx.coroutines.delay
 
 @Composable
@@ -51,6 +54,7 @@ fun AudioTestScreen(
     viewModel: AudioTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val liveStateUpdatedAtEpochMillis = remember(state) { System.currentTimeMillis() }
     val context = LocalContext.current
     val hasMicrophone =
         remember(context) {
@@ -127,6 +131,7 @@ fun AudioTestScreen(
         )
         HeadphoneJackSection(state, viewModel)
         VolumeButtonSection(state, viewModel)
+        LiveStateTimestamp(liveStateUpdatedAtEpochMillis)
     }
 }
 
@@ -155,14 +160,9 @@ private fun SpeakerTestSection(
                 )
             }
         }
-        if (state.isPlaying) {
-            SecondaryButton(
-                label = stringResource(R.string.audio_stop),
-                onClick = viewModel::stopTone,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+        ToneStopButton(isPlaying = state.isPlaying, onStop = viewModel::stopTone)
         AudioManualResult(
+            check = AudioManualCheck.SPEAKER,
             result = state.manualResults[AudioManualCheck.SPEAKER],
             onResult = { viewModel.recordManualResult(AudioManualCheck.SPEAKER, it) },
         )
@@ -207,16 +207,25 @@ private fun StereoTestSection(
                 )
             }
         }
-        if (state.isPlaying) {
-            SecondaryButton(
-                label = stringResource(R.string.audio_stop),
-                onClick = viewModel::stopTone,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+        ToneStopButton(isPlaying = state.isPlaying, onStop = viewModel::stopTone)
         AudioManualResult(
+            check = AudioManualCheck.STEREO,
             result = state.manualResults[AudioManualCheck.STEREO],
             onResult = { viewModel.recordManualResult(AudioManualCheck.STEREO, it) },
+        )
+    }
+}
+
+@Composable
+private fun ToneStopButton(
+    isPlaying: Boolean,
+    onStop: () -> Unit,
+) {
+    if (isPlaying) {
+        SecondaryButton(
+            label = stringResource(R.string.audio_stop),
+            onClick = onStop,
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -242,6 +251,7 @@ private fun EarpieceTestSection(
             )
         }
         AudioManualResult(
+            check = AudioManualCheck.EARPIECE,
             result = state.manualResults[AudioManualCheck.EARPIECE],
             onResult = { viewModel.recordManualResult(AudioManualCheck.EARPIECE, it) },
         )
@@ -308,6 +318,7 @@ private fun MicrophoneTestSection(
         }
         if (state.hasRecordedAudio) {
             AudioManualResult(
+                check = AudioManualCheck.PLAYBACK,
                 result = state.manualResults[AudioManualCheck.PLAYBACK],
                 onResult = { viewModel.recordManualResult(AudioManualCheck.PLAYBACK, it) },
             )
@@ -317,6 +328,7 @@ private fun MicrophoneTestSection(
 
 @Composable
 private fun AudioManualResult(
+    check: AudioManualCheck,
     result: Boolean?,
     onResult: (Boolean) -> Unit,
 ) {
@@ -327,9 +339,10 @@ private fun AudioManualResult(
         onResult = onResult,
     )
     result?.let {
+        val classification = classifyAudioConfirmation(check, it)
         StatusText(
             text = stringResource(if (it) R.string.audio_manual_passed else R.string.audio_manual_issue_saved),
-            tone = if (it) SemanticTone.PASS else SemanticTone.FAIL,
+            tone = classification.toSemanticTone(),
         )
     }
 }

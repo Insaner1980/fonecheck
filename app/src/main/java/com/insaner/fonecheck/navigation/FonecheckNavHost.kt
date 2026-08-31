@@ -1,10 +1,6 @@
 package com.insaner.fonecheck.navigation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
@@ -15,6 +11,8 @@ import com.insaner.fonecheck.R
 import com.insaner.fonecheck.data.preferences.AppPreferences
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.ui.TopBarAction
+import com.insaner.fonecheck.ui.components.ScreenStateScreen
+import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.screens.audio.AudioTestScreen
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestScreen
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestScreen
@@ -89,7 +87,10 @@ fun FonecheckNavHost(
             StorageTestScreen(onTopBarActionChange = onTopBarActionChange)
         }
         composable<DisplayTest> {
-            DisplayTestScreen(onFullscreenChange = onDisplayFullscreenChange)
+            DisplayTestScreen(
+                onFullscreenChange = onDisplayFullscreenChange,
+                onTopBarActionChange = onTopBarActionChange,
+            )
         }
         composable<VibrationTest> {
             VibrationTestScreen()
@@ -140,12 +141,10 @@ fun FonecheckNavHost(
             val route = backStackEntry.toRoute<CategoryRetest>()
             val category = DiagnosticCategoryId.entries.firstOrNull { it.stableId == route.categoryId }
             if (category == null) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(stringResource(R.string.report_retest_unavailable))
-                }
+                ScreenStateScreen(
+                    type = ScreenStateType.UNAVAILABLE,
+                    message = stringResource(R.string.report_retest_unavailable),
+                )
             } else {
                 RunAllTestsScreen(
                     onDone = { navController.popBackStack() },

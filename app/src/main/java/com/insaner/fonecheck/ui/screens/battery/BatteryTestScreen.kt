@@ -8,14 +8,20 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.observation.DeviceObservation
+import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
+import com.insaner.fonecheck.ui.classification.classifyBatteryHealth
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
+import com.insaner.fonecheck.ui.components.LiveStateTimestamp
 import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.ObservationReasonNote
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
@@ -26,6 +32,9 @@ fun BatteryTestScreen(
     viewModel: BatteryTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val liveStateUpdatedAtEpochMillis = remember(state) { System.currentTimeMillis() }
+    val chargingStatusLabel = stringResource(viewModel.getChargingStatusLabel(state.charging.status))
+    val plugTypeLabel = stringResource(viewModel.getPlugTypeLabel(state.charging.plugType))
 
     Column(
         modifier =
@@ -39,7 +48,7 @@ fun BatteryTestScreen(
             BasicDetails(state.basic)
         }
         BatterySection(label = stringResource(R.string.batt_charging_title)) {
-            ChargingDetails(state.charging, viewModel)
+            ChargingDetails(state.charging, chargingStatusLabel, plugTypeLabel)
         }
         BatterySection(label = stringResource(R.string.batt_health_title)) {
             HealthDetails(state.health)
@@ -47,13 +56,16 @@ fun BatteryTestScreen(
         BatterySection(label = stringResource(R.string.batt_manufacturer_title)) {
             ManufacturerDetails(state.manufacturer)
         }
+        LiveStateTimestamp(liveStateUpdatedAtEpochMillis)
     }
 }
 
 @Composable
-private fun BasicDetails(
-    basic: BasicBatteryState,
-) {
+private fun BasicDetails(basic: BasicBatteryState) {
+    val temperatureClassification =
+        DeviceObservationClassifier.classify(
+            DeviceObservation.BatteryTemperature(basic.temperatureCelsius),
+        )
     DataRow(
         label = stringResource(R.string.batt_level),
         value = basic.level?.let { stringResource(R.string.batt_value_percent, it) },
@@ -68,7 +80,10 @@ private fun BasicDetails(
             basic.temperatureCelsius?.let {
                 stringResource(R.string.batt_value_celsius, uiNumber(it, 1, 1))
             },
+        showDivider = false,
     )
+    ObservationReasonNote(temperatureClassification)
+    HairlineRule()
     DataRow(
         label = stringResource(R.string.batt_technology),
         value = basic.technology,
@@ -78,15 +93,16 @@ private fun BasicDetails(
 @Composable
 private fun ChargingDetails(
     charging: ChargingState,
-    viewModel: BatteryTestViewModel,
+    chargingStatusLabel: String,
+    plugTypeLabel: String,
 ) {
     DataRow(
         label = stringResource(R.string.batt_charging_status),
-        value = stringResource(viewModel.getChargingStatusLabel(charging.status)),
+        value = chargingStatusLabel,
     )
     DataRow(
         label = stringResource(R.string.batt_plug_type),
-        value = stringResource(viewModel.getPlugTypeLabel(charging.plugType)),
+        value = plugTypeLabel,
     )
     DataRow(
         label = stringResource(R.string.batt_charging_current),
@@ -119,11 +135,13 @@ private fun ChargingDetails(
 
 @Composable
 private fun HealthDetails(health: HealthState) {
+    val classification = classifyBatteryHealth(health.healthStatusRaw)
     DataRow(
         label = stringResource(R.string.batt_health_status),
         value = stringResource(health.healthStatusLabel),
         showDivider = false,
     )
+    ObservationReasonNote(classification)
     Note(stringResource(R.string.batt_health_source_note))
     HairlineRule()
 

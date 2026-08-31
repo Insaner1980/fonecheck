@@ -139,7 +139,7 @@ internal fun screenStateTitleResId(type: ScreenStateType): Int =
         ScreenStateType.LOADING -> R.string.state_loading_title
         ScreenStateType.EMPTY -> R.string.state_empty_title
         ScreenStateType.UNAVAILABLE -> R.string.state_unavailable_title
-        ScreenStateType.NOT_TESTED -> R.string.state_not_tested_title
+        ScreenStateType.NOT_TESTED -> R.string.status_not_measured
         ScreenStateType.PERMISSION_DENIED -> R.string.state_permission_denied_title
         ScreenStateType.ERROR -> R.string.state_error_title
     }

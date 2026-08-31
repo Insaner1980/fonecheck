@@ -34,10 +34,17 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.observation.DeviceObservation
+import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
+import com.insaner.fonecheck.domain.observation.MeasurementKind
+import com.insaner.fonecheck.domain.observation.MeasurementOutcome
 import com.insaner.fonecheck.domain.permission.PermissionKind
 import com.insaner.fonecheck.domain.permission.PermissionState
+import com.insaner.fonecheck.localization.observationReasonStringRes
+import com.insaner.fonecheck.ui.classification.classifyCameraConfirmation
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.IndeterminateRule
+import com.insaner.fonecheck.ui.components.LiveStateTimestamp
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.ManualResultButtons
 import com.insaner.fonecheck.ui.components.Note
@@ -51,7 +58,7 @@ import com.insaner.fonecheck.ui.components.StatusText
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
-import com.insaner.fonecheck.ui.theme.SemanticTone
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 import androidx.annotation.OptIn as ExperimentalOptIn
 
 @Composable
@@ -61,6 +68,7 @@ fun CameraTestScreen(
     viewModel: CameraTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val liveStateUpdatedAtEpochMillis = remember(state) { System.currentTimeMillis() }
     val context = LocalContext.current
     val hasCamera =
         remember(context) {
@@ -109,43 +117,64 @@ fun CameraTestScreen(
             onOpenSettings = cameraPermission::openSettings,
         )
         if (state.isLoading) {
-            ScreenStateCard(
-                type = ScreenStateType.LOADING,
-                message = stringResource(R.string.camera_loading),
-            )
+            CameraLoadingState()
         } else {
             CameraPreviewSection(
                 state = state,
                 viewModel = viewModel,
                 hasPermission = cameraPermission.state == PermissionState.GRANTED,
             )
-            FlashTestSection(
-                state = state,
-                viewModel = viewModel,
+            TorchTestSection(
+                flashTestResult = state.flashTestResult,
+                flashOn = state.flashOn,
+                hasFlash = state.rearCapabilities?.hasFlash == true,
                 hasPermission = cameraPermission.state == PermissionState.GRANTED,
+                onToggleFlash = viewModel::toggleFlash,
             )
             state.cameras.forEach { capabilities ->
-                CapabilitiesSection(
-                    title = stringResource(R.string.camera_capabilities_title, capabilities.cameraId),
-                    capabilities = capabilities,
-                )
+                CapabilitiesSection(capabilities = capabilities)
             }
         }
-        state.error?.let { error ->
-            ScreenStateCard(
-                type = ScreenStateType.ERROR,
-                message =
-                    stringResource(
-                        if (error == "camera_no_public_cameras") {
-                            R.string.camera_no_public_cameras
+        CameraErrorState(
+            error = state.error,
+            onRetry = viewModel::refreshCapabilities,
+        )
+        LiveStateTimestamp(liveStateUpdatedAtEpochMillis)
+    }
+}
+
+@Composable
+internal fun CameraLoadingState() {
+    ScreenStateCard(
+        type = ScreenStateType.LOADING,
+        message = stringResource(R.string.camera_loading),
+    )
+}
+
+@Composable
+internal fun CameraErrorState(
+    error: String?,
+    onRetry: () -> Unit,
+) {
+    error?.let {
+        val classification =
+            DeviceObservationClassifier.classify(
+                DeviceObservation.Measurement(
+                    kind = MeasurementKind.CAMERA,
+                    outcome =
+                        if (it == "camera_no_public_cameras") {
+                            MeasurementOutcome.HARDWARE_ABSENT
                         } else {
-                            R.string.camera_operation_failed
+                            MeasurementOutcome.ERROR
                         },
-                    ),
-                actionLabel = stringResource(R.string.camera_retry),
-                onAction = viewModel::refreshCapabilities,
+                ),
             )
-        }
+        ScreenStateCard(
+            type = ScreenStateType.NOT_TESTED,
+            message = stringResource(observationReasonStringRes(requireNotNull(classification.reason))),
+            actionLabel = stringResource(R.string.camera_retry),
+            onAction = onRetry,
+        )
     }
 }
 
@@ -162,17 +191,14 @@ private fun CameraPreviewSection(
 
     CameraSection(title = stringResource(R.string.camera_capture_title)) {
         Note(stringResource(R.string.camera_capture_description))
-        state.cameras.forEach { camera ->
-            val isActive = state.isPreviewActive && state.selectedCameraId == camera.cameraId
-            CameraSelectorButton(
-                label = cameraButtonLabel(camera),
-                isActive = isActive,
-                enabled = hasPermission,
-                onClick = {
-                    viewModel.startPreview(previewView, lifecycleOwner, camera.cameraId)
-                },
-            )
-        }
+        CameraSelectionList(
+            cameras = state.cameras,
+            activeCameraId = state.selectedCameraId.takeIf { state.isPreviewActive },
+            enabled = hasPermission,
+            onSelect = { cameraId ->
+                viewModel.startPreview(previewView, lifecycleOwner, cameraId)
+            },
+        )
 
         if (state.isPreviewActive) {
             Box(
@@ -209,13 +235,7 @@ private fun CameraPreviewSection(
         }
 
         state.lastCapture?.let { result ->
-            val megapixels = (result.width.toLong() * result.height.toLong()) / 1_000_000.0
-            LongValueRow(
-                label = stringResource(R.string.camera_captured),
-                value =
-                    "${stringResource(R.string.camera_dimensions_value, result.width, result.height)} · " +
-                        stringResource(R.string.camera_megapixels_value, uiNumber(megapixels, 1, 1)),
-            )
+            CameraCaptureResult(result)
             Note(stringResource(R.string.camera_confirm_question))
             ManualResultButtons(
                 problemLabel = stringResource(R.string.camera_confirm_problem),
@@ -224,17 +244,53 @@ private fun CameraPreviewSection(
             )
             state.selectedCameraId?.let { selectedCameraId ->
                 state.confirmations[selectedCameraId]?.let { confirmed ->
+                    val classification = classifyCameraConfirmation(confirmed)
                     StatusText(
                         text =
                             stringResource(
                                 if (confirmed) R.string.camera_confirm_pass else R.string.camera_confirm_problem,
                             ),
-                        tone = if (confirmed) SemanticTone.PASS else SemanticTone.FAIL,
+                        tone = classification.toSemanticTone(),
                     )
                 }
             }
         }
     }
+}
+
+@Composable
+internal fun CameraSelectionList(
+    cameras: List<CameraCapabilities>,
+    activeCameraId: String?,
+    enabled: Boolean,
+    onSelect: (String) -> Unit,
+) {
+    val facingCounts = cameras.groupingBy { it.facingCode }.eachCount()
+    cameras.forEach { camera ->
+        val isActive = camera.cameraId == activeCameraId
+        CameraSelectorButton(
+            label =
+                cameraSelectionLabel(
+                    camera = camera,
+                    isActive = isActive,
+                    showCameraId = facingCounts[camera.facingCode] != 1,
+                ),
+            isActive = isActive,
+            enabled = enabled,
+            onClick = { onSelect(camera.cameraId) },
+        )
+    }
+}
+
+@Composable
+internal fun CameraCaptureResult(result: CaptureResult) {
+    val megapixels = (result.width.toLong() * result.height.toLong()) / 1_000_000.0
+    val dimensions = stringResource(R.string.camera_dimensions_value, result.width, result.height)
+    val megapixelValue = stringResource(R.string.camera_megapixels_value, uiNumber(megapixels, 1, 1))
+    LongValueRow(
+        label = stringResource(R.string.camera_captured),
+        value = stringResource(R.string.camera_capture_result, dimensions, megapixelValue),
+    )
 }
 
 @Composable
@@ -263,56 +319,55 @@ private fun CameraSelectorButton(
 }
 
 @Composable
-private fun cameraButtonLabel(camera: CameraCapabilities): String {
-    val facing =
-        when (camera.facingCode) {
-            CameraFacingCode.FRONT -> stringResource(R.string.camera_front)
-            CameraFacingCode.REAR -> stringResource(R.string.camera_rear)
-            CameraFacingCode.EXTERNAL -> stringResource(R.string.camera_external)
-            CameraFacingCode.UNKNOWN -> stringResource(R.string.camera_unknown)
+private fun cameraSelectionLabel(
+    camera: CameraCapabilities,
+    isActive: Boolean,
+    showCameraId: Boolean,
+): String {
+    val baseLabel =
+        if (isActive) {
+            cameraFacingLabel(camera.facingCode)
+        } else {
+            stringResource(cameraOpenLabelRes(camera.facingCode))
         }
-    val cameraClass =
-        when (camera.cameraClass) {
-            CameraClassCode.STANDARD -> stringResource(R.string.camera_class_standard)
-            CameraClassCode.LOGICAL -> stringResource(R.string.camera_class_logical)
-            CameraClassCode.PHYSICAL_SELECTABLE -> stringResource(R.string.camera_class_physical)
-            CameraClassCode.EXTERNAL -> stringResource(R.string.camera_class_external)
-            CameraClassCode.UNKNOWN -> stringResource(R.string.camera_unknown)
-        }
-    return stringResource(R.string.camera_selector_label, camera.cameraId, facing, cameraClass)
+    return if (showCameraId) {
+        stringResource(R.string.camera_duplicate_selection, baseLabel, camera.cameraId)
+    } else {
+        baseLabel
+    }
 }
 
 @Composable
-private fun FlashTestSection(
-    state: CameraTestState,
-    viewModel: CameraTestViewModel,
+internal fun TorchTestSection(
+    flashTestResult: FlashTestResult,
+    flashOn: Boolean,
+    hasFlash: Boolean,
     hasPermission: Boolean,
+    onToggleFlash: () -> Unit,
 ) {
-    val hasFlash = state.rearCapabilities?.hasFlash == true
-
-    CameraSection(title = stringResource(R.string.camera_flash_title)) {
-        Note(stringResource(R.string.camera_flash_description))
+    CameraSection(title = stringResource(R.string.camera_torch_title)) {
+        Note(stringResource(R.string.camera_torch_description))
         DataRow(
-            label = stringResource(R.string.camera_flash),
-            value = flashTestLabel(state.flashTestResult),
+            label = stringResource(R.string.camera_torch),
+            value = flashTestLabel(flashTestResult),
         )
-        if (state.flashOn) {
+        if (flashOn) {
             SecondaryButton(
-                label = stringResource(R.string.camera_flash_turn_off),
-                onClick = viewModel::toggleFlash,
+                label = stringResource(R.string.camera_torch_turn_off),
+                onClick = onToggleFlash,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = hasPermission && hasFlash,
             )
         } else {
             PrimaryButton(
-                label = stringResource(R.string.camera_flash_turn_on),
-                onClick = viewModel::toggleFlash,
+                label = stringResource(R.string.camera_torch_turn_on),
+                onClick = onToggleFlash,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = hasPermission && hasFlash,
             )
         }
         if (!hasFlash) {
-            Note(stringResource(R.string.camera_no_flash))
+            Note(stringResource(R.string.camera_no_torch))
         }
     }
 }
@@ -324,21 +379,21 @@ private fun flashTestLabel(result: FlashTestResult): String =
             FlashTestResult.ON -> R.string.camera_flash_on
             FlashTestResult.OFF -> R.string.camera_flash_off
             FlashTestResult.NOT_AVAILABLE -> R.string.camera_flash_na
-            FlashTestResult.NOT_TESTED -> R.string.camera_flash_not_tested
+            FlashTestResult.NOT_TESTED -> R.string.status_not_measured
         },
     )
 
 @Composable
-private fun CapabilitiesSection(
-    title: String,
-    capabilities: CameraCapabilities,
-) {
-    var showTechnicalDetails by rememberSaveable(title) { mutableStateOf(false) }
+internal fun CapabilitiesSection(capabilities: CameraCapabilities) {
+    var showTechnicalDetails by rememberSaveable(capabilities.cameraId) { mutableStateOf(false) }
 
-    CameraSection(title = title) {
+    CameraSection(
+        title = cameraFacingLabel(capabilities.facingCode),
+        trailing = stringResource(R.string.camera_identifier, capabilities.cameraId),
+    ) {
         DataRow(
             label = stringResource(R.string.camera_max_resolution),
-            value = capabilities.maxResolution.ifBlank { null },
+            value = cameraCapabilityResolution(capabilities.maxResolution),
         )
         DataRow(
             label = stringResource(R.string.camera_zoom),
@@ -371,6 +426,16 @@ private fun CapabilitiesSection(
             modifier = Modifier.fillMaxWidth(),
         )
         if (showTechnicalDetails) {
+            DataRow(
+                label = stringResource(R.string.camera_type),
+                value = cameraClassLabel(capabilities.cameraClass),
+            )
+            if (capabilities.physicalCameraIds.isNotEmpty()) {
+                LongValueRow(
+                    label = stringResource(R.string.camera_physical_ids),
+                    value = capabilities.physicalCameraIds.sorted().joinToString(", "),
+                )
+            }
             LongValueRow(
                 label = stringResource(R.string.camera_sensor_size),
                 value = capabilities.sensorSize.ifBlank { null },
@@ -391,9 +456,49 @@ private fun CapabilitiesSection(
     }
 }
 
+private fun cameraCapabilityResolution(value: String): String? {
+    val displayValue =
+        if (value.endsWith(" MP)")) {
+            value.substringBeforeLast(" (")
+        } else {
+            value
+        }
+    return displayValue.ifBlank { null }
+}
+
 @Composable
-private fun yesNoLabel(value: Boolean): String =
-    stringResource(if (value) R.string.status_yes else R.string.status_no)
+private fun cameraFacingLabel(facingCode: CameraFacingCode): String =
+    stringResource(
+        when (facingCode) {
+            CameraFacingCode.FRONT -> R.string.camera_front
+            CameraFacingCode.REAR -> R.string.camera_rear
+            CameraFacingCode.EXTERNAL -> R.string.camera_external
+            CameraFacingCode.UNKNOWN -> R.string.camera_unknown
+        },
+    )
+
+private fun cameraOpenLabelRes(facingCode: CameraFacingCode): Int =
+    when (facingCode) {
+        CameraFacingCode.FRONT -> R.string.camera_open_front
+        CameraFacingCode.REAR -> R.string.camera_open_rear
+        CameraFacingCode.EXTERNAL -> R.string.camera_open_external
+        CameraFacingCode.UNKNOWN -> R.string.camera_open_unknown
+    }
+
+@Composable
+private fun cameraClassLabel(cameraClass: CameraClassCode): String =
+    stringResource(
+        when (cameraClass) {
+            CameraClassCode.STANDARD -> R.string.camera_class_standard
+            CameraClassCode.LOGICAL -> R.string.camera_class_logical
+            CameraClassCode.PHYSICAL_SELECTABLE -> R.string.camera_class_physical
+            CameraClassCode.EXTERNAL -> R.string.camera_class_external
+            CameraClassCode.UNKNOWN -> R.string.camera_unknown
+        },
+    )
+
+@Composable
+private fun yesNoLabel(value: Boolean): String = stringResource(if (value) R.string.status_yes else R.string.status_no)
 
 @Composable
 private fun cameraAutoFocusLabel(code: String): String =
@@ -425,13 +530,17 @@ private fun TechnicalValueRow(
 @Composable
 private fun CameraSection(
     title: String,
+    trailing: String? = null,
     content: @Composable () -> Unit,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
     ) {
-        SectionHeader(label = title)
+        SectionHeader(
+            label = title,
+            trailing = trailing,
+        )
         content()
     }
 }

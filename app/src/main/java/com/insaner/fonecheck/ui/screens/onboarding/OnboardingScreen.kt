@@ -102,7 +102,7 @@ fun OnboardingScreen(
             LinearProgressIndicator(
                 progress = { progress },
                 modifier = Modifier.fillMaxWidth().height(FonecheckTheme.spacing.segmentHeight),
-                color = FonecheckTheme.colors.accentFill,
+                color = FonecheckTheme.colors.primaryButtonBackground,
                 trackColor = FonecheckTheme.colors.segmentTrack,
             )
         }

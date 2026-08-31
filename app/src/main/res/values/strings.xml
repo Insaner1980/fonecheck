@@ -5,7 +5,6 @@
     <string name="state_loading_title">Loading</string>
     <string name="state_empty_title">Nothing here yet</string>
     <string name="state_unavailable_title">Unavailable</string>
-    <string name="state_not_tested_title">Not tested</string>
     <string name="state_permission_denied_title">Permission needed</string>
     <string name="state_error_title">Something went wrong</string>
     <!-- Default short label for a measured value the app could not read. Rows that know a more
@@ -42,6 +41,8 @@
     <string name="device_value_restricted">Restricted</string>
     <string name="device_serial_restricted_note">Android does not give this app access to the device serial number.</string>
     <string name="device_captured_at">Captured %1$s</string>
+    <string name="live_state_label">Live data</string>
+    <string name="live_state_updated_at">Updated %1$s</string>
     <string name="device_refresh">Refresh device information</string>
     <string name="device_capture_error_description">fonecheck could not refresh the device snapshot. The last successful snapshot remains visible.</string>
     <string name="device_loading">Reading device information…</string>
@@ -70,7 +71,6 @@
     <string name="perf_cpu_model">Model</string>
     <string name="perf_cpu_architecture">Architecture</string>
     <string name="perf_cpu_cores">Cores</string>
-    <string name="perf_cpu_clock_speeds">Clock Speeds</string>
     <string name="perf_cpu_core_label">Core %1$s</string>
     <string name="perf_cpu_freq_range">%1$s (%2$s – %3$s)</string>
     <string name="perf_ram_title">RAM</string>
@@ -114,14 +114,14 @@
 
     <!-- SIM & Telephony Screen -->
     <string name="sim_telephony_title">Telephony</string>
-    <string name="sim_slot_title">SIM Slot %1$s</string>
-    <string name="label_phone_type">Phone Type</string>
-    <string name="label_phone_count">Phone Count</string>
-    <string name="label_data_network">Data Network</string>
+    <string name="sim_slot_title">SIM slot %1$s</string>
+    <string name="label_phone_type">Phone type</string>
+    <string name="label_active_modem_count">Active modems</string>
+    <string name="label_data_network">Data network</string>
     <string name="label_sim_status">Status</string>
     <string name="label_operator">Operator</string>
     <string name="label_country">Country</string>
-    <string name="label_network_type">Network Type</string>
+    <string name="label_network_type">Network type</string>
     <string name="sim_inventory_label">SIM configuration</string>
     <string name="sim_inventory_no_telephony">No telephony hardware</string>
     <string name="sim_inventory_no_sim">No SIM detected</string>
@@ -140,6 +140,7 @@
     <string name="sim_state_pin_required">PIN required</string>
     <string name="sim_state_puk_required">PUK required</string>
     <string name="sim_state_not_ready">Not ready</string>
+    <string name="sim_state_unused">Unused</string>
     <string name="sim_state_permanently_disabled">Permanently disabled</string>
     <string name="sim_state_card_io_error">Card I/O error</string>
     <string name="sim_state_card_restricted">Card restricted</string>
@@ -152,30 +153,30 @@
     <string name="sim_network_4g">4G</string>
     <string name="sim_network_5g">5G</string>
     <string name="sim_value_unknown">Unknown</string>
-    <string name="sim_limited_mode">Limited information is shown without Phone permission. SIM identifiers are never saved.</string>
+    <string name="sim_limited_mode">Limited information is shown without phone permission. SIM identifiers are never saved.</string>
     <string name="sim_capture_error_description">Telephony information could not be read. You can try again.</string>
     <string name="sim_loading">Reading telephony information…</string>
     <string name="sim_refresh">Refresh telephony information</string>
 
     <!-- Audio Test Screen -->
-    <string name="audio_speaker_title">Speaker Test</string>
+    <string name="audio_speaker_title">Speaker test</string>
     <string name="audio_speaker_description">Tap a frequency to play a tone through the speaker. Verify you can hear each tone clearly.</string>
-    <string name="audio_stereo_title">Stereo Test</string>
+    <string name="audio_stereo_title">Stereo test</string>
     <string name="audio_stereo_description">Test left and right audio channels separately to verify stereo output.</string>
-    <string name="audio_earpiece_title">Earpiece Test</string>
+    <string name="audio_earpiece_title">Earpiece test</string>
     <string name="audio_earpiece_description">Play a 1 kHz tone through the earpiece speaker. Hold the phone to your ear to listen.</string>
-    <string name="audio_microphone_title">Microphone Test</string>
+    <string name="audio_microphone_title">Microphone test</string>
     <string name="audio_microphone_description">Record audio and play it back to verify the microphone is working. Requires microphone permission.</string>
-    <string name="audio_headphone_title">Headphone Jack</string>
+    <string name="audio_headphone_title">Headphone jack</string>
     <string name="audio_headphone_description">Plug in wired headphones or a headset to test detection.</string>
-    <string name="audio_volume_title">Volume Buttons</string>
+    <string name="audio_volume_title">Volume buttons</string>
     <string name="audio_volume_description">Press the hardware volume buttons to verify they are working.</string>
 
     <string name="audio_stop">Stop</string>
-    <string name="audio_play_earpiece">Play Earpiece Tone</string>
+    <string name="audio_play_earpiece">Play earpiece tone</string>
     <string name="audio_record">Record</string>
-    <string name="audio_stop_recording">Stop Recording</string>
-    <string name="audio_playback">Play Back</string>
+    <string name="audio_stop_recording">Stop recording</string>
+    <string name="audio_playback">Play back</string>
     <string name="audio_level">Relative input level</string>
     <string name="audio_relative_level_value">%1$s%%</string>
     <string name="audio_relative_level_disclaimer">Relative PCM amplitude only, not a calibrated sound-pressure or loudness measurement. Recorded audio stays in memory and is discarded when the test closes.</string>
@@ -197,37 +198,44 @@
     <string name="audio_connected">Connected</string>
     <string name="audio_disconnected">Disconnected</string>
     <string name="audio_volume_level">Volume</string>
-    <string name="audio_volume_up">Vol Up</string>
-    <string name="audio_volume_down">Vol Down</string>
+    <string name="audio_volume_up">Vol up</string>
+    <string name="audio_volume_down">Vol down</string>
     <string name="audio_reset">Reset</string>
 
     <!-- Camera Test Screen -->
-    <string name="camera_capture_title">Camera Capture</string>
+    <string name="camera_capture_title">Camera test</string>
     <string name="camera_capture_description">Open front or rear camera, preview, and capture a photo to verify resolution.</string>
-    <string name="camera_rear">Rear Camera</string>
-    <string name="camera_front">Front Camera</string>
+    <string name="camera_rear">Rear camera</string>
+    <string name="camera_front">Front camera</string>
+    <string name="camera_external">External camera</string>
+    <string name="camera_open_rear">Open rear camera</string>
+    <string name="camera_open_front">Open front camera</string>
+    <string name="camera_open_external">Open external camera</string>
+    <string name="camera_open_unknown">Open camera</string>
+    <string name="camera_duplicate_selection">%1$s (camera %2$s)</string>
     <string name="camera_capture">Capture</string>
     <string name="camera_stop">Stop</string>
     <string name="camera_captured">Captured</string>
+    <string name="camera_capture_result">%1$s (%2$s)</string>
 
-    <string name="camera_flash_title">Flash / Torch</string>
-    <string name="camera_flash_description">Toggle the camera flash to verify the torch works.</string>
+    <string name="camera_torch_title">Torch test</string>
+    <string name="camera_torch_description">Turn the torch on to verify it works.</string>
+    <string name="camera_torch">Torch</string>
     <string name="camera_flash_on">On</string>
     <string name="camera_flash_off">Off</string>
-    <string name="camera_flash_na">Not Available</string>
-    <string name="camera_flash_not_tested">Not Tested</string>
-    <string name="camera_flash_turn_on">Turn On</string>
-    <string name="camera_flash_turn_off">Turn Off</string>
-    <string name="camera_no_flash">This device does not have a flash.</string>
+    <string name="camera_flash_na">Not available</string>
+    <string name="camera_torch_turn_on">Turn on torch</string>
+    <string name="camera_torch_turn_off">Turn off torch</string>
+    <string name="camera_no_torch">This device does not have a torch.</string>
 
-    <string name="camera_max_resolution">Max Resolution</string>
-    <string name="camera_sensor_size">Sensor Array</string>
-    <string name="camera_zoom">Zoom Range</string>
+    <string name="camera_max_resolution">Max resolution</string>
+    <string name="camera_sensor_size">Sensor array</string>
+    <string name="camera_zoom">Zoom range</string>
     <string name="camera_ois">OIS</string>
     <string name="camera_flash">Flash</string>
-    <string name="camera_focal_lengths">Focal Lengths</string>
-    <string name="camera_fps_ranges">FPS Ranges</string>
-    <string name="camera_all_resolutions">All Resolutions</string>
+    <string name="camera_focal_lengths">Focal lengths</string>
+    <string name="camera_fps_ranges">FPS ranges</string>
+    <string name="camera_all_resolutions">All resolutions</string>
     <string name="camera_autofocus">Autofocus</string>
     <string name="camera_af_off">Off</string>
     <string name="camera_af_auto">Auto</string>
@@ -239,21 +247,19 @@
     <string name="camera_megapixels_value">%1$s MP</string>
     <string name="camera_show_technical_details">Show technical details</string>
     <string name="camera_hide_technical_details">Hide technical details</string>
-    <string name="camera_capabilities_title">Camera %1$s capabilities</string>
-    <string name="camera_selector_label">Camera %1$s · %2$s · %3$s</string>
-    <string name="camera_external">External camera</string>
+    <string name="camera_identifier">Camera %1$s</string>
+    <string name="camera_type">Camera type</string>
+    <string name="camera_physical_ids">Physical camera IDs</string>
     <string name="camera_unknown">Unknown</string>
     <string name="camera_class_standard">standard</string>
     <string name="camera_class_logical">logical multi-camera</string>
     <string name="camera_class_physical">independently selectable physical camera</string>
     <string name="camera_class_external">external</string>
-    <string name="camera_confirm_question">Did this selected camera preview and capture correctly?</string>
+    <string name="camera_confirm_question">Did the preview and photo work?</string>
     <string name="camera_confirm_problem">Problem</string>
     <string name="camera_confirm_pass">Confirmed</string>
     <string name="camera_inventory_label">Public cameras</string>
     <string name="camera_logical_count_label">Logical cameras</string>
-    <string name="camera_no_public_cameras">No publicly selectable camera was reported by Android.</string>
-    <string name="camera_operation_failed">The camera operation failed. Close the preview and try again.</string>
     <string name="camera_loading">Reading camera capabilities…</string>
     <string name="camera_retry">Try again</string>
 
@@ -264,14 +270,13 @@
     <string name="sensor_guided_completed">Guided test types passed</string>
     <string name="sensor_guided_progress">%1$s of %2$s</string>
     <string name="sensor_guided_title">Guided tests</string>
-    <string name="sensor_listener_error">The sensor listener could not be started. Try the test again.</string>
     <string name="sensor_not_available_description">This sensor is not available on this device.</string>
     <string name="sensor_skip_test">Skip test</string>
     <string name="sensor_status_sampling">Sampling</string>
     <string name="sensor_status_skipped">Skipped</string>
     <string name="sensor_status_label">Status</string>
     <string name="status_not_available">Not available</string>
-    <string name="status_not_tested">Not tested</string>
+    <string name="status_not_measured">Not measured</string>
     <string name="status_pass">Pass</string>
     <string name="sensor_live_values">Live values</string>
     <string name="sensor_accuracy">Accuracy</string>
@@ -348,7 +353,6 @@
     <string name="conn_not_available">Not available</string>
     <string name="conn_supported">Supported</string>
     <string name="conn_not_supported">Not supported</string>
-    <string name="conn_status_label">Status</string>
     <string name="conn_refresh">Refresh connectivity information</string>
     <string name="conn_dbm_format">%1$s dBm</string>
     <string name="conn_signal_level_format">%1$s / %2$s</string>
@@ -393,7 +397,6 @@
     <string name="conn_gps_not_supported">GPS hardware not available on this device.</string>
     <string name="conn_gps_provider">GPS provider</string>
     <string name="conn_gps_status">GPS test</string>
-    <string name="conn_gps_ready">Ready</string>
     <string name="conn_gps_searching">Searching…</string>
     <string name="conn_gps_fixed">Fixed</string>
     <string name="conn_gps_failed">Timed out</string>
@@ -407,7 +410,6 @@
     <string name="conn_gps_altitude_format">%1$s m</string>
     <string name="conn_gps_speed_format">%1$s m/s</string>
     <string name="conn_gps_satellite_ratio">%1$s / %2$s</string>
-    <string name="conn_gps_cn0_format">%1$s</string>
     <string name="conn_gps_latitude">Latitude</string>
     <string name="conn_gps_longitude">Longitude</string>
     <string name="conn_gps_accuracy">Accuracy</string>
@@ -416,10 +418,10 @@
     <string name="conn_gps_satellites_visible">Satellites visible</string>
     <string name="conn_gps_satellites_used">Satellites used</string>
     <string name="conn_gps_satellite_info">Satellite details</string>
-    <string name="conn_gps_satellite_label">Satellite %1$s · %2$s</string>
-    <string name="conn_gps_satellite_value">%1$s dB-Hz · used: %2$s</string>
-    <string name="conn_gps_constellation">Constellation</string>
-    <string name="conn_gps_used">Fix</string>
+    <string name="conn_gps_satellite_label">Satellite %1$s (%2$s)</string>
+    <string name="conn_gps_satellite_value">%1$s dB-Hz (%2$s)</string>
+    <string name="conn_gps_satellite_used_in_fix">used in fix</string>
+    <string name="conn_gps_satellite_not_used_in_fix">not used in fix</string>
     <plurals name="conn_gps_more_sats">
         <item quantity="one">+ %1$s more</item>
         <item quantity="other">+ %1$s more</item>
@@ -448,20 +450,15 @@
     <string name="conn_mobile_mcc_mnc">MCC / MNC</string>
 
     <!-- Battery Test Screen -->
-    <string name="batt_basic_title">Basic Info</string>
+    <string name="batt_basic_title">Basic info</string>
     <string name="batt_charging_title">Charging</string>
     <string name="batt_health_title">Android battery status</string>
     <string name="batt_manufacturer_title">Manufacturer</string>
-    <string name="batt_icon_basic" translatable="false">BAT</string>
-    <string name="batt_icon_charging" translatable="false">CHG</string>
-    <string name="batt_icon_health" translatable="false">HLT</string>
-    <string name="batt_icon_manufacturer" translatable="false">MFR</string>
 
     <!-- Basic -->
     <string name="batt_level">Level</string>
     <string name="batt_voltage">Voltage</string>
     <string name="batt_temperature">Temperature</string>
-    <string name="batt_health_label">Android-reported status</string>
     <string name="batt_technology">Technology</string>
     <string name="batt_value_percent">%1$d%%</string>
     <string name="batt_value_millivolts">%1$d mV</string>
@@ -478,7 +475,7 @@
 
     <!-- Charging -->
     <string name="batt_charging_status">Status</string>
-    <string name="batt_plug_type">Plug Type</string>
+    <string name="batt_plug_type">Plug type</string>
     <string name="batt_charging_current">Current</string>
     <string name="batt_value_milliamps">%1$s mA</string>
     <string name="batt_current_direction">Direction</string>
@@ -493,7 +490,7 @@
     <string name="batt_status_charging">Charging</string>
     <string name="batt_status_discharging">Discharging</string>
     <string name="batt_status_full">Full</string>
-    <string name="batt_status_not_charging">Not Charging</string>
+    <string name="batt_status_not_charging">Not charging</string>
     <string name="batt_status_unknown">Unknown</string>
     <string name="batt_plug_ac">AC</string>
     <string name="batt_plug_usb">USB</string>
@@ -503,7 +500,7 @@
     <!-- Health advanced -->
     <string name="batt_health_status">Android-reported status</string>
     <string name="batt_health_source_note">This is Android’s current status value, not a battery capacity or wear diagnosis.</string>
-    <string name="batt_cycle_count">Cycle Count</string>
+    <string name="batt_cycle_count">Cycle count</string>
     <string name="batt_requires_api34">Requires Android 14+</string>
 
     <!-- Manufacturer -->
@@ -553,21 +550,24 @@
     <string name="storage_available">Available</string>
     <string name="storage_usage">Usage</string>
     <string name="storage_percent_value">%1$s%%</string>
-    <string name="storage_usage_context">%1$s used · %2$s free · %3$s total</string>
+    <string name="storage_usage_unit">% used</string>
     <string name="storage_internal_access">App-private storage</string>
+    <string name="storage_access_title">Storage access</string>
+    <string name="storage_private_access">Private app storage</string>
     <string name="storage_accessible">Accessible</string>
     <string name="storage_info_error">Storage information could not be read.</string>
     <string name="storage_loading">Reading app-accessible storage information…</string>
     <string name="storage_volumes_title">App-accessible shared volumes</string>
     <string name="storage_no_shared_volumes">No app-accessible shared volume is currently available.</string>
-    <string name="storage_volume_primary">Primary shared volume</string>
+    <string name="storage_volume_primary">Primary shared storage</string>
     <string name="storage_volume_number">Shared volume %1$d</string>
     <string name="storage_mounted_state">State</string>
     <string name="storage_removable">Removable</string>
+    <string name="storage_removable_storage">Removable storage</string>
     <string name="storage_state_mounted">Mounted</string>
     <string name="storage_state_read_only">Mounted read-only</string>
     <string name="storage_state_unavailable">Not mounted</string>
-    <string name="storage_benchmark_title">App-private storage benchmark</string>
+    <string name="storage_benchmark_title">Storage speed check</string>
     <string name="storage_benchmark_description">Writes and reads one 64 MiB temporary file in fonecheck’s private cache, then deletes it. You can cancel or skip the check.</string>
     <string name="storage_benchmark_running">Benchmark running</string>
     <string name="storage_benchmark_start">Run benchmark</string>
@@ -579,7 +579,7 @@
     <string name="storage_benchmark_insufficient_space">Not run because the app cache does not have enough free space for the temporary file and safety reserve.</string>
     <string name="storage_benchmark_error">The storage benchmark could not be completed.</string>
     <string name="storage_benchmark_data_mismatch">The temporary file did not read back with the expected size and checksum.</string>
-    <string name="storage_benchmark_cleanup_error">The benchmark completed, but Android could not confirm deletion of the temporary file.</string>
+    <string name="storage_benchmark_cleanup_error">fonecheck could not confirm deletion of the temporary benchmark file.</string>
     <string name="storage_benchmark_write_rate">Sequential write</string>
     <string name="storage_benchmark_read_rate">Sequential read</string>
     <string name="storage_rate_value">%1$s MiB/s</string>
@@ -596,15 +596,17 @@
     <string name="storage_benchmark_required_space">Temporary data</string>
     <string name="storage_benchmark_available_before">Available before test</string>
     <string name="storage_benchmark_conditions">Results reflect this app-cache run only. OS caching, thermal state, background activity, and device conditions can affect throughput.</string>
-    <string name="storage_limitations_title">What this check does not measure</string>
+    <string name="storage_limitations_title">Limitations</string>
     <string name="storage_limitations_description">Throughput is not physical flash health or wear. fonecheck does not inspect user files and does not apply a universal pass/fail speed threshold.</string>
     <string name="storage_refresh">Refresh storage information</string>
 
     <!-- Home Screen -->
-    <string name="home_run_all">Run All Tests</string>
+    <string name="full_check_title">Full Check</string>
+    <string name="home_start_full_check">Start Full Check</string>
     <string name="home_history_content_description">Open report history</string>
     <string name="home_settings_content_description">Open settings</string>
     <string name="home_latest_title">Last full check</string>
+    <string name="home_latest_past_title">Last full check</string>
     <string name="home_latest_loading">Loading the latest Full Check…</string>
     <string name="home_latest_empty_title">No Full Check yet</string>
     <string name="home_latest_error_message">The saved report summary could not be refreshed.</string>
@@ -614,29 +616,37 @@
     <string name="home_latest_status_fail">Issues reported</string>
     <string name="home_latest_status_info">Complete with information</string>
     <string name="home_latest_status_unavailable">Some checks unavailable</string>
-    <string name="home_latest_status_not_tested">Some checks not tested</string>
+    <string name="home_latest_status_not_tested">Some checks not measured</string>
     <string name="home_latest_no_attention">No items need attention</string>
-    <plurals name="home_latest_attention_summary">
-        <item quantity="one">%1$d item needs attention</item>
-        <item quantity="other">%1$d items need attention</item>
+    <plurals name="home_latest_evidence_attention_summary">
+        <item quantity="one">%1$d evidence item needs attention</item>
+        <item quantity="other">%1$d evidence items need attention</item>
     </plurals>
     <string name="home_latest_completed_at">Completed %1$s</string>
-    <string name="home_latest_passed_label">Checks passed</string>
-    <string name="home_latest_passed_total">%1$s</string>
-    <string name="home_latest_passed_description">%1$s of %2$s checks passed</string>
-    <string name="home_latest_coverage_value">Coverage %1$s</string>
-    <string name="home_latest_category_statuses">Category status: Pass %1$s, Warning %2$s, Fail %3$s, Info %4$s, Not available %5$s, Not tested %6$s.</string>
+    <plurals name="home_latest_days_ago">
+        <item quantity="one">%1$d day ago</item>
+        <item quantity="other">%1$d days ago</item>
+    </plurals>
+    <string name="home_latest_past_state_description">Last Full Check, %1$s. Completed %2$s</string>
+    <string name="home_latest_passed_label">Categories passed</string>
+    <string name="home_latest_passed_total">of %1$s</string>
+    <string name="home_latest_passed_description">%1$s of %2$s categories passed</string>
+    <string name="home_latest_coverage_value">Evidence coverage %1$s</string>
+    <string name="home_latest_category_statuses">Category status: Pass %1$s, Warning %2$s, Fail %3$s, Info %4$s, Not available %5$s, Not measured %6$s.</string>
     <string name="home_latest_state_description">%1$s. %2$s. %3$s. %4$s. %5$s. %6$s</string>
     <string name="run_all_preflight_title">Before the full check</string>
     <string name="run_all_preflight_description">Review what fonecheck will do before any permission request appears.</string>
+    <string name="run_all_preflight_what_happens_title">What happens</string>
     <string name="run_all_preflight_interactions">You will inspect the display and use supported camera, motion, volume-button, vibration, speaker, and biometric checks.</string>
-    <string name="run_all_preflight_audio_vibration">Selected audio plays a short speaker tone and records a brief microphone sample for a relative level reading. Vibration can feel strong.</string>
+    <string name="run_all_preflight_audio_vibration">If selected, the speaker test plays a short tone and the microphone test records a brief sample for a relative level reading. Vibration can feel strong.</string>
     <string name="run_all_preflight_storage">The storage benchmark writes, reads, and deletes one temporary 64 MiB file in fonecheck’s private cache.</string>
+    <string name="run_all_preflight_permissions_control_title">Permissions and control</string>
     <string name="run_all_preflight_permissions">Permissions are requested on the next screen only when needed. Denial limits coverage but does not fail or block the full check.</string>
     <string name="run_all_preflight_unsupported">Unavailable hardware is marked not applicable. Every interactive check can be skipped or exited.</string>
+    <string name="run_all_preflight_privacy_title">Privacy</string>
     <string name="run_all_preflight_local_report">Report data stays on this device and is not uploaded. Raw audio, camera images, precise location, network names, and cell identifiers are not saved.</string>
     <string name="run_all_preflight_no_network">No internet or network-speed test is performed.</string>
-    <string name="run_all_preflight_choices_title">Included optional work</string>
+    <string name="run_all_preflight_choices_title">Optional tests</string>
     <string name="run_all_preflight_speaker_option">Speaker tone and confirmation</string>
     <string name="run_all_preflight_microphone_option">Brief microphone sample</string>
     <string name="run_all_preflight_camera_option">Camera preview and capture</string>
@@ -674,8 +684,6 @@
     <string name="run_all_biometrics_description">Use the biometric-only system prompt. A PIN, pattern, or password is not accepted as a biometric result.</string>
     <string name="run_all_skip">Skip this check</string>
     <string name="run_all_cancel">Cancel Full Check</string>
-    <string name="run_all_stage_timeout">This check timed out. Retry it or skip it to continue.</string>
-    <string name="run_all_stage_error">This check could not continue. Retry it or skip it.</string>
     <string name="run_all_results_title">Your phone report</string>
     <string name="run_all_results_description">Automatic and interactive checks are grouped by category below.</string>
     <string name="run_all_overall_score">Overall score</string>
@@ -695,8 +703,6 @@
     <string name="run_all_needs_attention">Needs attention</string>
     <string name="run_all_completed">Completed</string>
     <string name="run_all_not_completed">Not completed</string>
-    <string name="run_all_view_details">View details</string>
-    <string name="run_all_hide_details">Hide details</string>
     <string name="run_all_open_test">Open individual test</string>
     <string name="run_all_done">Done</string>
     <string name="run_all_saving_report">Saving the completed report on this device…</string>
@@ -722,12 +728,12 @@
     <string name="report_reason_error">Check could not be completed</string>
     <string name="report_reason_android_version_unsupported">Unsupported on this Android version</string>
     <string name="report_coverage">Coverage</string>
-    <string name="report_coverage_value">%1$s%% · Checks: %2$s/%3$s</string>
+    <string name="report_coverage_value">%1$s%%</string>
+    <string name="report_checks">Checks</string>
+    <string name="report_checks_value">%1$s/%2$s</string>
     <string name="report_pass_count" tools:ignore="PluralsCandidate">%1$s passed</string>
     <string name="report_info_count">Information: %1$s</string>
-    <string name="report_not_tested_count" tools:ignore="PluralsCandidate">%1$s not tested</string>
-    <string name="report_view_saved_evidence">View saved evidence</string>
-    <string name="report_hide_saved_evidence">Hide saved evidence</string>
+    <string name="report_not_tested_count" tools:ignore="PluralsCandidate">%1$s not measured</string>
     <string name="report_retest">Retest</string>
     <string name="report_retest_title">Retest %1$s</string>
     <string name="report_retest_description">The new result will be saved as a separate category-only report. The original report will not change.</string>
@@ -756,6 +762,10 @@
     <string name="settings_theme_system">System</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">System</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_finnish">Suomi</string>
     <string name="settings_test_warnings">Show test warnings</string>
     <string name="settings_test_warnings_description">Keep safety and limitation notices visible before interactive diagnostics.</string>
     <string name="settings_permissions">Permissions</string>
@@ -821,14 +831,19 @@
     <string name="history_delete_error">The report could not be deleted. It remains in history.</string>
     <string name="history_retry">Retry</string>
     <string name="history_full_check">Full Check</string>
-    <string name="history_partial_check">Partial Full Check</string>
-    <string name="history_incomplete_check">Incomplete Full Check</string>
-    <string name="history_category_retest">Category retest · %1$s</string>
+    <string name="history_category_retest">Category retest</string>
     <string name="history_unavailable_report">Unavailable report</string>
+    <string name="history_status">Status</string>
+    <string name="history_status_complete">Complete</string>
+    <string name="history_status_partial">Partial</string>
+    <string name="history_status_incomplete">Incomplete</string>
+    <string name="history_status_unavailable">Unavailable</string>
+    <string name="history_completed">Completed</string>
     <string name="history_score">Score</string>
     <string name="history_coverage">Coverage</string>
     <string name="history_coverage_value">%1$s%%</string>
-    <string name="history_issue_summary">Warnings: %1$s · Issues: %2$s</string>
+    <string name="history_warnings">Warnings</string>
+    <string name="history_issues">Issues</string>
     <string name="history_open">Open</string>
     <string name="history_compare">Compare</string>
     <string name="history_compare_selected">Selected</string>
@@ -858,7 +873,7 @@
     <string name="pdf_captured">Captured</string>
     <string name="pdf_disclaimer">Differences and measurements do not prove physical device health.</string>
     <string name="pdf_unit_samples">samples</string>
-    <string name="pdf_counts_value">Completed: %1$d, not tested: %2$d, unavailable: %3$d, warnings: %4$d, failures: %5$d</string>
+    <string name="pdf_counts_value">Completed: %1$d, not measured: %2$d, unavailable: %3$d, warnings: %4$d, failures: %5$d</string>
     <string name="pdf_page">Page %1$d / %2$d</string>
     <string name="export_title">Export report</string>
     <string name="export_description">Create a local copy of this immutable saved report.</string>
@@ -884,8 +899,6 @@
     <string name="comparison_check">Check</string>
     <string name="comparison_first_report">First report</string>
     <string name="comparison_second_report">Second report</string>
-    <string name="comparison_app_version">App %1$s (%2$d)</string>
-    <string name="comparison_report_version">Report format %1$d</string>
     <string name="comparison_score">Score</string>
     <string name="comparison_score_value">%1$s → %2$s</string>
     <string name="comparison_score_delta">Score change: %1$s</string>
@@ -918,7 +931,6 @@
     <string name="run_all_status_fail">Fail</string>
     <string name="run_all_status_info">Info</string>
     <string name="run_all_status_unavailable">Not available</string>
-    <string name="run_all_status_not_tested">Not tested</string>
     <string name="run_all_summary_pass">Checks completed successfully</string>
     <string name="run_all_summary_info">Information recorded</string>
     <string name="run_all_summary_warning">Some checks need attention</string>
@@ -935,18 +947,10 @@
     <string name="run_all_permission_missing">Permission was not granted</string>
     <string name="run_all_manual_failed">User reported a problem</string>
     <string name="run_all_manual_skipped">Interactive check was skipped</string>
-    <string name="home_categories_title">Categories</string>
-    <plurals name="home_category_cpu_cores">
-        <item quantity="one">%1$d core</item>
-        <item quantity="other">%1$d cores</item>
-    </plurals>
-    <plurals name="home_category_cameras">
-        <item quantity="one">%1$d camera</item>
-        <item quantity="other">%1$d cameras</item>
-    </plurals>
-    <plurals name="home_category_sensors">
-        <item quantity="one">%1$d sensor</item>
-        <item quantity="other">%1$d sensors</item>
+    <string name="home_status_panel_title">Status panel</string>
+    <plurals name="home_status_channel_count">
+        <item quantity="one">%1$s category</item>
+        <item quantity="other">%1$s categories</item>
     </plurals>
 
     <string name="home_cat_device">Device</string>
@@ -965,19 +969,20 @@
     <string name="home_cat_biometrics">Biometrics</string>
 
     <!-- Display Test Screen -->
-    <string name="display_touch_title">Touch Screen Test</string>
+    <string name="display_touch_title">Touch screen test</string>
     <string name="display_touch_desc">Draw on the grid to verify touch response across the entire screen.</string>
-    <string name="display_touch_reset">Reset Grid</string>
-    <string name="display_info_title">Display Info</string>
+    <string name="display_touch_reset">Reset grid</string>
+    <string name="display_info_title">Display info</string>
     <string name="display_resolution">Resolution</string>
     <string name="display_density">Density</string>
-    <string name="display_refresh_rate">Refresh Rate</string>
+    <string name="display_refresh_rate">Refresh rate</string>
     <string name="display_hdr">HDR</string>
-    <string name="display_wide_color">Wide Color Gamut</string>
+    <string name="display_wide_color">Wide color gamut</string>
     <string name="display_brightness">Brightness</string>
-    <string name="display_auto_brightness">Auto-Brightness</string>
+    <string name="display_auto_brightness">Auto-brightness</string>
     <string name="display_status_label">Status</string>
-    <string name="display_start_test">Start Test</string>
+    <string name="display_start_test">Start test</string>
+    <string name="display_refresh_info">Refresh display information</string>
     <string name="display_visual_title">Pixel and uniformity test</string>
     <string name="display_visual_description">Inspect red, green, blue, white, black and a gray gradient for dead or stuck pixels, shadows and image retention.</string>
     <string name="display_visual_question">Did every field look even and clean?</string>
@@ -992,13 +997,14 @@
     <string name="display_pattern_white">White field</string>
     <string name="display_pattern_black">Black field</string>
     <string name="display_pattern_gray_gradient">Gray gradient</string>
-    <string name="display_status_ready">Ready</string>
     <string name="display_status_passed">Passed</string>
     <string name="display_status_issue">Issue found</string>
     <string name="display_status_complete">Complete</string>
     <string name="display_touch_cells">Grid coverage</string>
     <string name="display_multi_touch_peak">Maximum simultaneous touches</string>
-    <string name="display_touch_progress">Grid %1$s/%2$s · active pointers %3$s · maximum %4$s</string>
+    <string name="display_touch_active">Active touches</string>
+    <string name="display_touch_maximum">Maximum touches</string>
+    <string name="display_touch_progress">Grid coverage is %1$s of %2$s cells. Active touch count is %3$s. Maximum touch count is %4$s.</string>
     <string name="display_touch_grid_description">Touch-test grid. Drag across the whole area and place multiple fingers simultaneously.</string>
     <string name="display_touch_complete">Complete test</string>
     <string name="display_resolution_value">%1$s × %2$s px (%3$s)</string>
@@ -1022,7 +1028,6 @@
     <string name="vibration_effects_supported">Supported effects</string>
     <string name="vibration_primitives_supported">Supported primitives</string>
     <string name="vibration_has_vibrator">Vibrator</string>
-    <string name="vibration_ready">Ready</string>
     <string name="vibration_felt">Felt</string>
     <string name="vibration_not_felt">Not felt</string>
     <string name="vibration_skipped">Skipped</string>
@@ -1054,7 +1059,6 @@
     <string name="button_volume_down">Volume down</string>
     <string name="button_power">Power button</string>
     <string name="button_detected">Detected</string>
-    <string name="button_not_detected">Not detected</string>
     <string name="button_power_note">Android apps cannot reliably test the power button, so it is not included in this test.</string>
     <string name="button_power_unavailable">Unavailable to apps</string>
     <string name="button_start_test">Start test</string>
@@ -1062,7 +1066,6 @@
     <string name="button_skip">Skip</string>
     <string name="button_retry">Try again</string>
     <string name="button_reset">Reset</string>
-    <string name="button_status_ready">Ready</string>
     <string name="button_status_progress">%1$s of %2$s detected</string>
     <string name="button_status_complete">Complete</string>
     <string name="button_status_timed_out">Timed out</string>
@@ -1088,7 +1091,6 @@
     <string name="biometric_security_update_required">Security update required</string>
     <string name="biometric_unsupported">Unsupported on this Android version</string>
     <string name="biometric_unknown">Availability unknown</string>
-    <string name="biometric_ready">Ready</string>
     <string name="biometric_in_progress">System prompt active</string>
     <string name="biometric_not_recognized">Not recognized</string>
     <string name="biometric_cancelled">Cancelled</string>
@@ -1118,6 +1120,74 @@
     <string name="permission_rationale_location">Location access is required by Android to read nearby Wi-Fi and GPS diagnostic data.</string>
     <string name="permission_rationale_phone">Phone access is used to read SIM and mobile-network diagnostic data.</string>
     <string name="permission_rationale_bluetooth">Nearby devices access is used to read Bluetooth diagnostic data on Android 12 and newer.</string>
+
+    <!-- Device observation reasons -->
+    <string name="observation_reason_cpu_reading_unavailable">Android did not return a usable CPU core count.</string>
+    <string name="observation_reason_ram_reading_unavailable">Android did not return a usable total memory value.</string>
+    <string name="observation_reason_gpu_reading_unavailable">OpenGL did not return a renderer name.</string>
+    <string name="observation_reason_display_reading_unavailable">Android did not return usable display dimensions.</string>
+    <string name="observation_reason_sim_inventory_unknown">Android did not expose enough SIM information to determine the current SIM configuration.</string>
+    <string name="observation_reason_sim_not_present">No SIM was detected. Insert or activate a SIM to measure mobile service.</string>
+    <string name="observation_reason_sim_inactive">A SIM is present but inactive. Activate it to measure mobile service.</string>
+    <string name="observation_reason_sim_slot_unknown">Android did not expose the state of this SIM slot.</string>
+    <string name="observation_reason_sim_network_locked">The SIM is locked to a network. Contact the carrier if it should work with this phone.</string>
+    <string name="observation_reason_sim_pin_required">The SIM is waiting for its PIN. Unlock it in Android settings to use mobile service.</string>
+    <string name="observation_reason_sim_puk_required">The SIM is locked after incorrect PIN attempts. Use the PUK supplied by the carrier.</string>
+    <string name="observation_reason_sim_not_ready">Android reports that the SIM is not ready. Wait for initialization and check it again.</string>
+    <string name="observation_reason_sim_permanently_disabled">The SIM is permanently disabled. Replace it or contact the carrier.</string>
+    <string name="observation_reason_sim_card_io_error">Android reports an I/O fault, but fonecheck cannot tell whether it is in the SIM card or the phone’s reader.</string>
+    <string name="observation_reason_sim_card_restricted">Android reports that the SIM is restricted. Contact the carrier if mobile service should be available.</string>
+    <string name="observation_reason_camera_measurement_error">fonecheck could not start or complete the camera measurement. Check camera permission and try again.</string>
+    <string name="observation_reason_sensor_measurement_error">fonecheck could not register the sensor listener. Close other sensor tests and try again.</string>
+    <string name="observation_reason_gps_disabled">GPS is switched off. Enable Location to run the GPS measurement.</string>
+    <string name="observation_reason_gps_not_run">The GPS fix was not run. Start the fix to measure satellite positioning.</string>
+    <string name="observation_reason_gps_in_progress">The GPS fix is still running. Wait for it to finish before using the result.</string>
+    <string name="observation_reason_gps_timeout">No GPS fix was obtained before the timeout. Move to an open area and try again.</string>
+    <string name="observation_reason_gps_start_failed">Android could not start location updates. Check Location permission and GPS, then try again.</string>
+    <string name="observation_reason_battery_health_unavailable">Android did not expose a recognized battery health status.</string>
+    <string name="observation_reason_battery_overheat">Android reports that the battery is currently overheated. Let the phone cool.</string>
+    <string name="observation_reason_battery_dead">Android reports that the battery is dead. The battery requires service or replacement.</string>
+    <string name="observation_reason_battery_over_voltage">Android reports battery over-voltage. Stop charging and have the battery and charging system inspected.</string>
+    <string name="observation_reason_battery_unspecified_failure">Android reports an unspecified battery failure. The battery requires inspection.</string>
+    <string name="observation_reason_battery_cold">Android reports that the battery is currently cold. Let the phone reach room temperature.</string>
+    <string name="observation_reason_battery_temperature_unavailable">Android did not expose a usable battery temperature.</string>
+    <string name="observation_reason_battery_temperature_cold">The battery is below 0 °C right now. Let the phone reach room temperature.</string>
+    <string name="observation_reason_battery_temperature_high">The battery is above 45 °C right now. Disconnect charging and let the phone cool.</string>
+    <string name="observation_reason_battery_temperature_critical">The battery is at least 50 °C right now. Disconnect charging and let the phone cool before continuing.</string>
+    <string name="observation_reason_thermal_status_unavailable">This Android version or device does not expose the thermal status to fonecheck.</string>
+    <string name="observation_reason_thermal_management_active">Android is currently applying thermal management. Let the phone rest.</string>
+    <string name="observation_reason_thermal_severe_without_app_load">Android is applying severe thermal throttling even though fonecheck adds no thermal load. Let the phone cool.</string>
+    <string name="observation_reason_button_test_not_run">The button test was not run. Start it and press each requested button.</string>
+    <string name="observation_reason_button_test_in_progress">The button test is still running. Press each requested button before the timer ends.</string>
+    <string name="observation_reason_button_test_timeout">The button test ended before every requested press was recorded. Run it again and press each button.</string>
+    <string name="observation_reason_biometric_not_run">Biometric authentication was not run. Start the system prompt to take this measurement.</string>
+    <string name="observation_reason_biometric_in_progress">The biometric prompt is still active. Complete or cancel it before using the result.</string>
+    <string name="observation_reason_biometric_not_recognized">The submitted biometric was not recognized. Try an enrolled biometric again.</string>
+    <string name="observation_reason_biometric_cancelled">Biometric authentication was cancelled before a result was obtained.</string>
+    <string name="observation_reason_biometric_lockout">Android has temporarily locked biometric authentication after repeated attempts. Wait or unlock the phone another way.</string>
+    <string name="observation_reason_biometric_not_enrolled">No biometric is enrolled. Add one in Android settings to run this measurement.</string>
+    <string name="observation_reason_biometric_security_update_required">Android requires a security update before biometric authentication can be measured.</string>
+    <string name="observation_reason_biometric_unavailable">Android does not expose an available biometric authenticator for this measurement.</string>
+    <string name="observation_reason_biometric_error">Android ended biometric authentication with an unclassified error. Try the measurement again.</string>
+    <string name="observation_reason_permission_not_requested">The required permission has not been requested. Allow it to enable this measurement.</string>
+    <string name="observation_reason_permission_denied">The required permission was denied. Allow it to enable this measurement.</string>
+    <string name="observation_reason_permission_open_settings">The required permission is disabled. Enable it in the app settings to run this measurement.</string>
+    <string name="observation_reason_permission_partial">Only part of the required permission was granted. Enable the remaining access in app settings.</string>
+    <string name="observation_reason_hardware_unavailable">This device does not expose the hardware needed for this measurement.</string>
+    <string name="observation_reason_value_not_exposed">Android does not expose this value on this device.</string>
+    <string name="observation_reason_android_version_unsupported">This Android version does not expose the API needed for this measurement.</string>
+    <string name="observation_reason_platform_restriction">Android does not allow an ordinary app to take this measurement.</string>
+    <string name="observation_reason_test_not_run">This test was not run. Run it to obtain a result.</string>
+    <string name="observation_reason_measurement_in_progress">The measurement is still running. Wait for it to finish before using the result.</string>
+    <string name="observation_reason_test_skipped">This test was skipped. Run it to obtain a result.</string>
+    <string name="observation_reason_test_cancelled">This test was cancelled before a result was obtained.</string>
+    <string name="observation_reason_measurement_timeout">The measurement did not finish before the timeout. Try it again.</string>
+    <string name="observation_reason_measurement_error">fonecheck could not complete this measurement. Try it again.</string>
+    <string name="observation_reason_insufficient_space">There is not enough free app-cache space for this measurement. Free space and try again.</string>
+    <string name="observation_reason_user_confirmed_display_failure">You confirmed a visible display problem during the test.</string>
+    <string name="observation_reason_user_confirmed_audio_failure">You confirmed an audio problem during the test.</string>
+    <string name="observation_reason_user_confirmed_camera_failure">You confirmed a camera image problem during the test.</string>
+    <string name="observation_reason_user_confirmed_vibration_failure">You confirmed that the vibration motor was not felt during the test.</string>
     <!-- Accessibility -->
     <string name="accessibility_expanded">Expanded</string>
     <string name="accessibility_collapsed">Collapsed</string>

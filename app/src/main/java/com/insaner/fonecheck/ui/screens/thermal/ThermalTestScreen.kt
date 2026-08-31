@@ -17,18 +17,21 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
+import com.insaner.fonecheck.domain.observation.DeviceObservation
+import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
 import com.insaner.fonecheck.localization.thermalStatusStringRes
 import com.insaner.fonecheck.ui.TopBarAction
 import com.insaner.fonecheck.ui.components.CaptureTimestamp
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.ObservationReasonNote
 import com.insaner.fonecheck.ui.components.RegisterRefreshTopBarAction
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.confidenceLabel
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
-import com.insaner.fonecheck.ui.theme.SemanticTone
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 
 @Composable
 fun ThermalTestScreen(
@@ -80,6 +83,8 @@ fun ThermalTestScreen(
 
 @Composable
 private fun ThermalStatusSection(state: ThermalTestState) {
+    val classification =
+        DeviceObservationClassifier.classify(DeviceObservation.Thermal(state.status))
     ThermalSection(
         label = stringResource(R.string.thermal_status_title),
         trailing = confidenceLabel(state.statusConfidence),
@@ -90,7 +95,7 @@ private fun ThermalStatusSection(state: ThermalTestState) {
                 state.status
                     .takeUnless { it == ThermalStatusCode.UNAVAILABLE }
                     ?.let { stringResource(thermalStatusStringRes(it)) },
-            tone = thermalStatusTone(state.severity),
+            tone = classification.toSemanticTone(),
         )
         DataRow(
             label = stringResource(R.string.thermal_severity_label),
@@ -98,7 +103,7 @@ private fun ThermalStatusSection(state: ThermalTestState) {
                 state.severity
                     .takeUnless { it == ThermalSeverityCode.UNAVAILABLE }
                     ?.let { thermalSeverityLabel(it) },
-            tone = thermalStatusTone(state.severity),
+            tone = classification.toSemanticTone(),
         )
         DataRow(
             label = stringResource(R.string.thermal_monitoring_label),
@@ -112,6 +117,7 @@ private fun ThermalStatusSection(state: ThermalTestState) {
                 ),
             showDivider = false,
         )
+        ObservationReasonNote(classification)
         Note(
             stringResource(
                 if (state.statusApiSupported) {
@@ -190,20 +196,6 @@ private fun thermalSeverityLabel(severity: ThermalSeverityCode): String =
             ThermalSeverityCode.UNAVAILABLE -> R.string.device_value_unavailable
         },
     )
-
-private fun thermalStatusTone(severity: ThermalSeverityCode): SemanticTone =
-    when (severity) {
-        ThermalSeverityCode.NORMAL -> SemanticTone.PASS
-        ThermalSeverityCode.LIGHT,
-        ThermalSeverityCode.MODERATE,
-        -> SemanticTone.ATTENTION
-
-        ThermalSeverityCode.SEVERE,
-        ThermalSeverityCode.CRITICAL,
-        -> SemanticTone.FAIL
-
-        ThermalSeverityCode.UNAVAILABLE -> SemanticTone.NEUTRAL
-    }
 
 @Composable
 private fun thermalErrorLabel(error: ThermalErrorCode): String =

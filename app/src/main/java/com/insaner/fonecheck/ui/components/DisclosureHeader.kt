@@ -1,6 +1,10 @@
 package com.insaner.fonecheck.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -27,6 +31,41 @@ import com.insaner.fonecheck.R
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
 import com.insaner.fonecheck.ui.theme.contentColor
+
+@Composable
+fun DisclosureSection(
+    label: String,
+    summary: String,
+    expanded: Boolean,
+    onClick: () -> Unit,
+    tone: SemanticTone = SemanticTone.NEUTRAL,
+    content: @Composable () -> Unit,
+) {
+    Column {
+        DisclosureHeader(
+            label = label,
+            summary = summary,
+            expanded = expanded,
+            onClick = onClick,
+            tone = tone,
+        )
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically(),
+            exit = shrinkVertically(),
+        ) {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = FonecheckTheme.spacing.md),
+                verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md),
+            ) {
+                content()
+            }
+        }
+    }
+}
 
 /**
  * Opens and closes a disclosure section while keeping its real summary visible in the header.

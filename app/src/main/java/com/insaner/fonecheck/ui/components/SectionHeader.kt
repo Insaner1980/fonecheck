@@ -8,10 +8,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 
 /**
@@ -21,7 +23,7 @@ import com.insaner.fonecheck.ui.theme.FonecheckTheme
  *
  * Pass [label] in its natural casing; the component uppercases what it draws and keeps the original
  * wording for screen readers. [trailing] is drawn exactly as given, because uppercasing a localised
- * value mangles it — a Finnish medium-form date becomes `11. ELOK. 2026`.
+ * value mangles it: a Finnish medium-form date becomes `11. ELOK. 2026`.
  *
  * The trailing value is measured first and never wraps; a label too long to fit beside it wraps
  * instead.
@@ -31,6 +33,8 @@ fun SectionHeader(
     label: String,
     modifier: Modifier = Modifier,
     trailing: String? = null,
+    ruleColor: Color = FonecheckTheme.colors.ruleStrong,
+    ruleThickness: Dp = FonecheckTheme.spacing.ruleThickness,
 ) {
     val locale = LocalLocale.current.platformLocale
     Column(modifier = modifier.fillMaxWidth()) {
@@ -62,6 +66,6 @@ fun SectionHeader(
                 )
             }
         }
-        StrongRule()
+        StrongRule(color = ruleColor, thickness = ruleThickness)
     }
 }

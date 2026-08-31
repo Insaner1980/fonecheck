@@ -20,13 +20,19 @@ import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.CpuCoreFrequency
 import com.insaner.fonecheck.domain.model.PerformanceBenchmarkResult
 import com.insaner.fonecheck.domain.model.PerformanceInfo
+import com.insaner.fonecheck.domain.observation.DeviceObservation
+import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
+import com.insaner.fonecheck.domain.observation.MeasurementKind
+import com.insaner.fonecheck.domain.observation.MeasurementOutcome
 import com.insaner.fonecheck.localization.thermalStatusStringRes
 import com.insaner.fonecheck.ui.TopBarAction
 import com.insaner.fonecheck.ui.components.CaptureTimestamp
 import com.insaner.fonecheck.ui.components.DataRow
+import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.IndeterminateRule
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.ObservationReasonNote
 import com.insaner.fonecheck.ui.components.PrimaryButton
 import com.insaner.fonecheck.ui.components.RegisterRefreshTopBarAction
 import com.insaner.fonecheck.ui.components.SecondaryButton
@@ -90,36 +96,33 @@ fun PerformanceInfoScreen(
 
 @Composable
 private fun CpuInfoSection(info: PerformanceInfo) {
+    val coreClassification = classifyReading(MeasurementKind.CPU, info.cpuCores > 0)
     PerformanceSection(
         label = stringResource(R.string.perf_cpu_title),
         trailing = confidenceLabel(info.cpuConfidence),
     ) {
-        val cpuModel = performanceValueOrNull(info.cpuModel)
-        if (cpuModel == null) {
-            DataRow(
-                label = stringResource(R.string.perf_cpu_model),
-                value = null,
-            )
-        } else {
-            LongValueRow(
-                label = stringResource(R.string.perf_cpu_model),
-                value = cpuModel,
-            )
-        }
+        LongValueRow(
+            label = stringResource(R.string.perf_cpu_model),
+            value = performanceValueOrNull(info.cpuModel),
+        )
         DataRow(
             label = stringResource(R.string.perf_cpu_architecture),
             value = performanceValueOrNull(info.cpuArchitecture),
         )
         DataRow(
             label = stringResource(R.string.perf_cpu_cores),
-            value = uiNumber(info.cpuCores),
+            value = info.cpuCores.takeIf { it > 0 }?.let { uiNumber(it) },
+            showDivider = coreClassification.reason == null,
         )
+        ObservationReasonNote(coreClassification)
+        if (coreClassification.reason != null) HairlineRule()
         info.cpuFrequencies.forEach { CoreFrequencyRow(it) }
     }
 }
 
 @Composable
 private fun RamInfoSection(info: PerformanceInfo) {
+    val totalRamClassification = classifyReading(MeasurementKind.RAM, info.totalRamBytes?.let { it > 0L } == true)
     PerformanceSection(
         label = stringResource(R.string.perf_ram_title),
         trailing = confidenceLabel(info.ramConfidence),
@@ -127,7 +130,10 @@ private fun RamInfoSection(info: PerformanceInfo) {
         DataRow(
             label = stringResource(R.string.perf_ram_total),
             value = info.totalRamBytes?.let { uiFileSize(it) },
+            showDivider = totalRamClassification.reason == null,
         )
+        ObservationReasonNote(totalRamClassification)
+        if (totalRamClassification.reason != null) HairlineRule()
         DataRow(
             label = stringResource(R.string.perf_ram_available),
             value = info.availableRamBytes?.let { uiFileSize(it) },
@@ -137,6 +143,11 @@ private fun RamInfoSection(info: PerformanceInfo) {
 
 @Composable
 private fun GpuInfoSection(info: PerformanceInfo) {
+    val rendererClassification =
+        classifyReading(
+            MeasurementKind.GPU,
+            info.glRenderer != PerformanceInfo.UNAVAILABLE && info.glRenderer.isNotBlank(),
+        )
     PerformanceSection(
         label = stringResource(R.string.perf_gpu_title),
         trailing = confidenceLabel(info.gpuConfidence),
@@ -148,7 +159,10 @@ private fun GpuInfoSection(info: PerformanceInfo) {
         DataRow(
             label = stringResource(R.string.perf_gpu_renderer),
             value = performanceValueOrNull(info.glRenderer),
+            showDivider = rendererClassification.reason == null,
         )
+        ObservationReasonNote(rendererClassification)
+        if (rendererClassification.reason != null) HairlineRule()
         DataRow(
             label = stringResource(R.string.perf_gpu_vendor),
             value = performanceValueOrNull(info.glVendor),
@@ -280,6 +294,16 @@ private fun frequencyValue(value: Long?): String =
 
 private fun performanceValueOrNull(value: String): String? =
     value.takeUnless { it == PerformanceInfo.UNAVAILABLE || it.isBlank() }
+
+private fun classifyReading(
+    kind: MeasurementKind,
+    available: Boolean,
+) = DeviceObservationClassifier.classify(
+    DeviceObservation.Measurement(
+        kind,
+        if (available) MeasurementOutcome.MEASURED else MeasurementOutcome.UNAVAILABLE,
+    ),
+)
 
 @Composable
 private fun PerformanceSection(

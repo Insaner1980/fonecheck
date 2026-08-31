@@ -23,6 +23,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,17 +45,28 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.observation.DeviceObservation
+import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
+import com.insaner.fonecheck.domain.observation.MeasurementKind
+import com.insaner.fonecheck.domain.observation.MeasurementOutcome
+import com.insaner.fonecheck.ui.TopBarAction
+import com.insaner.fonecheck.ui.classification.classifyDisplayConfirmation
 import com.insaner.fonecheck.ui.components.DataRow
+import com.insaner.fonecheck.ui.components.HairlineRule
+import com.insaner.fonecheck.ui.components.LiveStateTimestamp
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.ObservationReasonNote
 import com.insaner.fonecheck.ui.components.PrimaryButton
+import com.insaner.fonecheck.ui.components.RegisterRefreshTopBarAction
 import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.components.shouldShowObservationReason
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.Green400
-import com.insaner.fonecheck.ui.theme.SemanticTone
 import com.insaner.fonecheck.ui.theme.Yellow400
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 import kotlinx.coroutines.delay
 
 internal const val DISPLAY_TOUCH_GRID_TAG = "display_touch_grid"
@@ -65,11 +77,19 @@ internal const val DISPLAY_EXIT_BUTTON_TAG = "display_exit_button"
 fun DisplayTestScreen(
     modifier: Modifier = Modifier,
     onFullscreenChange: (Boolean) -> Unit = {},
+    onTopBarActionChange: (TopBarAction?) -> Unit = {},
     viewModel: DisplayTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val isFullscreen = state.visual.isActive || state.touch.isActive
     val currentOnFullscreenChange by rememberUpdatedState(onFullscreenChange)
+
+    RegisterRefreshTopBarAction(
+        contentDescriptionResId = R.string.display_refresh_info,
+        enabled = true,
+        onRefresh = viewModel::refreshInfo,
+        onTopBarActionChange = onTopBarActionChange,
+    )
 
     DisposableEffect(isFullscreen) {
         currentOnFullscreenChange(isFullscreen)
@@ -121,6 +141,7 @@ private fun DisplayOverview(
     viewModel: DisplayTestViewModel,
     modifier: Modifier = Modifier,
 ) {
+    val liveStateUpdatedAtEpochMillis = remember(state) { System.currentTimeMillis() }
     Column(
         modifier =
             modifier
@@ -129,23 +150,40 @@ private fun DisplayOverview(
                 .padding(FonecheckTheme.spacing.md),
         verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg),
     ) {
+        val visualClassification = classifyDisplayResult(state.visual.result)
         DisplaySection(label = stringResource(R.string.display_info_title)) {
             DisplayInfoDetails(state.info)
         }
         DisplaySection(label = stringResource(R.string.display_visual_title)) {
+            val valueExplainsReason = state.visual.result == null
+            val reasonVisible =
+                shouldShowObservationReason(visualClassification, valueExplainsReason)
             DataRow(
                 label = stringResource(R.string.display_status_label),
                 value = manualResultLabel(state.visual.result),
-                tone = manualResultTone(state.visual.result),
+                tone = visualClassification.toSemanticTone(),
+                showDivider = !reasonVisible,
             )
+            ObservationReasonNote(
+                classification = visualClassification,
+                valueExplainsNotMeasuredState = valueExplainsReason,
+            )
+            if (reasonVisible) HairlineRule()
             Note(stringResource(R.string.display_visual_description))
-            PrimaryButton(
+            SecondaryButton(
                 label = stringResource(R.string.display_start_test),
                 onClick = viewModel::startVisualTest,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
         DisplaySection(label = stringResource(R.string.display_touch_title)) {
+            val touchClassification =
+                classifyMeasurement(
+                    if (state.touch.isComplete) MeasurementOutcome.MEASURED else MeasurementOutcome.NOT_RUN,
+                )
+            val valueExplainsReason = !state.touch.isComplete
+            val reasonVisible =
+                shouldShowObservationReason(touchClassification, valueExplainsReason)
             DataRow(
                 label = stringResource(R.string.display_status_label),
                 value =
@@ -153,11 +191,17 @@ private fun DisplayOverview(
                         if (state.touch.isComplete) {
                             R.string.display_status_complete
                         } else {
-                            R.string.display_status_ready
+                            R.string.status_not_measured
                         },
                     ),
-                tone = if (state.touch.isComplete) SemanticTone.PASS else SemanticTone.NEUTRAL,
+                tone = touchClassification.toSemanticTone(),
+                showDivider = !reasonVisible,
             )
+            ObservationReasonNote(
+                classification = touchClassification,
+                valueExplainsNotMeasuredState = valueExplainsReason,
+            )
+            if (reasonVisible) HairlineRule()
             if (state.touch.isComplete) {
                 DataRow(
                     label = stringResource(R.string.display_touch_cells),
@@ -174,27 +218,46 @@ private fun DisplayOverview(
                 )
             }
             Note(stringResource(R.string.display_touch_desc))
-            PrimaryButton(
+            SecondaryButton(
                 label = stringResource(R.string.display_start_test),
                 onClick = viewModel::startTouchTest,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+        LiveStateTimestamp(liveStateUpdatedAtEpochMillis)
     }
 }
 
 @Composable
 private fun DisplayInfoDetails(info: DisplayInfoState) {
+    val resolutionClassification =
+        DeviceObservationClassifier.classify(
+            DeviceObservation.Measurement(
+                MeasurementKind.DISPLAY,
+                if (info.widthPx > 0 && info.heightPx > 0) {
+                    MeasurementOutcome.MEASURED
+                } else {
+                    MeasurementOutcome.UNAVAILABLE
+                },
+            ),
+        )
     LongValueRow(
         label = stringResource(R.string.display_resolution),
         value =
-            stringResource(
-                R.string.display_resolution_value,
-                uiNumber(info.widthPx),
-                uiNumber(info.heightPx),
-                resolutionSourceLabel(info.resolutionSource),
-            ),
+            if (info.widthPx > 0 && info.heightPx > 0) {
+                stringResource(
+                    R.string.display_resolution_value,
+                    uiNumber(info.widthPx),
+                    uiNumber(info.heightPx),
+                    resolutionSourceLabel(info.resolutionSource),
+                )
+            } else {
+                null
+            },
+        showDivider = resolutionClassification.reason == null,
     )
+    ObservationReasonNote(resolutionClassification)
+    if (resolutionClassification.reason != null) HairlineRule()
     DataRow(
         label = stringResource(R.string.display_density),
         value = stringResource(R.string.display_density_value, uiNumber(info.densityDpi)),
@@ -376,10 +439,22 @@ internal fun TouchTestOverlay(
                 modifier = Modifier.testTag(DISPLAY_EXIT_BUTTON_TAG),
             )
         }
-        Text(
-            text = progressDescription,
-            style = FonecheckTheme.type.sectionLabel,
-            color = FonecheckTheme.colors.textMuted,
+        DataRow(
+            label = stringResource(R.string.display_touch_cells),
+            value =
+                stringResource(
+                    R.string.display_value_ratio,
+                    uiNumber(state.touchedCells.size),
+                    uiNumber(touchCellCount()),
+                ),
+        )
+        DataRow(
+            label = stringResource(R.string.display_touch_active),
+            value = uiNumber(state.activePointers.size),
+        )
+        DataRow(
+            label = stringResource(R.string.display_touch_maximum),
+            value = uiNumber(state.maxPointerCount),
         )
         Canvas(
             modifier =
@@ -533,16 +608,15 @@ private fun manualResultLabel(value: Boolean?): String =
         when (value) {
             true -> R.string.display_status_passed
             false -> R.string.display_status_issue
-            null -> R.string.display_status_ready
+            null -> R.string.status_not_measured
         },
     )
 
-private fun manualResultTone(value: Boolean?): SemanticTone =
-    when (value) {
-        true -> SemanticTone.PASS
-        false -> SemanticTone.FAIL
-        null -> SemanticTone.NEUTRAL
-    }
+private fun classifyDisplayResult(value: Boolean?) =
+    value?.let(::classifyDisplayConfirmation) ?: classifyMeasurement(MeasurementOutcome.NOT_RUN)
+
+private fun classifyMeasurement(outcome: MeasurementOutcome) =
+    DeviceObservationClassifier.classify(DeviceObservation.Measurement(MeasurementKind.GENERIC, outcome))
 
 @Composable
 private fun supportedLabel(supported: Boolean): String =

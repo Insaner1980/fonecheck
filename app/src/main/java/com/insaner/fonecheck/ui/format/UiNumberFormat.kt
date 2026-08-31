@@ -1,9 +1,11 @@
 package com.insaner.fonecheck.ui.format
 
+import android.annotation.SuppressLint
 import android.content.res.Configuration
 import android.text.format.Formatter
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLocale
 import java.text.DecimalFormat
@@ -70,12 +72,14 @@ fun uiScientificNumber(
     }
 }
 
+@SuppressLint("AppBundleLocaleChanges")
 @Composable
 fun uiFileSize(bytes: Long): String {
     val context = LocalContext.current
+    val currentConfiguration = LocalConfiguration.current
     val locale = uiLanguageLocale(LocalLocale.current.platformLocale)
-    return remember(context, bytes, locale) {
-        val configuration = Configuration(context.resources.configuration)
+    return remember(context, currentConfiguration, bytes, locale) {
+        val configuration = Configuration(currentConfiguration)
         configuration.setLocale(locale)
         Formatter.formatFileSize(context.createConfigurationContext(configuration), bytes)
     }

@@ -152,6 +152,10 @@ class DisplayTestViewModel
                 )
         }
 
+        fun refreshInfo() {
+            loadDisplayInfo()
+        }
+
         private fun loadDisplayInfo() {
             val windowManager = context.getSystemService(WindowManager::class.java)
             val display =

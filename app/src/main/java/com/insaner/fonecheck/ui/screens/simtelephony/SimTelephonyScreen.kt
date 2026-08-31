@@ -29,12 +29,17 @@ import com.insaner.fonecheck.domain.model.SimFormFactorCode
 import com.insaner.fonecheck.domain.model.SimInventoryCode
 import com.insaner.fonecheck.domain.model.SimSlotInfo
 import com.insaner.fonecheck.domain.model.SimSlotStateCode
+import com.insaner.fonecheck.domain.observation.DeviceObservation
+import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
+import com.insaner.fonecheck.domain.observation.isUnusedSimSlot
 import com.insaner.fonecheck.domain.permission.PermissionKind
 import com.insaner.fonecheck.ui.TopBarAction
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.IndeterminateRule
+import com.insaner.fonecheck.ui.components.LiveStateTimestamp
 import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.ObservationReasonNote
 import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.RegisterRefreshTopBarAction
 import com.insaner.fonecheck.ui.components.SectionHeader
@@ -42,6 +47,7 @@ import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 
 @Composable
 fun SimTelephonyScreen(
@@ -106,17 +112,23 @@ fun SimTelephonyScreen(
         }
 
         state.info?.let { info ->
+            val liveStateUpdatedAtEpochMillis = remember(info) { System.currentTimeMillis() }
+            val inventoryClassification =
+                DeviceObservationClassifier.classify(DeviceObservation.SimInventory(info.inventory))
             SimSection(label = stringResource(R.string.sim_telephony_title)) {
                 DataRow(
                     label = stringResource(R.string.sim_inventory_label),
                     value = inventoryLabel(info.inventory),
+                    showDivider = inventoryClassification.reason == null,
                 )
+                ObservationReasonNote(inventoryClassification)
+                if (inventoryClassification.reason != null) HairlineRule()
                 DataRow(
                     label = stringResource(R.string.label_phone_type),
                     value = phoneTypeLabel(info.phoneType),
                 )
                 DataRow(
-                    label = stringResource(R.string.label_phone_count),
+                    label = stringResource(R.string.label_active_modem_count),
                     value = uiNumber(info.phoneCount),
                 )
                 DataRow(
@@ -130,7 +142,13 @@ fun SimTelephonyScreen(
                 }
             }
 
-            info.simSlots.forEach { slot -> SimSlotSection(slot) }
+            info.simSlots.forEach { slot ->
+                SimSlotSection(
+                    slot = slot,
+                    inventory = info.inventory,
+                )
+            }
+            LiveStateTimestamp(liveStateUpdatedAtEpochMillis)
         }
 
         state.error?.let {
@@ -143,37 +161,60 @@ fun SimTelephonyScreen(
 }
 
 @Composable
-private fun SimSlotSection(slot: SimSlotInfo) {
+private fun SimSlotSection(
+    slot: SimSlotInfo,
+    inventory: SimInventoryCode,
+) {
+    val isUnused = isUnusedSlot(inventory, slot)
+    val classification =
+        DeviceObservationClassifier.classify(
+            DeviceObservation.SimSlot(slot.state, unused = isUnused),
+        )
     SimSection(
         label = stringResource(R.string.sim_slot_title, uiNumber(slot.slotIndex + 1)),
     ) {
         DataRow(
             label = stringResource(R.string.label_sim_status),
-            value = slotStateLabel(slot.state),
-            tone = slotStateTone(slot.state),
+            value =
+                if (isUnused) {
+                    stringResource(R.string.sim_state_unused)
+                } else {
+                    slotStateLabel(slot.state)
+                },
+            tone = if (isUnused) SemanticTone.NEUTRAL else classification.toSemanticTone(),
+            showDivider = classification.reason == null,
         )
-        DataRow(
-            label = stringResource(R.string.sim_activity_label),
-            value = activityLabel(slot.activity),
-        )
-        DataRow(
-            label = stringResource(R.string.sim_form_factor_label),
-            value = formFactorLabel(slot.formFactor),
-        )
-        DataRow(
-            label = stringResource(R.string.label_operator),
-            value = slot.operatorName?.takeIf(String::isNotBlank),
-        )
-        DataRow(
-            label = stringResource(R.string.label_country),
-            value = slot.countryIso?.takeIf(String::isNotBlank),
-        )
-        DataRow(
-            label = stringResource(R.string.label_network_type),
-            value = networkLabel(slot.networkType),
-        )
+        ObservationReasonNote(classification)
+        if (classification.reason != null) HairlineRule()
+        if (!isUnused) {
+            DataRow(
+                label = stringResource(R.string.sim_activity_label),
+                value = activityLabel(slot.activity),
+            )
+            DataRow(
+                label = stringResource(R.string.sim_form_factor_label),
+                value = formFactorLabel(slot.formFactor),
+            )
+            DataRow(
+                label = stringResource(R.string.label_operator),
+                value = slot.operatorName?.takeIf(String::isNotBlank),
+            )
+            DataRow(
+                label = stringResource(R.string.label_country),
+                value = slot.countryIso?.takeIf(String::isNotBlank),
+            )
+            DataRow(
+                label = stringResource(R.string.label_network_type),
+                value = networkLabel(slot.networkType),
+            )
+        }
     }
 }
+
+internal fun isUnusedSlot(
+    inventory: SimInventoryCode,
+    slot: SimSlotInfo,
+): Boolean = isUnusedSimSlot(inventory, slot)
 
 @Composable
 private fun SimSection(
@@ -185,23 +226,6 @@ private fun SimSection(
         content()
     }
 }
-
-private fun slotStateTone(value: SimSlotStateCode): SemanticTone =
-    when (value) {
-        SimSlotStateCode.READY -> SemanticTone.PASS
-        SimSlotStateCode.NETWORK_LOCKED,
-        SimSlotStateCode.PIN_REQUIRED,
-        SimSlotStateCode.PUK_REQUIRED,
-        SimSlotStateCode.NOT_READY,
-        SimSlotStateCode.CARD_RESTRICTED,
-        -> SemanticTone.ATTENTION
-        SimSlotStateCode.PERMANENTLY_DISABLED,
-        SimSlotStateCode.CARD_IO_ERROR,
-        -> SemanticTone.FAIL
-        SimSlotStateCode.ABSENT,
-        SimSlotStateCode.UNKNOWN,
-        -> SemanticTone.NEUTRAL
-    }
 
 @Composable
 private fun inventoryLabel(value: SimInventoryCode): String =

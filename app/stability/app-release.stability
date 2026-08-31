@@ -37,6 +37,14 @@ private fun com.insaner.fonecheck.ui.MainActivity.LoadedFonecheckContent(prefere
     - darkTheme: STABLE (primitive type)
 
 @Composable
+public fun com.insaner.fonecheck.ui.components.CaptureTimestamp(capturedAt: java.time.Instant, modifier: androidx.compose.ui.Modifier): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - capturedAt: UNSTABLE (has mutable properties or unstable members)
+    - modifier: STABLE (marked @Stable or @Immutable)
+
+@Composable
 public fun com.insaner.fonecheck.ui.components.ConfidenceBadge(confidence: com.insaner.fonecheck.domain.model.Confidence, modifier: androidx.compose.ui.Modifier): kotlin.Unit
   skippable: true
   restartable: true
@@ -74,6 +82,16 @@ public fun com.insaner.fonecheck.ui.components.HairlineRule(modifier: androidx.c
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
+public fun com.insaner.fonecheck.ui.components.HeadlineReadout(value: kotlin.String, unit: kotlin.String, supportingLines: kotlin.collections.List<kotlin.String>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - value: STABLE (String is immutable)
+    - unit: STABLE (String is immutable)
+    - supportingLines: RUNTIME (requires runtime check)
+    - modifier: STABLE (marked @Stable or @Immutable)
+
+@Composable
 public fun com.insaner.fonecheck.ui.components.InfoCard(title: kotlin.String, modifier: androidx.compose.ui.Modifier, confidence: com.insaner.fonecheck.domain.model.Confidence?, content: @[Composable] androidx.compose.runtime.internal.ComposableFunction0<kotlin.Unit>): kotlin.Unit
   skippable: true
   restartable: true
@@ -100,6 +118,14 @@ internal fun com.insaner.fonecheck.ui.components.LabeledValueRow(modifier: andro
   params:
     - modifier: STABLE (marked @Stable or @Immutable)
     - content: STABLE (composable function type)
+
+@Composable
+public fun com.insaner.fonecheck.ui.components.LiveStateTimestamp(updatedAtEpochMillis: kotlin.Long, modifier: androidx.compose.ui.Modifier): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+    - updatedAtEpochMillis: STABLE (primitive type)
+    - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
 public fun com.insaner.fonecheck.ui.components.LongValueRow(label: kotlin.String, value: kotlin.String?, modifier: androidx.compose.ui.Modifier, tone: com.insaner.fonecheck.ui.theme.SemanticTone, unavailableLabel: kotlin.String, showDivider: kotlin.Boolean): kotlin.Unit
@@ -284,11 +310,12 @@ public fun com.insaner.fonecheck.ui.components.StrongRule(modifier: androidx.com
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
-public fun com.insaner.fonecheck.ui.components.TestScreenContent(modifier: androidx.compose.ui.Modifier, content: @[ExtensionFunctionType] kotlin.Function1<androidx.compose.foundation.lazy.LazyListScope, kotlin.Unit>): kotlin.Unit
+public fun com.insaner.fonecheck.ui.components.TestScreenContent(modifier: androidx.compose.ui.Modifier, liveStateUpdatedAtEpochMillis: kotlin.Long?, content: @[ExtensionFunctionType] kotlin.Function1<androidx.compose.foundation.lazy.LazyListScope, kotlin.Unit>): kotlin.Unit
   skippable: true
   restartable: true
   params:
     - modifier: STABLE (marked @Stable or @Immutable)
+    - liveStateUpdatedAtEpochMillis: STABLE (class with no mutable properties)
     - content: STABLE (function type)
 
 @Composable
@@ -324,6 +351,24 @@ private fun com.insaner.fonecheck.ui.components.screenStateColor(type: com.insan
   restartable: false
   params:
     - type: STABLE (class with no mutable properties)
+
+@Composable
+public fun com.insaner.fonecheck.ui.format.uiNumber(value: kotlin.Number, minimumFractionDigits: kotlin.Int, maximumFractionDigits: kotlin.Int, grouping: kotlin.Boolean): kotlin.String
+  skippable: false
+  restartable: false
+  params:
+    - value: UNKNOWN (interface or non-final class; concrete implementation unknown)
+    - minimumFractionDigits: STABLE (primitive type)
+    - maximumFractionDigits: STABLE (primitive type)
+    - grouping: STABLE (primitive type)
+
+@Composable
+public fun com.insaner.fonecheck.ui.format.uiScientificNumber(value: kotlin.Number, fractionDigits: kotlin.Int): kotlin.String
+  skippable: false
+  restartable: false
+  params:
+    - value: UNKNOWN (interface or non-final class; concrete implementation unknown)
+    - fractionDigits: STABLE (primitive type)
 
 @Composable
 public fun com.insaner.fonecheck.ui.permissions.rememberPermissionController(kind: com.insaner.fonecheck.domain.permission.PermissionKind, hardwareAvailable: kotlin.Boolean): com.insaner.fonecheck.ui.permissions.PermissionController
@@ -365,7 +410,7 @@ public fun com.insaner.fonecheck.ui.screens.audio.AudioTestScreen(modifier: andr
     - viewModel: STABLE (stability configuration file type)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.audio.EarpieceTestCard(state: com.insaner.fonecheck.ui.screens.audio.AudioTestState, viewModel: com.insaner.fonecheck.ui.screens.audio.AudioTestViewModel): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.audio.EarpieceTestSection(state: com.insaner.fonecheck.ui.screens.audio.AudioTestState, viewModel: com.insaner.fonecheck.ui.screens.audio.AudioTestViewModel): kotlin.Unit
   skippable: false
   restartable: true
   params:
@@ -383,7 +428,7 @@ private fun com.insaner.fonecheck.ui.screens.audio.FrequencyButton(frequency: ko
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.audio.HeadphoneJackCard(state: com.insaner.fonecheck.ui.screens.audio.AudioTestState, viewModel: com.insaner.fonecheck.ui.screens.audio.AudioTestViewModel): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.audio.HeadphoneJackSection(state: com.insaner.fonecheck.ui.screens.audio.AudioTestState, viewModel: com.insaner.fonecheck.ui.screens.audio.AudioTestViewModel): kotlin.Unit
   skippable: false
   restartable: true
   params:
@@ -391,7 +436,7 @@ private fun com.insaner.fonecheck.ui.screens.audio.HeadphoneJackCard(state: com.
     - viewModel: STABLE (stability configuration file type)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.audio.MicrophoneTestCard(state: com.insaner.fonecheck.ui.screens.audio.AudioTestState, viewModel: com.insaner.fonecheck.ui.screens.audio.AudioTestViewModel, permissionState: com.insaner.fonecheck.domain.permission.PermissionState, onRequestPermission: kotlin.Function0<kotlin.Unit>, onOpenSettings: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.audio.MicrophoneTestSection(state: com.insaner.fonecheck.ui.screens.audio.AudioTestState, viewModel: com.insaner.fonecheck.ui.screens.audio.AudioTestViewModel, permissionState: com.insaner.fonecheck.domain.permission.PermissionState, onRequestPermission: kotlin.Function0<kotlin.Unit>, onOpenSettings: kotlin.Function0<kotlin.Unit>): kotlin.Unit
   skippable: false
   restartable: true
   params:
@@ -402,7 +447,7 @@ private fun com.insaner.fonecheck.ui.screens.audio.MicrophoneTestCard(state: com
     - onOpenSettings: STABLE (function type)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.audio.SpeakerTestCard(state: com.insaner.fonecheck.ui.screens.audio.AudioTestState, viewModel: com.insaner.fonecheck.ui.screens.audio.AudioTestViewModel): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.audio.SpeakerTestSection(state: com.insaner.fonecheck.ui.screens.audio.AudioTestState, viewModel: com.insaner.fonecheck.ui.screens.audio.AudioTestViewModel): kotlin.Unit
   skippable: false
   restartable: true
   params:
@@ -410,7 +455,7 @@ private fun com.insaner.fonecheck.ui.screens.audio.SpeakerTestCard(state: com.in
     - viewModel: STABLE (stability configuration file type)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.audio.StereoTestCard(state: com.insaner.fonecheck.ui.screens.audio.AudioTestState, viewModel: com.insaner.fonecheck.ui.screens.audio.AudioTestViewModel): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.audio.StereoTestSection(state: com.insaner.fonecheck.ui.screens.audio.AudioTestState, viewModel: com.insaner.fonecheck.ui.screens.audio.AudioTestViewModel): kotlin.Unit
   skippable: false
   restartable: true
   params:
@@ -435,7 +480,7 @@ private fun com.insaner.fonecheck.ui.screens.audio.ToneSelectionButton(isActive:
     - content: STABLE (composable function type)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.audio.VolumeButtonCard(state: com.insaner.fonecheck.ui.screens.audio.AudioTestState, viewModel: com.insaner.fonecheck.ui.screens.audio.AudioTestViewModel): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.audio.VolumeButtonSection(state: com.insaner.fonecheck.ui.screens.audio.AudioTestState, viewModel: com.insaner.fonecheck.ui.screens.audio.AudioTestViewModel): kotlin.Unit
   skippable: false
   restartable: true
   params:
@@ -614,13 +659,23 @@ private fun com.insaner.fonecheck.ui.screens.buttons.buttonStatusLabel(state: co
     - state: STABLE (class with no mutable properties)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.camera.CameraPreviewCard(state: com.insaner.fonecheck.ui.screens.camera.CameraTestState, viewModel: com.insaner.fonecheck.ui.screens.camera.CameraTestViewModel, hasPermission: kotlin.Boolean): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.camera.CameraPreviewSection(state: com.insaner.fonecheck.ui.screens.camera.CameraTestState, viewModel: com.insaner.fonecheck.ui.screens.camera.CameraTestViewModel, hasPermission: kotlin.Boolean): kotlin.Unit
   skippable: false
   restartable: true
   params:
     - state: RUNTIME (requires runtime check)
     - viewModel: STABLE (stability configuration file type)
     - hasPermission: STABLE (primitive type)
+
+@Composable
+internal fun com.insaner.fonecheck.ui.screens.camera.CameraSelectionList(cameras: kotlin.collections.List<com.insaner.fonecheck.ui.screens.camera.CameraCapabilities>, activeCameraId: kotlin.String?, enabled: kotlin.Boolean, onSelect: kotlin.Function1<kotlin.String, kotlin.Unit>): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - cameras: RUNTIME (requires runtime check)
+    - activeCameraId: STABLE (class with no mutable properties)
+    - enabled: STABLE (primitive type)
+    - onSelect: STABLE (function type)
 
 @Composable
 public fun com.insaner.fonecheck.ui.screens.camera.CameraTestScreen(modifier: androidx.compose.ui.Modifier, viewModel: com.insaner.fonecheck.ui.screens.camera.CameraTestViewModel): kotlin.Unit
@@ -631,15 +686,14 @@ public fun com.insaner.fonecheck.ui.screens.camera.CameraTestScreen(modifier: an
     - viewModel: STABLE (stability configuration file type)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.camera.CapabilitiesCard(title: kotlin.String, capabilities: com.insaner.fonecheck.ui.screens.camera.CameraCapabilities): kotlin.Unit
+internal fun com.insaner.fonecheck.ui.screens.camera.CapabilitiesSection(capabilities: com.insaner.fonecheck.ui.screens.camera.CameraCapabilities): kotlin.Unit
   skippable: false
   restartable: true
   params:
-    - title: STABLE (String is immutable)
     - capabilities: RUNTIME (requires runtime check)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.camera.FlashTestCard(state: com.insaner.fonecheck.ui.screens.camera.CameraTestState, viewModel: com.insaner.fonecheck.ui.screens.camera.CameraTestViewModel, hasPermission: kotlin.Boolean): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.camera.FlashTestSection(state: com.insaner.fonecheck.ui.screens.camera.CameraTestState, viewModel: com.insaner.fonecheck.ui.screens.camera.CameraTestViewModel, hasPermission: kotlin.Boolean): kotlin.Unit
   skippable: false
   restartable: true
   params:
@@ -648,11 +702,11 @@ private fun com.insaner.fonecheck.ui.screens.camera.FlashTestCard(state: com.ins
     - hasPermission: STABLE (primitive type)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.camera.TechnicalValueGroup(title: kotlin.String, values: kotlin.collections.List<kotlin.String>): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.camera.TechnicalValueRow(label: kotlin.String, values: kotlin.collections.List<kotlin.String>): kotlin.Unit
   skippable: false
   restartable: true
   params:
-    - title: STABLE (String is immutable)
+    - label: STABLE (String is immutable)
     - values: RUNTIME (requires runtime check)
 
 @Composable
@@ -670,7 +724,16 @@ private fun com.insaner.fonecheck.ui.screens.camera.cameraButtonLabel(camera: co
     - camera: RUNTIME (requires runtime check)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.comparison.ComparisonCategoryCard(category: com.insaner.fonecheck.domain.comparison.CategoryComparison, isExpanded: kotlin.Boolean, onClick: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.camera.cameraSelectionLabel(camera: com.insaner.fonecheck.ui.screens.camera.CameraCapabilities, isActive: kotlin.Boolean, showCameraId: kotlin.Boolean): kotlin.String
+  skippable: false
+  restartable: false
+  params:
+    - camera: RUNTIME (requires runtime check)
+    - isActive: STABLE (primitive type)
+    - showCameraId: STABLE (primitive type)
+
+@Composable
+private fun com.insaner.fonecheck.ui.screens.comparison.ComparisonCategorySection(category: com.insaner.fonecheck.domain.comparison.CategoryComparison, isExpanded: kotlin.Boolean, onClick: kotlin.Function0<kotlin.Unit>): kotlin.Unit
   skippable: false
   restartable: true
   params:
@@ -754,6 +817,13 @@ public fun com.insaner.fonecheck.ui.screens.connectivity.ConnectivityTestScreen(
     - viewModel: STABLE (stability configuration file type)
 
 @Composable
+private fun com.insaner.fonecheck.ui.screens.connectivity.FixedGpsRows(gps: com.insaner.fonecheck.ui.screens.connectivity.GpsState): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - gps: RUNTIME (requires runtime check)
+
+@Composable
 private fun com.insaner.fonecheck.ui.screens.connectivity.GpsDetails(gps: com.insaner.fonecheck.ui.screens.connectivity.GpsState, permissionState: com.insaner.fonecheck.domain.permission.PermissionState, viewModel: com.insaner.fonecheck.ui.screens.connectivity.ConnectivityTestViewModel, onRequestPermission: kotlin.Function0<kotlin.Unit>, onOpenSettings: kotlin.Function0<kotlin.Unit>): kotlin.Unit
   skippable: false
   restartable: true
@@ -782,6 +852,20 @@ private fun com.insaner.fonecheck.ui.screens.connectivity.NfcDetails(nfc: com.in
     - nfc: STABLE (class with no mutable properties)
 
 @Composable
+private fun com.insaner.fonecheck.ui.screens.connectivity.SatelliteSection(satellites: kotlin.collections.List<com.insaner.fonecheck.ui.screens.connectivity.GpsSatelliteInfo>): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - satellites: RUNTIME (requires runtime check)
+
+@Composable
+private fun com.insaner.fonecheck.ui.screens.connectivity.SearchingGpsRows(gps: com.insaner.fonecheck.ui.screens.connectivity.GpsState): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - gps: RUNTIME (requires runtime check)
+
+@Composable
 private fun com.insaner.fonecheck.ui.screens.connectivity.WifiDetails(wifi: com.insaner.fonecheck.ui.screens.connectivity.WifiState): kotlin.Unit
   skippable: true
   restartable: true
@@ -793,6 +877,13 @@ private fun com.insaner.fonecheck.ui.screens.connectivity.displayName(): kotlin.
   skippable: false
   restartable: false
   params:
+
+@Composable
+private fun com.insaner.fonecheck.ui.screens.connectivity.gpsSummary(gps: com.insaner.fonecheck.ui.screens.connectivity.GpsState): kotlin.String
+  skippable: false
+  restartable: false
+  params:
+    - gps: RUNTIME (requires runtime check)
 
 @Composable
 public fun com.insaner.fonecheck.ui.screens.deviceinfo.DeviceInfoScreen(modifier: androidx.compose.ui.Modifier, viewModel: com.insaner.fonecheck.ui.screens.deviceinfo.DeviceInfoViewModel): kotlin.Unit
@@ -826,12 +917,13 @@ private fun com.insaner.fonecheck.ui.screens.display.DisplayOverview(state: com.
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
-public fun com.insaner.fonecheck.ui.screens.display.DisplayTestScreen(modifier: androidx.compose.ui.Modifier, onFullscreenChange: kotlin.Function1<kotlin.Boolean, kotlin.Unit>, viewModel: com.insaner.fonecheck.ui.screens.display.DisplayTestViewModel): kotlin.Unit
+public fun com.insaner.fonecheck.ui.screens.display.DisplayTestScreen(modifier: androidx.compose.ui.Modifier, onFullscreenChange: kotlin.Function1<kotlin.Boolean, kotlin.Unit>, onTopBarActionChange: kotlin.Function1<com.insaner.fonecheck.ui.TopBarAction?, kotlin.Unit>, viewModel: com.insaner.fonecheck.ui.screens.display.DisplayTestViewModel): kotlin.Unit
   skippable: false
   restartable: true
   params:
     - modifier: STABLE (marked @Stable or @Immutable)
     - onFullscreenChange: STABLE (function type)
+    - onTopBarActionChange: STABLE (function type)
     - viewModel: RUNTIME (requires runtime check)
 
 @Composable
@@ -1043,6 +1135,17 @@ private fun com.insaner.fonecheck.ui.screens.home.HistoryGlyph(color: androidx.c
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
+private fun com.insaner.fonecheck.ui.screens.home.HomeAttentionReadings(state: com.insaner.fonecheck.ui.screens.home.LatestFullCheckState.Available, destinations: kotlin.collections.List<com.insaner.fonecheck.navigation.DiagnosticDestination>, onNavigate: kotlin.Function1<kotlin.Any, kotlin.Unit>, emphasized: kotlin.Boolean, modifier: androidx.compose.ui.Modifier): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - state: STABLE (class with no mutable properties)
+    - destinations: RUNTIME (requires runtime check)
+    - onNavigate: STABLE (function type)
+    - emphasized: STABLE (primitive type)
+    - modifier: STABLE (marked @Stable or @Immutable)
+
+@Composable
 private fun com.insaner.fonecheck.ui.screens.home.HomeBrand(modifier: androidx.compose.ui.Modifier): kotlin.Unit
   skippable: true
   restartable: true
@@ -1077,6 +1180,18 @@ public fun com.insaner.fonecheck.ui.screens.home.HomeScreen(onNavigate: kotlin.F
     - onRunAllTests: STABLE (function type)
     - modifier: STABLE (marked @Stable or @Immutable)
     - viewModel: STABLE (stability configuration file type)
+
+@Composable
+private fun com.insaner.fonecheck.ui.screens.home.HomeStatusCell(destination: com.insaner.fonecheck.navigation.DiagnosticDestination, labelStyle: androidx.compose.ui.text.TextStyle, status: com.insaner.fonecheck.domain.model.DiagnosticStatus?, onClick: kotlin.Function0<kotlin.Unit>, columnLayout: com.insaner.fonecheck.ui.screens.home.HomeStatusColumnLayout, modifier: androidx.compose.ui.Modifier): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - destination: RUNTIME (requires runtime check)
+    - labelStyle: STABLE (marked @Stable or @Immutable)
+    - status: STABLE (class with no mutable properties)
+    - onClick: STABLE (function type)
+    - columnLayout: STABLE (class with no mutable properties)
+    - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
 private fun com.insaner.fonecheck.ui.screens.home.HomeTopPreview(darkTheme: kotlin.Boolean): kotlin.Unit
@@ -1443,7 +1558,7 @@ public fun com.insaner.fonecheck.ui.screens.runall.DisplayCheckStep(colorIndex: 
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.runall.ExpandedCategoryResult(result: com.insaner.fonecheck.domain.model.CategoryTestResult, isExpanded: kotlin.Boolean, onToggle: kotlin.Function0<kotlin.Unit>, onOpenCategory: kotlin.Function1<kotlin.Any, kotlin.Unit>, mode: com.insaner.fonecheck.ui.screens.runall.ReportResultMode): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.runall.CategoryResult(result: com.insaner.fonecheck.domain.model.CategoryTestResult, isExpanded: kotlin.Boolean, onToggle: kotlin.Function0<kotlin.Unit>, onOpenCategory: kotlin.Function1<kotlin.Any, kotlin.Unit>, mode: com.insaner.fonecheck.ui.screens.runall.ReportResultMode): kotlin.Unit
   skippable: false
   restartable: true
   params:
@@ -1510,6 +1625,14 @@ private fun com.insaner.fonecheck.ui.screens.runall.PreflightDisclosure(textResI
     - textResId: STABLE (primitive type)
 
 @Composable
+private fun com.insaner.fonecheck.ui.screens.runall.PreflightDisclosureGroup(title: kotlin.String, paragraphs: kotlin.collections.List<kotlin.String>): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - title: STABLE (String is immutable)
+    - paragraphs: RUNTIME (requires runtime check)
+
+@Composable
 private fun com.insaner.fonecheck.ui.screens.runall.ReportMetadataCard(report: com.insaner.fonecheck.domain.model.DiagnosticReport, durationMillis: kotlin.Long): kotlin.Unit
   skippable: true
   restartable: true
@@ -1542,15 +1665,14 @@ private fun com.insaner.fonecheck.ui.screens.runall.ResultDetails(results: kotli
     - mode: STABLE (class with no mutable properties)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.runall.ResultHeader(result: com.insaner.fonecheck.domain.model.CategoryTestResult, title: kotlin.String, imageResId: kotlin.Int, showSummary: kotlin.Boolean, imageSize: androidx.compose.ui.unit.Dp): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.runall.ResultHeader(result: com.insaner.fonecheck.domain.model.CategoryTestResult, title: kotlin.String, iconResId: kotlin.Int, showSummary: kotlin.Boolean): kotlin.Unit
   skippable: false
   restartable: true
   params:
     - result: RUNTIME (requires runtime check)
     - title: STABLE (String is immutable)
-    - imageResId: STABLE (primitive type)
+    - iconResId: STABLE (primitive type)
     - showSummary: STABLE (primitive type)
-    - imageSize: STABLE (marked @Stable or @Immutable)
 
 @Composable
 private fun com.insaner.fonecheck.ui.screens.runall.ResultSectionTitle(title: kotlin.String, count: kotlin.Int): kotlin.Unit
@@ -1561,12 +1683,13 @@ private fun com.insaner.fonecheck.ui.screens.runall.ResultSectionTitle(title: ko
     - count: STABLE (primitive type)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.runall.ResultsSummaryCard(report: com.insaner.fonecheck.domain.model.DiagnosticReport, presentation: com.insaner.fonecheck.ui.screens.report.ReportDetailPresentation): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.runall.ResultsSummary(report: com.insaner.fonecheck.domain.model.DiagnosticReport, presentation: com.insaner.fonecheck.ui.screens.report.ReportDetailPresentation, categoryTones: kotlin.collections.List<com.insaner.fonecheck.ui.theme.SemanticTone>): kotlin.Unit
   skippable: false
   restartable: true
   params:
     - report: STABLE (stability configuration file type)
     - presentation: RUNTIME (requires runtime check)
+    - categoryTones: RUNTIME (requires runtime check)
 
 @Composable
 public fun com.insaner.fonecheck.ui.screens.runall.RunAllResultsScreen(report: com.insaner.fonecheck.domain.model.DiagnosticReport, saveStatus: com.insaner.fonecheck.ui.screens.runall.ReportSaveStatus, onRetrySave: kotlin.Function0<kotlin.Unit>, onOpenCategory: kotlin.Function1<kotlin.Any, kotlin.Unit>, onDone: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, mode: com.insaner.fonecheck.ui.screens.runall.ReportResultMode): kotlin.Unit
@@ -1678,6 +1801,13 @@ private fun com.insaner.fonecheck.ui.screens.runall.evidenceValueLabel(value: co
     - unit: STABLE (class with no mutable properties)
 
 @Composable
+private fun com.insaner.fonecheck.ui.screens.runall.localizedNumber(value: kotlin.Number): kotlin.String
+  skippable: false
+  restartable: false
+  params:
+    - value: UNKNOWN (interface or non-final class; concrete implementation unknown)
+
+@Composable
 private fun com.insaner.fonecheck.ui.screens.runall.reasonLabel(reason: com.insaner.fonecheck.domain.model.EvidenceReasonCode): kotlin.String
   skippable: false
   restartable: false
@@ -1747,7 +1877,7 @@ private fun com.insaner.fonecheck.ui.screens.sensor.ChallengesSection(challenges
     - onChallenge: STABLE (function type)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.sensor.GuidedSensorCard(test: com.insaner.fonecheck.ui.screens.sensor.GuidedSensorTestState, sensorInfo: com.insaner.fonecheck.ui.screens.sensor.SensorInfo?, isExpanded: kotlin.Boolean, liveData: com.insaner.fonecheck.ui.screens.sensor.SensorLiveData?, challenges: kotlin.collections.List<com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge>, onToggle: kotlin.Function0<kotlin.Unit>, onChallenge: kotlin.Function1<com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge, kotlin.Unit>, onSkip: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.sensor.GuidedSensorSection(test: com.insaner.fonecheck.ui.screens.sensor.GuidedSensorTestState, sensorInfo: com.insaner.fonecheck.ui.screens.sensor.SensorInfo?, isExpanded: kotlin.Boolean, liveData: com.insaner.fonecheck.ui.screens.sensor.SensorLiveData?, challenges: kotlin.collections.List<com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge>, onToggle: kotlin.Function0<kotlin.Unit>, onChallenge: kotlin.Function1<com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge, kotlin.Unit>, onSkip: kotlin.Function0<kotlin.Unit>): kotlin.Unit
   skippable: false
   restartable: true
   params:
@@ -1782,7 +1912,7 @@ private fun com.insaner.fonecheck.ui.screens.sensor.SensorInfoSection(sensorInfo
     - sensorInfo: STABLE (class with no mutable properties)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.sensor.SensorSummaryCard(state: com.insaner.fonecheck.ui.screens.sensor.SensorTestState): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.sensor.SensorSummarySection(state: com.insaner.fonecheck.ui.screens.sensor.SensorTestState): kotlin.Unit
   skippable: false
   restartable: true
   params:
@@ -2058,6 +2188,13 @@ private fun com.insaner.fonecheck.ui.screens.storage.StorageVolumesCard(volumes:
     - volumes: RUNTIME (requires runtime check)
 
 @Composable
+private fun com.insaner.fonecheck.ui.screens.storage.StorageVolumesSection(volumes: kotlin.collections.List<com.insaner.fonecheck.ui.screens.storage.AppStorageVolumeInfo>): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - volumes: RUNTIME (requires runtime check)
+
+@Composable
 private fun com.insaner.fonecheck.ui.screens.storage.storageBenchmarkMessage(state: com.insaner.fonecheck.ui.screens.storage.StorageTestState): kotlin.String
   skippable: false
   restartable: false
@@ -2072,12 +2209,33 @@ private fun com.insaner.fonecheck.ui.screens.storage.storageStateLabel(stateCode
     - stateCode: STABLE (String is immutable)
 
 @Composable
+private fun com.insaner.fonecheck.ui.screens.thermal.ThermalBatterySection(state: com.insaner.fonecheck.ui.screens.thermal.ThermalTestState): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - state: UNSTABLE (has mutable properties or unstable members)
+
+@Composable
+private fun com.insaner.fonecheck.ui.screens.thermal.ThermalHeadroomSection(state: com.insaner.fonecheck.ui.screens.thermal.ThermalTestState): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - state: UNSTABLE (has mutable properties or unstable members)
+
+@Composable
 public fun com.insaner.fonecheck.ui.screens.thermal.ThermalMonitoringEffect(onStartMonitoring: kotlin.Function0<kotlin.Unit>, onStopMonitoring: kotlin.Function0<kotlin.Unit>): kotlin.Unit
   skippable: true
   restartable: true
   params:
     - onStartMonitoring: STABLE (function type)
     - onStopMonitoring: STABLE (function type)
+
+@Composable
+private fun com.insaner.fonecheck.ui.screens.thermal.ThermalStatusSection(state: com.insaner.fonecheck.ui.screens.thermal.ThermalTestState): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - state: UNSTABLE (has mutable properties or unstable members)
 
 @Composable
 public fun com.insaner.fonecheck.ui.screens.thermal.ThermalTestScreen(modifier: androidx.compose.ui.Modifier, viewModel: com.insaner.fonecheck.ui.screens.thermal.ThermalTestViewModel): kotlin.Unit
@@ -2100,6 +2258,15 @@ private fun com.insaner.fonecheck.ui.screens.thermal.thermalSeverityLabel(severi
   restartable: false
   params:
     - severity: STABLE (class with no mutable properties)
+
+@Composable
+private fun com.insaner.fonecheck.ui.screens.vibration.HapticCapabilityList(label: kotlin.String, apiSupported: kotlin.Boolean, values: kotlin.collections.List<kotlin.String>): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - label: STABLE (String is immutable)
+    - apiSupported: STABLE (primitive type)
+    - values: RUNTIME (requires runtime check)
 
 @Composable
 private fun com.insaner.fonecheck.ui.screens.vibration.HapticDetails(haptic: com.insaner.fonecheck.ui.screens.vibration.HapticCapabilityState): kotlin.Unit
@@ -2200,4 +2367,3 @@ public fun com.insaner.fonecheck.ui.theme.readableStatusColor(color: androidx.co
   restartable: false
   params:
     - color: STABLE (marked @Stable or @Immutable)
-

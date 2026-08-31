@@ -79,11 +79,10 @@ data class RunAllPermissions(
 data class ManualCheckResults(
     val display: Boolean? = null,
     val speaker: Boolean? = null,
-    val camera: Boolean? = null,
-    val sensors: Boolean? = null,
+    val cameraCompleted: Boolean = false,
+    val sensorsCompleted: Boolean = false,
     val vibration: Boolean? = null,
     val buttons: Boolean? = null,
-    val biometrics: Boolean? = null,
     val outcomes: Map<RunAllStage, RunAllStageOutcome> = emptyMap(),
 )
 
@@ -263,14 +262,6 @@ class RunAllTestsViewModel
             finishStage(token, RunAllStage.AUDIO, outcome, result)
         }
 
-        fun recordCamera(
-            token: Long,
-            result: Boolean?,
-            outcome: RunAllStageOutcome = outcomeFor(result),
-        ) {
-            finishStage(token, RunAllStage.CAMERA, outcome, result)
-        }
-
         fun prepareCameraStage(
             token: Long,
             cameraIds: List<String>,
@@ -318,12 +309,8 @@ class RunAllTestsViewModel
             _state.value = _state.value.copy(stageIssue = issue)
         }
 
-        fun recordSensors(
-            token: Long,
-            result: Boolean?,
-            outcome: RunAllStageOutcome = outcomeFor(result),
-        ) {
-            finishStage(token, RunAllStage.SENSORS, outcome, result)
+        fun recordSensorsPassed(token: Long) {
+            finishStage(token, RunAllStage.SENSORS, RunAllStageOutcome.PASSED, true)
         }
 
         fun recordVibration(
@@ -342,12 +329,11 @@ class RunAllTestsViewModel
             finishStage(token, RunAllStage.BUTTONS, outcome, result)
         }
 
-        fun recordBiometrics(
+        fun recordBiometricOutcome(
             token: Long,
-            result: Boolean?,
-            outcome: RunAllStageOutcome = outcomeFor(result),
+            outcome: RunAllStageOutcome,
         ) {
-            finishStage(token, RunAllStage.BIOMETRICS, outcome, result)
+            finishStage(token, RunAllStage.BIOMETRICS, outcome)
         }
 
         fun skipStage(token: Long) {
@@ -469,11 +455,11 @@ class RunAllTestsViewModel
             when (stage) {
                 RunAllStage.DISPLAY -> manual.copy(display = result)
                 RunAllStage.AUDIO -> manual.copy(speaker = result)
-                RunAllStage.CAMERA -> manual.copy(camera = result)
-                RunAllStage.SENSORS -> manual.copy(sensors = result)
+                RunAllStage.CAMERA -> manual.copy(cameraCompleted = result == true)
+                RunAllStage.SENSORS -> manual.copy(sensorsCompleted = result == true)
                 RunAllStage.VIBRATION -> manual.copy(vibration = result)
                 RunAllStage.BUTTONS -> manual.copy(buttons = result)
-                RunAllStage.BIOMETRICS -> manual.copy(biometrics = result)
+                RunAllStage.BIOMETRICS -> manual
                 else -> manual
             }
 

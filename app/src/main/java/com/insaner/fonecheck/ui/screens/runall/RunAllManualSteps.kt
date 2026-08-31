@@ -1,6 +1,5 @@
 package com.insaner.fonecheck.ui.screens.runall
 
-import androidx.annotation.StringRes
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -33,11 +32,19 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.viewinterop.AndroidView
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.observation.DeviceObservation
+import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
+import com.insaner.fonecheck.domain.observation.MeasurementKind
+import com.insaner.fonecheck.domain.observation.MeasurementOutcome
 import com.insaner.fonecheck.domain.permission.PermissionState
+import com.insaner.fonecheck.localization.observationStatusStringRes
+import com.insaner.fonecheck.ui.classification.classifyBiometric
+import com.insaner.fonecheck.ui.classification.classifyButtonTest
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.IndeterminateRule
 import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.ObservationReasonNote
 import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.PrimaryButton
 import com.insaner.fonecheck.ui.components.SecondaryButton
@@ -54,6 +61,7 @@ import com.insaner.fonecheck.ui.screens.display.displayPatternBackground
 import com.insaner.fonecheck.ui.screens.sensor.SensorTestState
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 
 internal val displayTestPatterns = DisplayPattern.entries
 
@@ -94,15 +102,31 @@ fun FullCheckPreflightScreen(
             Note(stringResource(R.string.run_all_preflight_description))
         }
         if (showWarnings) {
-            Column {
-                PreflightDisclosure(R.string.run_all_preflight_interactions)
-                PreflightDisclosure(R.string.run_all_preflight_audio_vibration)
-                PreflightDisclosure(R.string.run_all_preflight_storage)
-                PreflightDisclosure(R.string.run_all_preflight_permissions)
-                PreflightDisclosure(R.string.run_all_preflight_unsupported)
-                PreflightDisclosure(R.string.run_all_preflight_local_report)
-                PreflightDisclosure(R.string.run_all_preflight_no_network)
-            }
+            PreflightDisclosureGroup(
+                title = stringResource(R.string.run_all_preflight_what_happens_title),
+                paragraphs =
+                    listOf(
+                        stringResource(R.string.run_all_preflight_interactions),
+                        stringResource(R.string.run_all_preflight_audio_vibration),
+                        stringResource(R.string.run_all_preflight_storage),
+                    ),
+            )
+            PreflightDisclosureGroup(
+                title = stringResource(R.string.run_all_preflight_permissions_control_title),
+                paragraphs =
+                    listOf(
+                        stringResource(R.string.run_all_preflight_permissions),
+                        stringResource(R.string.run_all_preflight_unsupported),
+                    ),
+            )
+            PreflightDisclosureGroup(
+                title = stringResource(R.string.run_all_preflight_privacy_title),
+                paragraphs =
+                    listOf(
+                        stringResource(R.string.run_all_preflight_local_report),
+                        stringResource(R.string.run_all_preflight_no_network),
+                    ),
+            )
         }
         Column {
             SectionHeader(stringResource(R.string.run_all_preflight_choices_title))
@@ -136,10 +160,20 @@ fun FullCheckPreflightScreen(
 }
 
 @Composable
-private fun PreflightDisclosure(
-    @StringRes textResId: Int,
+private fun PreflightDisclosureGroup(
+    title: String,
+    paragraphs: List<String>,
 ) {
-    Note(text = stringResource(textResId))
+    Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm)) {
+        SectionHeader(title)
+        paragraphs.forEach { paragraph ->
+            Text(
+                text = paragraph,
+                style = FonecheckTheme.type.rowLabel,
+                color = FonecheckTheme.colors.textSecondary,
+            )
+        }
+    }
 }
 
 @Composable
@@ -414,31 +448,29 @@ fun CameraCheckStep(
         if (state.lastCapture == null && state.error == null && issue == null) {
             IndeterminateRule()
         }
-        if (state.error != null || issue != null) {
-            StatusText(
-                text = stringResource(R.string.run_all_status_fail),
-                tone = SemanticTone.FAIL,
-            )
-            Note(
-                text =
-                    stringResource(
+        val canRetry = state.error != null || issue != null
+        if (canRetry) {
+            val classification =
+                DeviceObservationClassifier.classify(
+                    DeviceObservation.Measurement(
+                        MeasurementKind.CAMERA,
                         if (issue == RunAllStageOutcome.TIMED_OUT) {
-                            R.string.run_all_stage_timeout
+                            MeasurementOutcome.TIMED_OUT
                         } else {
-                            R.string.run_all_stage_error
+                            MeasurementOutcome.ERROR
                         },
                     ),
+                )
+            StatusText(
+                text = stringResource(observationStatusStringRes(classification)),
+                tone = classification.toSemanticTone(),
             )
-            PrimaryButton(
-                label = stringResource(R.string.button_retry),
-                onClick = onRetry,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            ObservationReasonNote(classification)
         }
-        SecondaryButton(
-            label = stringResource(R.string.run_all_skip),
-            onClick = onSkip,
-            modifier = Modifier.fillMaxWidth(),
+        RetryAndSkipButtons(
+            showRetry = canRetry,
+            onRetry = onRetry,
+            onSkip = onSkip,
         )
     }
 }
@@ -540,19 +572,13 @@ fun ButtonCheckStep(
             )
         }
         if (state.phase == ButtonTestPhase.TIMED_OUT) {
+            ObservationReasonNote(classifyButtonTest(state.phase))
             Note(text = stringResource(R.string.button_timeout_hint))
         }
-        if (state.phase != ButtonTestPhase.RUNNING) {
-            PrimaryButton(
-                label = stringResource(R.string.button_retry),
-                onClick = onRetry,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        SecondaryButton(
-            label = stringResource(R.string.run_all_skip),
-            onClick = onSkip,
-            modifier = Modifier.fillMaxWidth(),
+        RetryAndSkipButtons(
+            showRetry = state.phase != ButtonTestPhase.RUNNING,
+            onRetry = onRetry,
+            onSkip = onSkip,
         )
     }
 }
@@ -564,7 +590,7 @@ private fun ButtonDetectionRow(
 ) {
     DataRow(
         label = label,
-        value = stringResource(if (detected) R.string.button_detected else R.string.button_not_detected),
+        value = stringResource(if (detected) R.string.button_detected else R.string.status_not_measured),
         tone = if (detected) SemanticTone.PASS else SemanticTone.NEUTRAL,
     )
 }
@@ -584,6 +610,7 @@ fun BiometricCheckStep(
         description = stringResource(R.string.run_all_biometrics_description),
         onCancel = onCancel,
     ) {
+        ObservationReasonNote(classifyBiometric(state.authResult))
         if (state.promptActive) {
             IndeterminateRule()
         }
@@ -599,6 +626,26 @@ fun BiometricCheckStep(
 }
 
 @Composable
+private fun RetryAndSkipButtons(
+    showRetry: Boolean,
+    onRetry: () -> Unit,
+    onSkip: () -> Unit,
+) {
+    if (showRetry) {
+        PrimaryButton(
+            label = stringResource(R.string.button_retry),
+            onClick = onRetry,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+    SecondaryButton(
+        label = stringResource(R.string.run_all_skip),
+        onClick = onSkip,
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+@Composable
 private fun ManualCheckFrame(
     progress: RunAllProgress,
     title: String,
@@ -607,14 +654,7 @@ private fun ManualCheckFrame(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(FonecheckTheme.spacing.md),
-        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg),
-    ) {
+    ScrollableStepContent(modifier) {
         ManualProgress(progress)
         Column {
             Text(

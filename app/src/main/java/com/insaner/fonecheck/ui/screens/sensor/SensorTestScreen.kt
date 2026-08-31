@@ -14,16 +14,23 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.observation.DeviceObservation
+import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
+import com.insaner.fonecheck.domain.observation.MeasurementKind
+import com.insaner.fonecheck.domain.observation.MeasurementOutcome
+import com.insaner.fonecheck.localization.observationReasonStringRes
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.DisclosureHeader
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.ObservationReasonNote
 import com.insaner.fonecheck.ui.components.ScreenStateCard
 import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.SecondaryButton
@@ -32,7 +39,7 @@ import com.insaner.fonecheck.ui.components.TestScreenContent
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.format.uiScientificNumber
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
-import com.insaner.fonecheck.ui.theme.SemanticTone
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 
 @Composable
 fun SensorTestScreen(
@@ -40,12 +47,13 @@ fun SensorTestScreen(
     viewModel: SensorTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val liveStateUpdatedAtEpochMillis = remember(state) { System.currentTimeMillis() }
 
     DisposableEffect(viewModel) {
         onDispose(viewModel::stopAllTests)
     }
 
-    TestScreenContent(modifier = modifier) {
+    TestScreenContent(modifier = modifier, liveStateUpdatedAtEpochMillis = liveStateUpdatedAtEpochMillis) {
         item { SensorSummarySection(state) }
 
         state.error?.let { item { SensorErrorCard() } }
@@ -97,16 +105,20 @@ private fun SensorSummarySection(state: SensorTestState) {
 
 @Composable
 private fun SensorErrorCard() {
+    val classification = sensorMeasurement(MeasurementOutcome.ERROR)
     ScreenStateCard(
-        type = ScreenStateType.ERROR,
-        message = stringResource(R.string.sensor_listener_error),
+        type = ScreenStateType.NOT_TESTED,
+        message = stringResource(observationReasonStringRes(requireNotNull(classification.reason))),
     )
 }
 
 @Composable
 private fun ChallengeSection(challenge: ChallengeState) {
     val progress by animateFloatAsState(challenge.progress, label = "sensorChallengeProgress")
-    val tone = if (challenge.completed) SemanticTone.PASS else SemanticTone.NEUTRAL
+    val classification =
+        sensorMeasurement(
+            if (challenge.completed) MeasurementOutcome.MEASURED else MeasurementOutcome.IN_PROGRESS,
+        )
 
     Column {
         SectionHeader(label = stringResource(R.string.sensor_challenges_title))
@@ -118,8 +130,9 @@ private fun ChallengeSection(challenge: ChallengeState) {
                 } else {
                     stringResource(R.string.sensor_status_sampling)
                 },
-            tone = tone,
+            tone = classification.toSemanticTone(),
         )
+        ObservationReasonNote(classification)
         if (!challenge.completed) {
             challenge.challenge?.let { Note(text = it.prompt()) }
         }
@@ -130,7 +143,12 @@ private fun ChallengeSection(challenge: ChallengeState) {
                 Modifier
                     .fillMaxWidth()
                     .height(FonecheckTheme.spacing.segmentHeight),
-            color = if (challenge.completed) FonecheckTheme.colors.pass else FonecheckTheme.colors.accentFill,
+            color =
+                if (challenge.completed) {
+                    FonecheckTheme.colors.pass
+                } else {
+                    FonecheckTheme.colors.primaryButtonBackground
+                },
             trackColor = FonecheckTheme.colors.segmentTrack,
         )
     }
@@ -148,16 +166,16 @@ private fun GuidedSensorSection(
     onChallenge: (InteractiveChallenge) -> Unit,
     onSkip: () -> Unit,
 ) {
+    val classification = test.status.classification()
     Column {
         DisclosureHeader(
             label = test.code.displayName(),
             summary = test.status.displayName(),
             expanded = isExpanded,
             onClick = onToggle,
-            tone = if (test.status == GuidedSensorStatus.PASSED) SemanticTone.PASS else SemanticTone.NEUTRAL,
+            tone = classification.toSemanticTone(),
             strongDivider = false,
         )
-
         AnimatedVisibility(
             visible = isExpanded,
             enter = expandVertically(),
@@ -170,6 +188,10 @@ private fun GuidedSensorSection(
                         .padding(vertical = FonecheckTheme.spacing.md),
                 verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md),
             ) {
+                ObservationReasonNote(
+                    classification = classification,
+                    valueExplainsNotMeasuredState = test.status == GuidedSensorStatus.NOT_TESTED,
+                )
                 if (sensorInfo == null) {
                     Note(text = stringResource(R.string.sensor_not_available_description))
                 } else {
@@ -216,7 +238,7 @@ private fun SamplingProgress(sampleCount: Int) {
                 Modifier
                     .fillMaxWidth()
                     .height(FonecheckTheme.spacing.segmentHeight),
-            color = FonecheckTheme.colors.accentFill,
+            color = FonecheckTheme.colors.primaryButtonBackground,
             trackColor = FonecheckTheme.colors.segmentTrack,
         )
     }
@@ -375,11 +397,27 @@ private fun GuidedSensorStatus.displayName(): String =
     stringResource(
         when (this) {
             GuidedSensorStatus.NOT_AVAILABLE -> R.string.status_not_available
-            GuidedSensorStatus.NOT_TESTED -> R.string.status_not_tested
+            GuidedSensorStatus.NOT_TESTED -> R.string.status_not_measured
             GuidedSensorStatus.SAMPLING -> R.string.sensor_status_sampling
             GuidedSensorStatus.PASSED -> R.string.status_pass
             GuidedSensorStatus.SKIPPED -> R.string.sensor_status_skipped
         },
+    )
+
+private fun GuidedSensorStatus.classification() =
+    sensorMeasurement(
+        when (this) {
+            GuidedSensorStatus.NOT_AVAILABLE -> MeasurementOutcome.HARDWARE_ABSENT
+            GuidedSensorStatus.NOT_TESTED -> MeasurementOutcome.NOT_RUN
+            GuidedSensorStatus.SAMPLING -> MeasurementOutcome.IN_PROGRESS
+            GuidedSensorStatus.PASSED -> MeasurementOutcome.MEASURED
+            GuidedSensorStatus.SKIPPED -> MeasurementOutcome.SKIPPED
+        },
+    )
+
+private fun sensorMeasurement(outcome: MeasurementOutcome) =
+    DeviceObservationClassifier.classify(
+        DeviceObservation.Measurement(MeasurementKind.SENSORS, outcome),
     )
 
 @Composable

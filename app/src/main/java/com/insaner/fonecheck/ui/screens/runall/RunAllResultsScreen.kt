@@ -39,6 +39,7 @@ import com.insaner.fonecheck.domain.model.TestResult
 import com.insaner.fonecheck.domain.model.TestStatus
 import com.insaner.fonecheck.localization.evidenceLabelStringRes
 import com.insaner.fonecheck.localization.evidenceReasonStringRes
+import com.insaner.fonecheck.localization.shouldShowEvidenceReason
 import com.insaner.fonecheck.localization.stableTextStringRes
 import com.insaner.fonecheck.navigation.CategoryRetest
 import com.insaner.fonecheck.navigation.diagnosticDestinations
@@ -54,6 +55,7 @@ import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.SegmentedBar
 import com.insaner.fonecheck.ui.components.TestScreenContent
+import com.insaner.fonecheck.ui.format.formatUiDateTime
 import com.insaner.fonecheck.ui.format.uiFileSize
 import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import com.insaner.fonecheck.ui.format.uiNumber
@@ -64,9 +66,6 @@ import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
 import com.insaner.fonecheck.ui.theme.contentColor
 import com.insaner.fonecheck.ui.theme.toSemanticTone
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 
 enum class ReportResultMode {
     COMPLETED_RUN,
@@ -231,7 +230,7 @@ private fun ResultsSummary(
             HeadlineReadout(
                 value = uiNumber(score),
                 unit = stringResource(R.string.report_score_unit),
-                rawValues = scoreStateLabel(report.score.state),
+                supportingLines = listOf(scoreStateLabel(report.score.state)),
             )
         } else {
             DataRow(
@@ -280,11 +279,19 @@ private fun ResultsSummary(
             text = stringResource(R.string.report_not_tested_count, uiNumber(counts.notTested)),
             tone = SemanticTone.NEUTRAL,
         )
-        Note(
-            text =
+        DataRow(
+            label = stringResource(R.string.report_coverage),
+            value =
                 stringResource(
                     R.string.report_coverage_value,
                     uiNumber(report.coverage.percentage),
+                ),
+        )
+        DataRow(
+            label = stringResource(R.string.report_checks),
+            value =
+                stringResource(
+                    R.string.report_checks_value,
                     uiNumber(report.coverage.completedCount),
                     uiNumber(report.coverage.applicableCount),
                 ),
@@ -309,12 +316,10 @@ private fun ReportMetadataSection(
     report: DiagnosticReport,
     durationMillis: Long,
 ) {
-    val dateFormatter =
-        remember {
-            DateTimeFormatter
-                .ofLocalizedDateTime(FormatStyle.MEDIUM)
-                .withLocale(uiLanguageLocale(LocalLocale.current.platformLocale))
-                .withZone(ZoneId.systemDefault())
+    val locale = uiLanguageLocale(LocalLocale.current.platformLocale)
+    val completedAt =
+        remember(report.completedAt, locale) {
+            formatUiDateTime(report.completedAt, locale)
         }
     val durationSeconds = durationMillis / 1_000L
     val deviceName =
@@ -361,7 +366,7 @@ private fun ReportMetadataSection(
         )
         LongValueRow(
             label = stringResource(R.string.report_completed_at),
-            value = dateFormatter.format(report.completedAt),
+            value = completedAt,
         )
         DataRow(
             label = stringResource(R.string.report_duration),
@@ -434,7 +439,9 @@ private fun CategoryResult(
             onClick = onToggle,
             tone = result.status.semanticTone(),
         )
-        Note(text = result.summary)
+        if (result.status != TestStatus.NotTested) {
+            Note(text = result.summary)
+        }
         if (isExpanded) {
             ResultDetails(
                 results = result.results,
@@ -455,11 +462,18 @@ private fun ResultDetails(
         modifier = Modifier.padding(top = FonecheckTheme.spacing.sm),
         verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
     ) {
+        val sectionReasons = repeatedConsecutiveReasons(results.map(TestResult::reason))
+        sectionReasons.forEach { reason ->
+            Note(text = stringResource(R.string.report_evidence_reason, reason))
+        }
         if (results.isEmpty()) {
             Note(text = stringResource(R.string.report_no_saved_evidence))
         } else {
             results.forEach { result ->
-                ResultDetail(result)
+                ResultDetail(
+                    result = result,
+                    showReason = result.reason !in sectionReasons,
+                )
             }
         }
         SecondaryButton(
@@ -478,7 +492,10 @@ private fun ResultDetails(
 }
 
 @Composable
-private fun ResultDetail(result: TestResult) {
+private fun ResultDetail(
+    result: TestResult,
+    showReason: Boolean,
+) {
     val hasDetail = result.detail != null
     Column {
         DataRow(
@@ -500,7 +517,7 @@ private fun ResultDetail(result: TestResult) {
                 value = sourceLabel(source),
             )
         }
-        result.reason?.let { reason ->
+        result.reason?.takeIf { showReason }?.let { reason ->
             Note(text = stringResource(R.string.report_evidence_reason, reason))
         }
     }
@@ -525,8 +542,18 @@ private fun DiagnosticEvidence.toUiResult(): TestResult =
         confidence = confidence,
         timestamp = capturedAt.toEpochMilli(),
         source = source,
-        reason = reason?.let { reasonLabel(it) },
+        reason =
+            reason
+                ?.takeIf { shouldShowEvidenceReason(status, it) }
+                ?.let { reasonLabel(it) },
     )
+
+internal fun repeatedConsecutiveReasons(reasons: List<String?>): Set<String> =
+    buildSet {
+        reasons.zipWithNext().forEach { (first, second) ->
+            first?.takeIf { it == second }?.let(::add)
+        }
+    }
 
 private fun DiagnosticStatus.toLegacyStatus(): TestStatus =
     when (this) {
@@ -609,8 +636,7 @@ private fun evidenceValueLabel(
     }
 
 @Composable
-private fun localizedNumber(value: Number): String =
-    uiNumber(value, maximumFractionDigits = 6, grouping = true)
+private fun localizedNumber(value: Number): String = uiNumber(value, maximumFractionDigits = 6, grouping = true)
 
 @Composable
 private fun stableTextLabel(code: String): String =
@@ -641,7 +667,7 @@ private fun statusLabel(status: TestStatus): String =
             is TestStatus.Fail -> R.string.run_all_status_fail
             is TestStatus.Info -> R.string.run_all_status_info
             TestStatus.NotAvailable -> R.string.run_all_status_unavailable
-            TestStatus.NotTested -> R.string.run_all_status_not_tested
+            TestStatus.NotTested -> R.string.status_not_measured
         },
     )
 

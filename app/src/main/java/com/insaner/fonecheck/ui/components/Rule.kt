@@ -15,8 +15,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.unit.Dp
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 
 /**
@@ -24,26 +26,33 @@ import com.insaner.fonecheck.ui.theme.FonecheckTheme
  * on high-density screens the way a 1dp line would.
  */
 @Composable
-fun HairlineRule(modifier: Modifier = Modifier) {
+fun HairlineRule(
+    modifier: Modifier = Modifier,
+    color: Color = FonecheckTheme.colors.ruleHairline,
+) {
     val thickness = with(LocalDensity.current) { 1f.toDp() }
     Box(
         modifier =
             modifier
                 .fillMaxWidth()
                 .height(thickness)
-                .background(FonecheckTheme.colors.ruleHairline),
+                .background(color),
     )
 }
 
 /** The full-weight rule that sits under a section label. Used nowhere else. */
 @Composable
-fun StrongRule(modifier: Modifier = Modifier) {
+fun StrongRule(
+    modifier: Modifier = Modifier,
+    color: Color = FonecheckTheme.colors.ruleStrong,
+    thickness: Dp = FonecheckTheme.spacing.ruleThickness,
+) {
     Box(
         modifier =
             modifier
                 .fillMaxWidth()
-                .height(FonecheckTheme.spacing.ruleThickness)
-                .background(FonecheckTheme.colors.ruleStrong),
+                .height(thickness)
+                .background(color),
     )
 }
 
@@ -53,7 +62,7 @@ private const val SWEEP_DURATION_MILLIS = 1_100
 
 /**
  * A hairline that is waiting for something: a muted segment travelling along an otherwise ordinary
- * [HairlineRule]. Indeterminate by nature — it reports that work is in progress, never how far it
+ * [HairlineRule]. Indeterminate by nature, it reports that work is in progress, never how far it
  * has got.
  *
  * It replaces a spinner, which has no place in a surface with no cards and no elevation. Purely

@@ -44,5 +44,4 @@ class AccessibilitySemanticsTest {
         composeRule.onNodeWithText("Ready", useUnmergedTree = true).assertExists()
         composeRule.onNodeWithText("Collapsed", useUnmergedTree = true).assertDoesNotExist()
     }
-
 }

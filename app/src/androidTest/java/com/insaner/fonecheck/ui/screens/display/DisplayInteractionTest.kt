@@ -5,10 +5,14 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
+import androidx.test.platform.app.InstrumentationRegistry
+import com.insaner.fonecheck.R
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -20,6 +24,7 @@ class DisplayInteractionTest {
 
     @Test
     fun dragAndSimultaneousPointersReachTheTouchCallbacksAndExitIsAccessible() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
         val touchedCells = mutableSetOf<Int>()
         val pointerCounts = mutableListOf<Int>()
         var exited = false
@@ -27,7 +32,17 @@ class DisplayInteractionTest {
         composeRule.setContent {
             FonecheckTheme {
                 TouchTestOverlay(
-                    state = TouchTestState(isActive = true),
+                    state =
+                        TouchTestState(
+                            isActive = true,
+                            touchedCells = setOf(0, 1),
+                            activePointers =
+                                mapOf(
+                                    1L to TouchPoint(0.25f, 0.5f),
+                                    2L to TouchPoint(0.75f, 0.5f),
+                                ),
+                            maxPointerCount = 3,
+                        ),
                     onTouchCells = touchedCells::addAll,
                     onPointerChange = { pointerCounts += it.size },
                     onReset = {},
@@ -37,11 +52,24 @@ class DisplayInteractionTest {
             }
         }
 
+        composeRule.onNodeWithText(context.getString(R.string.display_touch_cells)).assertIsDisplayed()
+        composeRule
+            .onNodeWithText(context.getString(R.string.display_value_ratio, "2", "60"))
+            .assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.display_touch_active)).assertIsDisplayed()
+        composeRule.onNodeWithText("2").assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.display_touch_maximum)).assertIsDisplayed()
+        composeRule.onNodeWithText("3").assertIsDisplayed()
+
         composeRule
             .onNodeWithTag(DISPLAY_TOUCH_GRID_TAG)
             .assertHasClickAction()
-            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.StateDescription))
-            .performClick()
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.StateDescription,
+                    context.getString(R.string.display_touch_progress, "2", "60", "2", "3"),
+                ),
+            ).performClick()
 
         composeRule.runOnIdle { assertTrue(0 in touchedCells) }
 

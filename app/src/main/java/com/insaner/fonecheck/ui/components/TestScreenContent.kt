@@ -13,6 +13,7 @@ import com.insaner.fonecheck.ui.theme.FonecheckTheme
 @Composable
 fun TestScreenContent(
     modifier: Modifier = Modifier,
+    liveStateUpdatedAtEpochMillis: Long? = null,
     content: LazyListScope.() -> Unit,
 ) {
     LazyColumn(
@@ -22,6 +23,10 @@ fun TestScreenContent(
                 .padding(horizontal = FonecheckTheme.spacing.md),
         verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg),
         contentPadding = PaddingValues(vertical = FonecheckTheme.spacing.md),
-        content = content,
-    )
+    ) {
+        content()
+        if (liveStateUpdatedAtEpochMillis != null) {
+            item { LiveStateTimestamp(liveStateUpdatedAtEpochMillis) }
+        }
+    }
 }

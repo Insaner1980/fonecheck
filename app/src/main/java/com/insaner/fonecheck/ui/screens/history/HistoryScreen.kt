@@ -35,12 +35,10 @@ import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.TestScreenContent
+import com.insaner.fonecheck.ui.format.formatUiDateTime
 import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 
 @Composable
 fun HistoryRoute(
@@ -76,14 +74,6 @@ fun HistoryScreen(
     var compareBaseId by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingDeleteId by rememberSaveable { mutableStateOf<String?>(null) }
     val locale = uiLanguageLocale(LocalLocale.current.platformLocale)
-    val dateFormatter =
-        remember(locale) {
-            DateTimeFormatter
-                .ofLocalizedDateTime(FormatStyle.MEDIUM)
-                .withLocale(locale)
-                .withZone(ZoneId.systemDefault())
-        }
-
     LaunchedEffect(state.reports) {
         val reportIds = state.reports.map(SavedReportSummary::stableId).toSet()
         if (compareBaseId !in reportIds) compareBaseId = null
@@ -108,9 +98,13 @@ fun HistoryScreen(
                     items = state.reports,
                     key = SavedReportSummary::stableId,
                 ) { report ->
+                    val completedAt =
+                        remember(report.completedAt, locale) {
+                            formatUiDateTime(report.completedAt, locale)
+                        }
                     HistoryReportSection(
                         report = report,
-                        completedAt = dateFormatter.format(report.completedAt),
+                        completedAt = completedAt,
                         isCompareBase = compareBaseId == report.stableId,
                         isDeleting = report.stableId in state.deletingReportIds,
                         onOpen = { onOpen(report.stableId) },
@@ -227,7 +221,15 @@ private fun HistoryReportSection(
     Column {
         SectionHeader(
             label = historyKindLabel(report),
-            trailing = completedAt,
+            trailing = historyCategoryLabel(report),
+        )
+        DataRow(
+            label = stringResource(R.string.history_status),
+            value = historyStatusLabel(report),
+        )
+        DataRow(
+            label = stringResource(R.string.history_completed),
+            value = completedAt,
         )
         LongValueRow(
             label = stringResource(R.string.report_identifier),
@@ -245,12 +247,13 @@ private fun HistoryReportSection(
                     uiNumber(report.coveragePercentage),
                 ).takeIf { isAvailable },
         )
-        Note(
-            stringResource(
-                R.string.history_issue_summary,
-                uiNumber(report.warningCount),
-                uiNumber(report.failureCount),
-            ),
+        DataRow(
+            label = stringResource(R.string.history_warnings),
+            value = uiNumber(report.warningCount),
+        )
+        DataRow(
+            label = stringResource(R.string.history_issues),
+            value = uiNumber(report.failureCount),
         )
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
@@ -297,19 +300,31 @@ private fun historyKindLabel(report: SavedReportSummary): String {
         return stringResource(R.string.history_unavailable_report)
     }
     if (report.kind == ReportKind.CATEGORY_ONLY) {
-        val categoryLabel =
-            report.categoryId
-                ?.let { categoryId -> diagnosticDestinations.firstOrNull { it.category == categoryId } }
-                ?.let { destination -> stringResource(destination.labelResId) }
-                ?: stringResource(R.string.history_unavailable_report)
-        return stringResource(R.string.history_category_retest, categoryLabel)
+        return stringResource(R.string.history_category_retest)
+    }
+    return stringResource(R.string.history_full_check)
+}
+
+@Composable
+private fun historyCategoryLabel(report: SavedReportSummary): String? {
+    if (report.unavailableReason != null || report.kind != ReportKind.CATEGORY_ONLY) return null
+    return report.categoryId
+        ?.let { categoryId -> diagnosticDestinations.firstOrNull { it.category == categoryId } }
+        ?.let { destination -> stringResource(destination.labelResId) }
+        ?: stringResource(R.string.history_unavailable_report)
+}
+
+@Composable
+private fun historyStatusLabel(report: SavedReportSummary): String {
+    if (report.unavailableReason != null) {
+        return stringResource(R.string.history_status_unavailable)
     }
     return stringResource(
         when (report.scoreState) {
-            ScoreState.COMPLETE -> R.string.history_full_check
-            ScoreState.PARTIAL -> R.string.history_partial_check
-            ScoreState.INCOMPLETE -> R.string.history_incomplete_check
-            null -> R.string.history_unavailable_report
+            ScoreState.COMPLETE -> R.string.history_status_complete
+            ScoreState.PARTIAL -> R.string.history_status_partial
+            ScoreState.INCOMPLETE -> R.string.history_status_incomplete
+            null -> R.string.history_status_unavailable
         },
     )
 }

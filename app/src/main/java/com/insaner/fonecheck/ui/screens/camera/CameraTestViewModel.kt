@@ -15,6 +15,7 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewModelScope
@@ -87,7 +88,12 @@ class CameraTestViewModel
     ) : AndroidViewModel(application) {
         private val cameraManager = application.getSystemService(CameraManager::class.java)
         private val cameraExecutor = Executors.newSingleThreadExecutor()
-        private val uiLocale = uiLanguageLocale(application.resources.configuration.locales[0])
+        private val uiLocale =
+            uiLanguageLocale(
+                ContextCompat
+                    .getContextForLanguage(application)
+                    .resources.configuration.locales[0],
+            )
 
         private val _state = MutableStateFlow(CameraTestState())
         val state: StateFlow<CameraTestState> = _state
@@ -157,7 +163,12 @@ class CameraTestViewModel
             val maxResStr =
                 maxRes
                     ?.let {
-                        "${it.width} × ${it.height} (${formatCameraMegapixels(it.width.toLong() * it.height, uiLocale)})"
+                        val megapixels =
+                            formatCameraMegapixels(
+                                pixelCount = it.width.toLong() * it.height,
+                                locale = uiLocale,
+                            )
+                        "${it.width} × ${it.height} ($megapixels)"
                     }.orEmpty()
 
             val fpsRanges =

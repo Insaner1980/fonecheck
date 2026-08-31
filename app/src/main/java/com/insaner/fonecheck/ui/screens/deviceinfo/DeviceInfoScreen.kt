@@ -25,21 +25,26 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.DeviceInfo
+import com.insaner.fonecheck.domain.observation.DeviceObservation
+import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
+import com.insaner.fonecheck.localization.observationStatusStringRes
 import com.insaner.fonecheck.ui.TopBarAction
 import com.insaner.fonecheck.ui.components.CaptureTimestamp
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.ObservationReasonNote
 import com.insaner.fonecheck.ui.components.PrimaryButton
 import com.insaner.fonecheck.ui.components.RegisterRefreshTopBarAction
 import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.formatCaptureTimestamp
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
-import com.insaner.fonecheck.ui.theme.SemanticTone
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 import java.time.Instant
 import java.time.ZoneId
+import java.util.Locale
 
 @Composable
 fun DeviceInfoScreen(
@@ -106,10 +111,10 @@ internal fun RegisterDeviceTopBarAction(
 @Composable
 internal fun DeviceInfoContent(
     state: DeviceInfoState,
+    modifier: Modifier = Modifier,
     onCopyValue: ((String) -> Unit)? = null,
     onCopyAll: () -> Unit = {},
     onExport: () -> Unit = {},
-    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier =
@@ -166,6 +171,8 @@ private fun IdentitySection(
     info: DeviceInfo,
     onCopyValue: ((String) -> Unit)?,
 ) {
+    val serialClassification =
+        DeviceObservationClassifier.classify(DeviceObservation.SerialNumber(available = false))
     val model = availableDeviceValue(info.model)
     val manufacturer = availableDeviceValue(info.manufacturer)
     val brand = availableDeviceValue(info.brand)
@@ -201,7 +208,7 @@ private fun IdentitySection(
             unavailableLabel = stringResource(R.string.device_value_restricted),
             showDivider = false,
         )
-        Note(stringResource(R.string.device_serial_restricted_note))
+        ObservationReasonNote(serialClassification)
         HairlineRule()
     }
 }
@@ -215,9 +222,9 @@ private fun OperatingSystemSection(
     val apiLevel = info.apiLevel.toString()
     val securityPatch = availableDeviceValue(info.securityPatch)
     val buildNumber = availableDeviceValue(info.buildNumber)
-    val kernelVersion = availableDeviceValue(info.kernelVersion)
-    val basebandVersion = availableDeviceValue(info.basebandVersion)
-    val bootloaderVersion = availableDeviceValue(info.bootloaderVersion)
+    val kernelVersion = splitConcatenatedDeviceIdentifiers(availableDeviceValue(info.kernelVersion))
+    val basebandVersion = splitConcatenatedDeviceIdentifiers(availableDeviceValue(info.basebandVersion))
+    val bootloaderVersion = splitConcatenatedDeviceIdentifiers(availableDeviceValue(info.bootloaderVersion))
     DeviceSection(label = stringResource(R.string.os_info_title)) {
         DataRow(
             stringResource(R.string.label_android_version),
@@ -244,19 +251,19 @@ private fun OperatingSystemSection(
         )
         LongValueRow(
             stringResource(R.string.label_kernel),
-            splitConcatenatedDeviceIdentifiers(kernelVersion),
+            kernelVersion,
             unavailableLabel = stringResource(R.string.device_value_unavailable),
             onValueLongClick = valueCopyAction(kernelVersion, onCopyValue),
         )
         LongValueRow(
             stringResource(R.string.label_baseband),
-            splitConcatenatedDeviceIdentifiers(basebandVersion),
+            basebandVersion,
             unavailableLabel = stringResource(R.string.device_value_unavailable),
             onValueLongClick = valueCopyAction(basebandVersion, onCopyValue),
         )
         LongValueRow(
             stringResource(R.string.label_bootloader),
-            splitConcatenatedDeviceIdentifiers(bootloaderVersion),
+            bootloaderVersion,
             unavailableLabel = stringResource(R.string.device_value_unavailable),
             onValueLongClick = valueCopyAction(bootloaderVersion, onCopyValue),
         )
@@ -284,27 +291,25 @@ private fun SecuritySection(
     info: DeviceInfo,
     onCopyValue: ((String) -> Unit)?,
 ) {
+    val rootClassification =
+        DeviceObservationClassifier.classify(DeviceObservation.RootArtifact(info.rootArtifactDetected))
+    val developerOptionsClassification =
+        DeviceObservationClassifier.classify(DeviceObservation.DeveloperOptions(info.developerOptionsEnabled))
+    val usbDebuggingClassification =
+        DeviceObservationClassifier.classify(DeviceObservation.UsbDebugging(info.usbDebuggingEnabled))
     val rootStatus =
-        stringResource(
-            if (info.rootArtifactDetected) {
-                R.string.run_all_status_warning
-            } else {
-                R.string.run_all_status_pass
-            },
-        )
+        stringResource(observationStatusStringRes(rootClassification))
     val developerOptions = enabledLabel(info.developerOptionsEnabled)
     val usbDebugging = enabledLabel(info.usbDebuggingEnabled)
     DeviceSection(label = stringResource(R.string.security_info_title)) {
         DataRow(
             label = stringResource(R.string.label_root_artifact),
             value = rootStatus,
-            tone = if (info.rootArtifactDetected) SemanticTone.ATTENTION else SemanticTone.PASS,
+            tone = rootClassification.toSemanticTone(),
             showDivider = false,
             onValueLongClick = valueCopyAction(rootStatus, onCopyValue),
         )
-        if (info.rootArtifactDetected) {
-            Note(stringResource(R.string.device_root_finding_note))
-        }
+        ObservationReasonNote(rootClassification)
         Note(stringResource(R.string.device_root_heuristic_disclaimer))
         HairlineRule()
 
@@ -314,7 +319,11 @@ private fun SecuritySection(
             showDivider = false,
             onValueLongClick = valueCopyAction(developerOptions, onCopyValue),
         )
-        Note(stringResource(R.string.device_developer_options_note))
+        if (developerOptionsClassification.reason != null) {
+            ObservationReasonNote(developerOptionsClassification)
+        } else {
+            Note(stringResource(R.string.device_developer_options_note))
+        }
         HairlineRule()
 
         DataRow(
@@ -323,7 +332,11 @@ private fun SecuritySection(
             showDivider = false,
             onValueLongClick = valueCopyAction(usbDebugging, onCopyValue),
         )
-        Note(stringResource(R.string.device_usb_debugging_note))
+        if (usbDebuggingClassification.reason != null) {
+            ObservationReasonNote(usbDebuggingClassification)
+        } else {
+            Note(stringResource(R.string.device_usb_debugging_note))
+        }
         HairlineRule()
     }
 }
@@ -357,16 +370,16 @@ internal fun availableDeviceValue(value: String): String? = value.takeUnless { i
 
 internal fun splitConcatenatedDeviceIdentifiers(value: String?): String? {
     if (value == null) return null
-    listOf(',', ';').forEach { separator ->
-        val parts = value.split(separator)
-        if (parts.size == 2 && parts.all { it.isNotBlank() }) {
-            return "${parts[0].trimEnd()}\n${parts[1].trimStart()}"
-        }
+    val parts = value.split(',', ';')
+    return if (parts.size == 2 && parts.all { it.isNotBlank() }) {
+        parts.map(String::trim).distinct().joinToString("\n")
+    } else {
+        value
     }
-    return value
 }
 
 internal fun formatCapturedAt(
     value: Instant,
+    locale: Locale,
     zoneId: ZoneId = ZoneId.systemDefault(),
-): String = formatCaptureTimestamp(value, zoneId)
+): String = formatCaptureTimestamp(value, locale, zoneId)

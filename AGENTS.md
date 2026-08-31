@@ -68,7 +68,7 @@ colour: they read roles from `FonecheckTheme.colors` and pass a `SemanticTone`.
 | fail                     | #A32C22 | #E8736B | 6.6 / 6.6              |
 | accentFill (fills only)  | #B5761A | #E8A33D | never text             |
 | segmentTrack             | #D5D3CC | #2A2E34 | —                      |
-| primaryButton bg / fg    | #17191C / #F7F6F3 | #E8A33D / #1A1206 | 16.3 / 8.6 |
+| primaryButton bg / fg    | #17191C / #F7F6F3 | #E8EAED / #0B0C0E | 16.3 / 16.2 |
 
 `attention` and `accentFill` are the text-safe and fill-safe renderings of the single accent hue.
 The colour vocabulary is `SemanticTone` (NEUTRAL / PASS / ATTENTION / FAIL);
@@ -104,8 +104,8 @@ Current foundation — new and migrated screens MUST use these instead of local 
 - `SectionHeader` — uppercase mono label with a strong rule beneath, optional trailing value
 - `DataRow` — sans label, mono value, hairline rule; `tone` sets the semantic colour, and
   `value = null` draws `unavailableLabel` (default `n/a`) in muted text
-- `LongValueRow` — label on its own line, full-width left-aligned value that wraps only after
-  `-`, `.` or `,`
+- `LongValueRow` — measures the row first; values that fit keep the `DataRow` scan pattern, while
+  longer values move below the label and wrap only after `-`, `.` or `,`
 - `StatusText` — short mono uppercase label in a semantic colour
 - `Note` — small muted sans caveat under a row
 - `PrimaryButton` / `SecondaryButton` — filled and outlined, 48dp minimum height
@@ -134,14 +134,20 @@ never reaches a release build.
   so a regional device preference cannot change the decimal separator of an English or Finnish UI.
 - Measured and Android-reported values are neutral. Apply a `SemanticTone` only when the app is
   presenting an actual verdict, warning or failure.
-- Never truncate a measured value. Use `LongValueRow` for long row values and allow
-  `HeadlineReadout` context to continue on another line.
+- Never truncate a measured value. Use `LongValueRow` when a value may be long; it selects the
+  two-line form only when the measured value does not fit. Pass unavailable and placeholder states
+  as null so they always retain the one-line `DataRow` form.
+- Write labels and action text in sentence case in every locale. Acronyms and proper names keep
+  their normal casing; `SectionHeader` alone transforms its rendered label to uppercase.
 - Put the snapshot-wide `CaptureTimestamp` at the bottom of the screen. A time that belongs only to
   one measurement remains with that measurement, not in a section header.
 - Put per-row confidence inside that `DataRow` or `LongValueRow`; put section-wide confidence in the
   `SectionHeader` trailing slot. Never show the same confidence in both places.
 - Register refresh with `RegisterRefreshTopBarAction`. Bottom-screen buttons are reserved for the
   screen's workflow actions, not snapshot refresh.
+- Keep the shared scaffold's top-edge fade over non-fullscreen content. Individual screens must not
+  add their own top masks; the shared fade prevents scrolling text from clipping mid-glyph at the
+  top-bar boundary.
 
 ## Code Review Triggers
 `CODE_REVIEW.md` contains tagged review items. Check relevant items at these trigger points:

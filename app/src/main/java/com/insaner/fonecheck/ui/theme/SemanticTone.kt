@@ -4,6 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
+import com.insaner.fonecheck.domain.observation.ObservationClassification
+import com.insaner.fonecheck.domain.observation.ObservationState
 
 /**
  * The visual role a value carries. This is the whole colour vocabulary available to screens: they
@@ -31,6 +33,14 @@ fun DiagnosticStatus.toSemanticTone(): SemanticTone =
         -> SemanticTone.NEUTRAL
     }
 
+fun ObservationClassification.toSemanticTone(): SemanticTone =
+    when (state) {
+        ObservationState.PASS -> SemanticTone.PASS
+        ObservationState.FAULT -> SemanticTone.FAIL
+        ObservationState.NOTED -> SemanticTone.ATTENTION
+        ObservationState.NOT_MEASURED -> SemanticTone.NEUTRAL
+    }
+
 /** Colour for text drawn in this tone. Every value here clears 4.5:1 against the background. */
 @Composable
 @ReadOnlyComposable
@@ -52,7 +62,7 @@ fun SemanticTone.fillColor(): Color {
     return when (this) {
         SemanticTone.NEUTRAL -> colors.segmentTrack
         SemanticTone.PASS -> colors.pass
-        SemanticTone.ATTENTION -> colors.accentFill
+        SemanticTone.ATTENTION -> colors.attentionFill
         SemanticTone.FAIL -> colors.fail
     }
 }

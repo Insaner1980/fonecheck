@@ -210,11 +210,11 @@ class BatteryTestViewModel
                 val note =
                     when (profile) {
                         ManufacturerProfile.SAMSUNG ->
-                            context.getString(R.string.batt_mfr_samsung_current_note)
+                            ContextCompat.getString(context, R.string.batt_mfr_samsung_current_note)
                         ManufacturerProfile.ONEPLUS ->
-                            context.getString(R.string.batt_mfr_oneplus_current_note)
+                            ContextCompat.getString(context, R.string.batt_mfr_oneplus_current_note)
                         ManufacturerProfile.GOOGLE_PIXEL ->
-                            context.getString(R.string.batt_mfr_pixel_current_note)
+                            ContextCompat.getString(context, R.string.batt_mfr_pixel_current_note)
                         else -> null
                     }
                 current.copy(
@@ -244,17 +244,17 @@ class BatteryTestViewModel
                 when (profile) {
                     ManufacturerProfile.SAMSUNG ->
                         listOf(
-                            context.getString(R.string.batt_mfr_samsung_note1),
-                            context.getString(R.string.batt_mfr_samsung_note2),
+                            ContextCompat.getString(context, R.string.batt_mfr_samsung_note1),
+                            ContextCompat.getString(context, R.string.batt_mfr_samsung_note2),
                         )
                     ManufacturerProfile.ONEPLUS ->
                         listOf(
-                            context.getString(R.string.batt_mfr_oneplus_note1),
-                            context.getString(R.string.batt_mfr_oneplus_note2),
+                            ContextCompat.getString(context, R.string.batt_mfr_oneplus_note1),
+                            ContextCompat.getString(context, R.string.batt_mfr_oneplus_note2),
                         )
                     ManufacturerProfile.GOOGLE_PIXEL ->
                         listOf(
-                            context.getString(R.string.batt_mfr_pixel_note1),
+                            ContextCompat.getString(context, R.string.batt_mfr_pixel_note1),
                         )
                     ManufacturerProfile.GENERIC -> emptyList()
                 }

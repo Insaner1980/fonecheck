@@ -4,10 +4,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -122,6 +124,32 @@ class DeviceInfoContentTest {
     }
 
     @Test
+    fun duplicateBasebandIsDisplayedAndCopiedOnce() {
+        var copiedValue: String? = null
+
+        composeRule.setContent {
+            FonecheckTheme {
+                DeviceInfoContent(
+                    state =
+                        DeviceInfoState(
+                            info =
+                                deviceInfo(rootArtifactDetected = false).copy(
+                                    basebandVersion = "radio-one, radio-one",
+                                ),
+                        ),
+                    onCopyValue = { copiedValue = it },
+                )
+            }
+        }
+
+        composeRule.onAllNodesWithText("radio-one", useUnmergedTree = true).assertCountEquals(1)
+        composeRule
+            .onNodeWithText("radio-one")
+            .performSemanticsAction(SemanticsActions.OnLongClick)
+        assertEquals("radio-one", copiedValue)
+    }
+
+    @Test
     fun deviceRegistersAndClearsOneTopBarAction() {
         var showAction by mutableStateOf(true)
         var registeredAction: TopBarAction? = null
@@ -155,13 +183,15 @@ class DeviceInfoContentTest {
                 context = context,
                 info =
                     deviceInfo(rootArtifactDetected = true).copy(
+                        basebandVersion = "radio-one, radio-one",
                         widevineLevel = DeviceInfo.UNAVAILABLE,
                     ),
                 zoneId = ZoneOffset.UTC,
             )
 
         assertTrue(snapshot.contains("${context.getString(R.string.label_model)}: Pixel 10"))
-        assertTrue(snapshot.contains("radio-one\nradio-two"))
+        assertTrue(snapshot.contains("${context.getString(R.string.label_baseband)}: radio-one"))
+        assertEquals(1, snapshot.split("radio-one").size - 1)
         assertTrue(snapshot.contains(context.getString(R.string.device_value_restricted)))
         assertTrue(snapshot.contains(context.getString(R.string.device_value_unavailable)))
         assertTrue(snapshot.contains(context.getString(R.string.device_root_finding_note)))

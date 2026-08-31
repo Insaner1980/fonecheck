@@ -27,6 +27,18 @@ class ReportPdfContentTest {
     }
 
     @Test
+    fun scoreStateIsASeparateBodyLineBetweenScoreAndCoverage() {
+        val blocks = ReportPdfContentBuilder.build(report(), PdfReportLabels.english())
+        val scoreIndex = blocks.indexOf(PdfTextBlock("Score: —", PdfTextStyle.HEADING))
+        val scoreStateIndex = blocks.indexOf(PdfTextBlock("Score state: incomplete", PdfTextStyle.BODY))
+        val coverageIndex = blocks.indexOf(PdfTextBlock("Coverage: 100%", PdfTextStyle.HEADING))
+
+        assertTrue(scoreIndex >= 0)
+        assertEquals(scoreIndex + 1, scoreStateIndex)
+        assertEquals(scoreStateIndex + 1, coverageIndex)
+    }
+
+    @Test
     fun longLocalizedContentPaginatesWithoutDroppingOrReorderingText() {
         val marker = (1..180).joinToString(" ") { "word$it" }
         val blocks =
@@ -52,8 +64,8 @@ class ReportPdfContentTest {
         val categoryHeadings = blocks.filter { it.style == PdfTextStyle.CATEGORY }.map(PdfTextBlock::text)
 
         assertEquals(14, categoryHeadings.size)
-        assertEquals("Device — not_tested", categoryHeadings.first())
-        assertEquals("Biometrics — not_tested", categoryHeadings.last())
+        assertEquals("Device — not measured", categoryHeadings.first())
+        assertEquals("Biometrics — not measured", categoryHeadings.last())
     }
 
     private fun report() =

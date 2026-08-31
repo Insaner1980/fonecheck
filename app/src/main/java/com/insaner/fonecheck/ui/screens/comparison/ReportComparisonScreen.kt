@@ -35,14 +35,12 @@ import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.StatusText
 import com.insaner.fonecheck.ui.components.TestScreenContent
+import com.insaner.fonecheck.ui.format.formatUiDateTime
 import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
 import com.insaner.fonecheck.ui.theme.toSemanticTone
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 
 @Composable
 fun ReportComparisonRoute(
@@ -115,17 +113,18 @@ private fun ComparisonContent(
 ) {
     var expandedCategory by rememberSaveable { mutableStateOf<String?>(null) }
     val locale = uiLanguageLocale(LocalLocale.current.platformLocale)
-    val dateFormatter =
-        remember(locale) {
-            DateTimeFormatter
-                .ofLocalizedDateTime(FormatStyle.MEDIUM)
-                .withLocale(locale)
-                .withZone(ZoneId.systemDefault())
+    val beforeCompletedAt =
+        remember(comparison.beforeCompletedAt, locale) {
+            formatUiDateTime(comparison.beforeCompletedAt, locale)
+        }
+    val afterCompletedAt =
+        remember(comparison.afterCompletedAt, locale) {
+            formatUiDateTime(comparison.afterCompletedAt, locale)
         }
 
     TestScreenContent(modifier = modifier) {
         item { Note(stringResource(R.string.comparison_description)) }
-        item { ReportPairSections(comparison, dateFormatter) }
+        item { ReportPairSections(comparison, beforeCompletedAt, afterCompletedAt) }
         item { ScoreSection(comparison) }
         item {
             Column {
@@ -155,13 +154,14 @@ private fun ComparisonContent(
 @Composable
 private fun ReportPairSections(
     comparison: ReportComparison,
-    dateFormatter: DateTimeFormatter,
+    beforeCompletedAt: String,
+    afterCompletedAt: String,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg)) {
         ReportMetadataSection(
             label = stringResource(R.string.comparison_first_report),
             reportId = comparison.beforeId,
-            completedAt = dateFormatter.format(comparison.beforeCompletedAt),
+            completedAt = beforeCompletedAt,
             appVersion =
                 stringResource(
                     R.string.report_app_version_value,
@@ -173,7 +173,7 @@ private fun ReportPairSections(
         ReportMetadataSection(
             label = stringResource(R.string.comparison_second_report),
             reportId = comparison.afterId,
-            completedAt = dateFormatter.format(comparison.afterCompletedAt),
+            completedAt = afterCompletedAt,
             appVersion =
                 stringResource(
                     R.string.report_app_version_value,
@@ -264,8 +264,7 @@ private fun ScoreSection(comparison: ReportComparison) {
 }
 
 @Composable
-private fun signedUiNumber(value: Int): String =
-    if (value > 0) "+${uiNumber(value)}" else uiNumber(value)
+private fun signedUiNumber(value: Int): String = if (value > 0) "+${uiNumber(value)}" else uiNumber(value)
 
 @Composable
 private fun ComparisonCategorySection(
@@ -329,6 +328,8 @@ private fun EvidenceRows(evidence: EvidenceComparison) {
     }
 }
 
+// CPD-OFF
+// Comparison and Home use different labels for unavailable and missing report data.
 @Composable
 private fun statusLabel(status: DiagnosticStatus?): String =
     stringResource(
@@ -338,10 +339,11 @@ private fun statusLabel(status: DiagnosticStatus?): String =
             DiagnosticStatus.FAIL -> R.string.run_all_status_fail
             DiagnosticStatus.INFO -> R.string.run_all_status_info
             DiagnosticStatus.NOT_AVAILABLE -> R.string.run_all_status_unavailable
-            DiagnosticStatus.NOT_TESTED -> R.string.run_all_status_not_tested
+            DiagnosticStatus.NOT_TESTED -> R.string.status_not_measured
             null -> R.string.comparison_missing
         },
     )
+// CPD-ON
 
 private fun changeLabel(change: EvidenceChange): Int =
     when (change) {

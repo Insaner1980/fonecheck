@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
@@ -44,6 +45,8 @@ fun StorageTestScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+    // CPD-OFF
+    // Storage and performance intentionally share the same information-screen loading shell.
     RegisterRefreshTopBarAction(
         contentDescriptionResId = R.string.storage_refresh,
         enabled = !state.isInfoLoading,
@@ -68,10 +71,17 @@ fun StorageTestScreen(
                 )
             }
         }
+        // CPD-ON
 
         state.info?.let { info ->
             StorageOverviewSection(info)
-            StorageVolumesSection(info.appAccessibleVolumes)
+            StorageAccessSection(info)
+            if (
+                info.appAccessibleVolumes.isEmpty() ||
+                info.appAccessibleVolumes.any { it.isRemovable || !it.isPrimary }
+            ) {
+                StorageVolumesSection(info.appAccessibleVolumes)
+            }
         }
 
         state.infoError?.let {
@@ -98,7 +108,7 @@ fun StorageTestScreen(
 }
 
 @Composable
-private fun StorageOverviewSection(info: StorageInfo) {
+internal fun StorageOverviewSection(info: StorageInfo) {
     val usagePercent = info.usagePercent
     val total = uiFileSize(info.totalBytes)
     val used = uiFileSize(info.usedBytes)
@@ -108,43 +118,72 @@ private fun StorageOverviewSection(info: StorageInfo) {
         if (usagePercent != null) {
             HeadlineReadout(
                 value = uiNumber(usagePercent, maximumFractionDigits = 1),
-                unit = stringResource(R.string.storage_percent_value, "").trim(),
-                rawValues = stringResource(R.string.storage_usage_context, used, available, total),
+                unit = stringResource(R.string.storage_usage_unit),
+                supportingLines = emptyList(),
                 modifier = Modifier.padding(vertical = FonecheckTheme.spacing.md),
             )
+            DataRow(stringResource(R.string.storage_used), used)
+            DataRow(stringResource(R.string.storage_available), available)
+            DataRow(stringResource(R.string.storage_total), total)
         } else {
             DataRow(stringResource(R.string.storage_total), total)
             DataRow(stringResource(R.string.storage_used), used)
             DataRow(stringResource(R.string.storage_available), available)
             DataRow(stringResource(R.string.storage_usage), null)
         }
+    }
+}
+
+@Composable
+internal fun StorageAccessSection(info: StorageInfo) {
+    val primaryVolume = info.appAccessibleVolumes.firstOrNull { it.isPrimary }
+
+    StorageSection(label = stringResource(R.string.storage_access_title)) {
         DataRow(
-            label = stringResource(R.string.storage_internal_access),
+            label = stringResource(R.string.storage_private_access),
             value = stringResource(R.string.storage_accessible).takeIf { info.internalStorageAccessible },
             confidence = Confidence.HIGH,
+        )
+        DataRow(
+            label = stringResource(R.string.storage_volume_primary),
+            value = primaryVolume?.let { storageStateLabel(it.stateCode) },
+        )
+        DataRow(
+            label = stringResource(R.string.storage_removable_storage),
+            value =
+                primaryVolume?.let {
+                    stringResource(if (it.isRemovable) R.string.status_yes else R.string.status_no)
+                },
         )
     }
 }
 
 @Composable
-private fun StorageVolumesSection(volumes: List<AppStorageVolumeInfo>) {
-    StorageSection(label = stringResource(R.string.storage_volumes_title)) {
-        if (volumes.isEmpty()) {
+internal fun StorageVolumesSection(volumes: List<AppStorageVolumeInfo>) {
+    if (volumes.isEmpty()) {
+        StorageSection(label = stringResource(R.string.storage_volumes_title)) {
             Note(stringResource(R.string.storage_no_shared_volumes))
             HairlineRule()
-        } else {
-            volumes.forEachIndexed { index, volume ->
+        }
+        return
+    }
+
+    volumes.forEachIndexed { index, volume ->
+        if (volume.isRemovable || !volume.isPrimary) {
+            StorageSection(
+                label =
+                    if (volume.isPrimary) {
+                        stringResource(R.string.storage_volume_primary)
+                    } else {
+                        stringResource(R.string.storage_volume_number, index + 1)
+                    },
+            ) {
                 DataRow(
-                    label =
-                        if (volume.isPrimary) {
-                            stringResource(R.string.storage_volume_primary)
-                        } else {
-                            stringResource(R.string.storage_volume_number, index + 1)
-                        },
+                    label = stringResource(R.string.storage_mounted_state),
                     value = storageStateLabel(volume.stateCode),
                 )
                 DataRow(
-                    label = stringResource(R.string.storage_removable),
+                    label = stringResource(R.string.storage_removable_storage),
                     value = stringResource(if (volume.isRemovable) R.string.status_yes else R.string.status_no),
                 )
                 DataRow(
@@ -215,6 +254,12 @@ private fun StorageBenchmarkSection(
             StorageBenchmarkPhase.CANCELLED,
             StorageBenchmarkPhase.ERROR,
             -> {
+                if (state.benchmarkPhase == StorageBenchmarkPhase.ERROR) {
+                    StatusText(
+                        text = stringResource(R.string.state_error_title),
+                        tone = SemanticTone.FAIL,
+                    )
+                }
                 Note(storageBenchmarkMessage(state))
                 state.benchmarkResult?.let { StorageBenchmarkConditions(it) }
                 BenchmarkStartButton(onStart, R.string.storage_benchmark_start)
@@ -225,6 +270,7 @@ private fun StorageBenchmarkSection(
 
 @Composable
 private fun StorageBenchmarkRows(result: StorageBenchmarkResult) {
+    val locale = LocalLocale.current.platformLocale
     DataRow(
         label = stringResource(R.string.storage_benchmark_write_rate),
         value =
@@ -257,7 +303,7 @@ private fun StorageBenchmarkRows(result: StorageBenchmarkResult) {
     )
     DataRow(
         stringResource(R.string.storage_benchmark_captured),
-        formatCaptureTimestamp(result.capturedAt),
+        formatCaptureTimestamp(result.capturedAt, locale),
     )
     DataRow(
         label = stringResource(R.string.storage_benchmark_cleanup),
@@ -269,7 +315,6 @@ private fun StorageBenchmarkRows(result: StorageBenchmarkResult) {
                     R.string.storage_cleanup_failed
                 },
             ),
-        tone = if (result.cleanupSucceeded) SemanticTone.PASS else SemanticTone.ATTENTION,
         showDivider = false,
     )
     Note(stringResource(R.string.storage_benchmark_conditions))
@@ -290,7 +335,6 @@ private fun StorageBenchmarkConditions(result: StorageBenchmarkResult) {
         DataRow(
             label = stringResource(R.string.storage_benchmark_cleanup),
             value = stringResource(R.string.storage_cleanup_failed),
-            tone = SemanticTone.ATTENTION,
         )
     }
 }

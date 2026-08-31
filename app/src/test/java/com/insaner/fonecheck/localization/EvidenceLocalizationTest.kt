@@ -1,11 +1,15 @@
 package com.insaner.fonecheck.localization
 
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
+import com.insaner.fonecheck.domain.observation.ObservationReason
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class EvidenceLocalizationTest {
@@ -36,16 +40,40 @@ class EvidenceLocalizationTest {
     @Test
     fun `unavailable and error reasons retain their distinct meanings`() {
         assertEquals(
-            R.string.run_all_summary_unavailable,
+            R.string.observation_reason_hardware_unavailable,
             evidenceReasonStringRes(EvidenceReasonCode.HARDWARE_UNAVAILABLE),
         )
         assertEquals(
-            R.string.report_reason_android_version_unsupported,
+            R.string.observation_reason_android_version_unsupported,
             evidenceReasonStringRes(EvidenceReasonCode.ANDROID_VERSION_UNSUPPORTED),
         )
         assertEquals(
             R.string.report_reason_error,
             evidenceReasonStringRes(EvidenceReasonCode.ERROR),
+        )
+    }
+
+    @Test
+    fun `only generic not-run reasons are restated by the not-measured value`() {
+        assertTrue(EvidenceReasonCode.NOT_RUN.isRestatedByNotMeasuredValue())
+        assertTrue(
+            EvidenceReasonCode(ObservationReason.TEST_NOT_RUN.stableCode)
+                .isRestatedByNotMeasuredValue(),
+        )
+        assertFalse(
+            EvidenceReasonCode(ObservationReason.BUTTON_TEST_NOT_RUN.stableCode)
+                .isRestatedByNotMeasuredValue(),
+        )
+        assertFalse(EvidenceReasonCode.PERMISSION_DENIED.isRestatedByNotMeasuredValue())
+        assertFalse(
+            shouldShowEvidenceReason(DiagnosticStatus.NOT_TESTED, EvidenceReasonCode.NOT_RUN),
+        )
+        assertTrue(shouldShowEvidenceReason(DiagnosticStatus.INFO, EvidenceReasonCode.NOT_RUN))
+        assertTrue(
+            shouldShowEvidenceReason(
+                DiagnosticStatus.NOT_TESTED,
+                EvidenceReasonCode.PERMISSION_DENIED,
+            ),
         )
     }
 

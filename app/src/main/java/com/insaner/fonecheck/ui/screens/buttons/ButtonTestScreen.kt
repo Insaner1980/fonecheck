@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -14,8 +15,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.ui.classification.classifyButtonTest
 import com.insaner.fonecheck.ui.components.DataRow
+import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.ObservationReasonNote
 import com.insaner.fonecheck.ui.components.PrimaryButton
 import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
@@ -23,6 +27,7 @@ import com.insaner.fonecheck.ui.components.TestScreenContent
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 
 @Composable
 fun ButtonTestScreen(
@@ -30,18 +35,23 @@ fun ButtonTestScreen(
     viewModel: ButtonTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val liveStateUpdatedAtEpochMillis = remember(state) { System.currentTimeMillis() }
     ButtonLifecycleEffect(onStopTest = viewModel::stopTest)
 
-    TestScreenContent(modifier = modifier) {
+    TestScreenContent(modifier = modifier, liveStateUpdatedAtEpochMillis = liveStateUpdatedAtEpochMillis) {
         item {
+            val classification = classifyButtonTest(state.phase)
             Column {
                 SectionHeader(label = stringResource(R.string.button_test_title))
                 DataRow(
                     label = stringResource(R.string.button_status_label),
                     value = buttonStatusLabel(state),
-                    tone = buttonStatusTone(state.phase),
+                    tone = classification.toSemanticTone(),
                     modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                    showDivider = classification.reason == null,
                 )
+                ObservationReasonNote(classification)
+                if (classification.reason != null) HairlineRule()
                 DataRow(
                     label = stringResource(R.string.button_volume_up),
                     value = buttonDetectionLabel(state.volumeUpDetected),
@@ -83,7 +93,7 @@ fun ButtonTestScreen(
 @Composable
 private fun buttonStatusLabel(state: ButtonTestState): String =
     when (state.phase) {
-        ButtonTestPhase.IDLE -> stringResource(R.string.button_status_ready)
+        ButtonTestPhase.IDLE -> stringResource(R.string.status_not_measured)
         ButtonTestPhase.RUNNING ->
             stringResource(
                 R.string.button_status_progress,
@@ -95,15 +105,12 @@ private fun buttonStatusLabel(state: ButtonTestState): String =
         ButtonTestPhase.SKIPPED -> stringResource(R.string.button_status_skipped)
     }
 
-internal fun buttonStatusTone(phase: ButtonTestPhase): SemanticTone =
-    when (phase) {
-        ButtonTestPhase.COMPLETED -> SemanticTone.PASS
-        ButtonTestPhase.TIMED_OUT -> SemanticTone.ATTENTION
-        ButtonTestPhase.IDLE,
-        ButtonTestPhase.RUNNING,
-        ButtonTestPhase.SKIPPED,
-        -> SemanticTone.NEUTRAL
-    }
+internal fun buttonStatusTone(phase: ButtonTestPhase): SemanticTone = classifyButtonTest(phase).toSemanticTone()
+
+internal fun buttonResetAvailable(phase: ButtonTestPhase): Boolean =
+    phase == ButtonTestPhase.COMPLETED ||
+        phase == ButtonTestPhase.TIMED_OUT ||
+        phase == ButtonTestPhase.SKIPPED
 
 @Composable
 private fun ButtonTestActions(
@@ -149,7 +156,7 @@ private fun ButtonTestActions(
                     modifier = Modifier.weight(1f),
                 )
         }
-        if (phase != ButtonTestPhase.RUNNING) {
+        if (buttonResetAvailable(phase)) {
             SecondaryButton(
                 label = stringResource(R.string.button_reset),
                 onClick = onReset,
@@ -161,6 +168,6 @@ private fun ButtonTestActions(
 
 @Composable
 private fun buttonDetectionLabel(detected: Boolean): String =
-    stringResource(if (detected) R.string.button_detected else R.string.button_not_detected)
+    stringResource(if (detected) R.string.button_detected else R.string.status_not_measured)
 
 private const val REQUIRED_BUTTON_COUNT = 2

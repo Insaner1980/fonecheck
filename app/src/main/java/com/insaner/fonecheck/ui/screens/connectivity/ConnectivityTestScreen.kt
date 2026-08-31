@@ -2,9 +2,6 @@ package com.insaner.fonecheck.ui.screens.connectivity
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -24,11 +22,14 @@ import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.permission.PermissionKind
 import com.insaner.fonecheck.domain.permission.PermissionState
 import com.insaner.fonecheck.ui.TopBarAction
+import com.insaner.fonecheck.ui.classification.classifyGpsFix
+import com.insaner.fonecheck.ui.classification.classifyGpsProvider
 import com.insaner.fonecheck.ui.components.DataRow
-import com.insaner.fonecheck.ui.components.DisclosureHeader
+import com.insaner.fonecheck.ui.components.DisclosureSection
 import com.insaner.fonecheck.ui.components.IndeterminateRule
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.ObservationReasonNote
 import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.PrimaryButton
 import com.insaner.fonecheck.ui.components.RegisterRefreshTopBarAction
@@ -39,6 +40,7 @@ import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
+import com.insaner.fonecheck.ui.theme.toSemanticTone
 
 @Composable
 @Suppress("ViewModelForwarding", "ktlint:compose:vm-forwarding-check", "kotlin:S3776")
@@ -48,6 +50,7 @@ fun ConnectivityTestScreen(
     viewModel: ConnectivityTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val liveStateUpdatedAtEpochMillis = remember(state) { System.currentTimeMillis() }
     val bluetoothPermission =
         rememberPermissionController(
             kind = PermissionKind.BLUETOOTH,
@@ -107,7 +110,7 @@ fun ConnectivityTestScreen(
         onDispose(viewModel::cancelGpsFix)
     }
 
-    TestScreenContent(modifier = modifier) {
+    TestScreenContent(modifier = modifier, liveStateUpdatedAtEpochMillis = liveStateUpdatedAtEpochMillis) {
         item {
             ConnectivitySectionBlock(
                 title = stringResource(R.string.conn_wifi_title),
@@ -199,32 +202,14 @@ private fun ConnectivitySectionBlock(
     onToggle: () -> Unit,
     statusTone: SemanticTone = SemanticTone.NEUTRAL,
     content: @Composable () -> Unit,
-) {
-    Column {
-        DisclosureHeader(
-            label = title,
-            summary = status,
-            expanded = isExpanded,
-            onClick = onToggle,
-            tone = statusTone,
-        )
-        AnimatedVisibility(
-            visible = isExpanded,
-            enter = expandVertically(),
-            exit = shrinkVertically(),
-        ) {
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = FonecheckTheme.spacing.md),
-                verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md),
-            ) {
-                content()
-            }
-        }
-    }
-}
+) = DisclosureSection(
+    label = title,
+    summary = status,
+    expanded = isExpanded,
+    onClick = onToggle,
+    tone = statusTone,
+    content = content,
+)
 
 @Composable
 private fun WifiDetails(wifi: WifiState) {
@@ -373,6 +358,7 @@ private fun GpsDetails(
             return@Column
         }
 
+        val providerClassification = classifyGpsProvider(gps.isEnabled)
         DataRow(
             label = stringResource(R.string.conn_gps_provider),
             value =
@@ -382,6 +368,7 @@ private fun GpsDetails(
                     stringResource(R.string.status_disabled)
                 },
         )
+        ObservationReasonNote(providerClassification)
 
         when (gps.fixStatus) {
             GpsFixStatus.NOT_STARTED -> Unit
@@ -426,10 +413,13 @@ private fun GpsDetails(
 
 @Composable
 private fun SearchingGpsRows(gps: GpsState) {
+    val classification = classifyGpsFix(gps.fixStatus, gps.failure)
     DataRow(
         label = stringResource(R.string.conn_gps_status),
         value = stringResource(R.string.conn_gps_searching),
+        tone = classification.toSemanticTone(),
     )
+    ObservationReasonNote(classification)
     DataRow(
         label = stringResource(R.string.conn_gps_elapsed),
         value =
@@ -452,10 +442,11 @@ private fun SearchingGpsRows(gps: GpsState) {
 
 @Composable
 private fun FixedGpsRows(gps: GpsState) {
+    val classification = classifyGpsFix(gps.fixStatus, gps.failure)
     DataRow(
         label = stringResource(R.string.conn_gps_status),
         value = stringResource(R.string.conn_gps_fixed),
-        tone = SemanticTone.PASS,
+        tone = classification.toSemanticTone(),
     )
     gps.fixTimeMs?.let {
         DataRow(
@@ -510,6 +501,7 @@ private fun FixedGpsRows(gps: GpsState) {
 
 @Composable
 private fun FailedGpsRow(failure: GpsFailureCode?) {
+    val classification = classifyGpsFix(GpsFixStatus.FAILED, failure)
     DataRow(
         label = stringResource(R.string.conn_gps_status),
         value =
@@ -520,12 +512,13 @@ private fun FailedGpsRow(failure: GpsFailureCode?) {
                     R.string.conn_gps_failed
                 },
             ),
-        tone = if (failure == GpsFailureCode.TIMEOUT) SemanticTone.ATTENTION else SemanticTone.FAIL,
+        tone = classification.toSemanticTone(),
     )
+    ObservationReasonNote(classification)
 }
 
 @Composable
-private fun SatelliteSection(satellites: List<GpsSatelliteInfo>) {
+internal fun SatelliteSection(satellites: List<GpsSatelliteInfo>) {
     Column {
         SectionHeader(label = stringResource(R.string.conn_gps_satellite_info))
         satellites.take(MAX_VISIBLE_SATELLITES).forEach { satellite ->
@@ -541,9 +534,9 @@ private fun SatelliteSection(satellites: List<GpsSatelliteInfo>) {
                         R.string.conn_gps_satellite_value,
                         uiNumber(satellite.cn0DbHz, 1, 1),
                         if (satellite.usedInFix) {
-                            stringResource(R.string.status_yes)
+                            stringResource(R.string.conn_gps_satellite_used_in_fix)
                         } else {
-                            stringResource(R.string.status_no)
+                            stringResource(R.string.conn_gps_satellite_not_used_in_fix)
                         },
                     ),
             )
@@ -673,17 +666,16 @@ private fun gpsSummary(gps: GpsState): String =
         GpsFixStatus.NOT_STARTED ->
             when {
                 !gps.isAvailable -> stringResource(R.string.conn_not_available)
-                gps.isEnabled -> stringResource(R.string.conn_gps_ready)
+                gps.isEnabled -> stringResource(R.string.status_enabled)
                 else -> stringResource(R.string.status_disabled)
             }
     }
 
 private fun GpsState.summaryTone(): SemanticTone =
-    when (fixStatus) {
-        GpsFixStatus.FIXED -> SemanticTone.PASS
-        GpsFixStatus.FAILED ->
-            if (failure == GpsFailureCode.TIMEOUT) SemanticTone.ATTENTION else SemanticTone.FAIL
-        GpsFixStatus.SEARCHING, GpsFixStatus.NOT_STARTED -> SemanticTone.NEUTRAL
+    if (fixStatus == GpsFixStatus.NOT_STARTED && !isEnabled) {
+        classifyGpsProvider(enabled = false).toSemanticTone()
+    } else {
+        classifyGpsFix(fixStatus, failure).toSemanticTone()
     }
 
 @Composable
