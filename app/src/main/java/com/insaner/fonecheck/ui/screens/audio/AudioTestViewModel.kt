@@ -291,41 +291,50 @@ class AudioTestViewModel
                 (
                     sampleRate.toLong() * maxDurationMs / MILLIS_PER_SECOND
                 ).coerceAtLeast(sampleRate.toLong() / 2).toInt()
-            val allSamples = ShortArray(maxRecordSamples)
-            var totalSamples = 0
 
             recordJob =
                 viewModelScope.launch(ioDispatcher) {
-                    try {
-                        if (!recordGate.isCurrent(operationToken)) return@launch
-                        record.startRecording()
-                        val buffer = ShortArray(bufferSize / 2)
-                        while (isActive && totalSamples < maxRecordSamples) {
-                            val read = record.read(buffer, 0, buffer.size)
-                            if (read > 0) {
-                                val copyCount = minOf(read, maxRecordSamples - totalSamples)
-                                buffer.copyInto(allSamples, totalSamples, 0, copyCount)
-                                totalSamples += copyCount
-                                if (recordGate.isCurrent(operationToken)) {
-                                    _state.value =
-                                        _state.value.copy(
-                                            relativeInputLevel = RelativeInputLevel.fromPcm16(buffer, read),
-                                        )
-                                }
-                            }
-                        }
-                    } finally {
-                        recordOwner.release(record)
+                    captureRecording(record, bufferSize, maxRecordSamples, operationToken)
+                }
+        }
+
+        private fun CoroutineScope.captureRecording(
+            record: AudioRecord,
+            bufferSize: Int,
+            maxRecordSamples: Int,
+            operationToken: Long,
+        ) {
+            val allSamples = ShortArray(maxRecordSamples)
+            var totalSamples = 0
+            try {
+                if (!recordGate.isCurrent(operationToken)) return
+                record.startRecording()
+                val buffer = ShortArray(bufferSize / 2)
+                while (isActive && totalSamples < maxRecordSamples) {
+                    val read = record.read(buffer, 0, buffer.size)
+                    if (read > 0) {
+                        val copyCount = minOf(read, maxRecordSamples - totalSamples)
+                        buffer.copyInto(allSamples, totalSamples, 0, copyCount)
+                        totalSamples += copyCount
                         if (recordGate.isCurrent(operationToken)) {
-                            recordedData = allSamples.copyOf(totalSamples)
                             _state.value =
                                 _state.value.copy(
-                                    isRecording = false,
-                                    hasRecordedAudio = totalSamples > 0,
+                                    relativeInputLevel = RelativeInputLevel.fromPcm16(buffer, read),
                                 )
                         }
                     }
                 }
+            } finally {
+                recordOwner.release(record)
+                if (recordGate.isCurrent(operationToken)) {
+                    recordedData = allSamples.copyOf(totalSamples)
+                    _state.value =
+                        _state.value.copy(
+                            isRecording = false,
+                            hasRecordedAudio = totalSamples > 0,
+                        )
+                }
+            }
         }
 
         fun stopRecording() {
