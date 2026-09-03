@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,16 +20,31 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.DisclosureHeader
+import com.insaner.fonecheck.ui.components.IconBoxButton
 import com.insaner.fonecheck.ui.components.IndeterminateRule
+import com.insaner.fonecheck.ui.components.InstrumentActionButton
+import com.insaner.fonecheck.ui.components.InstrumentTickRule
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.PanelToggle
 import com.insaner.fonecheck.ui.components.PrimaryButton
+import com.insaner.fonecheck.ui.components.ProgressWindow
+import com.insaner.fonecheck.ui.components.ReadoutWindow
 import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.SegmentedBar
+import com.insaner.fonecheck.ui.components.StatusLamp
 import com.insaner.fonecheck.ui.components.StatusText
+import com.insaner.fonecheck.ui.components.ThermalHeadroomGauge
+import com.insaner.fonecheck.ui.components.WindowBar
+import com.insaner.fonecheck.ui.components.WindowFigure
+import com.insaner.fonecheck.ui.components.WindowLabel
+import com.insaner.fonecheck.ui.components.WindowReading
+import com.insaner.fonecheck.ui.components.WindowRow
+import com.insaner.fonecheck.ui.components.statusLabel
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
 
@@ -35,7 +52,7 @@ import com.insaner.fonecheck.ui.theme.SemanticTone
 // build. The values here are invented; screens draw their own measurements.
 
 private const val SPECIMEN_WIDTH_DP = 380
-private const val SPECIMEN_HEIGHT_DP = 1900
+private const val SPECIMEN_HEIGHT_DP = 3100
 
 private val SummarySegments =
     listOf(
@@ -77,15 +94,130 @@ private fun FoundationSpecimenPreview() {
                     .padding(FonecheckTheme.spacing.md),
         ) {
             SpecimenTitle()
+            SpecimenChrome()
+            SpecimenWindow()
+            SpecimenProgress()
+            SpecimenGauge()
+            SpecimenLamps()
             SpecimenSummary()
             SpecimenWaiting()
             SpecimenMeasured()
             SpecimenStatuses()
             SpecimenDisclosures()
+            SpecimenToggles()
             SpecimenActions()
         }
     }
 }
+
+@Composable
+private fun SpecimenChrome() {
+    Column(modifier = Modifier.padding(bottom = FonecheckTheme.spacing.lg)) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconBoxButton(
+                imageVector = Icons.Filled.Refresh,
+                contentDescription = "Refresh",
+                onClick = {},
+            )
+            IconBoxButton(
+                imageVector = Icons.Filled.Refresh,
+                contentDescription = "Refresh, unavailable",
+                onClick = {},
+                enabled = false,
+            )
+        }
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+        InstrumentTickRule()
+    }
+}
+
+@Composable
+private fun SpecimenWindow() {
+    Column(modifier = Modifier.padding(bottom = FonecheckTheme.spacing.lg)) {
+        ReadoutWindow {
+            WindowLabel(text = "Categories passed")
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+            WindowReading(value = "09", unit = "of 14")
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+            WindowLabel(text = "Evidence coverage 84%")
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+            WindowBar(percentage = 84)
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+            WindowRow(label = "X", value = "9.81 m/s²")
+            WindowRow(label = "Accuracy", value = "High")
+        }
+    }
+}
+
+@Composable
+private fun SpecimenProgress() {
+    Column(modifier = Modifier.padding(bottom = FonecheckTheme.spacing.lg)) {
+        ProgressWindow(label = "Quick check 3 of 15", percentage = 20)
+    }
+}
+
+@Composable
+private fun SpecimenGauge() {
+    Column(modifier = Modifier.padding(bottom = FonecheckTheme.spacing.lg)) {
+        SectionHeader(label = "Thermal headroom")
+        Row(
+            modifier = Modifier.padding(top = FonecheckTheme.spacing.md),
+            horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
+        ) {
+            // Normal, over the threshold, and unavailable.
+            listOf(0.64f, 1.4f, null).forEach { headroom ->
+                Column(modifier = Modifier.weight(1f)) {
+                    ReadoutWindow {
+                        ThermalHeadroomGauge(headroom = headroom)
+                        WindowFigure(
+                            value = headroom?.let { "%.2f".format(it) } ?: "n/a",
+                            style = FonecheckTheme.type.readoutUnit,
+                            alert = headroom != null && headroom > 1f,
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SpecimenLamps() {
+    Column(modifier = Modifier.padding(bottom = FonecheckTheme.spacing.lg)) {
+        SectionHeader(label = "Status lamps")
+        Row(
+            modifier = Modifier.padding(top = FonecheckTheme.spacing.md),
+            horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SpecimenLampStates.forEach { status ->
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    StatusLamp(status = status)
+                    Spacer(modifier = Modifier.height(FonecheckTheme.spacing.xs))
+                    Text(
+                        text = statusLabel(status),
+                        style = FonecheckTheme.type.sectionLabel,
+                        color = FonecheckTheme.colors.textMuted,
+                    )
+                }
+            }
+        }
+    }
+}
+
+private val SpecimenLampStates =
+    listOf(
+        DiagnosticStatus.PASS,
+        DiagnosticStatus.WARNING,
+        DiagnosticStatus.FAIL,
+        DiagnosticStatus.INFO,
+        DiagnosticStatus.NOT_AVAILABLE,
+        DiagnosticStatus.NOT_TESTED,
+    )
 
 @Composable
 private fun SpecimenTitle() {
@@ -214,6 +346,23 @@ private fun SpecimenDisclosures() {
 }
 
 @Composable
+private fun SpecimenToggles() {
+    Column(modifier = Modifier.padding(bottom = FonecheckTheme.spacing.lg)) {
+        SectionHeader(label = "Toggles")
+        Row(
+            modifier = Modifier.padding(top = FonecheckTheme.spacing.md),
+            horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // On and off, beside the lamp they must not be mistaken for.
+            PanelToggle(checked = true)
+            PanelToggle(checked = false)
+            StatusLamp(status = DiagnosticStatus.PASS)
+        }
+    }
+}
+
+@Composable
 private fun SpecimenActions() {
     Column(modifier = Modifier.fillMaxWidth()) {
         PrimaryButton(
@@ -233,6 +382,12 @@ private fun SpecimenActions() {
             label = stringResource(R.string.home_start_full_check),
             onClick = {},
             enabled = false,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+        InstrumentActionButton(
+            label = stringResource(R.string.home_start_full_check),
+            onClick = {},
             modifier = Modifier.fillMaxWidth(),
         )
     }

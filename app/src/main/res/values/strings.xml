@@ -267,7 +267,6 @@
     <string name="sensor_summary_title">Sensor overview</string>
     <string name="sensor_description">Open each available test and follow its guidance. A pass requires a bounded sample or motion response.</string>
     <string name="sensor_count">Android sensor entries</string>
-    <string name="sensor_guided_completed">Guided test types passed</string>
     <string name="sensor_guided_progress">%1$s of %2$s</string>
     <string name="sensor_guided_title">Guided tests</string>
     <string name="sensor_not_available_description">This sensor is not available on this device.</string>
@@ -688,18 +687,6 @@
     <string name="run_all_results_description">Automatic and interactive checks are grouped by category below.</string>
     <string name="run_all_overall_score">Overall score</string>
     <string name="report_score_unit">/ 100</string>
-    <plurals name="run_all_warning_count">
-        <item quantity="one">%1$s warning</item>
-        <item quantity="other">%1$s warnings</item>
-    </plurals>
-    <plurals name="run_all_failed_count">
-        <item quantity="one">%1$s issue</item>
-        <item quantity="other">%1$s issues</item>
-    </plurals>
-    <plurals name="run_all_unavailable_count">
-        <item quantity="one">%1$s unavailable</item>
-        <item quantity="other">%1$s unavailable</item>
-    </plurals>
     <string name="run_all_needs_attention">Needs attention</string>
     <string name="run_all_completed">Completed</string>
     <string name="run_all_not_completed">Not completed</string>
@@ -731,9 +718,6 @@
     <string name="report_coverage_value">%1$s%%</string>
     <string name="report_checks">Checks</string>
     <string name="report_checks_value">%1$s/%2$s</string>
-    <string name="report_pass_count" tools:ignore="PluralsCandidate">%1$s passed</string>
-    <string name="report_info_count">Information: %1$s</string>
-    <string name="report_not_tested_count" tools:ignore="PluralsCandidate">%1$s not measured</string>
     <string name="report_retest">Retest</string>
     <string name="report_retest_title">Retest %1$s</string>
     <string name="report_retest_description">The new result will be saved as a separate category-only report. The original report will not change.</string>
@@ -901,7 +885,7 @@
     <string name="comparison_second_report">Second report</string>
     <string name="comparison_score">Score</string>
     <string name="comparison_score_value">%1$s → %2$s</string>
-    <string name="comparison_score_delta">Score change: %1$s</string>
+    <string name="comparison_score_change">Score change</string>
     <string name="comparison_score_no_delta">No numeric score change is available.</string>
     <string name="comparison_score_incompatible" tools:ignore="PluralsCandidate">Scores cannot be compared because their score versions differ (%1$s and %2$s).</string>
     <string name="comparison_coverage">Coverage</string>

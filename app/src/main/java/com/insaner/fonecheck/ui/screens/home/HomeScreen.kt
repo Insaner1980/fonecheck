@@ -1,7 +1,6 @@
 package com.insaner.fonecheck.ui.screens.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,14 +13,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,7 +25,6 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.testTag
@@ -38,13 +32,11 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -62,7 +54,6 @@ import com.insaner.fonecheck.domain.model.DiagnosticEvidence
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceSource
-import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.ReportAppContext
 import com.insaner.fonecheck.domain.model.ReportDeviceContext
 import com.insaner.fonecheck.domain.model.ReportKind
@@ -74,13 +65,20 @@ import com.insaner.fonecheck.navigation.History
 import com.insaner.fonecheck.navigation.Report
 import com.insaner.fonecheck.navigation.Settings
 import com.insaner.fonecheck.ui.components.HairlineRule
+import com.insaner.fonecheck.ui.components.IconBoxButton
 import com.insaner.fonecheck.ui.components.IndeterminateRule
+import com.insaner.fonecheck.ui.components.InstrumentActionButton
+import com.insaner.fonecheck.ui.components.InstrumentTickRule
+import com.insaner.fonecheck.ui.components.ReadoutWindow
 import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
-import com.insaner.fonecheck.ui.components.StrongRule
+import com.insaner.fonecheck.ui.components.WindowBar
+import com.insaner.fonecheck.ui.components.WindowLabel
+import com.insaner.fonecheck.ui.components.WindowReading
 import com.insaner.fonecheck.ui.format.formatTechnicalUiDateTime
 import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
+import com.insaner.fonecheck.ui.theme.FonecheckType
 import kotlinx.coroutines.delay
 import java.text.NumberFormat
 import java.time.Duration
@@ -149,7 +147,7 @@ internal fun HomeContent(
 
         item {
             Box(modifier = Modifier.padding(bottom = FonecheckTheme.spacing.lg)) {
-                HomeRunButton(
+                InstrumentActionButton(
                     label = stringResource(R.string.home_start_full_check),
                     onClick = onRunAllTests,
                     modifier = Modifier.fillMaxWidth(),
@@ -168,55 +166,6 @@ internal fun HomeContent(
                     InstrumentTickRule()
                 }
             }
-        }
-    }
-}
-
-@Composable
-internal fun HomeSectionHeader(
-    label: String,
-    modifier: Modifier = Modifier,
-    trailing: String? = null,
-    stackedTrailing: Boolean = false,
-) {
-    if (!stackedTrailing || trailing == null) {
-        SectionHeader(
-            label = label,
-            trailing = trailing,
-            modifier = modifier,
-            ruleColor = FonecheckTheme.colors.edge,
-            ruleThickness = 3.dp,
-        )
-    } else {
-        val locale = LocalLocale.current.platformLocale
-        Column(modifier = modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(bottom = FonecheckTheme.spacing.sm),
-                verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.xs),
-            ) {
-                Text(
-                    text = label.uppercase(locale),
-                    style = FonecheckTheme.type.sectionLabel,
-                    color = FonecheckTheme.colors.textMuted,
-                    modifier =
-                        Modifier.semantics {
-                            heading()
-                            contentDescription = label
-                        },
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = TextOverflow.Visible,
-                )
-                Text(
-                    text = trailing,
-                    style = FonecheckTheme.type.sectionLabel,
-                    color = FonecheckTheme.colors.textMuted,
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = TextOverflow.Visible,
-                )
-            }
-            StrongRule(color = FonecheckTheme.colors.edge, thickness = 3.dp)
         }
     }
 }
@@ -255,6 +204,9 @@ internal fun formatHomeCompletedAt(
 ): String = formatTechnicalUiDateTime(value, locale, zoneId)
 
 internal fun homePaddedCount(value: Int): String = value.toString().padStart(2, '0')
+
+/** Matches the rule `SectionHeader` draws, for the stacked variant that cannot delegate to it. */
+private val HomeStackedRuleThickness = 3.dp
 
 @Composable
 private fun HomeBrandHeader(
@@ -303,69 +255,16 @@ private fun HeaderActions(
         horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        HeaderActionButton(
+        IconBoxButton(
             imageVector = Icons.AutoMirrored.Filled.List,
             contentDescription = stringResource(R.string.home_history_content_description),
             onClick = onHistory,
         )
-        HeaderActionButton(
+        IconBoxButton(
             imageVector = Icons.Filled.Settings,
             contentDescription = stringResource(R.string.home_settings_content_description),
             onClick = onSettings,
         )
-    }
-}
-
-@Composable
-private fun InstrumentTickRule() {
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(FonecheckTheme.spacing.sm)
-                .clearAndSetSemantics { },
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        repeat(INSTRUMENT_TICK_COUNT) {
-            Box(
-                modifier =
-                    Modifier
-                        .width(3.dp)
-                        .height(FonecheckTheme.spacing.sm)
-                        .background(FonecheckTheme.colors.edge),
-            )
-        }
-    }
-}
-
-private const val INSTRUMENT_TICK_COUNT = 32
-
-@Composable
-private fun HeaderActionButton(
-    imageVector: ImageVector,
-    contentDescription: String,
-    onClick: () -> Unit,
-) {
-    IconButton(
-        onClick = onClick,
-        modifier = Modifier.size(FonecheckTheme.spacing.minTouchTarget),
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .size(36.dp)
-                    .border(
-                        width = 2.dp,
-                        color = FonecheckTheme.colors.edge,
-                    ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = imageVector,
-                contentDescription = contentDescription,
-                tint = FonecheckTheme.colors.textPrimary,
-            )
-        }
     }
 }
 
@@ -450,10 +349,9 @@ private fun LatestFullCheckMessage(
                     liveRegion = if (assertive) LiveRegionMode.Assertive else LiveRegionMode.Polite
                 },
     ) {
-        HomeSectionHeader(
+        SectionHeader(
             label = stringResource(R.string.home_latest_title),
             trailing = trailing,
-            stackedTrailing = LocalDensity.current.fontScale > HOME_LARGE_FONT_SCALE_THRESHOLD,
         )
         if (showLoadingIndicator) {
             Box(modifier = Modifier.testTag("home_latest_loading_indicator")) {
@@ -557,7 +455,6 @@ private fun LatestFullCheckReadout(
 
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
         val fontScale = LocalDensity.current.fontScale
-        val largeFontLayout = fontScale > HOME_LARGE_FONT_SCALE_THRESHOLD
         val stacked = latestReportUsesStackedLayout(maxWidth.value, fontScale)
         Column(
             modifier =
@@ -567,7 +464,7 @@ private fun LatestFullCheckReadout(
                     .semantics { stateDescription = cardStateDescription }
                     .clickable(role = Role.Button, onClick = onClick),
         ) {
-            HomeSectionHeader(
+            SectionHeader(
                 label =
                     stringResource(
                         if (recency.isStale) {
@@ -577,7 +474,6 @@ private fun LatestFullCheckReadout(
                         },
                     ),
                 trailing = elapsedValue ?: completedAtValue,
-                stackedTrailing = largeFontLayout,
             )
             if (recency.isStale) {
                 Text(
@@ -588,29 +484,18 @@ private fun LatestFullCheckReadout(
                 )
             }
             Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .background(FonecheckTheme.colors.windowBg)
-                        .border(3.dp, FonecheckTheme.colors.windowFrame)
-                        .padding(FonecheckTheme.spacing.md),
-            ) {
-                Text(
-                    text =
-                        stringResource(R.string.home_latest_passed_label)
-                            .uppercase(LocalLocale.current.platformLocale),
-                    style = FonecheckTheme.type.sectionLabel,
-                    color = FonecheckTheme.colors.windowDim,
-                )
+            ReadoutWindow {
+                WindowLabel(text = stringResource(R.string.home_latest_passed_label))
                 Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
-                PassedReadout(
-                    passed = homePaddedCount(presentation.passCount),
-                    total =
+                // Home raises the readout above its role size: this figure is the point of the screen.
+                WindowReading(
+                    value = homePaddedCount(presentation.passCount),
+                    unit =
                         stringResource(
                             R.string.home_latest_passed_total,
                             numberFormat.format(presentation.totalCategories),
                         ),
+                    style = FonecheckType.readout.copy(fontSize = 56.sp, lineHeight = 60.sp),
                     stacked = stacked,
                 )
                 Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
@@ -625,72 +510,6 @@ private fun LatestFullCheckReadout(
 }
 
 @Composable
-private fun PassedReadout(
-    passed: String,
-    total: String,
-    stacked: Boolean,
-) {
-    if (stacked) {
-        Column {
-            PassedFigure(passed)
-            TotalFigure(total)
-        }
-    } else {
-        Row(verticalAlignment = Alignment.Bottom) {
-            PassedFigure(passed)
-            Spacer(modifier = Modifier.width(FonecheckTheme.spacing.md))
-            TotalFigure(total)
-        }
-    }
-}
-
-@Composable
-private fun PassedFigure(value: String) {
-    Text(
-        text = value,
-        style =
-            FonecheckTheme.type.readout.copy(
-                fontSize = 56.sp,
-                lineHeight = 60.sp,
-            ),
-        color = FonecheckTheme.colors.windowText,
-        maxLines = 1,
-    )
-}
-
-@Composable
-private fun TotalFigure(value: String) {
-    Text(
-        text = value.uppercase(LocalLocale.current.platformLocale),
-        style = FonecheckTheme.type.readoutUnit,
-        color = FonecheckTheme.colors.windowDim,
-        modifier = Modifier.padding(bottom = FonecheckTheme.spacing.sm),
-        maxLines = 1,
-    )
-}
-
-@Composable
-private fun HomeCoverageBar(percentage: Int) {
-    val fraction = percentage.coerceIn(0, 100) / 100f
-    Box(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(12.dp)
-                .background(FonecheckTheme.colors.windowTrack)
-                .clearAndSetSemantics { },
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth(fraction)
-                    .height(12.dp)
-                    .background(FonecheckTheme.colors.windowText),
-        )
-    }
-}
-
-@Composable
 private fun LatestCheckInfoLine(
     coverage: String,
     coveragePercentage: Int,
@@ -699,21 +518,11 @@ private fun LatestCheckInfoLine(
     Column(
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Text(
-            text = coverage.uppercase(LocalLocale.current.platformLocale),
-            style = FonecheckTheme.type.sectionLabel,
-            color = FonecheckTheme.colors.windowDim,
-            modifier = Modifier.semantics { contentDescription = coverage },
-        )
+        WindowLabel(text = coverage)
         Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
-        HomeCoverageBar(coveragePercentage)
+        WindowBar(coveragePercentage)
         Spacer(modifier = Modifier.height(FonecheckTheme.spacing.xs))
-        Text(
-            text = attention.uppercase(LocalLocale.current.platformLocale),
-            style = FonecheckTheme.type.sectionLabel,
-            color = FonecheckTheme.colors.windowDim,
-            modifier = Modifier.semantics { contentDescription = attention },
-        )
+        WindowLabel(text = attention)
     }
 }
 
@@ -746,7 +555,7 @@ private fun HomeTopPreview(darkTheme: Boolean) {
                     onClick = {},
                     currentTime = Instant.parse("2026-08-20T13:18:00Z"),
                 )
-                HomeRunButton(
+                InstrumentActionButton(
                     label = stringResource(R.string.home_start_full_check),
                     onClick = {},
                     modifier = Modifier.fillMaxWidth(),

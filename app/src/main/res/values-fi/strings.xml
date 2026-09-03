@@ -81,9 +81,9 @@
     <string name="perf_info_error_description">fonecheck ei voinut päivittää laitteistotietoja. Viimeisin onnistunut tilannekuva pysyy näkyvissä.</string>
     <string name="perf_info_loading">Luetaan suorituskyky- ja laitteistotietoja…</string>
     <string name="perf_refresh_info">Päivitä laitteistotiedot</string>
-    <string name="perf_benchmark_title">Rajattu suorituskykytarkistus</string>
+    <string name="perf_benchmark_title">Rajattu suorituskyvyn tarkistus</string>
     <string name="perf_benchmark_description">Suorittaa lyhyen kiinteän CPU-työkuorman ja 64 MiB:n muistissa tehtävän luku- ja kirjoitustyökuorman. Tulokset ovat informatiivisia, vaihtelevat laitteen olosuhteiden mukaan ja ovat vertailukelpoisia vain saman sovellusversion sisällä.</string>
-    <string name="perf_benchmark_start">Aja suorituskykytarkistus</string>
+    <string name="perf_benchmark_start">Aja suorituskyvyn tarkistus</string>
     <string name="perf_benchmark_run_again">Aja uudelleen</string>
     <string name="perf_benchmark_cancel">Peruuta tarkistus</string>
     <string name="perf_benchmark_cancelled">Suorituskykytarkistus peruutettiin.</string>
@@ -119,7 +119,7 @@
     <string name="label_country">Maa</string>
     <string name="label_network_type">Verkkotyyppi</string>
     <string name="sim_inventory_label">SIM-kokoonpano</string>
-    <string name="sim_inventory_no_telephony">Ei puhelinverkkolaitteistoa</string>
+    <string name="sim_inventory_no_telephony">Ei puhelinlaitteistoa</string>
     <string name="sim_inventory_no_sim">SIM-korttia ei havaittu</string>
     <string name="sim_inventory_inactive">Passiivinen SIM havaittu</string>
     <string name="sim_inventory_single">Yksi SIM</string>
@@ -165,7 +165,7 @@
     <string name="audio_microphone_description">Nauhoita ääntä ja toista se varmistaaksesi, että mikrofoni toimii. Vaatii mikrofonin käyttöoikeuden.</string>
     <string name="audio_headphone_title">Kuulokeliitäntä</string>
     <string name="audio_headphone_description">Kytke langalliset kuulokkeet tai kuulokemikrofoni testataksesi tunnistusta.</string>
-    <string name="audio_volume_title">Äänenvoimakkuuspainikkeet</string>
+    <string name="audio_volume_title">Äänipainikkeet</string>
     <string name="audio_volume_description">Paina laitteiston äänenvoimakkuuspainikkeita varmistaaksesi, että ne toimivat.</string>
 
     <string name="audio_stop">Pysäytä</string>
@@ -263,7 +263,6 @@
     <string name="sensor_summary_title">Anturien yhteenveto</string>
     <string name="sensor_description">Avaa jokainen saatavilla oleva testi ja seuraa ohjetta. Läpäisy vaatii rajatun näytteen tai liikevasteen.</string>
     <string name="sensor_count">Androidin anturimerkinnät</string>
-    <string name="sensor_guided_completed">Läpäistyt ohjatut testityypit</string>
     <string name="sensor_guided_progress">%1$s / %2$s</string>
     <string name="sensor_guided_title">Ohjatut testit</string>
     <string name="sensor_not_available_description">Tätä anturia ei ole saatavilla tällä laitteella.</string>
@@ -523,11 +522,11 @@
     <string name="thermal_monitoring_label">Seuranta</string>
     <string name="thermal_monitoring_live">Reaaliaikainen</string>
     <string name="thermal_monitoring_paused">Keskeytetty</string>
-    <string name="thermal_status_note">Tämä on Androidin tämänhetkinen rajoitustila. Laitekohtainen lämpösuunnittelu vaikuttaa tilan ja headroom-arvion suhteeseen.</string>
+    <string name="thermal_status_note">Tämä on Androidin tämänhetkinen rajoitustila. Laitekohtainen lämpösuunnittelu vaikuttaa tilan ja lämpövaran suhteeseen.</string>
     <string name="thermal_status_unsupported">Reaaliaikainen lämpötilanhallinnan tila vaatii Android 10:n tai uudemman.</string>
     <string name="thermal_status_read_failed">Android ei antanut tämänhetkistä lämpötilanhallinnan tilaa.</string>
     <string name="thermal_listener_failed">Reaaliaikaista lämpötilanhallinnan seurantaa ei voitu käynnistää.</string>
-    <string name="thermal_headroom_title">Lämpötilanhallinnan headroom</string>
+    <string name="thermal_headroom_title">Lämpövara</string>
     <string name="thermal_headroom_current">Tämänhetkinen arvio</string>
     <string name="thermal_headroom_value">%1$s</string>
     <string name="thermal_headroom_requires_api30">Vaatii Android 11+</string>
@@ -548,7 +547,7 @@
     <string name="storage_percent_value">%1$s%%</string>
     <string name="storage_usage_unit">% käytetty</string>
     <string name="storage_internal_access">Sovelluksen yksityinen tallennustila</string>
-    <string name="storage_access_title">Tallennustilan käyttö</string>
+    <string name="storage_access_title">Pääsy tallennustilaan</string>
     <string name="storage_private_access">Sovelluksen yksityinen tallennustila</string>
     <string name="storage_accessible">Käytettävissä</string>
     <string name="storage_info_error">Tallennustilan tietoja ei voitu lukea.</string>
@@ -674,7 +673,7 @@
     <string name="run_all_vibration_description">fonecheck toisti juuri lyhyen värinäkuvion. Kuvioitu värinä voi tuntua voimakkaalta; sen voi pysäyttää, toistaa, vahvistaa tai ohittaa milloin tahansa.</string>
     <string name="run_all_felt_vibration">Tunsin värinän</string>
     <string name="run_all_no_vibration">Värinää ei tunnu</string>
-    <string name="run_all_buttons_title">Testaa äänenvoimakkuuspainikkeet</string>
+    <string name="run_all_buttons_title">Testaa äänipainikkeet</string>
     <string name="run_all_buttons_description">Paina kerran ääni ylös ja ääni alas. fonecheck kuuntelee kahta painiketapahtumaa 15 sekunnin ajan.</string>
     <string name="run_all_biometrics_title">Tunnistaudu biometrisesti</string>
     <string name="run_all_biometrics_description">Käytä vain biometriikan hyväksyvää järjestelmäkehotetta. PIN-koodia, kuviota tai salasanaa ei hyväksytä biometriseksi tulokseksi.</string>
@@ -684,18 +683,6 @@
     <string name="run_all_results_description">Automaattiset ja vuorovaikutteiset tarkistukset on ryhmitelty alle kategorioittain.</string>
     <string name="run_all_overall_score">Kokonaispisteet</string>
     <string name="report_score_unit">/ 100</string>
-    <plurals name="run_all_warning_count">
-        <item quantity="one">%1$s varoitus</item>
-        <item quantity="other">%1$s varoitusta</item>
-    </plurals>
-    <plurals name="run_all_failed_count">
-        <item quantity="one">%1$s ongelma</item>
-        <item quantity="other">%1$s ongelmaa</item>
-    </plurals>
-    <plurals name="run_all_unavailable_count">
-        <item quantity="one">%1$s ei saatavilla</item>
-        <item quantity="other">%1$s ei saatavilla</item>
-    </plurals>
     <string name="run_all_needs_attention">Vaatii huomiota</string>
     <string name="run_all_completed">Valmiit</string>
     <string name="run_all_not_completed">Ei suoritettu</string>
@@ -727,9 +714,6 @@
     <string name="report_coverage_value">%1$s%%</string>
     <string name="report_checks">Tarkistukset</string>
     <string name="report_checks_value">%1$s/%2$s</string>
-    <string name="report_pass_count">%1$s läpäisty</string>
-    <string name="report_info_count">Info: %1$s</string>
-    <string name="report_not_tested_count">%1$s ei mitattu</string>
     <string name="report_retest">Testaa uudelleen</string>
     <string name="report_retest_title">Testaa %1$s uudelleen</string>
     <string name="report_retest_description">Uusi tulos tallennetaan erillisenä kategoriakohtaisena raporttina. Alkuperäinen raportti ei muutu.</string>
@@ -897,7 +881,7 @@
     <string name="comparison_second_report">Toinen raportti</string>
     <string name="comparison_score">Pisteet</string>
     <string name="comparison_score_value">%1$s → %2$s</string>
-    <string name="comparison_score_delta">Pisteiden muutos: %1$s</string>
+    <string name="comparison_score_change">Pisteiden muutos</string>
     <string name="comparison_score_no_delta">Numeerista piste-eroa ei ole saatavilla.</string>
     <string name="comparison_score_incompatible">Pisteitä ei voi verrata, koska pisteversiot poikkeavat toisistaan (%1$s ja %2$s).</string>
     <string name="comparison_coverage">Kattavuus</string>
@@ -938,7 +922,7 @@
     <string name="run_all_check_microphone">Mikrofonin ääni</string>
     <string name="run_all_check_headphones">Liitetyt kuulokkeet</string>
     <string name="run_all_check_motion_sensor">Liikevaste</string>
-    <string name="run_all_check_volume_buttons">Äänenvoimakkuuspainikkeet</string>
+    <string name="run_all_check_volume_buttons">Äänipainikkeet</string>
     <string name="run_all_detail_temperature">%1$s °C</string>
     <string name="run_all_permission_missing">Oikeutta ei myönnetty</string>
     <string name="run_all_manual_failed">Käyttäjä ilmoitti ongelmasta</string>
@@ -1049,7 +1033,7 @@
     <string name="vibration_primitive_low_tick">Matala tikitys</string>
 
     <!-- Button Test Screen -->
-    <string name="button_test_title">Äänenvoimakkuuspainikkeet</string>
+    <string name="button_test_title">Äänipainikkeet</string>
     <string name="button_status_label">Tila</string>
     <string name="button_volume_up">Ääni ylös</string>
     <string name="button_volume_down">Ääni alas</string>
@@ -1070,8 +1054,8 @@
 
     <!-- Biometric Test Screen -->
     <string name="biometric_capabilities_title">Ominaisuudet</string>
-    <string name="biometric_fingerprint_hardware">Sormenjälkiominaisuus</string>
-    <string name="biometric_face_hardware">Kasvotunnistusominaisuus</string>
+    <string name="biometric_fingerprint_hardware">Sormenjälkitunnistus</string>
+    <string name="biometric_face_hardware">Kasvotunnistus</string>
     <string name="biometric_strong">Vahva (luokka 3)</string>
     <string name="biometric_weak">Heikko (luokka 2)</string>
     <string name="biometric_device_credential">Laitteen tunniste</string>

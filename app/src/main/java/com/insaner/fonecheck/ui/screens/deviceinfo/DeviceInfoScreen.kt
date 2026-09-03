@@ -6,9 +6,7 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -29,6 +27,7 @@ import com.insaner.fonecheck.domain.observation.DeviceObservation
 import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
 import com.insaner.fonecheck.localization.observationStatusStringRes
 import com.insaner.fonecheck.ui.TopBarAction
+import com.insaner.fonecheck.ui.components.ButtonRow
 import com.insaner.fonecheck.ui.components.CaptureTimestamp
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
@@ -146,19 +145,16 @@ internal fun DeviceInfoContent(
         }
 
         state.info?.let { info ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
-            ) {
+            ButtonRow { buttonModifier ->
                 SecondaryButton(
                     label = stringResource(R.string.device_copy_all),
                     onClick = onCopyAll,
-                    modifier = Modifier.weight(1f),
+                    modifier = buttonModifier,
                 )
                 PrimaryButton(
                     label = stringResource(R.string.device_export),
                     onClick = onExport,
-                    modifier = Modifier.weight(1f),
+                    modifier = buttonModifier,
                 )
             }
             CaptureTimestamp(info.capturedAt)

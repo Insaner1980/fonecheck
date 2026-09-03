@@ -344,7 +344,7 @@ class CameraTestViewModel
                     provider.bindToLifecycle(lifecycleOwner, selector, preview, capture)
                     _state.value = _state.value.copy(isPreviewActive = true)
                 }
-            }, cameraExecutor)
+            }, ContextCompat.getMainExecutor(context))
         }
 
         fun stopPreview() {

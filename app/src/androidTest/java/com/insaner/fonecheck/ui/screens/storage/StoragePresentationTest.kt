@@ -67,8 +67,11 @@ class StoragePresentationTest {
 
         composeRule.onNodeWithText("24", useUnmergedTree = true).assertDoesNotExist()
         composeRule
-            .onNodeWithText(context.getString(R.string.storage_usage_unit), useUnmergedTree = true)
-            .assertDoesNotExist()
+            .onNodeWithText(
+                context.getString(R.string.storage_usage_unit),
+                ignoreCase = true,
+                useUnmergedTree = true,
+            ).assertDoesNotExist()
         composeRule.onNodeWithText("246 GB", useUnmergedTree = true).assertExists()
     }
 

@@ -8,14 +8,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,16 +51,22 @@ import com.insaner.fonecheck.domain.observation.MeasurementKind
 import com.insaner.fonecheck.domain.observation.MeasurementOutcome
 import com.insaner.fonecheck.ui.TopBarAction
 import com.insaner.fonecheck.ui.classification.classifyDisplayConfirmation
+import com.insaner.fonecheck.ui.components.ButtonRow
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
-import com.insaner.fonecheck.ui.components.LiveStateTimestamp
 import com.insaner.fonecheck.ui.components.LongValueRow
+import com.insaner.fonecheck.ui.components.ManualResultButtons
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.ObservationReasonNote
 import com.insaner.fonecheck.ui.components.PrimaryButton
+import com.insaner.fonecheck.ui.components.ReadoutWindow
 import com.insaner.fonecheck.ui.components.RegisterRefreshTopBarAction
 import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.components.TestScreenContent
+import com.insaner.fonecheck.ui.components.WindowBar
+import com.insaner.fonecheck.ui.components.WindowFigure
+import com.insaner.fonecheck.ui.components.WindowLabel
 import com.insaner.fonecheck.ui.components.shouldShowObservationReason
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
@@ -142,91 +148,148 @@ private fun DisplayOverview(
     modifier: Modifier = Modifier,
 ) {
     val liveStateUpdatedAtEpochMillis = remember(state) { System.currentTimeMillis() }
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(FonecheckTheme.spacing.md),
-        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg),
+    TestScreenContent(
+        modifier = modifier,
+        liveStateUpdatedAtEpochMillis = liveStateUpdatedAtEpochMillis,
     ) {
-        val visualClassification = classifyDisplayResult(state.visual.result)
-        DisplaySection(label = stringResource(R.string.display_info_title)) {
-            DisplayInfoDetails(state.info)
-        }
-        DisplaySection(label = stringResource(R.string.display_visual_title)) {
-            val valueExplainsReason = state.visual.result == null
-            val reasonVisible =
-                shouldShowObservationReason(visualClassification, valueExplainsReason)
-            DataRow(
-                label = stringResource(R.string.display_status_label),
-                value = manualResultLabel(state.visual.result),
-                tone = visualClassification.toSemanticTone(),
-                showDivider = !reasonVisible,
-            )
-            ObservationReasonNote(
-                classification = visualClassification,
-                valueExplainsNotMeasuredState = valueExplainsReason,
-            )
-            if (reasonVisible) HairlineRule()
-            Note(stringResource(R.string.display_visual_description))
-            SecondaryButton(
-                label = stringResource(R.string.display_start_test),
-                onClick = viewModel::startVisualTest,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        DisplaySection(label = stringResource(R.string.display_touch_title)) {
-            val touchClassification =
-                classifyMeasurement(
-                    if (state.touch.isComplete) MeasurementOutcome.MEASURED else MeasurementOutcome.NOT_RUN,
-                )
-            val valueExplainsReason = !state.touch.isComplete
-            val reasonVisible =
-                shouldShowObservationReason(touchClassification, valueExplainsReason)
-            DataRow(
-                label = stringResource(R.string.display_status_label),
-                value =
-                    stringResource(
-                        if (state.touch.isComplete) {
-                            R.string.display_status_complete
-                        } else {
-                            R.string.status_not_measured
-                        },
-                    ),
-                tone = touchClassification.toSemanticTone(),
-                showDivider = !reasonVisible,
-            )
-            ObservationReasonNote(
-                classification = touchClassification,
-                valueExplainsNotMeasuredState = valueExplainsReason,
-            )
-            if (reasonVisible) HairlineRule()
-            if (state.touch.isComplete) {
-                DataRow(
-                    label = stringResource(R.string.display_touch_cells),
-                    value =
-                        stringResource(
-                            R.string.display_value_ratio,
-                            uiNumber(state.touch.touchedCells.size),
-                            uiNumber(touchCellCount()),
-                        ),
-                )
-                DataRow(
-                    label = stringResource(R.string.display_multi_touch_peak),
-                    value = uiNumber(state.touch.maxPointerCount),
-                )
+        item {
+            DisplaySection(label = stringResource(R.string.display_info_title)) {
+                BrightnessReadout(state.info)
+                DisplayInfoDetails(state.info)
             }
-            Note(stringResource(R.string.display_touch_desc))
-            SecondaryButton(
-                label = stringResource(R.string.display_start_test),
-                onClick = viewModel::startTouchTest,
-                modifier = Modifier.fillMaxWidth(),
+        }
+        item {
+            DisplayVisualSummary(
+                state = state.visual,
+                onStart = viewModel::startVisualTest,
             )
         }
-        LiveStateTimestamp(liveStateUpdatedAtEpochMillis)
+        item {
+            DisplayTouchSummary(
+                isComplete = state.touch.isComplete,
+                touchedCellCount = state.touch.touchedCells.size,
+                maxPointerCount = state.touch.maxPointerCount,
+                onStart = viewModel::startTouchTest,
+            )
+        }
     }
 }
+
+@Composable
+private fun DisplayVisualSummary(
+    state: VisualTestState,
+    onStart: () -> Unit,
+) {
+    val classification = classifyDisplayResult(state.result)
+    val valueExplainsReason = state.result == null
+    val reasonVisible = shouldShowObservationReason(classification, valueExplainsReason)
+    DisplaySection(label = stringResource(R.string.display_visual_title)) {
+        DataRow(
+            label = stringResource(R.string.display_status_label),
+            value = manualResultLabel(state.result),
+            tone = classification.toSemanticTone(),
+            showDivider = !reasonVisible,
+        )
+        ObservationReasonNote(
+            classification = classification,
+            valueExplainsNotMeasuredState = valueExplainsReason,
+        )
+        if (reasonVisible) HairlineRule()
+        Note(stringResource(R.string.display_visual_description))
+        SecondaryButton(
+            label = stringResource(R.string.display_start_test),
+            onClick = onStart,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun DisplayTouchSummary(
+    isComplete: Boolean,
+    touchedCellCount: Int,
+    maxPointerCount: Int,
+    onStart: () -> Unit,
+) {
+    val classification =
+        classifyMeasurement(
+            if (isComplete) MeasurementOutcome.MEASURED else MeasurementOutcome.NOT_RUN,
+        )
+    val valueExplainsReason = !isComplete
+    val reasonVisible = shouldShowObservationReason(classification, valueExplainsReason)
+    DisplaySection(label = stringResource(R.string.display_touch_title)) {
+        DataRow(
+            label = stringResource(R.string.display_status_label),
+            value =
+                stringResource(
+                    if (isComplete) {
+                        R.string.display_status_complete
+                    } else {
+                        R.string.status_not_measured
+                    },
+                ),
+            tone = classification.toSemanticTone(),
+            showDivider = !reasonVisible,
+        )
+        ObservationReasonNote(
+            classification = classification,
+            valueExplainsNotMeasuredState = valueExplainsReason,
+        )
+        if (reasonVisible) HairlineRule()
+        if (isComplete) {
+            DataRow(
+                label = stringResource(R.string.display_touch_cells),
+                value =
+                    stringResource(
+                        R.string.display_value_ratio,
+                        uiNumber(touchedCellCount),
+                        uiNumber(touchCellCount()),
+                    ),
+            )
+            DataRow(
+                label = stringResource(R.string.display_multi_touch_peak),
+                value = uiNumber(maxPointerCount),
+            )
+        }
+        Note(stringResource(R.string.display_touch_desc))
+        SecondaryButton(
+            label = stringResource(R.string.display_start_test),
+            onClick = onStart,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+/**
+ * Screen brightness against the scale Android reports it on. Bounded by a known maximum, so it
+ * reads as a level rather than a bare number.
+ */
+@Composable
+private fun BrightnessReadout(info: DisplayInfoState) {
+    val percent = (info.currentBrightness * PERCENT / MAX_BRIGHTNESS).coerceIn(0, PERCENT)
+    Column {
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+        ReadoutWindow {
+            WindowLabel(text = stringResource(R.string.display_brightness))
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+            WindowFigure(
+                value =
+                    stringResource(
+                        R.string.display_value_ratio,
+                        uiNumber(info.currentBrightness),
+                        uiNumber(MAX_BRIGHTNESS),
+                    ),
+            )
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+            WindowBar(percentage = percent)
+        }
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+    }
+}
+
+/** The scale Android's brightness setting is reported on. */
+private const val MAX_BRIGHTNESS = 255
+private const val PERCENT = 100
 
 @Composable
 private fun DisplayInfoDetails(info: DisplayInfoState) {
@@ -273,15 +336,6 @@ private fun DisplayInfoDetails(info: DisplayInfoState) {
     DataRow(
         label = stringResource(R.string.display_wide_color),
         value = supportedLabel(info.wideColorGamut),
-    )
-    DataRow(
-        label = stringResource(R.string.display_brightness),
-        value =
-            stringResource(
-                R.string.display_value_ratio,
-                uiNumber(info.currentBrightness),
-                uiNumber(255),
-            ),
     )
     DataRow(
         label = stringResource(R.string.display_auto_brightness),
@@ -356,36 +410,24 @@ private fun VisualTestOverlay(
                 )
                 if (isLast) {
                     Note(stringResource(R.string.display_visual_question))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
-                    ) {
-                        SecondaryButton(
-                            label = stringResource(R.string.display_found_problem),
-                            onClick = { onResult(false) },
-                            modifier = Modifier.weight(1f),
-                        )
-                        PrimaryButton(
-                            label = stringResource(R.string.display_looks_good),
-                            onClick = { onResult(true) },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
+                    // The shared pair, so this screen cannot drift back to recommending a pass.
+                    ManualResultButtons(
+                        problemLabel = stringResource(R.string.display_found_problem),
+                        passLabel = stringResource(R.string.display_looks_good),
+                        onResult = onResult,
+                    )
                 } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
-                    ) {
+                    ButtonRow { buttonModifier ->
                         SecondaryButton(
                             label = stringResource(R.string.display_previous_pattern),
                             onClick = onPrevious,
                             enabled = state.patternIndex > 0,
-                            modifier = Modifier.weight(1f),
+                            modifier = buttonModifier,
                         )
                         PrimaryButton(
                             label = stringResource(R.string.display_next_pattern),
                             onClick = onNext,
-                            modifier = Modifier.weight(1f),
+                            modifier = buttonModifier,
                         )
                     }
                 }
@@ -507,20 +549,17 @@ internal fun TouchTestOverlay(
         ) {
             drawTouchGrid(state)
         }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
-        ) {
+        ButtonRow { buttonModifier ->
             SecondaryButton(
                 label = stringResource(R.string.display_touch_reset),
                 onClick = onReset,
-                modifier = Modifier.weight(1f),
+                modifier = buttonModifier,
             )
             PrimaryButton(
                 label = stringResource(R.string.display_touch_complete),
                 onClick = onComplete,
                 enabled = state.touchedCells.isNotEmpty(),
-                modifier = Modifier.weight(1f),
+                modifier = buttonModifier,
             )
         }
     }

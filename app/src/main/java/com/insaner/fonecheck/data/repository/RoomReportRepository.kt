@@ -25,16 +25,11 @@ class RoomReportRepository(
         reportDao.observeSummaries().map { summaries -> summaries.map(ReportSummary::toDomain) }
 
     override suspend fun getById(id: String): ReportLoadResult =
-        reportDao.getById(id)?.toLoadResult() ?: ReportLoadResult.NotFound
-
-    override suspend fun getForComparison(
-        firstReportId: String,
-        secondReportId: String,
-    ): ReportComparisonLoad =
-        ReportComparisonLoad(
-            first = getById(firstReportId),
-            second = getById(secondReportId),
-        )
+        try {
+            reportDao.getById(id)?.toLoadResult() ?: ReportLoadResult.NotFound
+        } catch (_: IllegalArgumentException) {
+            ReportLoadResult.Unavailable(id, ReportReadFailure.CORRUPT_DATA)
+        }
 
     override suspend fun delete(id: String) {
         reportDao.deleteById(id)

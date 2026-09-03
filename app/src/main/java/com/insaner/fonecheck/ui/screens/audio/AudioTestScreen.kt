@@ -6,12 +6,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -31,15 +28,20 @@ import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.permission.PermissionKind
 import com.insaner.fonecheck.domain.permission.PermissionState
 import com.insaner.fonecheck.ui.classification.classifyAudioConfirmation
+import com.insaner.fonecheck.ui.components.ButtonRow
 import com.insaner.fonecheck.ui.components.DataRow
-import com.insaner.fonecheck.ui.components.LiveStateTimestamp
 import com.insaner.fonecheck.ui.components.ManualResultButtons
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.PrimaryButton
+import com.insaner.fonecheck.ui.components.ReadoutWindow
 import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.StatusText
+import com.insaner.fonecheck.ui.components.TestScreenContent
+import com.insaner.fonecheck.ui.components.WindowBar
+import com.insaner.fonecheck.ui.components.WindowFigure
+import com.insaner.fonecheck.ui.components.WindowLabel
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
@@ -94,12 +96,9 @@ fun AudioTestScreen(
         }
     }
 
-    Column(
+    TestScreenContent(
         modifier =
             modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(FonecheckTheme.spacing.md)
                 .onKeyEvent { event ->
                     if (event.nativeKeyEvent.action == KeyEvent.ACTION_DOWN) {
                         when (event.nativeKeyEvent.keyCode) {
@@ -117,21 +116,24 @@ fun AudioTestScreen(
                         false
                     }
                 },
-        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg),
+        liveStateUpdatedAtEpochMillis = liveStateUpdatedAtEpochMillis,
     ) {
-        SpeakerTestSection(state, viewModel)
-        StereoTestSection(state, viewModel)
-        EarpieceTestSection(state, viewModel)
-        MicrophoneTestSection(
-            state = state,
-            viewModel = viewModel,
-            permissionState = microphonePermission.state,
-            onRequestPermission = requestMicrophonePermission,
-            onOpenSettings = microphonePermission::openSettings,
-        )
-        HeadphoneJackSection(state, viewModel)
-        VolumeButtonSection(state, viewModel)
-        LiveStateTimestamp(liveStateUpdatedAtEpochMillis)
+        // Volume leads. It is the precondition for every test below it: at a low level a working
+        // speaker still sounds wrong, and the reader would mark a good device as faulty.
+        item { VolumeButtonSection(state, viewModel) }
+        item { SpeakerTestSection(state, viewModel) }
+        item { StereoTestSection(state, viewModel) }
+        item { EarpieceTestSection(state, viewModel) }
+        item {
+            MicrophoneTestSection(
+                state = state,
+                viewModel = viewModel,
+                permissionState = microphonePermission.state,
+                onRequestPermission = requestMicrophonePermission,
+                onOpenSettings = microphonePermission::openSettings,
+            )
+        }
+        item { HeadphoneJackSection(state, viewModel) }
     }
 }
 
@@ -144,10 +146,7 @@ private fun SpeakerTestSection(
 
     AudioSection(title = stringResource(R.string.audio_speaker_title)) {
         Note(stringResource(R.string.audio_speaker_description))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
-        ) {
+        ButtonRow { buttonModifier ->
             frequencies.forEach { frequency ->
                 val isActive = state.isPlaying && state.currentFrequency == frequency
                 ToneSelectionButton(
@@ -156,7 +155,7 @@ private fun SpeakerTestSection(
                     onClick = {
                         if (isActive) viewModel.stopTone() else viewModel.playTone(frequency)
                     },
-                    modifier = Modifier.weight(1f),
+                    modifier = buttonModifier,
                 )
             }
         }
@@ -191,10 +190,7 @@ private fun StereoTestSection(
 
     AudioSection(title = stringResource(R.string.audio_stereo_title)) {
         Note(stringResource(R.string.audio_stereo_description))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
-        ) {
+        ButtonRow { buttonModifier ->
             channels.forEach { (channel, label) ->
                 val isActive = state.isPlaying && state.stereoChannel == channel
                 ToneSelectionButton(
@@ -203,7 +199,7 @@ private fun StereoTestSection(
                     onClick = {
                         if (isActive) viewModel.stopTone() else viewModel.playStereoTone(channel)
                     },
-                    modifier = Modifier.weight(1f),
+                    modifier = buttonModifier,
                 )
             }
         }
@@ -286,34 +282,27 @@ private fun MicrophoneTestSection(
                 tone = SemanticTone.NEUTRAL,
             )
         }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
-        ) {
+        ButtonRow { buttonModifier ->
             if (state.isRecording) {
                 SecondaryButton(
                     label = stringResource(R.string.audio_stop_recording),
                     onClick = viewModel::stopRecording,
-                    modifier = Modifier.weight(1f),
+                    modifier = buttonModifier,
                 )
             } else {
                 PrimaryButton(
                     label = stringResource(R.string.audio_record),
                     onClick = viewModel::startRecording,
-                    modifier = Modifier.weight(1f),
+                    modifier = buttonModifier,
                     enabled = permissionState == PermissionState.GRANTED,
                 )
             }
-            SecondaryButton(
-                label =
-                    stringResource(
-                        if (state.isPlayingRecording) R.string.audio_stop else R.string.audio_playback,
-                    ),
-                onClick = {
-                    if (state.isPlayingRecording) viewModel.stopPlayback() else viewModel.playRecording()
-                },
-                modifier = Modifier.weight(1f),
+            RecordingPlaybackButton(
+                isPlayingRecording = state.isPlayingRecording,
                 enabled = state.hasRecordedAudio && !state.isRecording,
+                onStopPlayback = viewModel::stopPlayback,
+                onPlayRecording = viewModel::playRecording,
+                modifier = buttonModifier,
             )
         }
         if (state.hasRecordedAudio) {
@@ -324,6 +313,27 @@ private fun MicrophoneTestSection(
             )
         }
     }
+}
+
+@Composable
+private fun RecordingPlaybackButton(
+    isPlayingRecording: Boolean,
+    enabled: Boolean,
+    onStopPlayback: () -> Unit,
+    onPlayRecording: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    SecondaryButton(
+        label =
+            stringResource(
+                if (isPlayingRecording) R.string.audio_stop else R.string.audio_playback,
+            ),
+        onClick = {
+            if (isPlayingRecording) onStopPlayback() else onPlayRecording()
+        },
+        modifier = modifier,
+        enabled = enabled,
+    )
 }
 
 @Composable
@@ -398,11 +408,8 @@ private fun VolumeButtonSection(
     }
 
     AudioSection(title = stringResource(R.string.audio_volume_title)) {
+        VolumeLevelReadout(level = state.volumeLevel, max = state.maxVolume)
         Note(stringResource(R.string.audio_volume_description))
-        DataRow(
-            label = stringResource(R.string.audio_volume_level),
-            value = "${uiNumber(state.volumeLevel)} / ${uiNumber(state.maxVolume)}",
-        )
         DataRow(
             label = stringResource(R.string.audio_volume_up),
             value = uiNumber(state.volumeUpCount),
@@ -420,6 +427,31 @@ private fun VolumeButtonSection(
         )
     }
 }
+
+/**
+ * The system media volume against its own maximum. Bounded by a value Android reports, so it reads
+ * as a level rather than two numbers.
+ */
+@Composable
+private fun VolumeLevelReadout(
+    level: Int,
+    max: Int,
+) {
+    if (max <= 0) return
+    Column {
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+        ReadoutWindow {
+            WindowLabel(text = stringResource(R.string.audio_volume_level))
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+            WindowFigure(value = "${uiNumber(level)} / ${uiNumber(max)}")
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+            WindowBar(percentage = (level * PERCENT / max).coerceIn(0, PERCENT))
+        }
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+    }
+}
+
+private const val PERCENT = 100
 
 @Composable
 private fun ToneSelectionButton(

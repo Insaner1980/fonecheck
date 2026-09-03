@@ -78,7 +78,7 @@ class ThermalTestViewModel
                         if (nextRegistration == null) {
                             ThermalErrorCode.LISTENER_REGISTRATION_FAILED
                         } else {
-                            current.error
+                            current.error.takeUnless { it == ThermalErrorCode.LISTENER_REGISTRATION_FAILED }
                         },
                 )
             }
@@ -127,8 +127,12 @@ class ThermalTestViewModel
                         if (batteryTemperature != null) Confidence.HIGH else Confidence.UNAVAILABLE,
                     capturedAt = Instant.ofEpochMilli(nowMillis),
                     error =
-                        ThermalErrorCode.STATUS_UNAVAILABLE.takeIf {
-                            platform.statusApiSupported && status == ThermalStatusCode.UNAVAILABLE
+                        when {
+                            current.error == ThermalErrorCode.LISTENER_REGISTRATION_FAILED && registration == null ->
+                                current.error
+                            platform.statusApiSupported && status == ThermalStatusCode.UNAVAILABLE ->
+                                ThermalErrorCode.STATUS_UNAVAILABLE
+                            else -> null
                         },
                 )
             }

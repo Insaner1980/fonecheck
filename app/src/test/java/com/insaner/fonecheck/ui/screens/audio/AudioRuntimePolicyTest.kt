@@ -53,6 +53,20 @@ class AudioRuntimePolicyTest {
         )
     }
 
+    @Test
+    fun operationGateRejectsReplacedAndCancelledCompletions() {
+        val gate = AudioOperationGate()
+        val first = gate.start()
+        val second = gate.start()
+
+        assertFalse(gate.isCurrent(first))
+        assertTrue(gate.isCurrent(second))
+
+        gate.cancel()
+
+        assertFalse(gate.isCurrent(second))
+    }
+
     private class FakeResource {
         var releaseCount = 0
 

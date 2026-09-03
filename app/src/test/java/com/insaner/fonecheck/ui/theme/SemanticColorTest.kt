@@ -65,6 +65,7 @@ class SemanticColorTest {
             listOf(
                 "window" to contrast(colors.windowText, colors.windowBg),
                 "window dim" to contrast(colors.windowDim, colors.windowBg),
+                "window alert" to contrast(colors.windowAlert, colors.windowBg),
                 "state key" to contrast(colors.textPrimary, colors.panel),
                 "pass lamp" to contrast(colors.lampPassInk, colors.lampPass),
                 "noted lamp" to contrast(colors.lampNotedInk, colors.lampNoted),

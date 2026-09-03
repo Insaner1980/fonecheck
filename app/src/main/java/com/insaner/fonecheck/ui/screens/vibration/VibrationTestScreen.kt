@@ -2,9 +2,7 @@ package com.insaner.fonecheck.ui.screens.vibration
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -17,6 +15,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.ui.classification.classifyVibrationResult
+import com.insaner.fonecheck.ui.components.ButtonRow
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.DisclosureSection
 import com.insaner.fonecheck.ui.components.LongValueRow
@@ -103,30 +102,27 @@ private fun MotorTestDetails(
 
     Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md)) {
         Note(text = stringResource(R.string.vibration_strength_warning))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
-        ) {
+        ButtonRow { buttonModifier ->
             VibrationPatternButton(
                 label = stringResource(R.string.vibration_short),
                 isActive = state.isPlaying && state.lastPattern == VibrationPattern.SHORT,
                 enabled = enabled,
                 onClick = onShort,
-                modifier = Modifier.weight(1f),
+                modifier = buttonModifier,
             )
             VibrationPatternButton(
                 label = stringResource(R.string.vibration_long),
                 isActive = state.isPlaying && state.lastPattern == VibrationPattern.LONG,
                 enabled = enabled,
                 onClick = onLong,
-                modifier = Modifier.weight(1f),
+                modifier = buttonModifier,
             )
             VibrationPatternButton(
                 label = stringResource(R.string.vibration_pattern),
                 isActive = state.isPlaying && state.lastPattern == VibrationPattern.PATTERN,
                 enabled = enabled,
                 onClick = onPattern,
-                modifier = Modifier.weight(1f),
+                modifier = buttonModifier,
             )
         }
         SecondaryButton(

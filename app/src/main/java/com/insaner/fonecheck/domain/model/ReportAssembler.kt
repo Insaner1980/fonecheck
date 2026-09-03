@@ -96,15 +96,15 @@ object ReportAssembler {
             }
         }
 
-    private fun aggregate(evidence: List<DiagnosticEvidence>): DiagnosticStatus =
-        when {
-            evidence.any { it.status == DiagnosticStatus.FAIL } -> DiagnosticStatus.FAIL
-            evidence.any { it.status == DiagnosticStatus.WARNING } -> DiagnosticStatus.WARNING
-            evidence.any {
-                it.status == DiagnosticStatus.NOT_TESTED && it.applicability == Applicability.APPLICABLE
-            } -> DiagnosticStatus.NOT_TESTED
-            evidence.any { it.status == DiagnosticStatus.PASS } -> DiagnosticStatus.PASS
-            evidence.all { it.status == DiagnosticStatus.NOT_AVAILABLE } -> DiagnosticStatus.NOT_AVAILABLE
+    private fun aggregate(evidence: List<DiagnosticEvidence>): DiagnosticStatus {
+        val applicableEvidence = evidence.filter { it.applicability == Applicability.APPLICABLE }
+        return when {
+            applicableEvidence.any { it.status == DiagnosticStatus.FAIL } -> DiagnosticStatus.FAIL
+            applicableEvidence.any { it.status == DiagnosticStatus.WARNING } -> DiagnosticStatus.WARNING
+            applicableEvidence.any { it.status == DiagnosticStatus.NOT_TESTED } -> DiagnosticStatus.NOT_TESTED
+            applicableEvidence.any { it.status == DiagnosticStatus.PASS } -> DiagnosticStatus.PASS
+            applicableEvidence.isEmpty() -> DiagnosticStatus.NOT_AVAILABLE
             else -> DiagnosticStatus.INFO
         }
+    }
 }

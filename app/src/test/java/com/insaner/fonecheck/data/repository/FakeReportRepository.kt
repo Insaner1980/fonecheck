@@ -42,15 +42,6 @@ class FakeReportRepository(
             ?: ReportLoadResult.NotFound
     }
 
-    override suspend fun getForComparison(
-        firstReportId: String,
-        secondReportId: String,
-    ): ReportComparisonLoad =
-        ReportComparisonLoad(
-            first = getById(firstReportId),
-            second = getById(secondReportId),
-        )
-
     override suspend fun delete(id: String) {
         if (deleteFailuresRemaining > 0) {
             deleteFailuresRemaining -= 1

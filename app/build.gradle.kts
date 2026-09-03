@@ -89,6 +89,15 @@ tasks
         inputs.file(composeStabilityConfig).withPropertyName("composeStabilityConfig")
     }
 
+configurations.configureEach {
+    if (name == "androidLintTool") {
+        // AGP's sdklib still requests vulnerable HttpClient 4.5.6 for the lint tool process.
+        resolutionStrategy.force(
+            "org.apache.httpcomponents:httpclient:${libs.versions.apacheHttpClient.get()}",
+        )
+    }
+}
+
 detekt {
     buildUponDefaultConfig = true
     config.setFrom("$rootDir/config/detekt/detekt.yml")

@@ -102,7 +102,7 @@ class ReportPdfRenderer
                         PdfTextStyle.TITLE,
                         PdfTextStyle.HEADING,
                         PdfTextStyle.CATEGORY,
-                        -> Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                        -> Typeface.create("sans-serif-medium", Typeface.NORMAL)
 
                         PdfTextStyle.MONO -> Typeface.MONOSPACE
                         PdfTextStyle.BODY -> Typeface.DEFAULT

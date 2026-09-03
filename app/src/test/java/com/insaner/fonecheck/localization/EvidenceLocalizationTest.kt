@@ -4,7 +4,9 @@ import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
+import com.insaner.fonecheck.domain.observation.ObservationClassification
 import com.insaner.fonecheck.domain.observation.ObservationReason
+import com.insaner.fonecheck.domain.observation.ObservationState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -13,6 +15,43 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class EvidenceLocalizationTest {
+    @Test
+    fun `every observation reason maps to a localized resource`() {
+        ObservationReason.entries.forEach { reason ->
+            assertTrue(reason.name, observationReasonStringRes(reason) != 0)
+        }
+    }
+
+    @Test
+    fun `every observation status maps to the correct localized resource`() {
+        assertEquals(
+            R.string.run_all_status_pass,
+            observationStatusStringRes(ObservationClassification(ObservationState.PASS)),
+        )
+        assertEquals(
+            R.string.run_all_status_fail,
+            observationStatusStringRes(ObservationClassification(ObservationState.FAULT)),
+        )
+        assertEquals(
+            R.string.run_all_status_warning,
+            observationStatusStringRes(
+                ObservationClassification(ObservationState.NOTED, ObservationReason.BATTERY_OVERHEAT),
+            ),
+        )
+        assertEquals(
+            R.string.run_all_status_unavailable,
+            observationStatusStringRes(
+                ObservationClassification(ObservationState.NOT_MEASURED, ObservationReason.SERIAL_RESTRICTED),
+            ),
+        )
+        assertEquals(
+            R.string.status_not_measured,
+            observationStatusStringRes(
+                ObservationClassification(ObservationState.NOT_MEASURED, ObservationReason.TEST_NOT_RUN),
+            ),
+        )
+    }
+
     @Test
     fun `all canonical reason codes have localized resources`() {
         val reasons =

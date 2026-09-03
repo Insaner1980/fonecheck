@@ -18,17 +18,13 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.viewinterop.AndroidView
 import com.insaner.fonecheck.R
@@ -40,13 +36,18 @@ import com.insaner.fonecheck.domain.permission.PermissionState
 import com.insaner.fonecheck.localization.observationStatusStringRes
 import com.insaner.fonecheck.ui.classification.classifyBiometric
 import com.insaner.fonecheck.ui.classification.classifyButtonTest
+import com.insaner.fonecheck.ui.components.ButtonRow
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.IndeterminateRule
+import com.insaner.fonecheck.ui.components.ManualResultButtons
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.ObservationReasonNote
+import com.insaner.fonecheck.ui.components.PanelToggle
 import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.PrimaryButton
+import com.insaner.fonecheck.ui.components.ProgressWindow
+import com.insaner.fonecheck.ui.components.ScreenLoadingNote
 import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.StatusText
@@ -58,6 +59,7 @@ import com.insaner.fonecheck.ui.screens.buttons.ButtonTestState
 import com.insaner.fonecheck.ui.screens.camera.CameraTestState
 import com.insaner.fonecheck.ui.screens.display.DisplayPattern
 import com.insaner.fonecheck.ui.screens.display.displayPatternBackground
+import com.insaner.fonecheck.ui.screens.sensor.SensorChallengeWindow
 import com.insaner.fonecheck.ui.screens.sensor.SensorTestState
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
@@ -195,7 +197,7 @@ private fun PreflightChoiceRow(
                     ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Checkbox(checked = checked, onCheckedChange = null)
+            PanelToggle(checked = checked)
             Text(
                 text = label,
                 modifier = Modifier.padding(start = FonecheckTheme.spacing.sm),
@@ -284,8 +286,7 @@ fun AutomaticCheckScreen(
             color = FonecheckTheme.colors.textPrimary,
             modifier = Modifier.semantics { heading() },
         )
-        IndeterminateRule()
-        Note(description)
+        ScreenLoadingNote(description)
         actionLabel?.let { label ->
             SecondaryButton(
                 label = label,
@@ -341,11 +342,10 @@ fun DisplayCheckStep(
                     ),
             )
             if (isLastColor) {
-                ConfirmationButtons(
-                    positiveText = stringResource(R.string.run_all_looks_good),
-                    negativeText = stringResource(R.string.run_all_found_problem),
-                    onPositive = { onResult(true) },
-                    onNegative = { onResult(false) },
+                ManualResultButtons(
+                    problemLabel = stringResource(R.string.run_all_found_problem),
+                    passLabel = stringResource(R.string.run_all_looks_good),
+                    onResult = onResult,
                 )
             } else {
                 PrimaryButton(
@@ -354,19 +354,16 @@ fun DisplayCheckStep(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
-            ) {
+            ButtonRow { buttonModifier ->
                 SecondaryButton(
                     label = stringResource(R.string.run_all_skip),
                     onClick = onSkip,
-                    modifier = Modifier.weight(1f),
+                    modifier = buttonModifier,
                 )
                 SecondaryButton(
                     label = stringResource(R.string.run_all_cancel),
                     onClick = onCancel,
-                    modifier = Modifier.weight(1f),
+                    modifier = buttonModifier,
                 )
             }
         }
@@ -396,11 +393,10 @@ fun AudioCheckStep(
             enabled = !isPlaying,
             modifier = Modifier.fillMaxWidth(),
         )
-        ConfirmationButtons(
-            positiveText = stringResource(R.string.run_all_heard_tone),
-            negativeText = stringResource(R.string.run_all_no_tone),
-            onPositive = { onResult(true) },
-            onNegative = { onResult(false) },
+        ManualResultButtons(
+            problemLabel = stringResource(R.string.run_all_no_tone),
+            passLabel = stringResource(R.string.run_all_heard_tone),
+            onResult = onResult,
         )
         SecondaryButton(
             label = stringResource(R.string.run_all_skip),
@@ -490,12 +486,7 @@ fun SensorCheckStep(
         description = stringResource(R.string.run_all_sensor_description),
         onCancel = onCancel,
     ) {
-        LinearProgressIndicator(
-            progress = { state.challenge.progress.coerceIn(0f, 1f) },
-            modifier = Modifier.fillMaxWidth(),
-            color = FonecheckTheme.colors.primaryButtonBackground,
-            trackColor = FonecheckTheme.colors.segmentTrack,
-        )
+        SensorChallengeWindow(state.challenge)
         SecondaryButton(
             label = stringResource(R.string.run_all_skip),
             onClick = onSkip,
@@ -531,11 +522,10 @@ fun VibrationCheckStep(
             onClick = onStop,
             modifier = Modifier.fillMaxWidth(),
         )
-        ConfirmationButtons(
-            positiveText = stringResource(R.string.run_all_felt_vibration),
-            negativeText = stringResource(R.string.run_all_no_vibration),
-            onPositive = { onResult(true) },
-            onNegative = { onResult(false) },
+        ManualResultButtons(
+            problemLabel = stringResource(R.string.run_all_no_vibration),
+            passLabel = stringResource(R.string.run_all_felt_vibration),
+            onResult = onResult,
         )
         SecondaryButton(
             label = stringResource(R.string.vibration_skip),
@@ -631,18 +621,23 @@ private fun RetryAndSkipButtons(
     onRetry: () -> Unit,
     onSkip: () -> Unit,
 ) {
-    if (showRetry) {
-        PrimaryButton(
-            label = stringResource(R.string.button_retry),
-            onClick = onRetry,
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg),
+    ) {
+        if (showRetry) {
+            PrimaryButton(
+                label = stringResource(R.string.button_retry),
+                onClick = onRetry,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        SecondaryButton(
+            label = stringResource(R.string.run_all_skip),
+            onClick = onSkip,
             modifier = Modifier.fillMaxWidth(),
         )
     }
-    SecondaryButton(
-        label = stringResource(R.string.run_all_skip),
-        onClick = onSkip,
-        modifier = Modifier.fillMaxWidth(),
-    )
 }
 
 @Composable
@@ -676,50 +671,15 @@ private fun ManualCheckFrame(
 
 @Composable
 private fun ManualProgress(progress: RunAllProgress) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
-    ) {
-        Text(
-            text =
-                stringResource(
-                    R.string.run_all_interactive_progress,
-                    uiNumber(progress.position),
-                    uiNumber(progress.total),
-                ),
-            style = FonecheckTheme.type.sectionLabel,
-            color = FonecheckTheme.colors.textMuted,
-            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-        )
-        LinearProgressIndicator(
-            progress = { progress.position.toFloat() / progress.total.coerceAtLeast(1) },
-            modifier = Modifier.fillMaxWidth(),
-            color = FonecheckTheme.colors.primaryButtonBackground,
-            trackColor = FonecheckTheme.colors.segmentTrack,
-        )
-    }
+    ProgressWindow(
+        label =
+            stringResource(
+                R.string.run_all_interactive_progress,
+                uiNumber(progress.position),
+                uiNumber(progress.total),
+            ),
+        percentage = progress.position * PERCENT / progress.total.coerceAtLeast(1),
+    )
 }
 
-@Composable
-private fun ConfirmationButtons(
-    positiveText: String,
-    negativeText: String,
-    onPositive: () -> Unit,
-    onNegative: () -> Unit,
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
-    ) {
-        PrimaryButton(
-            label = positiveText,
-            onClick = onPositive,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        SecondaryButton(
-            label = negativeText,
-            onClick = onNegative,
-            modifier = Modifier.fillMaxWidth(),
-        )
-    }
-}
+private const val PERCENT = 100

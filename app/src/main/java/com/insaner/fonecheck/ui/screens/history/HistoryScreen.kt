@@ -15,9 +15,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
@@ -130,6 +132,9 @@ fun HistoryScreen(
     pendingDeleteId?.let { reportId ->
         AlertDialog(
             onDismissRequest = { pendingDeleteId = null },
+            shape = RectangleShape,
+            containerColor = FonecheckTheme.colors.panel,
+            tonalElevation = 0.dp,
             title = {
                 Text(
                     text = stringResource(R.string.history_delete_title),
@@ -202,6 +207,7 @@ private fun HistoryErrorCard(
 }
 
 @Composable
+@Suppress("kotlin:S107") // Report state and its four explicit row actions form one cohesive section API.
 private fun HistoryReportSection(
     report: SavedReportSummary,
     completedAt: String,

@@ -2,11 +2,10 @@ package com.insaner.fonecheck.ui.screens.storage
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -20,17 +19,21 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.ui.TopBarAction
-import com.insaner.fonecheck.ui.components.CaptureTimestamp
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
-import com.insaner.fonecheck.ui.components.HeadlineReadout
 import com.insaner.fonecheck.ui.components.IndeterminateRule
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.PrimaryButton
+import com.insaner.fonecheck.ui.components.ReadoutWindow
 import com.insaner.fonecheck.ui.components.RegisterRefreshTopBarAction
+import com.insaner.fonecheck.ui.components.ScreenLoadingNote
 import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.StatusText
+import com.insaner.fonecheck.ui.components.TestScreenContent
+import com.insaner.fonecheck.ui.components.WindowBar
+import com.insaner.fonecheck.ui.components.WindowLabel
+import com.insaner.fonecheck.ui.components.WindowReading
 import com.insaner.fonecheck.ui.components.formatCaptureTimestamp
 import com.insaner.fonecheck.ui.format.uiFileSize
 import com.insaner.fonecheck.ui.format.uiNumber
@@ -46,7 +49,7 @@ fun StorageTestScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     // CPD-OFF
-    // Storage and performance intentionally share the same information-screen loading shell.
+    // Storage and performance intentionally share the standard information-screen loading shell.
     RegisterRefreshTopBarAction(
         contentDescriptionResId = R.string.storage_refresh,
         enabled = !state.isInfoLoading,
@@ -54,56 +57,50 @@ fun StorageTestScreen(
         onTopBarActionChange = onTopBarActionChange,
     )
 
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(FonecheckTheme.spacing.md),
-        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg),
+    TestScreenContent(
+        modifier = modifier,
+        liveStateUpdatedAtEpochMillis = state.info?.capturedAt?.toEpochMilli(),
     ) {
         if (state.isInfoLoading && state.info == null) {
-            Column {
-                IndeterminateRule()
-                Note(
-                    text = stringResource(R.string.storage_loading),
-                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-                )
-            }
+            item { ScreenLoadingNote(message = stringResource(R.string.storage_loading)) }
         }
         // CPD-ON
 
         state.info?.let { info ->
-            StorageOverviewSection(info)
-            StorageAccessSection(info)
+            item { StorageOverviewSection(info) }
+            item { StorageAccessSection(info) }
             if (
                 info.appAccessibleVolumes.isEmpty() ||
                 info.appAccessibleVolumes.any { it.isRemovable || !it.isPrimary }
             ) {
-                StorageVolumesSection(info.appAccessibleVolumes)
+                item { StorageVolumesSection(info.appAccessibleVolumes) }
             }
         }
 
         state.infoError?.let {
-            Note(
-                text = stringResource(R.string.storage_info_error),
-                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
+            item {
+                Note(
+                    text = stringResource(R.string.storage_info_error),
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
+                )
+            }
+        }
+
+        item {
+            StorageBenchmarkSection(
+                state = state,
+                onStart = viewModel::startBenchmark,
+                onCancel = viewModel::cancelBenchmark,
+                onSkip = viewModel::skipBenchmark,
             )
         }
 
-        StorageBenchmarkSection(
-            state = state,
-            onStart = viewModel::startBenchmark,
-            onCancel = viewModel::cancelBenchmark,
-            onSkip = viewModel::skipBenchmark,
-        )
-
-        StorageSection(label = stringResource(R.string.storage_limitations_title)) {
-            Note(stringResource(R.string.storage_limitations_description))
-            HairlineRule()
+        item {
+            StorageSection(label = stringResource(R.string.storage_limitations_title)) {
+                Note(stringResource(R.string.storage_limitations_description))
+                HairlineRule()
+            }
         }
-
-        state.info?.let { CaptureTimestamp(it.capturedAt) }
     }
 }
 
@@ -116,12 +113,19 @@ internal fun StorageOverviewSection(info: StorageInfo) {
 
     StorageSection(label = stringResource(R.string.storage_overview_title)) {
         if (usagePercent != null) {
-            HeadlineReadout(
-                value = uiNumber(usagePercent, maximumFractionDigits = 1),
-                unit = stringResource(R.string.storage_usage_unit),
-                supportingLines = emptyList(),
-                modifier = Modifier.padding(vertical = FonecheckTheme.spacing.md),
-            )
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+            // A share of a fixed capacity: bounded, so the window carries a bar as well as a figure.
+            ReadoutWindow {
+                WindowLabel(text = stringResource(R.string.storage_usage))
+                Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+                WindowReading(
+                    value = uiNumber(usagePercent, maximumFractionDigits = 1),
+                    unit = stringResource(R.string.storage_usage_unit),
+                )
+                Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+                WindowBar(percentage = usagePercent.toInt())
+            }
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
             DataRow(stringResource(R.string.storage_used), used)
             DataRow(stringResource(R.string.storage_available), available)
             DataRow(stringResource(R.string.storage_total), total)

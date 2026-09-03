@@ -30,6 +30,21 @@ class AudioResourceOwner<T : Any>(
     }
 }
 
+class AudioOperationGate {
+    private var generation = 0L
+
+    @Synchronized
+    fun start(): Long = ++generation
+
+    @Synchronized
+    fun cancel() {
+        generation += 1
+    }
+
+    @Synchronized
+    fun isCurrent(token: Long): Boolean = token == generation
+}
+
 enum class AudioOutputRoute {
     MEDIA,
     EARPIECE,

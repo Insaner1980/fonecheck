@@ -9,13 +9,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -42,9 +38,9 @@ import com.insaner.fonecheck.domain.permission.PermissionKind
 import com.insaner.fonecheck.domain.permission.PermissionState
 import com.insaner.fonecheck.localization.observationReasonStringRes
 import com.insaner.fonecheck.ui.classification.classifyCameraConfirmation
+import com.insaner.fonecheck.ui.components.ButtonRow
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.IndeterminateRule
-import com.insaner.fonecheck.ui.components.LiveStateTimestamp
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.ManualResultButtons
 import com.insaner.fonecheck.ui.components.Note
@@ -55,6 +51,7 @@ import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.StatusText
+import com.insaner.fonecheck.ui.components.TestScreenContent
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
@@ -102,44 +99,49 @@ fun CameraTestScreen(
         }
     }
 
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(FonecheckTheme.spacing.md),
-        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg),
+    // No readout window here: the live preview is already the instrument, and this screen leads
+    // with it. A window beside a moving image would be the quieter of the two.
+    TestScreenContent(
+        modifier = modifier,
+        liveStateUpdatedAtEpochMillis = liveStateUpdatedAtEpochMillis,
     ) {
-        PermissionStatusCard(
-            state = cameraPermission.state,
-            rationale = stringResource(R.string.permission_rationale_camera),
-            onRequest = requestCameraPermission,
-            onOpenSettings = cameraPermission::openSettings,
-        )
+        item {
+            PermissionStatusCard(
+                state = cameraPermission.state,
+                rationale = stringResource(R.string.permission_rationale_camera),
+                onRequest = requestCameraPermission,
+                onOpenSettings = cameraPermission::openSettings,
+            )
+        }
         if (state.isLoading) {
-            CameraLoadingState()
+            item { CameraLoadingState() }
         } else {
-            CameraPreviewSection(
-                state = state,
-                viewModel = viewModel,
-                hasPermission = cameraPermission.state == PermissionState.GRANTED,
-            )
-            TorchTestSection(
-                flashTestResult = state.flashTestResult,
-                flashOn = state.flashOn,
-                hasFlash = state.rearCapabilities?.hasFlash == true,
-                hasPermission = cameraPermission.state == PermissionState.GRANTED,
-                onToggleFlash = viewModel::toggleFlash,
-            )
+            item {
+                CameraPreviewSection(
+                    state = state,
+                    viewModel = viewModel,
+                    hasPermission = cameraPermission.state == PermissionState.GRANTED,
+                )
+            }
+            item {
+                TorchTestSection(
+                    flashTestResult = state.flashTestResult,
+                    flashOn = state.flashOn,
+                    hasFlash = state.rearCapabilities?.hasFlash == true,
+                    hasPermission = cameraPermission.state == PermissionState.GRANTED,
+                    onToggleFlash = viewModel::toggleFlash,
+                )
+            }
             state.cameras.forEach { capabilities ->
-                CapabilitiesSection(capabilities = capabilities)
+                item { CapabilitiesSection(capabilities = capabilities) }
             }
         }
-        CameraErrorState(
-            error = state.error,
-            onRetry = viewModel::refreshCapabilities,
-        )
-        LiveStateTimestamp(liveStateUpdatedAtEpochMillis)
+        item {
+            CameraErrorState(
+                error = state.error,
+                onRetry = viewModel::refreshCapabilities,
+            )
+        }
     }
 }
 
@@ -216,20 +218,17 @@ private fun CameraPreviewSection(
             if (state.isCapturing) {
                 IndeterminateRule()
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
-            ) {
+            ButtonRow { buttonModifier ->
                 PrimaryButton(
                     label = stringResource(R.string.camera_capture),
                     onClick = viewModel::capturePhoto,
-                    modifier = Modifier.weight(1f),
+                    modifier = buttonModifier,
                     enabled = !state.isCapturing,
                 )
                 SecondaryButton(
                     label = stringResource(R.string.camera_stop),
                     onClick = viewModel::stopPreview,
-                    modifier = Modifier.weight(1f),
+                    modifier = buttonModifier,
                 )
             }
         }
@@ -351,15 +350,17 @@ internal fun TorchTestSection(
             label = stringResource(R.string.camera_torch),
             value = flashTestLabel(flashTestResult),
         )
+        // Filled means "this is on", matching the camera buttons above. The torch used the
+        // opposite convention and was the only filled control on a screen where nothing was active.
         if (flashOn) {
-            SecondaryButton(
+            PrimaryButton(
                 label = stringResource(R.string.camera_torch_turn_off),
                 onClick = onToggleFlash,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = hasPermission && hasFlash,
             )
         } else {
-            PrimaryButton(
+            SecondaryButton(
                 label = stringResource(R.string.camera_torch_turn_on),
                 onClick = onToggleFlash,
                 modifier = Modifier.fillMaxWidth(),

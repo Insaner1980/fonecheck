@@ -1,5 +1,6 @@
 package com.insaner.fonecheck.ui.components
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -26,20 +27,23 @@ fun CaptureTimestamp(
     modifier: Modifier = Modifier,
 ) {
     val locale = LocalLocale.current.platformLocale
-    LongValueRow(
-        label = stringResource(R.string.live_state_label),
-        value =
-            stringResource(
-                R.string.live_state_updated_at,
-                formatCaptureTimestamp(capturedAt, locale),
-            ),
-        showDivider = false,
-        contentVerticalPadding = 0.dp,
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(top = FonecheckTheme.spacing.xs, bottom = FonecheckTheme.spacing.sm),
-    )
+    Column(modifier = modifier.fillMaxWidth()) {
+        InstrumentTickRule()
+        LongValueRow(
+            label = stringResource(R.string.live_state_label),
+            value =
+                stringResource(
+                    R.string.live_state_updated_at,
+                    formatCaptureTimestamp(capturedAt, locale),
+                ),
+            showDivider = false,
+            contentVerticalPadding = 0.dp,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = FonecheckTheme.spacing.sm, bottom = FonecheckTheme.spacing.sm),
+        )
+    }
 }
 
 /** The time at which a live screen state was most recently delivered to the UI. */

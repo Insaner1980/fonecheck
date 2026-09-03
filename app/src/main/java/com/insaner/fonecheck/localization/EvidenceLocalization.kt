@@ -26,7 +26,10 @@ internal fun shouldShowEvidenceReason(
 ): Boolean = status != DiagnosticStatus.NOT_TESTED || !reason.isRestatedByNotMeasuredValue()
 
 @StringRes
-@Suppress("CyclomaticComplexMethod") // Exhaustive mapping keeps every observation reason compile-time checked.
+@Suppress(
+    "CyclomaticComplexMethod",
+    "kotlin:S1479", // Exhaustive mapping keeps every observation reason compile-time checked.
+)
 fun observationReasonStringRes(reason: ObservationReason): Int =
     when (reason) {
         ObservationReason.ROOT_ARTIFACT_PRESENT -> R.string.device_root_finding_note

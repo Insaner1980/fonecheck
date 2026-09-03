@@ -93,6 +93,9 @@ class AudioTestViewModel
         private val recordOwner = AudioResourceOwner<AudioRecord>(::stopAndRelease)
         private val routeController = AndroidAudioRouteController(audioManager)
         private val routeOwner = AudioResourceOwner<AudioRouteSession>(AudioRouteSession::close)
+        private val toneGate = AudioOperationGate()
+        private val recordGate = AudioOperationGate()
+        private val playbackGate = AudioOperationGate()
 
         private val sampleRate = 44100
 
@@ -124,6 +127,7 @@ class AudioTestViewModel
                     AudioOutputRoute.MEDIA
                 }
             val routeSession = openRoute(route) ?: return
+            val operationToken = toneGate.start()
             _state.value = _state.value.copy(isPlaying = true, currentFrequency = frequencyHz)
 
             toneJob =
@@ -144,6 +148,7 @@ class AudioTestViewModel
                             } else {
                                 AudioAttributes.CONTENT_TYPE_MUSIC
                             },
+                        operationToken = operationToken,
                     )
                 }
         }
@@ -152,6 +157,7 @@ class AudioTestViewModel
             stopTone()
             stopPlayback()
             val routeSession = openRoute(AudioOutputRoute.MEDIA) ?: return
+            val operationToken = toneGate.start()
             _state.value = _state.value.copy(isPlaying = true, stereoChannel = channel)
             val frequencyHz = 440
 
@@ -164,6 +170,7 @@ class AudioTestViewModel
                         usage = AudioAttributes.USAGE_MEDIA,
                         contentType = AudioAttributes.CONTENT_TYPE_MUSIC,
                         stereoChannel = channel,
+                        operationToken = operationToken,
                     )
                 }
         }
@@ -174,11 +181,16 @@ class AudioTestViewModel
             channelMask: Int,
             usage: Int,
             contentType: Int,
+            operationToken: Long,
             stereoChannel: StereoChannel? = null,
         ) {
             var track: AudioTrack? = null
             try {
                 val created = createAudioTrack(channelMask, usage, contentType)
+                if (!toneGate.isCurrent(operationToken)) {
+                    stopAndRelease(created.first)
+                    return
+                }
                 track = created.first
                 toneOwner.replace(created.first)
                 created.first.play()
@@ -192,7 +204,9 @@ class AudioTestViewModel
             } finally {
                 track?.let(toneOwner::release)
                 routeOwner.release(routeSession)
-                _state.value = _state.value.copy(isPlaying = false)
+                if (toneGate.isCurrent(operationToken)) {
+                    _state.value = _state.value.copy(isPlaying = false)
+                }
             }
         }
 
@@ -226,6 +240,7 @@ class AudioTestViewModel
         }
 
         fun stopTone() {
+            toneGate.cancel()
             toneJob?.cancel()
             toneJob = null
             toneOwner.release()
@@ -269,6 +284,7 @@ class AudioTestViewModel
             }
 
             recordOwner.replace(record)
+            val operationToken = recordGate.start()
             _state.value = _state.value.copy(isRecording = true, relativeInputLevel = 0f)
 
             val maxRecordSamples =
@@ -281,6 +297,7 @@ class AudioTestViewModel
             recordJob =
                 viewModelScope.launch(ioDispatcher) {
                     try {
+                        if (!recordGate.isCurrent(operationToken)) return@launch
                         record.startRecording()
                         val buffer = ShortArray(bufferSize / 2)
                         while (isActive && totalSamples < maxRecordSamples) {
@@ -289,25 +306,30 @@ class AudioTestViewModel
                                 val copyCount = minOf(read, maxRecordSamples - totalSamples)
                                 buffer.copyInto(allSamples, totalSamples, 0, copyCount)
                                 totalSamples += copyCount
-                                _state.value =
-                                    _state.value.copy(
-                                        relativeInputLevel = RelativeInputLevel.fromPcm16(buffer, read),
-                                    )
+                                if (recordGate.isCurrent(operationToken)) {
+                                    _state.value =
+                                        _state.value.copy(
+                                            relativeInputLevel = RelativeInputLevel.fromPcm16(buffer, read),
+                                        )
+                                }
                             }
                         }
                     } finally {
                         recordOwner.release(record)
-                        recordedData = allSamples.copyOf(totalSamples)
-                        _state.value =
-                            _state.value.copy(
-                                isRecording = false,
-                                hasRecordedAudio = totalSamples > 0,
-                            )
+                        if (recordGate.isCurrent(operationToken)) {
+                            recordedData = allSamples.copyOf(totalSamples)
+                            _state.value =
+                                _state.value.copy(
+                                    isRecording = false,
+                                    hasRecordedAudio = totalSamples > 0,
+                                )
+                        }
                     }
                 }
         }
 
         fun stopRecording() {
+            recordGate.cancel()
             recordJob?.cancel()
             recordJob = null
             recordOwner.release()
@@ -319,6 +341,7 @@ class AudioTestViewModel
             stopTone()
             stopPlayback()
             val routeSession = openRoute(AudioOutputRoute.MEDIA) ?: return
+            val operationToken = playbackGate.start()
             _state.value = _state.value.copy(isPlayingRecording = true)
 
             playbackJob =
@@ -331,6 +354,10 @@ class AudioTestViewModel
                                 usage = AudioAttributes.USAGE_MEDIA,
                                 contentType = AudioAttributes.CONTENT_TYPE_MUSIC,
                             ).first
+                        if (!playbackGate.isCurrent(operationToken)) {
+                            stopAndRelease(created)
+                            return@launch
+                        }
                         track = created
                         playbackOwner.replace(created)
                         created.play()
@@ -338,7 +365,9 @@ class AudioTestViewModel
                     } finally {
                         track?.let(playbackOwner::release)
                         routeOwner.release(routeSession)
-                        _state.value = _state.value.copy(isPlayingRecording = false)
+                        if (playbackGate.isCurrent(operationToken)) {
+                            _state.value = _state.value.copy(isPlayingRecording = false)
+                        }
                     }
                 }
         }
@@ -377,6 +406,7 @@ class AudioTestViewModel
         }
 
         fun stopPlayback() {
+            playbackGate.cancel()
             playbackJob?.cancel()
             playbackJob = null
             playbackOwner.release()

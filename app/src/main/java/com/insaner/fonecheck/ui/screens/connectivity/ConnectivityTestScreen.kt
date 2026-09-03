@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -125,7 +124,7 @@ fun ConnectivityTestScreen(
         item {
             ConnectivitySectionBlock(
                 title = stringResource(R.string.conn_bluetooth_title),
-                status = bluetoothSummary(state.bluetooth, bluetoothPermission.state),
+                status = bluetoothSummary(state.bluetooth),
                 isExpanded = state.expandedSection == ConnectivitySection.BLUETOOTH,
                 onToggle = { viewModel.toggleSection(ConnectivitySection.BLUETOOTH) },
             ) {
@@ -260,7 +259,7 @@ private fun WifiDetails(wifi: WifiState) {
 
 @Composable
 @Suppress("kotlin:S3776") // The section renders mutually exclusive Bluetooth states.
-private fun BluetoothDetails(
+internal fun BluetoothDetails(
     bluetooth: BluetoothState,
     permissionState: PermissionState,
     onRequestPermission: () -> Unit,
@@ -278,9 +277,7 @@ private fun BluetoothDetails(
             return@Column
         }
 
-        val canReadProtectedData =
-            permissionState == PermissionState.GRANTED ||
-                permissionState == PermissionState.NOT_REQUIRED
+        val canReadProtectedData = bluetooth.access.canReadProtectedData()
         DataRow(
             label = stringResource(R.string.conn_bt_status),
             value =
@@ -630,13 +627,10 @@ private fun wifiSummary(wifi: WifiState): String =
     }
 
 @Composable
-private fun bluetoothSummary(
-    bluetooth: BluetoothState,
-    permissionState: PermissionState,
-): String =
+private fun bluetoothSummary(bluetooth: BluetoothState): String =
     when {
         !bluetooth.isAvailable -> stringResource(R.string.conn_not_available)
-        permissionState != PermissionState.GRANTED && permissionState != PermissionState.NOT_REQUIRED ->
+        !bluetooth.access.canReadProtectedData() ->
             stringResource(R.string.run_all_permission_missing)
         bluetooth.isEnabled == true -> stringResource(R.string.status_enabled)
         else -> stringResource(R.string.status_disabled)

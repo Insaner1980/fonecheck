@@ -98,6 +98,37 @@ class ReportAssemblerTest {
     }
 
     @Test
+    fun `non applicable failure does not override applicable evidence`() {
+        val categoryId = DiagnosticCategoryId.BATTERY
+        val applicablePass = snapshot(categoryId, DiagnosticStatus.PASS).evidence.single()
+        val nonApplicableFailure =
+            snapshot(categoryId, DiagnosticStatus.FAIL)
+                .evidence
+                .single()
+                .copy(
+                    checkId = DiagnosticCheckId(categoryId, "battery.non_applicable_failure"),
+                    applicability = Applicability.NOT_APPLICABLE,
+                )
+
+        val report =
+            ReportAssembler.assemble(
+                request(
+                    kind = ReportKind.CATEGORY_ONLY,
+                    snapshots =
+                        listOf(
+                            DiagnosticCategorySnapshot(
+                                version = DiagnosticSnapshotVersion.CURRENT,
+                                categoryId = categoryId,
+                                evidence = listOf(applicablePass, nonApplicableFailure),
+                            ),
+                        ),
+                ),
+            )
+
+        assertEquals(DiagnosticStatus.PASS, report.categories.single().aggregateStatus)
+    }
+
+    @Test
     fun `category retest contains only the requested category`() {
         val request =
             request(

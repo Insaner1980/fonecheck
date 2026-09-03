@@ -6,7 +6,7 @@ reviews:
     - "!docs/**"
     - "!memory/**"
     - "!licenses/**"
-    - "!app/src/main/res/**"
+    - "!app/src/main/res/raw/third_party_notices.txt"
     - "!app/schemas/**"
     - "!app/stability/**"
     - "!gradle/verification-metadata.xml"

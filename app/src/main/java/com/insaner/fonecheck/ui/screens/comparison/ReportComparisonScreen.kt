@@ -3,6 +3,8 @@ package com.insaner.fonecheck.ui.screens.comparison
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
@@ -25,16 +27,23 @@ import com.insaner.fonecheck.domain.comparison.EvidenceComparison
 import com.insaner.fonecheck.domain.comparison.ReportComparison
 import com.insaner.fonecheck.domain.comparison.ScoreComparison
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
+import com.insaner.fonecheck.localization.evidenceLabelStringRes
 import com.insaner.fonecheck.navigation.diagnosticDestinations
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.DisclosureHeader
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.ReadoutWindow
 import com.insaner.fonecheck.ui.components.ReportStateScreen
 import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.components.StatusLamp
 import com.insaner.fonecheck.ui.components.StatusText
 import com.insaner.fonecheck.ui.components.TestScreenContent
+import com.insaner.fonecheck.ui.components.WindowLabel
+import com.insaner.fonecheck.ui.components.WindowReading
+import com.insaner.fonecheck.ui.components.WindowRow
+import com.insaner.fonecheck.ui.components.statusLabel
 import com.insaner.fonecheck.ui.format.formatUiDateTime
 import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import com.insaner.fonecheck.ui.format.uiNumber
@@ -124,7 +133,6 @@ private fun ComparisonContent(
 
     TestScreenContent(modifier = modifier) {
         item { Note(stringResource(R.string.comparison_description)) }
-        item { ReportPairSections(comparison, beforeCompletedAt, afterCompletedAt) }
         item { ScoreSection(comparison) }
         item {
             Column {
@@ -148,6 +156,9 @@ private fun ComparisonContent(
                 )
             }
         }
+
+        // Which two reports these numbers came from. Provenance, so it follows the reading.
+        item { ReportPairSections(comparison, beforeCompletedAt, afterCompletedAt) }
     }
 }
 
@@ -214,28 +225,58 @@ private fun ReportMetadataSection(
     }
 }
 
+/**
+ * What the comparison exists to answer: did it get better or worse, and by how much.
+ *
+ * The change is the figure, and the two readings behind it stay in the window beneath it. Two
+ * reports scored under different score versions have no comparable change at all, so the figure
+ * reads unavailable and the note underneath says why rather than showing a difference that would
+ * mean nothing.
+ */
 @Composable
 private fun ScoreSection(comparison: ReportComparison) {
     val unavailable = stringResource(R.string.value_unavailable_short)
+    val score = comparison.score
+    val compatible = score as? ScoreComparison.Compatible
     Column {
         SectionHeader(stringResource(R.string.comparison_score))
-        when (val score = comparison.score) {
-            is ScoreComparison.Compatible -> {
-                DataRow(
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+        ReadoutWindow {
+            WindowLabel(text = stringResource(R.string.comparison_score_change))
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+            WindowReading(
+                value = compatible?.delta?.let { signedUiNumber(it) } ?: unavailable,
+                unit = null,
+            )
+            compatible?.let {
+                Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+                WindowRow(
                     label = stringResource(R.string.comparison_score),
                     value =
                         stringResource(
                             R.string.comparison_score_value,
-                            score.before?.let { uiNumber(it) } ?: unavailable,
-                            score.after?.let { uiNumber(it) } ?: unavailable,
+                            it.before?.let { value -> uiNumber(value) } ?: unavailable,
+                            it.after?.let { value -> uiNumber(value) } ?: unavailable,
                         ),
                 )
-                Note(
-                    score.delta?.let {
-                        stringResource(R.string.comparison_score_delta, signedUiNumber(it))
-                    } ?: stringResource(R.string.comparison_score_no_delta),
-                )
             }
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+            WindowRow(
+                label = stringResource(R.string.comparison_coverage),
+                value =
+                    stringResource(
+                        R.string.comparison_coverage_value,
+                        uiNumber(comparison.coverage.before),
+                        uiNumber(comparison.coverage.after),
+                    ),
+            )
+        }
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+        when (score) {
+            is ScoreComparison.Compatible ->
+                if (score.delta == null) {
+                    Note(stringResource(R.string.comparison_score_no_delta))
+                }
 
             is ScoreComparison.Incompatible ->
                 Note(
@@ -246,15 +287,6 @@ private fun ScoreSection(comparison: ReportComparison) {
                     ),
                 )
         }
-        DataRow(
-            label = stringResource(R.string.comparison_coverage),
-            value =
-                stringResource(
-                    R.string.comparison_coverage_value,
-                    uiNumber(comparison.coverage.before),
-                    uiNumber(comparison.coverage.after),
-                ),
-        )
         Note(
             comparison.coverage.delta?.let {
                 stringResource(R.string.comparison_coverage_delta, signedUiNumber(it))
@@ -283,12 +315,15 @@ private fun ComparisonCategorySection(
             summary =
                 stringResource(
                     R.string.comparison_category_status,
-                    statusLabel(category.beforeStatus),
-                    statusLabel(category.afterStatus),
+                    comparisonStatusLabel(category.beforeStatus),
+                    comparisonStatusLabel(category.afterStatus),
                 ),
             expanded = isExpanded,
             onClick = onClick,
             tone = category.afterStatus?.toSemanticTone() ?: SemanticTone.NEUTRAL,
+            // Repeated rows inside one section; the categories header above keeps the panel edge.
+            strongDivider = false,
+            leading = { StatusLamp(status = category.afterStatus) },
             modifier = Modifier.testTag("comparison_category_${category.categoryId.stableId}"),
         )
         if (isExpanded) {
@@ -307,15 +342,17 @@ private fun ComparisonCategorySection(
 private fun EvidenceRows(evidence: EvidenceComparison) {
     LongValueRow(
         label = stringResource(R.string.comparison_check),
-        value = evidence.checkId,
+        // The report screen names its checks; showing a raw `battery.health` here instead was the
+        // same evidence in two vocabularies.
+        value = evidenceLabelStringRes(evidence.checkId)?.let { stringResource(it) } ?: evidence.checkId,
     )
     DataRow(
         label = stringResource(changeLabel(evidence.change)),
         value =
             stringResource(
                 R.string.comparison_category_status,
-                statusLabel(evidence.before?.status),
-                statusLabel(evidence.after?.status),
+                comparisonStatusLabel(evidence.before?.status),
+                comparisonStatusLabel(evidence.after?.status),
             ),
         tone = evidence.after?.status?.toSemanticTone() ?: SemanticTone.NEUTRAL,
     )
@@ -328,22 +365,14 @@ private fun EvidenceRows(evidence: EvidenceComparison) {
     }
 }
 
-// CPD-OFF
-// Comparison and Home use different labels for unavailable and missing report data.
+/**
+ * The shared status word, except that a null here means the report does not carry the check at all
+ * — missing rather than unavailable. That one case is the only reason this screen has its own
+ * function; the six statuses come from [statusLabel] like everywhere else.
+ */
 @Composable
-private fun statusLabel(status: DiagnosticStatus?): String =
-    stringResource(
-        when (status) {
-            DiagnosticStatus.PASS -> R.string.run_all_status_pass
-            DiagnosticStatus.WARNING -> R.string.run_all_status_warning
-            DiagnosticStatus.FAIL -> R.string.run_all_status_fail
-            DiagnosticStatus.INFO -> R.string.run_all_status_info
-            DiagnosticStatus.NOT_AVAILABLE -> R.string.run_all_status_unavailable
-            DiagnosticStatus.NOT_TESTED -> R.string.status_not_measured
-            null -> R.string.comparison_missing
-        },
-    )
-// CPD-ON
+private fun comparisonStatusLabel(status: DiagnosticStatus?): String =
+    if (status == null) stringResource(R.string.comparison_missing) else statusLabel(status)
 
 private fun changeLabel(change: EvidenceChange): Int =
     when (change) {
