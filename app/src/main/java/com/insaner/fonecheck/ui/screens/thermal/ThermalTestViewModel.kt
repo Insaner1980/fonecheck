@@ -92,19 +92,7 @@ class ThermalTestViewModel
                 } else {
                     ThermalStatusCode.UNAVAILABLE
                 }
-            val shouldReadHeadroom =
-                platform.headroomApiSupported &&
-                    (
-                        lastHeadroomAttemptMillis == null ||
-                            nowMillis - requireNotNull(lastHeadroomAttemptMillis) >= HEADROOM_MIN_INTERVAL_MILLIS
-                    )
-            val headroom =
-                if (shouldReadHeadroom) {
-                    lastHeadroomAttemptMillis = nowMillis
-                    platform.readHeadroom()
-                } else {
-                    _state.value.headroom
-                }
+            val headroom = readHeadroomIfDue(nowMillis)
             val batteryTemperature = platform.readBatteryTemperatureCelsius()
 
             _state.update { current ->
@@ -136,6 +124,19 @@ class ThermalTestViewModel
                         },
                 )
             }
+        }
+
+        private fun readHeadroomIfDue(nowMillis: Long): Float? {
+            val shouldReadHeadroom =
+                platform.headroomApiSupported &&
+                    (
+                        lastHeadroomAttemptMillis == null ||
+                            nowMillis - requireNotNull(lastHeadroomAttemptMillis) >= HEADROOM_MIN_INTERVAL_MILLIS
+                    )
+            if (!shouldReadHeadroom) return _state.value.headroom
+
+            lastHeadroomAttemptMillis = nowMillis
+            return platform.readHeadroom()
         }
 
         fun stopMonitoring() {

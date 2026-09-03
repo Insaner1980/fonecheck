@@ -89,5 +89,6 @@ jobs:
       - name: Run OSV-Scanner
         shell: bash
         run: |
+          echo "Scope: .deepsec and buildscript-gradle.lockfile only; app Gradle runtime dependencies and unlisted lockfiles are not covered by this job."
           "$RUNNER_TEMP/osv-scanner" scan source --recursive .deepsec
           "$RUNNER_TEMP/osv-scanner" scan source --lockfile buildscript-gradle.lockfile --config gradle/osv-scanner.toml

@@ -142,8 +142,16 @@ dependencyCheck {
     failBuildOnCVSS =
         providers
             .environmentVariable("DEPENDENCY_CHECK_FAIL_BUILD_ON_CVSS")
-            .map { it.toFloatOrNull() ?: 7f }
-            .getOrElse(7f)
+            .map { rawValue ->
+                val threshold = rawValue.toFloatOrNull()
+                if (threshold == null || !threshold.isFinite() || threshold !in 0f..10f) {
+                    throw GradleException(
+                        "DEPENDENCY_CHECK_FAIL_BUILD_ON_CVSS must be a finite number from 0 to 10.",
+                    )
+                }
+                logger.lifecycle("Dependency-Check CVSS failure threshold overridden to $threshold.")
+                threshold
+            }.getOrElse(7f)
     scanConfigurations = listOf("debugRuntimeClasspath", "releaseRuntimeClasspath")
     skipTestGroups = true
     analyzers {
