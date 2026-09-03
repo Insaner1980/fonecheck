@@ -351,11 +351,11 @@ class RunAllSnapshotMapperTest {
     }
 
     @Test
-    fun missingPerformanceBenchmarkPreservesItsTerminalReason() {
+    fun missingPerformanceBenchmarkUsesCanonicalReasonForItsPhase() {
         mapOf(
-            BenchmarkPhase.IDLE to EvidenceReasonCode.NOT_RUN,
-            BenchmarkPhase.CANCELLED to EvidenceReasonCode.CANCELLED,
-            BenchmarkPhase.ERROR to EvidenceReasonCode.ERROR,
+            BenchmarkPhase.IDLE to EvidenceReasonCode("test_not_run"),
+            BenchmarkPhase.CANCELLED to EvidenceReasonCode("test_cancelled"),
+            BenchmarkPhase.ERROR to EvidenceReasonCode("measurement_error"),
         ).forEach { (phase, expectedReason) ->
             val evidence =
                 mappedEvidence(

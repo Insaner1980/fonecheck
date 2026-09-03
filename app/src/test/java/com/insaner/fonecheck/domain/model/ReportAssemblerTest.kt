@@ -105,7 +105,10 @@ class ReportAssemblerTest {
             snapshot(categoryId, DiagnosticStatus.FAIL)
                 .evidence
                 .single()
-                .copy(applicability = Applicability.NOT_APPLICABLE)
+                .copy(
+                    checkId = DiagnosticCheckId(categoryId, "battery.non_applicable_failure"),
+                    applicability = Applicability.NOT_APPLICABLE,
+                )
 
         val report =
             ReportAssembler.assemble(
