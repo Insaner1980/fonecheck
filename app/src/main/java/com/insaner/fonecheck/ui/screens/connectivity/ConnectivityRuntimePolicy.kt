@@ -23,6 +23,25 @@ object BluetoothAccessPolicy {
     private const val ANDROID_12_API_LEVEL = 31
 }
 
+fun BluetoothAccessCode.canReadProtectedData(): Boolean =
+    this == BluetoothAccessCode.GRANTED || this == BluetoothAccessCode.NOT_REQUIRED
+
+fun GpsState.clearedProtectedFixData(): GpsState =
+    copy(
+        fixStatus = GpsFixStatus.NOT_STARTED,
+        latitude = null,
+        longitude = null,
+        accuracy = null,
+        altitude = null,
+        speed = null,
+        fixTimeMs = null,
+        satelliteCount = 0,
+        satellitesUsed = 0,
+        satellites = emptyList(),
+        elapsedSearchMs = 0L,
+        failure = null,
+    )
+
 enum class GpsSearchTick {
     ACTIVE,
     TIMED_OUT,

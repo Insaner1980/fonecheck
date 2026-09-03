@@ -1,12 +1,9 @@
 package com.insaner.fonecheck.ui.screens.performance
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -34,9 +31,15 @@ import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.ObservationReasonNote
 import com.insaner.fonecheck.ui.components.PrimaryButton
+import com.insaner.fonecheck.ui.components.ReadoutWindow
 import com.insaner.fonecheck.ui.components.RegisterRefreshTopBarAction
+import com.insaner.fonecheck.ui.components.ScreenLoadingNote
 import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.components.TestScreenContent
+import com.insaner.fonecheck.ui.components.WindowBar
+import com.insaner.fonecheck.ui.components.WindowFigure
+import com.insaner.fonecheck.ui.components.WindowLabel
 import com.insaner.fonecheck.ui.components.confidenceLabel
 import com.insaner.fonecheck.ui.format.uiFileSize
 import com.insaner.fonecheck.ui.format.uiNumber
@@ -57,40 +60,35 @@ fun PerformanceInfoScreen(
         onTopBarActionChange = onTopBarActionChange,
     )
 
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(FonecheckTheme.spacing.md),
-        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg),
+    TestScreenContent(
+        modifier = modifier,
+        liveStateUpdatedAtEpochMillis = state.info?.capturedAt?.toEpochMilli(),
     ) {
         if (state.isInfoLoading && state.info == null) {
-            Column {
-                IndeterminateRule()
+            item { ScreenLoadingNote(message = stringResource(R.string.perf_info_loading)) }
+        }
+        state.info?.let { info ->
+            // The instrument leads: memory is the one reading on this screen that is a share of
+            // a fixed capacity, so its window opens the screen and the inventories follow.
+            item { RamInfoSection(info) }
+            item { CpuInfoSection(info) }
+            item { GpuInfoSection(info) }
+        }
+        state.infoError?.let {
+            item {
                 Note(
-                    text = stringResource(R.string.perf_info_loading),
-                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                    text = stringResource(R.string.perf_info_error_description),
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
                 )
             }
         }
-        state.info?.let { info ->
-            CpuInfoSection(info)
-            RamInfoSection(info)
-            GpuInfoSection(info)
-        }
-        state.infoError?.let {
-            Note(
-                text = stringResource(R.string.perf_info_error_description),
-                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
+        item {
+            BenchmarkSection(
+                state = state,
+                onStart = viewModel::startBenchmark,
+                onCancel = viewModel::cancelBenchmark,
             )
         }
-        BenchmarkSection(
-            state = state,
-            onStart = viewModel::startBenchmark,
-            onCancel = viewModel::cancelBenchmark,
-        )
-        state.info?.let { CaptureTimestamp(it.capturedAt) }
     }
 }
 
@@ -127,6 +125,7 @@ private fun RamInfoSection(info: PerformanceInfo) {
         label = stringResource(R.string.perf_ram_title),
         trailing = confidenceLabel(info.ramConfidence),
     ) {
+        RamUsageReadout(total = info.totalRamBytes, available = info.availableRamBytes)
         DataRow(
             label = stringResource(R.string.perf_ram_total),
             value = info.totalRamBytes?.let { uiFileSize(it) },
@@ -140,6 +139,36 @@ private fun RamInfoSection(info: PerformanceInfo) {
         )
     }
 }
+
+/**
+ * How much of the device's memory is in use. Both figures come from the same reading, so the share
+ * between them is a real proportion rather than two unrelated numbers.
+ *
+ * Drawn only when both are present: a bar with one end missing would be an invented reading.
+ */
+@Composable
+private fun RamUsageReadout(
+    total: Long?,
+    available: Long?,
+) {
+    if (total == null || available == null || total <= 0L) return
+    // The bar shows what the label names. A window captioned "available" whose bar filled up as
+    // memory ran out would contradict its own figure.
+    val availablePercent = ((available.toDouble() / total) * PERCENT).toInt().coerceIn(0, PERCENT)
+    Column {
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+        ReadoutWindow {
+            WindowLabel(text = stringResource(R.string.perf_ram_available))
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+            WindowFigure(value = uiFileSize(available))
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+            WindowBar(percentage = availablePercent)
+        }
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+    }
+}
+
+private const val PERCENT = 100
 
 @Composable
 private fun GpuInfoSection(info: PerformanceInfo) {
@@ -274,7 +303,8 @@ private fun BenchmarkResultRows(result: PerformanceBenchmarkResult) {
 
 @Composable
 private fun CoreFrequencyRow(frequency: CpuCoreFrequency) {
-    DataRow(
+    // A frequency range is three numbers and two separators; it outgrows a side-by-side row.
+    LongValueRow(
         label = stringResource(R.string.perf_cpu_core_label, uiNumber(frequency.coreIndex)),
         value =
             stringResource(

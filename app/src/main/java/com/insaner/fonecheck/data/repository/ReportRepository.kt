@@ -18,7 +18,11 @@ interface ReportRepository {
     suspend fun getForComparison(
         firstReportId: String,
         secondReportId: String,
-    ): ReportComparisonLoad
+    ): ReportComparisonLoad =
+        ReportComparisonLoad(
+            first = getById(firstReportId),
+            second = getById(secondReportId),
+        )
 
     suspend fun delete(id: String)
 

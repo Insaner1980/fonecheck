@@ -75,12 +75,31 @@ class ThermalTestViewModelTest {
         assertEquals(2, platform.headroomReadCount)
     }
 
+    @Test
+    fun refreshPreservesListenerRegistrationFailureUntilRetrySucceeds() {
+        val platform = FakeThermalPlatform(registrationSucceeds = false)
+        val viewModel = ThermalTestViewModel(platform, EpochMillisClock { 1_000L })
+
+        viewModel.startMonitoring()
+        assertEquals(ThermalErrorCode.LISTENER_REGISTRATION_FAILED, viewModel.state.value.error)
+
+        viewModel.refresh()
+        assertEquals(ThermalErrorCode.LISTENER_REGISTRATION_FAILED, viewModel.state.value.error)
+
+        platform.registrationSucceeds = true
+        viewModel.startMonitoring()
+
+        assertTrue(viewModel.state.value.isMonitoring)
+        assertNull(viewModel.state.value.error)
+    }
+
     private class FakeThermalPlatform(
         override val statusApiSupported: Boolean = true,
         override val headroomApiSupported: Boolean = true,
         var currentStatus: ThermalStatusCode? = ThermalStatusCode.NONE,
         var headroom: Float? = 0.3f,
         var batteryTemperatureCelsius: Float? = 30f,
+        var registrationSucceeds: Boolean = true,
     ) : ThermalPlatform {
         var registrationCount = 0
         var closeCount = 0
@@ -97,7 +116,7 @@ class ThermalTestViewModelTest {
         override fun readBatteryTemperatureCelsius(): Float? = batteryTemperatureCelsius
 
         override fun registerStatusListener(listener: (ThermalStatusCode) -> Unit): ThermalStatusRegistration? {
-            if (!statusApiSupported) return null
+            if (!statusApiSupported || !registrationSucceeds) return null
             registrationCount += 1
             this.listener = listener
             return ThermalStatusRegistration {

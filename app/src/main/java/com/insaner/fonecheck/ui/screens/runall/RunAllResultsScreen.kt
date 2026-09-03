@@ -5,7 +5,9 @@ package com.insaner.fonecheck.ui.screens.runall
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
@@ -35,6 +37,7 @@ import com.insaner.fonecheck.domain.model.EvidenceUnitCode
 import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.ScoreState
+import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.TestResult
 import com.insaner.fonecheck.domain.model.TestStatus
 import com.insaner.fonecheck.localization.evidenceLabelStringRes
@@ -45,16 +48,20 @@ import com.insaner.fonecheck.navigation.CategoryRetest
 import com.insaner.fonecheck.navigation.diagnosticDestinations
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.DisclosureHeader
-import com.insaner.fonecheck.ui.components.HeadlineReadout
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.PrimaryButton
+import com.insaner.fonecheck.ui.components.ReadoutWindow
 import com.insaner.fonecheck.ui.components.ScreenStateCard
 import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.SegmentedBar
+import com.insaner.fonecheck.ui.components.StatusLamp
 import com.insaner.fonecheck.ui.components.TestScreenContent
+import com.insaner.fonecheck.ui.components.WindowLabel
+import com.insaner.fonecheck.ui.components.WindowReading
+import com.insaner.fonecheck.ui.components.statusLabel
 import com.insaner.fonecheck.ui.format.formatUiDateTime
 import com.insaner.fonecheck.ui.format.uiFileSize
 import com.insaner.fonecheck.ui.format.uiLanguageLocale
@@ -64,7 +71,6 @@ import com.insaner.fonecheck.ui.screens.report.ReportDetailPresenter
 import com.insaner.fonecheck.ui.screens.report.stableCodeFallback
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
-import com.insaner.fonecheck.ui.theme.contentColor
 import com.insaner.fonecheck.ui.theme.toSemanticTone
 
 enum class ReportResultMode {
@@ -109,12 +115,6 @@ fun RunAllResultsScreen(
     }
 
     TestScreenContent(modifier = modifier) {
-        if (mode == ReportResultMode.SAVED_REPORT) {
-            item {
-                ReportMetadataSection(report, presentation.durationMillis)
-            }
-        }
-
         item {
             ResultsSummary(
                 report = report,
@@ -153,6 +153,14 @@ fun RunAllResultsScreen(
             onOpenCategory = onOpenCategory,
             mode = mode,
         )
+
+        // Provenance last. A saved report used to open with seven rows of device and version
+        // detail before it said how the phone had done.
+        if (mode == ReportResultMode.SAVED_REPORT) {
+            item {
+                ReportMetadataSection(report, presentation.durationMillis)
+            }
+        }
 
         item {
             PrimaryButton(
@@ -215,7 +223,6 @@ private fun ResultsSummary(
     presentation: ReportDetailPresentation,
     categoryTones: List<SemanticTone>,
 ) {
-    val score = report.score.value
     val counts = presentation.counts
 
     Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm)) {
@@ -226,88 +233,74 @@ private fun ResultsSummary(
             modifier = Modifier.semantics { heading() },
         )
         Note(stringResource(R.string.run_all_results_description))
-        if (score != null) {
-            HeadlineReadout(
-                value = uiNumber(score),
-                unit = stringResource(R.string.report_score_unit),
-                supportingLines = listOf(scoreStateLabel(report.score.state)),
-            )
-        } else {
+        ScoreReadout(report.score)
+        // One segment per category, in the colour of that category: the shape of the run, drawn
+        // beside the score it produced and counted in words underneath.
+        SegmentedBar(segments = categoryTones)
+        Column {
+            StatusCount(DiagnosticStatus.PASS, counts.pass)
+            StatusCount(DiagnosticStatus.INFO, counts.info)
+            StatusCount(DiagnosticStatus.WARNING, counts.warning)
+            StatusCount(DiagnosticStatus.FAIL, counts.fail)
+            StatusCount(DiagnosticStatus.NOT_AVAILABLE, counts.notAvailable)
+            StatusCount(DiagnosticStatus.NOT_TESTED, counts.notTested)
             DataRow(
-                label = stringResource(R.string.run_all_overall_score),
-                value = null,
-                unavailableLabel = scoreStateLabel(report.score.state),
+                label = stringResource(R.string.report_coverage),
+                value =
+                    stringResource(
+                        R.string.report_coverage_value,
+                        uiNumber(report.coverage.percentage),
+                    ),
+            )
+            DataRow(
+                label = stringResource(R.string.report_checks),
+                value =
+                    stringResource(
+                        R.string.report_checks_value,
+                        uiNumber(report.coverage.completedCount),
+                        uiNumber(report.coverage.applicableCount),
+                    ),
             )
         }
-        SegmentedBar(segments = categoryTones)
-        SummaryCount(
-            text = stringResource(R.string.report_pass_count, uiNumber(counts.pass)),
-            tone = SemanticTone.PASS,
-        )
-        SummaryCount(
-            text = stringResource(R.string.report_info_count, uiNumber(counts.info)),
-            tone = SemanticTone.NEUTRAL,
-        )
-        SummaryCount(
-            text =
-                pluralStringResource(
-                    R.plurals.run_all_warning_count,
-                    counts.warning,
-                    uiNumber(counts.warning),
-                ),
-            tone = SemanticTone.ATTENTION,
-        )
-        SummaryCount(
-            text =
-                pluralStringResource(
-                    R.plurals.run_all_failed_count,
-                    counts.fail,
-                    uiNumber(counts.fail),
-                ),
-            tone = SemanticTone.FAIL,
-        )
-        SummaryCount(
-            text =
-                pluralStringResource(
-                    R.plurals.run_all_unavailable_count,
-                    counts.notAvailable,
-                    uiNumber(counts.notAvailable),
-                ),
-            tone = SemanticTone.NEUTRAL,
-        )
-        SummaryCount(
-            text = stringResource(R.string.report_not_tested_count, uiNumber(counts.notTested)),
-            tone = SemanticTone.NEUTRAL,
-        )
-        DataRow(
-            label = stringResource(R.string.report_coverage),
-            value =
-                stringResource(
-                    R.string.report_coverage_value,
-                    uiNumber(report.coverage.percentage),
-                ),
-        )
-        DataRow(
-            label = stringResource(R.string.report_checks),
-            value =
-                stringResource(
-                    R.string.report_checks_value,
-                    uiNumber(report.coverage.completedCount),
-                    uiNumber(report.coverage.applicableCount),
-                ),
-        )
     }
 }
 
+/**
+ * The score in the window the panel keeps for a reading, with the state that says what it is worth
+ * directly beneath it.
+ *
+ * A run with too little evidence has no score at all. The window says so rather than drawing a
+ * zero, and it drops the unit with it: a reading that was never taken has no denominator.
+ */
 @Composable
-private fun SummaryCount(
-    text: String,
-    tone: SemanticTone,
+private fun ScoreReadout(score: ScoreSummary) {
+    val value = score.value
+    ReadoutWindow {
+        WindowLabel(text = stringResource(R.string.run_all_overall_score))
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+        WindowReading(
+            value = value?.let { uiNumber(it) } ?: stringResource(R.string.value_unavailable_short),
+            unit = stringResource(R.string.report_score_unit).takeIf { value != null },
+        )
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+        WindowLabel(text = scoreStateLabel(score.state))
+    }
+}
+
+/**
+ * How many categories ended in one status. The label is the status word itself, taken from the one
+ * mapping the app has for it, so the count reads in the same vocabulary as the rows below it.
+ */
+@Composable
+private fun StatusCount(
+    status: DiagnosticStatus,
+    count: Int,
 ) {
-    Text(
-        text = text,
-        style = FonecheckTheme.type.rowValue,
-        color = tone.contentColor(),
+    DataRow(
+        label = statusLabel(status),
+        value = uiNumber(count),
+        tone = status.toSemanticTone(),
+        modifier = Modifier.testTag("report_count_" + status.name),
     )
 }
 
@@ -421,7 +414,8 @@ private fun CategoryResult(
 ) {
     val destination = diagnosticDestinations.first { it.category == result.category }
     val title = stringResource(destination.labelResId)
-    val status = statusLabel(result.status)
+    val diagnosticStatus = result.status.toDiagnosticStatus()
+    val status = statusLabel(diagnosticStatus)
     val route =
         if (mode == ReportResultMode.SAVED_REPORT) {
             CategoryRetest(result.category.stableId)
@@ -437,7 +431,10 @@ private fun CategoryResult(
             summary = status,
             expanded = isExpanded,
             onClick = onToggle,
-            tone = result.status.semanticTone(),
+            tone = diagnosticStatus.toSemanticTone(),
+            // Repeated rows inside a group take the hairline; the group header keeps the panel edge.
+            strongDivider = false,
+            leading = { StatusLamp(status = diagnosticStatus) },
         )
         if (result.status != TestStatus.NotTested) {
             Note(text = result.summary)
@@ -500,7 +497,7 @@ private fun ResultDetail(
     Column {
         DataRow(
             label = result.name,
-            value = statusLabel(result.status),
+            value = statusLabel(result.status.toDiagnosticStatus()),
             tone = result.status.semanticTone(),
             confidence = result.confidence.takeUnless { hasDetail },
         )
@@ -658,25 +655,19 @@ private fun sourceLabel(source: EvidenceSource): String =
         },
     )
 
-@Composable
-private fun statusLabel(status: TestStatus): String =
-    stringResource(
-        when (status) {
-            TestStatus.Pass -> R.string.run_all_status_pass
-            is TestStatus.Warning -> R.string.run_all_status_warning
-            is TestStatus.Fail -> R.string.run_all_status_fail
-            is TestStatus.Info -> R.string.run_all_status_info
-            TestStatus.NotAvailable -> R.string.run_all_status_unavailable
-            TestStatus.NotTested -> R.string.status_not_measured
-        },
-    )
-
-private fun TestStatus.semanticTone(): SemanticTone =
+/**
+ * The report is assembled from [DiagnosticStatus] and drawn from the legacy [TestStatus], so the
+ * screen converts back once and reads the status word, the tone and the lamp from that one value.
+ * The vocabulary has a single source rather than three parallel when blocks that can drift apart.
+ */
+private fun TestStatus.toDiagnosticStatus(): DiagnosticStatus =
     when (this) {
-        TestStatus.Pass -> DiagnosticStatus.PASS.toSemanticTone()
-        is TestStatus.Warning -> DiagnosticStatus.WARNING.toSemanticTone()
-        is TestStatus.Fail -> DiagnosticStatus.FAIL.toSemanticTone()
-        is TestStatus.Info -> DiagnosticStatus.INFO.toSemanticTone()
-        TestStatus.NotAvailable -> DiagnosticStatus.NOT_AVAILABLE.toSemanticTone()
-        TestStatus.NotTested -> DiagnosticStatus.NOT_TESTED.toSemanticTone()
+        TestStatus.Pass -> DiagnosticStatus.PASS
+        is TestStatus.Warning -> DiagnosticStatus.WARNING
+        is TestStatus.Fail -> DiagnosticStatus.FAIL
+        is TestStatus.Info -> DiagnosticStatus.INFO
+        TestStatus.NotAvailable -> DiagnosticStatus.NOT_AVAILABLE
+        TestStatus.NotTested -> DiagnosticStatus.NOT_TESTED
     }
+
+private fun TestStatus.semanticTone(): SemanticTone = toDiagnosticStatus().toSemanticTone()

@@ -1,9 +1,6 @@
 package com.insaner.fonecheck.ui.screens.buttons
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -16,6 +13,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.ui.classification.classifyButtonTest
+import com.insaner.fonecheck.ui.components.ButtonRow
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.Note
@@ -25,7 +23,6 @@ import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.TestScreenContent
 import com.insaner.fonecheck.ui.format.uiNumber
-import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
 import com.insaner.fonecheck.ui.theme.toSemanticTone
 
@@ -121,10 +118,7 @@ private fun ButtonTestActions(
     onSkip: () -> Unit,
     onReset: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
-    ) {
+    ButtonRow { buttonModifier ->
         when (phase) {
             ButtonTestPhase.IDLE,
             ButtonTestPhase.COMPLETED,
@@ -133,19 +127,19 @@ private fun ButtonTestActions(
                 PrimaryButton(
                     label = stringResource(R.string.button_start_test),
                     onClick = onStart,
-                    modifier = Modifier.weight(1f),
+                    modifier = buttonModifier,
                 )
 
             ButtonTestPhase.RUNNING -> {
                 SecondaryButton(
                     label = stringResource(R.string.button_stop),
                     onClick = onStop,
-                    modifier = Modifier.weight(1f),
+                    modifier = buttonModifier,
                 )
                 SecondaryButton(
                     label = stringResource(R.string.button_skip),
                     onClick = onSkip,
-                    modifier = Modifier.weight(1f),
+                    modifier = buttonModifier,
                 )
             }
 
@@ -153,14 +147,14 @@ private fun ButtonTestActions(
                 PrimaryButton(
                     label = stringResource(R.string.button_retry),
                     onClick = onRetry,
-                    modifier = Modifier.weight(1f),
+                    modifier = buttonModifier,
                 )
         }
         if (buttonResetAvailable(phase)) {
             SecondaryButton(
                 label = stringResource(R.string.button_reset),
                 onClick = onReset,
-                modifier = Modifier.weight(1f),
+                modifier = buttonModifier,
             )
         }
     }

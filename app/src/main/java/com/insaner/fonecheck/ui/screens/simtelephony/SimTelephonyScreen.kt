@@ -3,12 +3,7 @@ package com.insaner.fonecheck.ui.screens.simtelephony
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,16 +31,15 @@ import com.insaner.fonecheck.domain.permission.PermissionKind
 import com.insaner.fonecheck.ui.TopBarAction
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
-import com.insaner.fonecheck.ui.components.IndeterminateRule
-import com.insaner.fonecheck.ui.components.LiveStateTimestamp
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.ObservationReasonNote
 import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.RegisterRefreshTopBarAction
+import com.insaner.fonecheck.ui.components.ScreenLoadingNote
 import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.components.TestScreenContent
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
-import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
 import com.insaner.fonecheck.ui.theme.toSemanticTone
 
@@ -86,76 +80,74 @@ fun SimTelephonyScreen(
         onTopBarActionChange = onTopBarActionChange,
     )
 
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(FonecheckTheme.spacing.md),
-        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg),
+    val liveStateUpdatedAtEpochMillis = remember(state.info) { System.currentTimeMillis() }
+
+    TestScreenContent(
+        modifier = modifier,
+        liveStateUpdatedAtEpochMillis = state.info?.let { liveStateUpdatedAtEpochMillis },
     ) {
-        PermissionStatusCard(
-            state = phonePermission.state,
-            rationale = stringResource(R.string.permission_rationale_phone),
-            onRequest = requestPhonePermission,
-            onOpenSettings = phonePermission::openSettings,
-        )
+        item {
+            PermissionStatusCard(
+                state = phonePermission.state,
+                rationale = stringResource(R.string.permission_rationale_phone),
+                onRequest = requestPhonePermission,
+                onOpenSettings = phonePermission::openSettings,
+            )
+        }
 
         if (state.isLoading && state.info == null) {
-            Column {
-                IndeterminateRule()
-                Note(
-                    text = stringResource(R.string.sim_loading),
-                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-                )
-            }
+            item { ScreenLoadingNote(message = stringResource(R.string.sim_loading)) }
         }
 
         state.info?.let { info ->
-            val liveStateUpdatedAtEpochMillis = remember(info) { System.currentTimeMillis() }
-            val inventoryClassification =
-                DeviceObservationClassifier.classify(DeviceObservation.SimInventory(info.inventory))
-            SimSection(label = stringResource(R.string.sim_telephony_title)) {
-                DataRow(
-                    label = stringResource(R.string.sim_inventory_label),
-                    value = inventoryLabel(info.inventory),
-                    showDivider = inventoryClassification.reason == null,
-                )
-                ObservationReasonNote(inventoryClassification)
-                if (inventoryClassification.reason != null) HairlineRule()
-                DataRow(
-                    label = stringResource(R.string.label_phone_type),
-                    value = phoneTypeLabel(info.phoneType),
-                )
-                DataRow(
-                    label = stringResource(R.string.label_active_modem_count),
-                    value = uiNumber(info.phoneCount),
-                )
-                DataRow(
-                    label = stringResource(R.string.label_data_network),
-                    value = networkLabel(info.dataNetworkType),
-                    showDivider = info.phoneStatePermissionGranted || !hasTelephony,
-                )
-                if (!info.phoneStatePermissionGranted && hasTelephony) {
-                    Note(stringResource(R.string.sim_limited_mode))
-                    HairlineRule()
+            item {
+                val inventoryClassification =
+                    DeviceObservationClassifier.classify(DeviceObservation.SimInventory(info.inventory))
+                SimSection(label = stringResource(R.string.sim_telephony_title)) {
+                    DataRow(
+                        label = stringResource(R.string.sim_inventory_label),
+                        value = inventoryLabel(info.inventory),
+                        showDivider = inventoryClassification.reason == null,
+                    )
+                    ObservationReasonNote(inventoryClassification)
+                    if (inventoryClassification.reason != null) HairlineRule()
+                    DataRow(
+                        label = stringResource(R.string.label_phone_type),
+                        value = phoneTypeLabel(info.phoneType),
+                    )
+                    DataRow(
+                        label = stringResource(R.string.label_active_modem_count),
+                        value = uiNumber(info.phoneCount),
+                    )
+                    DataRow(
+                        label = stringResource(R.string.label_data_network),
+                        value = networkLabel(info.dataNetworkType),
+                        showDivider = info.phoneStatePermissionGranted || !hasTelephony,
+                    )
+                    if (!info.phoneStatePermissionGranted && hasTelephony) {
+                        Note(stringResource(R.string.sim_limited_mode))
+                        HairlineRule()
+                    }
                 }
             }
 
             info.simSlots.forEach { slot ->
-                SimSlotSection(
-                    slot = slot,
-                    inventory = info.inventory,
-                )
+                item {
+                    SimSlotSection(
+                        slot = slot,
+                        inventory = info.inventory,
+                    )
+                }
             }
-            LiveStateTimestamp(liveStateUpdatedAtEpochMillis)
         }
 
         state.error?.let {
-            Note(
-                text = stringResource(R.string.sim_capture_error_description),
-                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
-            )
+            item {
+                Note(
+                    text = stringResource(R.string.sim_capture_error_description),
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
+                )
+            }
         }
     }
 }

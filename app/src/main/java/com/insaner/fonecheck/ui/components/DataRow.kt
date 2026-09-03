@@ -1,5 +1,6 @@
 package com.insaner.fonecheck.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,15 +34,17 @@ import com.insaner.fonecheck.ui.theme.contentColor
  * [onValueLongClick] makes the full row a long-press target only when [value] is present. The
  * optional interaction preserves the default non-interactive behavior on existing screens.
  *
- * The label takes the width its own text needs and the value takes the rest of the row, so a short
- * label leaves more room for a long value. The label wraps once it reaches
- * `FonecheckTheme.spacing.rowLabelMaxWidth`, which is what keeps a minimum width for the value.
+ * The value is measured first, up to `FonecheckTheme.spacing.rowValueMaxWidth`, and the label takes
+ * everything left over. A short value therefore leaves the label room to stay on one line, which is
+ * what keeps a long compound label — Finnish is full of them — from wrapping three ways beside a
+ * four-letter reading.
  *
  * The value stays on one line and is ellipsised rather than clipped, so a shortened reading is
  * always visibly shortened. That ellipsis is a defect, not a layout state: a value that reaches it
  * belongs in a [LongValueRow].
  */
 @Composable
+@Suppress("kotlin:S107") // A row's optional presentation and interaction roles form one stable UI API.
 fun DataRow(
     label: String,
     value: String?,
@@ -63,45 +66,99 @@ fun DataRow(
                     onLongPress = onValueLongClick.takeIf { value != null },
                 ),
     ) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = contentVerticalPadding),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = label,
-                style = FonecheckTheme.type.rowLabel,
-                color = FonecheckTheme.colors.textSecondary,
-                modifier = Modifier.widthIn(max = FonecheckTheme.spacing.rowLabelMaxWidth),
+        // A value wider than its cap would be ellipsised beside the label, and an ellipsis is a
+        // defect rather than a layout state. Stacking gives it the full width instead.
+        val valueOutgrowsRow = valueExceedsRowValueWidth(value)
+        if (stackedRowLayout() || valueOutgrowsRow) {
+            StackedDataRow(
+                label = label,
+                value = value,
+                tone = tone,
+                confidence = confidence,
+                unavailableLabel = unavailableLabel,
+                contentVerticalPadding = contentVerticalPadding,
             )
-            Spacer(modifier = Modifier.width(FonecheckTheme.spacing.md))
-            Column(
-                horizontalAlignment = Alignment.End,
-                modifier = Modifier.weight(1f),
+        } else {
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = contentVerticalPadding),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = value ?: unavailableLabel,
-                    style = FonecheckTheme.type.rowValue,
-                    color = if (value == null) FonecheckTheme.colors.textMuted else tone.contentColor(),
-                    textAlign = TextAlign.End,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    text = label,
+                    style = FonecheckTheme.type.rowLabel,
+                    color = FonecheckTheme.colors.textSecondary,
+                    modifier = Modifier.weight(1f),
                 )
-                confidence?.let {
+                Spacer(modifier = Modifier.width(FonecheckTheme.spacing.md))
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    modifier = Modifier.widthIn(max = FonecheckTheme.spacing.rowValueMaxWidth),
+                ) {
                     Text(
-                        text = confidenceLabel(it),
-                        style = FonecheckTheme.type.sectionLabel,
-                        color = FonecheckTheme.colors.textMuted,
+                        text = value ?: unavailableLabel,
+                        style = FonecheckTheme.type.rowValue,
+                        color = if (value == null) FonecheckTheme.colors.textMuted else tone.contentColor(),
                         textAlign = TextAlign.End,
-                        modifier = Modifier.padding(top = FonecheckTheme.spacing.xs),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
+                    confidence?.let {
+                        Text(
+                            text = confidenceLabel(it),
+                            style = FonecheckTheme.type.sectionLabel,
+                            color = FonecheckTheme.colors.textMuted,
+                            textAlign = TextAlign.End,
+                            modifier = Modifier.padding(top = FonecheckTheme.spacing.xs),
+                        )
+                    }
                 }
             }
         }
         if (showDivider) {
             HairlineRule()
+        }
+    }
+}
+
+/**
+ * The same row once the font scale leaves no room for two columns: label on its own line, value
+ * beneath it at full width. Nothing is ellipsised and no word is broken.
+ */
+@Composable
+private fun StackedDataRow(
+    label: String,
+    value: String?,
+    tone: SemanticTone,
+    confidence: Confidence?,
+    unavailableLabel: String,
+    contentVerticalPadding: Dp,
+) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = contentVerticalPadding),
+        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.xs),
+    ) {
+        Text(
+            text = label,
+            style = FonecheckTheme.type.rowLabel,
+            color = FonecheckTheme.colors.textSecondary,
+        )
+        Text(
+            text = value ?: unavailableLabel,
+            style = FonecheckTheme.type.rowValue,
+            color = if (value == null) FonecheckTheme.colors.textMuted else tone.contentColor(),
+        )
+        confidence?.let {
+            Text(
+                text = confidenceLabel(it),
+                style = FonecheckTheme.type.sectionLabel,
+                color = FonecheckTheme.colors.textMuted,
+            )
         }
     }
 }

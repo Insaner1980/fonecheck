@@ -90,4 +90,4 @@ jobs:
         shell: bash
         run: |
           "$RUNNER_TEMP/osv-scanner" scan source --recursive .deepsec
-          "$RUNNER_TEMP/osv-scanner" scan source --lockfile buildscript-gradle.lockfile
+          "$RUNNER_TEMP/osv-scanner" scan source --lockfile buildscript-gradle.lockfile --config gradle/osv-scanner.toml

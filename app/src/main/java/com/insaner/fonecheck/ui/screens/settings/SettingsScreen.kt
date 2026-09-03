@@ -8,11 +8,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,11 +26,14 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.net.toUri
 import androidx.core.os.LocaleListCompat
@@ -42,6 +48,7 @@ import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.Note
+import com.insaner.fonecheck.ui.components.PanelToggle
 import com.insaner.fonecheck.ui.components.PrimaryButton
 import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
@@ -191,6 +198,9 @@ fun SettingsScreen(
     if (confirmDeleteAll) {
         AlertDialog(
             onDismissRequest = { confirmDeleteAll = false },
+            shape = RectangleShape,
+            containerColor = FonecheckTheme.colors.panel,
+            tonalElevation = 0.dp,
             title = {
                 Text(
                     text = stringResource(R.string.settings_delete_all_title),
@@ -325,6 +335,14 @@ private fun SettingToggleRow(
             modifier =
                 Modifier
                     .fillMaxWidth()
+                    .heightIn(min = FonecheckTheme.spacing.minTouchTarget)
+                    // The whole row switches the setting, so the label and its explanation are part
+                    // of the target rather than a caption beside a small one.
+                    .toggleable(
+                        value = checked,
+                        role = Role.Switch,
+                        onValueChange = onCheckedChange,
+                    ).testTag("settings_test_warnings")
                     .padding(vertical = FonecheckTheme.spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -340,11 +358,8 @@ private fun SettingToggleRow(
                     color = FonecheckTheme.colors.textMuted,
                 )
             }
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange,
-                modifier = Modifier.testTag("settings_test_warnings"),
-            )
+            Spacer(modifier = Modifier.width(FonecheckTheme.spacing.md))
+            PanelToggle(checked = checked)
         }
         HairlineRule()
     }

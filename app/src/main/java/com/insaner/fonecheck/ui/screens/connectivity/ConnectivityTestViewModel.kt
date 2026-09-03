@@ -206,25 +206,31 @@ class ConnectivityTestViewModel
         }
 
         fun checkPermissions() {
+            val hasLocationPermission =
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                ) == PackageManager.PERMISSION_GRANTED
+            val hasPhonePermission =
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.READ_PHONE_STATE,
+                ) == PackageManager.PERMISSION_GRANTED
+            if (!hasLocationPermission) {
+                gpsSearchGate.cancel()
+                releaseGpsCallbacks()
+            }
             _state.update {
                 it.copy(
-                    hasLocationPermission =
-                        ContextCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                        ) == PackageManager.PERMISSION_GRANTED,
-                    hasPhonePermission =
-                        ContextCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.READ_PHONE_STATE,
-                        ) == PackageManager.PERMISSION_GRANTED,
+                    hasLocationPermission = hasLocationPermission,
+                    hasPhonePermission = hasPhonePermission,
+                    gps = if (hasLocationPermission) it.gps else it.gps.clearedProtectedFixData(),
                 )
             }
         }
 
         fun onPermissionsGranted() {
             checkPermissions()
-            if (!_state.value.hasLocationPermission) clearProtectedGpsData()
             refreshAll()
         }
 
@@ -503,16 +509,16 @@ class ConnectivityTestViewModel
         private fun refreshGpsAvailability() {
             val hasGps = context.packageManager.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS)
             val isEnabled = hasGps && locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+            if (!hasGps || !isEnabled) {
+                gpsSearchGate.cancel()
+                releaseGpsCallbacks()
+            }
             _state.update {
+                val gps = it.gps.copy(isAvailable = hasGps, isEnabled = isEnabled)
                 it.copy(
-                    gps =
-                        it.gps.copy(
-                            isAvailable = hasGps,
-                            isEnabled = isEnabled,
-                        ),
+                    gps = if (hasGps && isEnabled) gps else gps.clearedProtectedFixData(),
                 )
             }
-            if (!hasGps || !isEnabled) cancelGpsFix()
         }
 
         @SuppressLint("MissingPermission")
@@ -675,34 +681,7 @@ class ConnectivityTestViewModel
             gpsSearchGate.cancel()
             releaseGpsCallbacks()
             _state.update {
-                if (it.gps.fixStatus == GpsFixStatus.SEARCHING) {
-                    it.copy(
-                        gps =
-                            it.gps.copy(
-                                fixStatus = GpsFixStatus.NOT_STARTED,
-                                elapsedSearchMs = 0L,
-                                failure = null,
-                            ),
-                    )
-                } else {
-                    it
-                }
-            }
-        }
-
-        private fun clearProtectedGpsData() {
-            cancelGpsFix()
-            _state.update {
-                it.copy(
-                    gps =
-                        it.gps.copy(
-                            latitude = null,
-                            longitude = null,
-                            accuracy = null,
-                            altitude = null,
-                            speed = null,
-                        ),
-                )
+                it.copy(gps = it.gps.clearedProtectedFixData())
             }
         }
 

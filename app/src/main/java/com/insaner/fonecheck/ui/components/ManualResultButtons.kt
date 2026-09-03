@@ -1,12 +1,13 @@
 package com.insaner.fonecheck.ui.components
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.insaner.fonecheck.ui.theme.FonecheckTheme
 
+/**
+ * The two answers to a manual check. Both are [SecondaryButton]s on purpose: they are equal
+ * replies to a question, not an action and its alternative. Filling the pass button would make it
+ * read as the recommended answer and bias what the app records.
+ */
 @Composable
 fun ManualResultButtons(
     problemLabel: String,
@@ -15,20 +16,17 @@ fun ManualResultButtons(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
-    ) {
+    ButtonRow(modifier = modifier) { buttonModifier ->
         SecondaryButton(
             label = problemLabel,
             onClick = { onResult(false) },
-            modifier = Modifier.weight(1f),
+            modifier = buttonModifier,
             enabled = enabled,
         )
-        PrimaryButton(
+        SecondaryButton(
             label = passLabel,
             onClick = { onResult(true) },
-            modifier = Modifier.weight(1f),
+            modifier = buttonModifier,
             enabled = enabled,
         )
     }

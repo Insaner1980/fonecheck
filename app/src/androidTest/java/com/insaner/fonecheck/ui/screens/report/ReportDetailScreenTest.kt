@@ -66,12 +66,25 @@ class ReportDetailScreenTest {
             }
         }
 
-        composeRule.onNodeWithText(context.getString(R.string.report_saved_title)).assertIsDisplayed()
-        composeRule.onNodeWithText("Finnvek Test Device").assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.report_kind_full)).assertIsDisplayed()
+        // Provenance now sits at the foot of the report, under the results it describes.
+        composeRule
+            .onNodeWithText(context.getString(R.string.report_saved_title), ignoreCase = true)
+            .performScrollTo()
+            .assertIsDisplayed()
+        composeRule.onNodeWithText("Finnvek Test Device").performScrollTo().assertIsDisplayed()
+        composeRule
+            .onNodeWithText(context.getString(R.string.report_kind_full))
+            .performScrollTo()
+            .assertIsDisplayed()
         composeRule.onNodeWithText(longValue).performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.report_source_android_api)).assertIsDisplayed()
-        composeRule.onNodeWithText("Future vendor reason", substring = true).assertIsDisplayed()
+        composeRule
+            .onNodeWithText(context.getString(R.string.report_source_android_api))
+            .performScrollTo()
+            .assertIsDisplayed()
+        composeRule
+            .onNodeWithText("Future vendor reason", substring = true)
+            .performScrollTo()
+            .assertIsDisplayed()
         assertCategoryStatus(DiagnosticCategoryId.DEVICE, R.string.run_all_status_pass)
         assertCategoryStatus(DiagnosticCategoryId.PERFORMANCE, R.string.run_all_status_warning)
         assertCategoryStatus(DiagnosticCategoryId.SIM, R.string.run_all_status_info)
@@ -103,7 +116,10 @@ class ReportDetailScreenTest {
             }
         }
 
-        composeRule.onNodeWithText(context.getString(R.string.report_score_partial)).assertIsDisplayed()
+        // The score state is the caption inside the readout window, which uppercases what it draws.
+        composeRule
+            .onNodeWithText(context.getString(R.string.report_score_partial), ignoreCase = true)
+            .assertIsDisplayed()
 
         state =
             ReportDetailState.Content(
@@ -114,8 +130,13 @@ class ReportDetailScreenTest {
                 ),
             )
         composeRule.waitForIdle()
-        composeRule.onNodeWithText(context.getString(R.string.report_kind_category)).assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.report_score_incomplete)).assertIsDisplayed()
+        composeRule
+            .onNodeWithText(context.getString(R.string.report_score_incomplete), ignoreCase = true)
+            .assertIsDisplayed()
+        composeRule
+            .onNodeWithText(context.getString(R.string.report_kind_category))
+            .performScrollTo()
+            .assertIsDisplayed()
     }
 
     @Test

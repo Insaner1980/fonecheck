@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -21,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.observation.DeviceObservation
 import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
 import com.insaner.fonecheck.domain.observation.MeasurementKind
@@ -31,11 +31,17 @@ import com.insaner.fonecheck.ui.components.DisclosureHeader
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.ObservationReasonNote
+import com.insaner.fonecheck.ui.components.ReadoutWindow
 import com.insaner.fonecheck.ui.components.ScreenStateCard
 import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.components.StatusLamp
 import com.insaner.fonecheck.ui.components.TestScreenContent
+import com.insaner.fonecheck.ui.components.WindowBar
+import com.insaner.fonecheck.ui.components.WindowLabel
+import com.insaner.fonecheck.ui.components.WindowReading
+import com.insaner.fonecheck.ui.components.WindowRow
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.format.uiScientificNumber
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
@@ -64,7 +70,19 @@ fun SensorTestScreen(
 
         item {
             Column {
-                SectionHeader(label = stringResource(R.string.sensor_guided_title))
+                SectionHeader(
+                    label = stringResource(R.string.sensor_guided_title),
+                    trailing =
+                        stringResource(
+                            R.string.sensor_guided_progress,
+                            uiNumber(state.guidedTests.count { it.status == GuidedSensorStatus.PASSED }),
+                            uiNumber(
+                                state.guidedTests.count { it.status != GuidedSensorStatus.NOT_AVAILABLE },
+                            ),
+                        ),
+                )
+                Note(text = stringResource(R.string.sensor_description))
+                Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
                 state.guidedTests.forEach { test ->
                     GuidedSensorSection(
                         test = test,
@@ -82,23 +100,17 @@ fun SensorTestScreen(
     }
 }
 
+/**
+ * What the screen knows before any test is run. The guided verdicts are deliberately not repeated
+ * here: this screen's subject is the list below, and the count in its header is the summary.
+ */
 @Composable
 private fun SensorSummarySection(state: SensorTestState) {
     Column {
         SectionHeader(label = stringResource(R.string.sensor_summary_title))
-        Note(text = stringResource(R.string.sensor_description))
         DataRow(
             label = stringResource(R.string.sensor_count),
             value = uiNumber(state.sensorCount),
-        )
-        DataRow(
-            label = stringResource(R.string.sensor_guided_completed),
-            value =
-                stringResource(
-                    R.string.sensor_guided_progress,
-                    uiNumber(state.guidedTests.count { it.status == GuidedSensorStatus.PASSED }),
-                    uiNumber(state.guidedTests.count { it.status != GuidedSensorStatus.NOT_AVAILABLE }),
-                ),
         )
     }
 }
@@ -112,9 +124,38 @@ private fun SensorErrorCard() {
     )
 }
 
+/**
+ * A challenge in flight, read in the window like any other live measurement: what the sampler is
+ * doing, and how far through it is.
+ *
+ * The full check draws this same window during its sensor stage, so a guided challenge looks the
+ * same wherever it runs.
+ */
+@Composable
+internal fun SensorChallengeWindow(
+    challenge: ChallengeState,
+    modifier: Modifier = Modifier,
+) {
+    val progress by animateFloatAsState(challenge.progress, label = "sensorChallengeProgress")
+    ReadoutWindow(modifier = modifier) {
+        WindowRow(
+            label = stringResource(R.string.sensor_status_label),
+            value =
+                stringResource(
+                    if (challenge.completed) {
+                        R.string.sensor_challenge_passed
+                    } else {
+                        R.string.sensor_status_sampling
+                    },
+                ),
+        )
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+        WindowBar(percentage = (progress * PERCENT).toInt())
+    }
+}
+
 @Composable
 private fun ChallengeSection(challenge: ChallengeState) {
-    val progress by animateFloatAsState(challenge.progress, label = "sensorChallengeProgress")
     val classification =
         sensorMeasurement(
             if (challenge.completed) MeasurementOutcome.MEASURED else MeasurementOutcome.IN_PROGRESS,
@@ -122,35 +163,13 @@ private fun ChallengeSection(challenge: ChallengeState) {
 
     Column {
         SectionHeader(label = stringResource(R.string.sensor_challenges_title))
-        DataRow(
-            label = stringResource(R.string.sensor_status_label),
-            value =
-                if (challenge.completed) {
-                    stringResource(R.string.sensor_challenge_passed)
-                } else {
-                    stringResource(R.string.sensor_status_sampling)
-                },
-            tone = classification.toSemanticTone(),
-        )
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+        SensorChallengeWindow(challenge)
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
         ObservationReasonNote(classification)
         if (!challenge.completed) {
             challenge.challenge?.let { Note(text = it.prompt()) }
         }
-        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(FonecheckTheme.spacing.segmentHeight),
-            color =
-                if (challenge.completed) {
-                    FonecheckTheme.colors.pass
-                } else {
-                    FonecheckTheme.colors.primaryButtonBackground
-                },
-            trackColor = FonecheckTheme.colors.segmentTrack,
-        )
     }
 }
 
@@ -175,6 +194,7 @@ private fun GuidedSensorSection(
             onClick = onToggle,
             tone = classification.toSemanticTone(),
             strongDivider = false,
+            leading = { StatusLamp(status = test.status.diagnosticStatus()) },
         )
         AnimatedVisibility(
             visible = isExpanded,
@@ -196,9 +216,15 @@ private fun GuidedSensorSection(
                     Note(text = stringResource(R.string.sensor_not_available_description))
                 } else {
                     Note(text = test.code.guidance())
-                    liveData?.let { LiveValuesSection(test.code, it) }
-                    if (test.status == GuidedSensorStatus.SAMPLING) {
-                        SamplingProgress(test.sampleCount)
+                    liveData?.let {
+                        LiveValuesSection(
+                            code = test.code,
+                            data = it,
+                            sampleCount =
+                                test.sampleCount.takeIf {
+                                    test.status == GuidedSensorStatus.SAMPLING
+                                },
+                        )
                     }
                     if (challenges.isNotEmpty()) {
                         ChallengesSection(challenges, onChallenge)
@@ -217,54 +243,67 @@ private fun GuidedSensorSection(
     }
 }
 
-@Composable
-private fun SamplingProgress(sampleCount: Int) {
-    Column {
-        Note(
-            text =
-                pluralStringResource(
-                    R.plurals.sensor_samples,
-                    sampleCount,
-                    uiNumber(sampleCount),
-                ),
-        )
-        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
-        LinearProgressIndicator(
-            progress = {
-                (sampleCount.toFloat() / GuidedSensorSampler.REQUIRED_SAMPLE_COUNT)
-                    .coerceIn(0f, 1f)
-            },
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(FonecheckTheme.spacing.segmentHeight),
-            color = FonecheckTheme.colors.primaryButtonBackground,
-            trackColor = FonecheckTheme.colors.segmentTrack,
-        )
-    }
-}
-
+/**
+ * The live reading of one sensor, in the window that the panel keeps for measured values.
+ *
+ * A sensor that reports a single quantity gets the full readout treatment; a three-axis sensor has
+ * no single headline value, so its axes are drawn as window rows instead.
+ *
+ * While the test is sampling, the progress of that sampling belongs in the same window as the
+ * numbers it is producing.
+ */
 @Composable
 private fun LiveValuesSection(
     code: GuidedSensorCode,
     data: SensorLiveData,
+    sampleCount: Int?,
 ) {
     val labels = code.valueLabels()
     val unit = code.unit()
-    Column {
-        SectionHeader(label = stringResource(R.string.sensor_live_values))
-        data.values.take(labels.size).forEachIndexed { index, value ->
-            DataRow(
-                label = labels[index],
-                value = stringResource(R.string.sensor_value_with_unit, formatSensorValue(value), unit),
-            )
+    val values = data.values.take(labels.size)
+    ReadoutWindow {
+        WindowLabel(text = stringResource(R.string.sensor_live_values))
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+        if (values.size == 1) {
+            WindowReading(value = formatSensorValue(values.first()), unit = unit)
+        } else {
+            values.forEachIndexed { index, value ->
+                WindowRow(
+                    label = labels[index],
+                    value =
+                        stringResource(
+                            R.string.sensor_value_with_unit,
+                            formatSensorValue(value),
+                            unit,
+                        ),
+                )
+            }
         }
-        DataRow(
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+        WindowRow(
             label = stringResource(R.string.sensor_accuracy),
             value = data.accuracy.displayName(),
         )
+        sampleCount?.let { count ->
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+            WindowLabel(
+                text =
+                    pluralStringResource(
+                        R.plurals.sensor_samples,
+                        count,
+                        uiNumber(count),
+                    ),
+            )
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+            WindowBar(percentage = samplingPercentage(count))
+        }
     }
 }
+
+private fun samplingPercentage(sampleCount: Int): Int =
+    (sampleCount * PERCENT / GuidedSensorSampler.REQUIRED_SAMPLE_COUNT).coerceIn(0, PERCENT)
+
+private const val PERCENT = 100
 
 @Composable
 private fun ChallengesSection(
@@ -272,7 +311,7 @@ private fun ChallengesSection(
     onChallenge: (InteractiveChallenge) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm)) {
-        SectionHeader(label = stringResource(R.string.sensor_challenges_title))
+        NestedSectionHeader(label = stringResource(R.string.sensor_challenges_title))
         challenges.forEach { challenge ->
             SecondaryButton(
                 label = challenge.buttonLabel(),
@@ -283,10 +322,23 @@ private fun ChallengesSection(
     }
 }
 
+/**
+ * A section header inside an already-framed region. The panel edge would read as a new top-level
+ * section; inside an expanded card the divider is the lighter panel rule.
+ */
+@Composable
+private fun NestedSectionHeader(label: String) {
+    SectionHeader(
+        label = label,
+        ruleColor = FonecheckTheme.colors.rule,
+        ruleThickness = FonecheckTheme.spacing.ruleThickness,
+    )
+}
+
 @Composable
 private fun SensorInfoSection(sensorInfo: SensorInfo) {
     Column {
-        SectionHeader(label = stringResource(R.string.sensor_info_title))
+        NestedSectionHeader(label = stringResource(R.string.sensor_info_title))
         LongValueRow(
             label = stringResource(R.string.sensor_name),
             value = sensorInfo.name,
@@ -403,6 +455,20 @@ private fun GuidedSensorStatus.displayName(): String =
             GuidedSensorStatus.SKIPPED -> R.string.sensor_status_skipped
         },
     )
+
+/**
+ * The lamp vocabulary for a guided test. Sampling, skipped and untested all read as unlit: none of
+ * them is a verdict, and the row beside the lamp says which one it is in words.
+ */
+private fun GuidedSensorStatus.diagnosticStatus(): DiagnosticStatus =
+    when (this) {
+        GuidedSensorStatus.NOT_AVAILABLE -> DiagnosticStatus.NOT_AVAILABLE
+        GuidedSensorStatus.PASSED -> DiagnosticStatus.PASS
+        GuidedSensorStatus.NOT_TESTED,
+        GuidedSensorStatus.SAMPLING,
+        GuidedSensorStatus.SKIPPED,
+        -> DiagnosticStatus.NOT_TESTED
+    }
 
 private fun GuidedSensorStatus.classification() =
     sensorMeasurement(

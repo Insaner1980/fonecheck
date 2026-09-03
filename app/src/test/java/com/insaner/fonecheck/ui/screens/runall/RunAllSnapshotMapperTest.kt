@@ -51,6 +51,7 @@ import com.insaner.fonecheck.ui.screens.connectivity.NfcState
 import com.insaner.fonecheck.ui.screens.connectivity.WifiState
 import com.insaner.fonecheck.ui.screens.display.DisplayInfoState
 import com.insaner.fonecheck.ui.screens.display.DisplayTestState
+import com.insaner.fonecheck.ui.screens.performance.BenchmarkPhase
 import com.insaner.fonecheck.ui.screens.sensor.GuidedSensorCatalog
 import com.insaner.fonecheck.ui.screens.sensor.GuidedSensorCode
 import com.insaner.fonecheck.ui.screens.sensor.GuidedSensorStatus
@@ -346,6 +347,26 @@ class RunAllSnapshotMapperTest {
             assertEquals(EvidenceValue.DoubleValue(640.5), value)
             assertEquals("mebibytes_per_second", unit?.value)
             assertEquals(benchmarkCapturedAt, capturedAt)
+        }
+    }
+
+    @Test
+    fun missingPerformanceBenchmarkPreservesItsTerminalReason() {
+        mapOf(
+            BenchmarkPhase.IDLE to EvidenceReasonCode.NOT_RUN,
+            BenchmarkPhase.CANCELLED to EvidenceReasonCode.CANCELLED,
+            BenchmarkPhase.ERROR to EvidenceReasonCode.ERROR,
+        ).forEach { (phase, expectedReason) ->
+            val evidence =
+                mappedEvidence(
+                    diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                        performanceBenchmark = null,
+                        performanceBenchmarkPhase = phase,
+                    ),
+                )
+
+            assertEquals(expectedReason, evidence.getValue("performance.cpu_benchmark").reason)
+            assertEquals(expectedReason, evidence.getValue("performance.memory_benchmark").reason)
         }
     }
 

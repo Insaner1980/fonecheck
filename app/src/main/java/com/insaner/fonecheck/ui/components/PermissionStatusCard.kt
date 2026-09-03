@@ -25,7 +25,12 @@ fun PermissionStatusCard(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
     ) {
-        SectionHeader(stringResource(R.string.permission_section_title))
+        // Nested inside a screen section, so it uses the panel rule rather than the panel edge.
+        SectionHeader(
+            label = stringResource(R.string.permission_section_title),
+            ruleColor = FonecheckTheme.colors.rule,
+            ruleThickness = FonecheckTheme.spacing.ruleThickness,
+        )
         StatusText(
             text = permissionStatusText(state),
             tone = classification.toSemanticTone(),

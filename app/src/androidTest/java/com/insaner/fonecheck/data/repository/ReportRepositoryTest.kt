@@ -143,6 +143,45 @@ class ReportRepositoryTest {
         }
 
     @Test
+    fun malformedStoredMetadataReturnsCorruptDataInsteadOfThrowing() =
+        runBlocking {
+            database.openHelper.writableDatabase.execSQL(
+                """
+                INSERT INTO reports (
+                    id, reportKindCode, categoryId, startedAtEpochMillis, completedAtEpochMillis,
+                    reportSchemaVersion, scoreVersion, scoreValue, scoreStateCode, coveragePercentage,
+                    applicableCount, completedCount, notTestedCount, unavailableCount, warningCount,
+                    failureCount, payloadJson
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """.trimIndent(),
+                arrayOf(
+                    "malformed-metadata",
+                    "future_kind",
+                    null,
+                    1_000L,
+                    2_000L,
+                    ReportSchemaVersion.CURRENT.value,
+                    ScoreVersion.CURRENT.value,
+                    100,
+                    "complete",
+                    100,
+                    1,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    "{}",
+                ),
+            )
+
+            assertEquals(
+                ReportLoadResult.Unavailable("malformed-metadata", ReportReadFailure.CORRUPT_DATA),
+                repository.getById("malformed-metadata"),
+            )
+        }
+
+    @Test
     fun comparisonLoadPreservesRequestedReportOrder() =
         runBlocking {
             val first = report(id = "first", completedAt = Instant.ofEpochMilli(3_000L))

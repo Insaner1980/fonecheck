@@ -20,7 +20,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -38,10 +37,11 @@ fun DisclosureSection(
     summary: String,
     expanded: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     tone: SemanticTone = SemanticTone.NEUTRAL,
     content: @Composable () -> Unit,
 ) {
-    Column {
+    Column(modifier = modifier) {
         DisclosureHeader(
             label = label,
             summary = summary,
@@ -75,6 +75,7 @@ fun DisclosureSection(
  * inside one section.
  */
 @Composable
+@Suppress("kotlin:S107") // Header content, state, styling, and optional leading content are one UI contract.
 fun DisclosureHeader(
     label: String,
     summary: String,
@@ -83,8 +84,9 @@ fun DisclosureHeader(
     modifier: Modifier = Modifier,
     tone: SemanticTone = SemanticTone.NEUTRAL,
     strongDivider: Boolean = true,
+    leading: (@Composable () -> Unit)? = null,
 ) {
-    val locale = LocalLocale.current.platformLocale
+    val stacked = stackedRowLayout()
     val expansionState =
         stringResource(
             if (expanded) R.string.accessibility_expanded else R.string.accessibility_collapsed,
@@ -107,25 +109,43 @@ fun DisclosureHeader(
                     .padding(bottom = FonecheckTheme.spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = label.uppercase(locale),
-                style = FonecheckTheme.type.sectionLabel,
-                color = FonecheckTheme.colors.textMuted,
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .semantics {
+            leading?.let {
+                it()
+                Spacer(modifier = Modifier.width(FonecheckTheme.spacing.sm))
+            }
+            // Stacked, the label and its summary each get the full width instead of splitting a
+            // row too narrow to hold either of them whole.
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.xs),
+            ) {
+                Text(
+                    text = label,
+                    style = FonecheckTheme.type.sectionLabel,
+                    color = FonecheckTheme.colors.textMuted,
+                    modifier =
+                        Modifier.semantics {
                             heading()
                             contentDescription = label
                         },
-            )
+                )
+                if (stacked) {
+                    Text(
+                        text = summary,
+                        style = FonecheckTheme.type.rowValue,
+                        color = tone.contentColor(),
+                    )
+                }
+            }
             Spacer(modifier = Modifier.width(FonecheckTheme.spacing.sm))
-            Text(
-                text = summary,
-                style = FonecheckTheme.type.rowValue,
-                color = tone.contentColor(),
-            )
-            Spacer(modifier = Modifier.width(FonecheckTheme.spacing.xs))
+            if (!stacked) {
+                Text(
+                    text = summary,
+                    style = FonecheckTheme.type.rowValue,
+                    color = tone.contentColor(),
+                )
+                Spacer(modifier = Modifier.width(FonecheckTheme.spacing.xs))
+            }
             Icon(
                 imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                 contentDescription = null,

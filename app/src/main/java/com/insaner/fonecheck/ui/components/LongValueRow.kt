@@ -1,6 +1,5 @@
 package com.insaner.fonecheck.ui.components
 
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -37,6 +36,7 @@ import com.insaner.fonecheck.ui.theme.contentColor
  * [onValueLongClick] follows the same optional interaction contract as [DataRow].
  */
 @Composable
+@Suppress("kotlin:S107") // Intentionally matches DataRow's stable row API.
 fun LongValueRow(
     label: String,
     value: String?,
@@ -50,39 +50,8 @@ fun LongValueRow(
     contentVerticalPadding: Dp = FonecheckTheme.spacing.sm,
 ) {
     // CPD-ON
-    val textMeasurer = rememberTextMeasurer()
-    val density = LocalDensity.current
-    val labelWidth =
-        textMeasurer
-            .measure(
-                text = AnnotatedString(label),
-                style = FonecheckTheme.type.rowLabel,
-                maxLines = 1,
-                softWrap = false,
-            ).size.width
-    val valueWidth =
-        value?.let {
-            textMeasurer
-                .measure(
-                    text = AnnotatedString(it),
-                    style = FonecheckTheme.type.rowValue,
-                    maxLines = 1,
-                    softWrap = false,
-                ).size.width
-        }
-
-    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        val useLongLayout =
-            shouldUseLongValueLayout(
-                rowWidth = constraints.maxWidth,
-                labelWidth = labelWidth,
-                labelMaxWidth =
-                    with(density) {
-                        FonecheckTheme.spacing.rowLabelMaxWidth.roundToPx()
-                    },
-                valueWidth = valueWidth,
-                rowGap = with(density) { FonecheckTheme.spacing.md.roundToPx() },
-            )
+    val useLongLayout = valueExceedsRowValueWidth(value)
+    Column(modifier = modifier.fillMaxWidth()) {
         if (useLongLayout && value != null) {
             LongValueLayout(
                 label = label,
@@ -111,6 +80,7 @@ fun LongValueRow(
 }
 
 @Composable
+@Suppress("kotlin:S107") // Keeps the long layout's presentation and interaction inputs explicit.
 private fun LongValueLayout(
     label: String,
     value: String,
@@ -169,14 +139,29 @@ private fun LongValueLayout(
 }
 
 internal fun shouldUseLongValueLayout(
-    rowWidth: Int,
-    labelWidth: Int,
-    labelMaxWidth: Int,
+    valueMaxWidth: Int,
     valueWidth: Int?,
-    rowGap: Int,
-): Boolean =
-    valueWidth != null &&
-        valueWidth > (rowWidth - labelWidth.coerceAtMost(labelMaxWidth) - rowGap).coerceAtLeast(0)
+): Boolean = valueWidth != null && valueWidth > valueMaxWidth
+
+@Composable
+internal fun valueExceedsRowValueWidth(value: String?): Boolean {
+    val textMeasurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val valueWidth =
+        value?.let {
+            textMeasurer
+                .measure(
+                    text = AnnotatedString(it),
+                    style = FonecheckTheme.type.rowValue,
+                    maxLines = 1,
+                    softWrap = false,
+                ).size.width
+        }
+    return shouldUseLongValueLayout(
+        valueMaxWidth = with(density) { FonecheckTheme.spacing.rowValueMaxWidth.roundToPx() },
+        valueWidth = valueWidth,
+    )
+}
 
 private const val ZERO_WIDTH_SPACE = '\u200B'
 

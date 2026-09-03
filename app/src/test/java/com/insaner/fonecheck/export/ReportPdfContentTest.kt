@@ -53,8 +53,7 @@ class ReportPdfContentTest {
 
         assertTrue(pages.size > 1)
         assertTrue(pages.all { it.isNotEmpty() })
-        assertTrue(text.startsWith("Heading word1"))
-        assertTrue(text.endsWith("word180 Last line"))
+        assertEquals("Heading $marker Last line", text)
         assertTrue(pages.flatten().all { it.text.length <= it.style.maxCharacters })
     }
 

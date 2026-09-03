@@ -73,12 +73,15 @@ project(":app") {
             property(
                 "sonar.coverage.exclusions",
                 listOf(
+                    // Debug-only preview specimens are not shipped and are outside JVM test scope.
+                    "src/debug/**",
                     "src/main/java/com/insaner/fonecheck/ui/MainActivity.kt",
                     "src/main/java/com/insaner/fonecheck/ui/components/**",
                     "src/main/java/com/insaner/fonecheck/navigation/FonecheckNavHost.kt",
                     "src/main/java/com/insaner/fonecheck/ui/theme/Theme.kt",
                     "src/main/java/com/insaner/fonecheck/ui/theme/Type.kt",
                     "src/main/java/com/insaner/fonecheck/ui/screens/**/*Screen.kt",
+                    "src/main/java/com/insaner/fonecheck/ui/screens/home/HomeStatusPanel.kt",
                     "src/main/java/com/insaner/fonecheck/ui/screens/runall/RunAllManualSteps.kt",
                     "src/main/java/com/insaner/fonecheck/ui/screens/**/*Platform.kt",
                     "src/main/java/com/insaner/fonecheck/ui/screens/**/*LifecycleEffect.kt",
@@ -108,5 +111,5 @@ project(":app") {
 }
 
 tasks.named("sonar") {
-    dependsOn(":app:assembleDebug", ":app:createDebugUnitTestCoverageReport")
+    dependsOn(":app:assembleDebug", ":app:createDebugUnitTestCoverageReport", ":app:lintDebug")
 }

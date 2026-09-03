@@ -1912,6 +1912,13 @@ private fun com.insaner.fonecheck.ui.screens.sensor.SensorInfoSection(sensorInfo
     - sensorInfo: STABLE (class with no mutable properties)
 
 @Composable
+private fun com.insaner.fonecheck.ui.screens.sensor.SensorStatusGrid(tests: kotlin.collections.List<com.insaner.fonecheck.ui.screens.sensor.GuidedSensorTestState>): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - tests: RUNTIME (requires runtime check)
+
+@Composable
 private fun com.insaner.fonecheck.ui.screens.sensor.SensorSummarySection(state: com.insaner.fonecheck.ui.screens.sensor.SensorTestState): kotlin.Unit
   skippable: false
   restartable: true

@@ -511,7 +511,6 @@ fun RunAllTestsScreen(
         if (sessionState.stage != RunAllStage.BIOMETRICS || !biometricState.authResult.isTerminal) {
             return@LaunchedEffect
         }
-        val succeeded = biometricState.authResult == AuthResult.SUCCESS
         val outcome =
             when (biometricState.authResult) {
                 AuthResult.SUCCESS -> RunAllStageOutcome.PASSED
@@ -792,6 +791,7 @@ fun RunAllTestsScreen(
                     device = deviceInfo,
                     performance = performanceInfo,
                     performanceBenchmark = performanceState.benchmarkResult,
+                    performanceBenchmarkPhase = performanceState.benchmarkPhase,
                     sim = simInfo,
                     display = displayState,
                     audio = audioState,

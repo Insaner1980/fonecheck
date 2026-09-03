@@ -134,7 +134,7 @@ if ([string]::IsNullOrWhiteSpace($hostUrl)) {
 if ($PlanOnly) {
     Write-Output @(
         "sonar"
-        "  - Gradle sonar (depends on :app:assembleDebug and :app:createDebugUnitTestCoverageReport): reports/sonar.txt"
+        "  - Gradle sonar (depends on :app:assembleDebug, :app:createDebugUnitTestCoverageReport, and :app:lintDebug): reports/sonar.txt"
         "  - coverage scope: JVM unit-test coverage only; instrumented and physical-device behavior remain outside this report"
         "  - optional SonarQube CLI issue export: reports/sonar-issues.json"
         "  - Quality Gate is not queried by this wrapper"
@@ -187,8 +187,8 @@ try {
     }
 
     try {
-        Import-Module "C:\Dev\Android-check\tools\CheckRuntime.psm1" -Force -ErrorAction Stop
         Import-Module "C:\Dev\Android-check\tools\AndroidProjectChecks.psm1" -Force -ErrorAction Stop
+        Import-Module "C:\Dev\Android-check\tools\CheckRuntime.psm1" -Force -ErrorAction Stop
         $sourceStateBefore = Get-AndroidProjectSourceState -Root $repoRoot
         Add-Content -LiteralPath $scanReport -Encoding utf8 -Value @(
             "Source HEAD: $($sourceStateBefore.gitHead)"
@@ -199,6 +199,7 @@ try {
             "Source input SHA-256: $($sourceStateBefore.inputSha256)"
             ""
         )
+        Write-Output "Sonar-analyysi kaynnistyi. Gradlen tuloste naytetaan ajon valmistuttua."
         $scanResult = Invoke-ManagedProcess `
             -Executable (Join-Path $repoRoot "gradlew.bat") `
             -Arguments @("sonar", "--console=plain") `
@@ -213,6 +214,7 @@ try {
     }
     catch {
         Add-Content -LiteralPath $scanReport -Encoding utf8 -Value "ERROR: SONAR_ANALYSIS_PROCESS_ERROR: $($_.Exception.Message)"
+        Get-Content -LiteralPath $scanReport
         exit 2
     }
 

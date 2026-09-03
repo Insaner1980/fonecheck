@@ -70,6 +70,7 @@ internal val RowUnlitDark = Color(0xFF93A099)
 
 internal val WindowText = Color(0xFFE8ECD4)
 internal val WindowDim = Color(0xFF7F8A6A)
+internal val WindowAlert = Color(0xFFEB8881)
 internal val PrimaryActionBackground = Color(0xFFCF4F24)
 internal val PrimaryActionContent = Color(0xFF0F0400)
 internal val LampPass = Color(0xFF8FB851)

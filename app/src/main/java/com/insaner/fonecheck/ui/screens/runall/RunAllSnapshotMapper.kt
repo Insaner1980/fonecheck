@@ -27,7 +27,6 @@ import com.insaner.fonecheck.domain.observation.InteractiveCheck
 import com.insaner.fonecheck.domain.observation.MeasurementKind
 import com.insaner.fonecheck.domain.observation.MeasurementOutcome
 import com.insaner.fonecheck.domain.observation.ObservationClassification
-import com.insaner.fonecheck.domain.observation.ObservationReason
 import com.insaner.fonecheck.domain.observation.ObservationState
 import com.insaner.fonecheck.domain.observation.isUnusedSimSlot
 import com.insaner.fonecheck.domain.observation.toDiagnosticStatus
@@ -44,15 +43,14 @@ import com.insaner.fonecheck.ui.screens.battery.ManufacturerProfile
 import com.insaner.fonecheck.ui.screens.biometrics.AuthResult
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricAvailability
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestState
-import com.insaner.fonecheck.ui.screens.buttons.ButtonTestPhase
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestState
 import com.insaner.fonecheck.ui.screens.camera.CameraClassCode
 import com.insaner.fonecheck.ui.screens.camera.CameraTestState
 import com.insaner.fonecheck.ui.screens.connectivity.BluetoothAccessCode
 import com.insaner.fonecheck.ui.screens.connectivity.ConnectivityTestState
-import com.insaner.fonecheck.ui.screens.connectivity.GpsFailureCode
 import com.insaner.fonecheck.ui.screens.connectivity.GpsFixStatus
 import com.insaner.fonecheck.ui.screens.display.DisplayTestState
+import com.insaner.fonecheck.ui.screens.performance.BenchmarkPhase
 import com.insaner.fonecheck.ui.screens.sensor.GuidedSensorStatus
 import com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge
 import com.insaner.fonecheck.ui.screens.sensor.SensorTestState
@@ -68,6 +66,7 @@ data class DiagnosticSnapshots(
     val device: DeviceInfo,
     val performance: PerformanceInfo,
     val performanceBenchmark: PerformanceBenchmarkResult? = null,
+    val performanceBenchmarkPhase: BenchmarkPhase = BenchmarkPhase.IDLE,
     val sim: SimTelephonyInfo,
     val display: DisplayTestState,
     val audio: AudioTestState,
@@ -180,6 +179,7 @@ object RunAllSnapshotMapper {
     ): List<DiagnosticEvidence> {
         val performance = snapshots.performance
         val benchmark = snapshots.performanceBenchmark
+        val benchmarkReason = performanceBenchmarkReason(snapshots.performanceBenchmarkPhase)
         val hasRamReading = performance.totalRamBytes?.let { it > 0L } == true
         val hasGpuReading = performance.glRenderer != PerformanceInfo.UNAVAILABLE && performance.glRenderer.isNotBlank()
         return listOf(
@@ -229,7 +229,7 @@ object RunAllSnapshotMapper {
                 categoryId = DiagnosticCategoryId.PERFORMANCE,
                 id = "cpu_benchmark",
                 capturedAt = capturedAt,
-                reason = EvidenceReasonCode.ERROR,
+                reason = benchmarkReason,
             ),
             benchmark?.memoryMebibytesPerSecond?.let { throughput ->
                 evidence(
@@ -245,10 +245,21 @@ object RunAllSnapshotMapper {
                 categoryId = DiagnosticCategoryId.PERFORMANCE,
                 id = "memory_benchmark",
                 capturedAt = benchmark?.capturedAt ?: capturedAt,
-                reason = EvidenceReasonCode.ERROR,
+                reason = benchmarkReason,
             ),
         )
     }
+
+    private fun performanceBenchmarkReason(phase: BenchmarkPhase): EvidenceReasonCode =
+        when (phase) {
+            BenchmarkPhase.CANCELLED -> EvidenceReasonCode.CANCELLED
+            BenchmarkPhase.ERROR,
+            BenchmarkPhase.COMPLETED,
+            -> EvidenceReasonCode.ERROR
+            BenchmarkPhase.IDLE,
+            BenchmarkPhase.RUNNING,
+            -> EvidenceReasonCode.NOT_RUN
+        }
 
     private fun simEvidence(
         snapshots: DiagnosticSnapshots,

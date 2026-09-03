@@ -2,17 +2,12 @@ package com.insaner.fonecheck.ui.screens.onboarding
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -23,6 +18,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.PrimaryButton
+import com.insaner.fonecheck.ui.components.ProgressWindow
 import com.insaner.fonecheck.ui.components.ScreenStateCard
 import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.SecondaryButton
@@ -67,43 +63,30 @@ fun OnboardingScreen(
     val pageIndex = state.pageIndex.coerceIn(0, OnboardingPage.entries.lastIndex)
     val page = OnboardingPage.entries[pageIndex]
     val isLastPage = pageIndex == OnboardingPage.entries.lastIndex
-    val progress = (pageIndex + 1).toFloat() / OnboardingPage.entries.size
+    val progress = (pageIndex + 1) * PERCENT / OnboardingPage.entries.size
 
     TestScreenContent(modifier = modifier) {
         item {
             Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom,
-                ) {
-                    Text(
-                        text = stringResource(page.titleResId),
-                        style = FonecheckTheme.type.screenTitle,
-                        color = FonecheckTheme.colors.textPrimary,
-                        modifier = Modifier.weight(1f).semantics { heading() },
-                    )
-                    Text(
-                        text =
-                            stringResource(
-                                R.string.onboarding_progress,
-                                uiNumber(pageIndex + 1),
-                                uiNumber(OnboardingPage.entries.size),
-                            ),
-                        style = FonecheckTheme.type.sectionLabel,
-                        color = FonecheckTheme.colors.textMuted,
-                        modifier = Modifier.padding(start = FonecheckTheme.spacing.sm),
-                    )
-                }
+                Text(
+                    text = stringResource(page.titleResId),
+                    style = FonecheckTheme.type.screenTitle,
+                    color = FonecheckTheme.colors.textPrimary,
+                    modifier = Modifier.fillMaxWidth().semantics { heading() },
+                )
                 StrongRule()
             }
         }
         item {
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier.fillMaxWidth().height(FonecheckTheme.spacing.segmentHeight),
-                color = FonecheckTheme.colors.primaryButtonBackground,
-                trackColor = FonecheckTheme.colors.segmentTrack,
+            // The same window the full check draws between its steps.
+            ProgressWindow(
+                label =
+                    stringResource(
+                        R.string.onboarding_progress,
+                        uiNumber(pageIndex + 1),
+                        uiNumber(OnboardingPage.entries.size),
+                    ),
+                percentage = progress,
             )
         }
         item {
@@ -137,39 +120,62 @@ fun OnboardingScreen(
             }
         }
         item {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
-            ) {
-                PrimaryButton(
-                    label =
-                        stringResource(
-                            when {
-                                state.isSaving -> R.string.onboarding_saving
-                                isLastPage -> R.string.onboarding_start
-                                else -> R.string.onboarding_next
-                            },
-                        ),
-                    onClick = if (isLastPage) onComplete else onNext,
-                    enabled = !state.isSaving,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .testTag(if (isLastPage) "onboarding_complete" else "onboarding_next"),
-                )
-                SecondaryButton(
-                    label = stringResource(R.string.onboarding_previous),
-                    onClick = onPrevious,
-                    enabled = pageIndex > 0 && !state.isSaving,
-                    modifier = Modifier.fillMaxWidth().testTag("onboarding_previous"),
-                )
-                SecondaryButton(
-                    label = stringResource(R.string.onboarding_skip),
-                    onClick = onSkip,
-                    enabled = !state.isSaving,
-                    modifier = Modifier.fillMaxWidth().testTag("onboarding_skip"),
-                )
-            }
+            OnboardingActions(
+                isSaving = state.isSaving,
+                pageIndex = pageIndex,
+                isLastPage = isLastPage,
+                onPrevious = onPrevious,
+                onNext = onNext,
+                onSkip = onSkip,
+                onComplete = onComplete,
+            )
         }
     }
 }
+
+@Composable
+private fun OnboardingActions(
+    isSaving: Boolean,
+    pageIndex: Int,
+    isLastPage: Boolean,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onSkip: () -> Unit,
+    onComplete: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
+    ) {
+        PrimaryButton(
+            label =
+                stringResource(
+                    when {
+                        isSaving -> R.string.onboarding_saving
+                        isLastPage -> R.string.onboarding_start
+                        else -> R.string.onboarding_next
+                    },
+                ),
+            onClick = if (isLastPage) onComplete else onNext,
+            enabled = !isSaving,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .testTag(if (isLastPage) "onboarding_complete" else "onboarding_next"),
+        )
+        SecondaryButton(
+            label = stringResource(R.string.onboarding_previous),
+            onClick = onPrevious,
+            enabled = pageIndex > 0 && !isSaving,
+            modifier = Modifier.fillMaxWidth().testTag("onboarding_previous"),
+        )
+        SecondaryButton(
+            label = stringResource(R.string.onboarding_skip),
+            onClick = onSkip,
+            enabled = !isSaving,
+            modifier = Modifier.fillMaxWidth().testTag("onboarding_skip"),
+        )
+    }
+}
+
+private const val PERCENT = 100

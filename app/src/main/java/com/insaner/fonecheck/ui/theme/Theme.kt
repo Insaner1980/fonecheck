@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 
 /**
  * Projects the instrument roles onto the Material slots so Material's own components speak the same
@@ -60,14 +61,13 @@ private fun FonecheckColors.toMaterialScheme(darkTheme: Boolean): ColorScheme =
 private val LightColorScheme = LightFonecheckColors.toMaterialScheme(darkTheme = false)
 private val DarkColorScheme = DarkFonecheckColors.toMaterialScheme(darkTheme = true)
 
-// A small radius, and only ever on controls. Nothing in the app is a rounded container.
 private val FonecheckShapes =
     Shapes(
-        extraSmall = RoundedCornerShape(FonecheckSpacing.controlRadius),
-        small = RoundedCornerShape(FonecheckSpacing.controlRadius),
-        medium = RoundedCornerShape(FonecheckSpacing.controlRadius),
-        large = RoundedCornerShape(FonecheckSpacing.controlRadius),
-        extraLarge = RoundedCornerShape(FonecheckSpacing.controlRadius),
+        extraSmall = RoundedCornerShape(0.dp),
+        small = RoundedCornerShape(0.dp),
+        medium = RoundedCornerShape(0.dp),
+        large = RoundedCornerShape(0.dp),
+        extraLarge = RoundedCornerShape(0.dp),
     )
 
 @Composable

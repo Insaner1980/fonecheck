@@ -5,45 +5,18 @@ import org.junit.Test
 
 class LongValueRowTest {
     @Test
-    fun `a value that fits keeps the one-line layout`() {
-        assertEquals(
-            false,
-            shouldUseLongValueLayout(
-                rowWidth = 400,
-                labelWidth = 100,
-                labelMaxWidth = 160,
-                valueWidth = 284,
-                rowGap = 16,
-            ),
-        )
+    fun `a value within the cap keeps the one-line layout`() {
+        assertEquals(false, shouldUseLongValueLayout(valueMaxWidth = 200, valueWidth = 200))
     }
 
     @Test
-    fun `a value that does not fit uses the two-line layout`() {
-        assertEquals(
-            true,
-            shouldUseLongValueLayout(
-                rowWidth = 400,
-                labelWidth = 100,
-                labelMaxWidth = 160,
-                valueWidth = 285,
-                rowGap = 16,
-            ),
-        )
+    fun `a value past the cap uses the two-line layout`() {
+        assertEquals(true, shouldUseLongValueLayout(valueMaxWidth = 200, valueWidth = 201))
     }
 
     @Test
     fun `a placeholder always keeps the one-line layout`() {
-        assertEquals(
-            false,
-            shouldUseLongValueLayout(
-                rowWidth = 400,
-                labelWidth = 100,
-                labelMaxWidth = 160,
-                valueWidth = null,
-                rowGap = 16,
-            ),
-        )
+        assertEquals(false, shouldUseLongValueLayout(valueMaxWidth = 200, valueWidth = null))
     }
 
     @Test

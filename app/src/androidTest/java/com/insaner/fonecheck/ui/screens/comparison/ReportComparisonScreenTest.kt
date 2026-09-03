@@ -78,7 +78,11 @@ class ReportComparisonScreenTest {
             }
         }
 
-        composeRule.onNodeWithText(context.getString(R.string.comparison_score_delta, 6)).assertIsDisplayed()
+        // The change is the figure in the score window; the window label uppercases what it draws.
+        composeRule
+            .onNodeWithText(context.getString(R.string.comparison_score_change), ignoreCase = true)
+            .assertIsDisplayed()
+        composeRule.onNodeWithText("+6").assertIsDisplayed()
         composeRule.onAllNodesWithTag("comparison_category", useUnmergedTree = true).assertCountEquals(14)
         composeRule.onNodeWithTag("comparison_category_device").performScrollTo().performClick()
         composeRule

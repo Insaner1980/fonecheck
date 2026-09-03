@@ -181,7 +181,7 @@ class HomeContentTest {
                     val cell = composeRule.onNodeWithTag("home_category_$id").performScrollTo()
                     cell.assertHeightIsAtLeast(48.dp)
                     composeRule.onNodeWithTag("home_category_reading_$id", useUnmergedTree = true).assertDoesNotExist()
-                    val label = context.getString(destination.labelResId).uppercase(locale)
+                    val label = context.getString(destination.labelResId)
                     cell.assertTextEquals(label)
                     val labelNode =
                         composeRule
@@ -281,8 +281,7 @@ class HomeContentTest {
         composeRule
             .onNodeWithText(
                 context
-                    .getString(R.string.home_latest_passed_total, "1")
-                    .uppercase(context.resources.configuration.locales[0]),
+                    .getString(R.string.home_latest_passed_total, "1"),
             ).assertIsDisplayed()
         assertPassedCount(context, passed = "1", total = "1")
         composeRule.onNodeWithContentDescription(coverageValue(context, 1.0)).assertIsDisplayed()
@@ -570,7 +569,9 @@ class HomeContentTest {
         }
 
         composeRule.onNodeWithText(context.getString(R.string.app_name)).assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.home_start_full_check)).assertIsDisplayed()
+        composeRule
+            .onNodeWithText(context.getString(R.string.home_start_full_check))
+            .assertIsDisplayed()
     }
 
     @Test

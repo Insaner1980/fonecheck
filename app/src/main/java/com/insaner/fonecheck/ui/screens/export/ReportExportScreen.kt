@@ -16,6 +16,7 @@ import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.ui.components.IndeterminateRule
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.PrimaryButton
@@ -188,6 +189,11 @@ private fun ExportReady(
                     enabled = !state.isGenerating,
                     modifier = Modifier.fillMaxWidth().testTag("export_pdf"),
                 )
+                // A disabled button reading "Generating" is the only sign the export is running.
+                // On a large report that is several seconds of a screen that looks stuck.
+                if (state.isGenerating) {
+                    IndeterminateRule()
+                }
             }
         }
         item {

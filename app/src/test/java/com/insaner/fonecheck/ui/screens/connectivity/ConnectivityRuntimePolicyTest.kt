@@ -66,4 +66,27 @@ class ConnectivityRuntimePolicyTest {
             BluetoothAccessPolicy.evaluate(sdkInt = 36, hardwareAvailable = true, permissionGranted = true),
         )
     }
+
+    @Test
+    fun clearingProtectedGpsDataRemovesEveryPreviousFixValue() {
+        val cleared =
+            GpsState(
+                isAvailable = true,
+                isEnabled = true,
+                fixStatus = GpsFixStatus.FIXED,
+                latitude = 60.1699,
+                longitude = 24.9384,
+                accuracy = 3.5f,
+                altitude = 22.0,
+                speed = 1.5f,
+                fixTimeMs = 1_000L,
+                satelliteCount = 8,
+                satellitesUsed = 5,
+                satellites = listOf(GpsSatelliteInfo(7, "GPS", 30f, true, 45f, 90f)),
+                elapsedSearchMs = 2_000L,
+                failure = GpsFailureCode.TIMEOUT,
+            ).clearedProtectedFixData()
+
+        assertEquals(GpsState(isAvailable = true, isEnabled = true), cleared)
+    }
 }

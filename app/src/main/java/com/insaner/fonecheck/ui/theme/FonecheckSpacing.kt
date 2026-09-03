@@ -21,16 +21,20 @@ object FonecheckSpacing {
     /** Full-weight rule under a section label. The hairline rule is one physical pixel instead. */
     val ruleThickness: Dp = 1.dp
 
-    /** Small corner radius, for controls only. Nothing else in the app is rounded. */
-    val controlRadius: Dp = 4.dp
-
     val minTouchTarget: Dp = 48.dp
 
     /**
-     * How wide a row label may grow before it wraps. A label is sized to its own text, so this cap
-     * is what guarantees the value the rest of the row instead of a fixed share of it.
+     * The width at which [com.insaner.fonecheck.ui.components.LongValueRow] gives up on a side-by-side
+     * row and stacks the value under its label.
      */
     val rowLabelMaxWidth: Dp = 160.dp
+
+    /**
+     * How wide a row value may grow before it is ellipsised. A `DataRow` measures its value first
+     * and gives the label everything left over, so this cap is what stops a long value from
+     * starving the label. A value that reaches it belongs in a `LongValueRow`.
+     */
+    val rowValueMaxWidth: Dp = 200.dp
 
     val segmentHeight: Dp = 4.dp
     val segmentGap: Dp = 2.dp

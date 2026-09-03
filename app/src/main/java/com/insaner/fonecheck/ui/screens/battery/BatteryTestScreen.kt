@@ -1,11 +1,8 @@
 package com.insaner.fonecheck.ui.screens.battery
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -19,10 +16,14 @@ import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
 import com.insaner.fonecheck.ui.classification.classifyBatteryHealth
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
-import com.insaner.fonecheck.ui.components.LiveStateTimestamp
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.ObservationReasonNote
+import com.insaner.fonecheck.ui.components.ReadoutWindow
 import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.components.TestScreenContent
+import com.insaner.fonecheck.ui.components.WindowBar
+import com.insaner.fonecheck.ui.components.WindowFigure
+import com.insaner.fonecheck.ui.components.WindowLabel
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 
@@ -36,27 +37,54 @@ fun BatteryTestScreen(
     val chargingStatusLabel = stringResource(viewModel.getChargingStatusLabel(state.charging.status))
     val plugTypeLabel = stringResource(viewModel.getPlugTypeLabel(state.charging.plugType))
 
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(FonecheckTheme.spacing.md),
-        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg),
+    TestScreenContent(
+        modifier = modifier,
+        liveStateUpdatedAtEpochMillis = liveStateUpdatedAtEpochMillis,
     ) {
-        BatterySection(label = stringResource(R.string.batt_basic_title)) {
-            BasicDetails(state.basic)
+        item {
+            BatterySection(label = stringResource(R.string.batt_basic_title)) {
+                // Charge is the one figure this screen exists to report, and it is a bounded
+                // percentage, so it gets the window and the bar.
+                BatteryLevelReadout(state.basic.level)
+                BasicDetails(state.basic)
+            }
         }
-        BatterySection(label = stringResource(R.string.batt_charging_title)) {
-            ChargingDetails(state.charging, chargingStatusLabel, plugTypeLabel)
+        item {
+            BatterySection(label = stringResource(R.string.batt_charging_title)) {
+                ChargingDetails(state.charging, chargingStatusLabel, plugTypeLabel)
+            }
         }
-        BatterySection(label = stringResource(R.string.batt_health_title)) {
-            HealthDetails(state.health)
+        item {
+            BatterySection(label = stringResource(R.string.batt_health_title)) {
+                HealthDetails(state.health)
+            }
         }
-        BatterySection(label = stringResource(R.string.batt_manufacturer_title)) {
-            ManufacturerDetails(state.manufacturer)
+        item {
+            BatterySection(label = stringResource(R.string.batt_manufacturer_title)) {
+                ManufacturerDetails(state.manufacturer)
+            }
         }
-        LiveStateTimestamp(liveStateUpdatedAtEpochMillis)
+    }
+}
+
+@Composable
+private fun BatteryLevelReadout(level: Int?) {
+    Column {
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+        ReadoutWindow {
+            WindowLabel(text = stringResource(R.string.batt_level))
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+            WindowFigure(
+                value =
+                    level?.let { stringResource(R.string.batt_value_percent, it) }
+                        ?: stringResource(R.string.value_unavailable_short),
+            )
+            level?.let {
+                Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+                WindowBar(percentage = it)
+            }
+        }
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
     }
 }
 
@@ -66,10 +94,6 @@ private fun BasicDetails(basic: BasicBatteryState) {
         DeviceObservationClassifier.classify(
             DeviceObservation.BatteryTemperature(basic.temperatureCelsius),
         )
-    DataRow(
-        label = stringResource(R.string.batt_level),
-        value = basic.level?.let { stringResource(R.string.batt_value_percent, it) },
-    )
     DataRow(
         label = stringResource(R.string.batt_voltage),
         value = basic.voltageMv?.let { stringResource(R.string.batt_value_millivolts, it) },
@@ -147,7 +171,7 @@ private fun HealthDetails(health: HealthState) {
 
     DataRow(
         label = stringResource(R.string.batt_cycle_count),
-        value = health.cycleCount?.toString(),
+        value = health.cycleCount?.let { uiNumber(it) },
         confidence = health.cycleCountConfidence.takeIf { health.cycleCountSupported && health.cycleCount != null },
         showDivider = health.cycleCountSupported,
     )

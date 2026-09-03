@@ -1,6 +1,9 @@
 package com.insaner.fonecheck.ui.screens.runall
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -63,10 +66,15 @@ class RunAllResultsScreenTest {
             .assertIsDisplayed()
         composeRule
             .onNodeWithText(context.getString(R.string.report_coverage_value, "100"))
+            .performScrollTo()
             .assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.report_checks)).assertIsDisplayed()
+        composeRule
+            .onNodeWithText(context.getString(R.string.report_checks))
+            .performScrollTo()
+            .assertIsDisplayed()
         composeRule
             .onNodeWithText(context.getString(R.string.report_checks_value, "1", "1"))
+            .performScrollTo()
             .assertIsDisplayed()
         composeRule
             .onNodeWithText(context.getString(R.string.home_cat_battery), ignoreCase = true)
@@ -134,9 +142,12 @@ class RunAllResultsScreenTest {
             .onNodeWithText(context.getString(R.string.run_all_summary_info))
             .performScrollTo()
             .assertIsDisplayed()
+        // The count is a row now: the status word labels it and the figure sits in the value.
         composeRule
-            .onNodeWithText(context.getString(R.string.report_info_count, 1))
-            .performScrollTo()
+            .onNode(
+                hasText("1") and hasAnyAncestor(hasTestTag("report_count_INFO")),
+                useUnmergedTree = true,
+            ).performScrollTo()
             .assertIsDisplayed()
     }
 

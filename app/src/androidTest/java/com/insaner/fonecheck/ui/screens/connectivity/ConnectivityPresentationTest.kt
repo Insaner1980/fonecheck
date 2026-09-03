@@ -3,13 +3,16 @@ package com.insaner.fonecheck.ui.screens.connectivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.permission.PermissionState
 import com.insaner.fonecheck.ui.format.formatUiNumber
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import org.junit.Rule
@@ -58,5 +61,33 @@ class ConnectivityPresentationTest {
         composeRule.onNodeWithContentDescription(usedValue).assertIsDisplayed()
         composeRule.onNodeWithContentDescription(unusedLabel).assertIsDisplayed()
         composeRule.onNodeWithContentDescription(unusedValue).assertIsDisplayed()
+    }
+
+    @Test
+    fun bluetoothDetailsTrustMeasuredAccessInsteadOfStaleUiPermissionState() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+
+        composeRule.setContent {
+            FonecheckTheme {
+                BluetoothDetails(
+                    bluetooth =
+                        BluetoothState(
+                            isAvailable = true,
+                            access = BluetoothAccessCode.PERMISSION_DENIED,
+                            isEnabled = false,
+                            name = "Private adapter",
+                            bleSupported = true,
+                            bondedDeviceCount = 7,
+                        ),
+                    permissionState = PermissionState.GRANTED,
+                    onRequestPermission = {},
+                    onOpenSettings = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Private adapter").assertDoesNotExist()
+        composeRule.onNodeWithText(context.getString(R.string.status_disabled)).assertDoesNotExist()
+        composeRule.onNodeWithText("7").assertDoesNotExist()
     }
 }
