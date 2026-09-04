@@ -53,7 +53,7 @@ class ReportExportScreenTest {
     }
 
     @Test
-    fun generatingAndErrorStatesStayExplicit() {
+    fun generatingStateDisablesExportAndExplainsProgress() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         composeRule.setContent {
             FonecheckTheme {
@@ -68,7 +68,11 @@ class ReportExportScreenTest {
         }
         composeRule.onNodeWithTag("export_pdf").assertIsNotEnabled()
         composeRule.onNodeWithText(context.getString(R.string.export_generating)).assertIsDisplayed()
+    }
 
+    @Test
+    fun exportErrorIsExplained() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
         composeRule.setContent {
             FonecheckTheme {
                 ReportExportScreen(

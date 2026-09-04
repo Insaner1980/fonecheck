@@ -1,5 +1,6 @@
 package com.insaner.fonecheck.ui.screens.vibration
 
+import com.insaner.fonecheck.runtime.EpochMillisClock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -14,6 +15,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class VibrationTestViewModelTest {
@@ -136,6 +138,26 @@ class VibrationTestViewModelTest {
             assertEquals(1, platform.cancelCount)
             assertFalse(viewModel.state.value.isPlaying)
         }
+
+    @Test
+    fun captureTimeChangesForARecordedResultButNotForSectionExpansion() {
+        val timestamps = listOf(100L, 200L).iterator()
+        val viewModel =
+            VibrationTestViewModel(
+                platform = FakeVibrationPlatform(),
+                clock = EpochMillisClock { timestamps.next() },
+            )
+
+        assertEquals(Instant.ofEpochMilli(100L), viewModel.state.value.capturedAt)
+
+        viewModel.toggleSection(VibrationSection.MOTOR)
+
+        assertEquals(Instant.ofEpochMilli(100L), viewModel.state.value.capturedAt)
+
+        viewModel.reportFelt(true)
+
+        assertEquals(Instant.ofEpochMilli(200L), viewModel.state.value.capturedAt)
+    }
 
     private class FakeVibrationPlatform(
         override val capabilities: HapticCapabilityState =

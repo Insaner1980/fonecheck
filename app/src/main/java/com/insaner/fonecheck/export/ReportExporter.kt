@@ -7,8 +7,10 @@ import com.insaner.fonecheck.di.IoDispatcher
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 data class ExportedReport(
@@ -67,14 +69,16 @@ class AndroidReportExporter
         }
 
         @Suppress("TooGenericExceptionCaught")
-        private inline fun ExportTarget.writeAndFinalize(
+        private suspend inline fun ExportTarget.writeAndFinalize(
             format: String,
             write: (File) -> Unit,
         ) {
             var primaryFailure: Throwable? = null
             try {
                 write(temporaryFile)
-                finalizeExport(this, format)
+                ExportTargetLockRegistry.withLock(outputFile) {
+                    finalizeExport(this, format)
+                }
             } catch (error: Throwable) {
                 primaryFailure = error
                 throw error
@@ -142,5 +146,22 @@ class AndroidReportExporter
             val temporaryFile: File,
         )
     }
+
+internal object ExportTargetLockRegistry {
+    private val locks = ConcurrentHashMap<String, Mutex>()
+
+    suspend fun <T> withLock(
+        outputFile: File,
+        action: suspend () -> T,
+    ): T {
+        val lock = locks.computeIfAbsent(outputFile.absolutePath) { Mutex() }
+        lock.lock()
+        return try {
+            action()
+        } finally {
+            lock.unlock()
+        }
+    }
+}
 
 class FonecheckFileProvider : FileProvider()

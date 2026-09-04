@@ -6,6 +6,7 @@ import com.insaner.fonecheck.domain.model.DiagnosticEvidence
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.ReportAppContext
+import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.ReportSchemaVersion
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreVersion
@@ -82,11 +83,36 @@ data class ReportComparison(
     val categories: List<CategoryComparison>,
 )
 
+class IncompatibleReportScopeException : IllegalArgumentException("Reports have incompatible scopes.")
+
+fun reportScopesAreComparable(
+    firstKind: ReportKind?,
+    firstCategoryId: DiagnosticCategoryId?,
+    secondKind: ReportKind?,
+    secondCategoryId: DiagnosticCategoryId?,
+): Boolean =
+    when {
+        firstKind == ReportKind.FULL_CHECK && secondKind == ReportKind.FULL_CHECK -> true
+        firstKind == ReportKind.CATEGORY_ONLY && secondKind == ReportKind.CATEGORY_ONLY ->
+            firstCategoryId != null && firstCategoryId == secondCategoryId
+        else -> false
+    }
+
 object ReportComparisonEngine {
     fun compare(
         before: DiagnosticReport,
         after: DiagnosticReport,
     ): ReportComparison {
+        if (
+            !reportScopesAreComparable(
+                firstKind = before.kind,
+                firstCategoryId = before.comparisonCategoryId(),
+                secondKind = after.kind,
+                secondCategoryId = after.comparisonCategoryId(),
+            )
+        ) {
+            throw IncompatibleReportScopeException()
+        }
         before.requireValidComparisonKeys()
         after.requireValidComparisonKeys()
         val score =
@@ -125,7 +151,7 @@ object ReportComparisonEngine {
                             null
                         },
                 ),
-            categories = DiagnosticCatalog.categories.map { compareCategory(it, before, after) },
+            categories = comparisonCategories(before).map { compareCategory(it, before, after) },
         )
     }
 
@@ -193,6 +219,15 @@ object ReportComparisonEngine {
     }
 
     private fun DiagnosticEvidence.withoutTimestamp() = copy(capturedAt = java.time.Instant.EPOCH)
+
+    private fun DiagnosticReport.comparisonCategoryId(): DiagnosticCategoryId? =
+        if (kind == ReportKind.CATEGORY_ONLY) categories.singleOrNull()?.categoryId else null
+
+    private fun comparisonCategories(report: DiagnosticReport): List<DiagnosticCategoryId> =
+        when (report.kind) {
+            ReportKind.FULL_CHECK -> DiagnosticCatalog.categories
+            ReportKind.CATEGORY_ONLY -> listOf(requireNotNull(report.comparisonCategoryId()))
+        }
 
     private fun DiagnosticReport.requireValidComparisonKeys() {
         require(categories.map { it.categoryId }.distinct().size == categories.size) {

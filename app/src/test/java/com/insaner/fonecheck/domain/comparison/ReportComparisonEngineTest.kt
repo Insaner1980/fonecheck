@@ -11,15 +11,57 @@ import com.insaner.fonecheck.domain.model.DiagnosticEvidence
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.EvidenceValue
+import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreVersion
 import com.insaner.fonecheck.testing.testReport
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
 import java.time.Instant
 
 class ReportComparisonEngineTest {
+    @Test
+    fun fullCheckReportsCanBeCompared() {
+        assertNotNull(
+            ReportComparisonEngine.compare(
+                report(id = "before"),
+                report(id = "after"),
+            ),
+        )
+    }
+
+    @Test
+    fun categoryOnlyReportsForTheSameCategoryCanBeCompared() {
+        val comparison =
+            ReportComparisonEngine.compare(
+                categoryReport("before", DiagnosticCategoryId.BATTERY),
+                categoryReport("after", DiagnosticCategoryId.BATTERY),
+            )
+
+        assertEquals(
+            listOf(DiagnosticCategoryId.BATTERY),
+            comparison.categories.map(CategoryComparison::categoryId),
+        )
+    }
+
+    @Test(expected = IncompatibleReportScopeException::class)
+    fun fullCheckAndCategoryOnlyReportsCannotBeCompared() {
+        ReportComparisonEngine.compare(
+            report(id = "before"),
+            categoryReport("after", DiagnosticCategoryId.BATTERY),
+        )
+    }
+
+    @Test(expected = IncompatibleReportScopeException::class)
+    fun categoryOnlyReportsForDifferentCategoriesCannotBeCompared() {
+        ReportComparisonEngine.compare(
+            categoryReport("before", DiagnosticCategoryId.BATTERY),
+            categoryReport("after", DiagnosticCategoryId.STORAGE),
+        )
+    }
+
     @Test
     fun stableCheckIdsClassifyAddedRemovedStatusAndAvailabilityChanges() {
         val before =
@@ -210,4 +252,19 @@ class ReportComparisonEngineTest {
         scoreVersion = scoreVersion,
         coverage = CoverageSummary(4, 3, 1, 0, coverage),
     )
+
+    private fun categoryReport(
+        id: String,
+        categoryId: DiagnosticCategoryId,
+    ) = report(
+        id = id,
+        categories =
+            listOf(
+                category(
+                    categoryId,
+                    DiagnosticStatus.PASS,
+                    evidence(categoryId, "result", DiagnosticStatus.PASS),
+                ),
+            ),
+    ).copy(kind = ReportKind.CATEGORY_ONLY)
 }

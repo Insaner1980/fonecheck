@@ -1,5 +1,6 @@
 package com.insaner.fonecheck.ui.screens.audio
 
+import com.insaner.fonecheck.ui.screens.buttons.VolumeButtonDirection
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -65,6 +66,32 @@ class AudioRuntimePolicyTest {
         gate.cancel()
 
         assertFalse(gate.isCurrent(second))
+    }
+
+    @Test
+    fun userStopKeepsRecordingCompletionCurrentButCancellationRejectsIt() {
+        val gate = AudioOperationGate()
+        val userStoppedRecording = gate.start()
+
+        gate.stop(AudioRecordingStopMode.KEEP_RESULT)
+
+        assertTrue(gate.isCurrent(userStoppedRecording))
+
+        gate.stop(AudioRecordingStopMode.DISCARD_RESULT)
+
+        assertFalse(gate.isCurrent(userStoppedRecording))
+    }
+
+    @Test
+    fun volumeButtonDirectionUpdatesOnlyItsOwnCounterAndPressedState() {
+        val initial = AudioTestState(volumeDownCount = 2)
+
+        val updated = initial.recordVolumeButton(VolumeButtonDirection.UP)
+
+        assertTrue(updated.volumeUpPressed)
+        assertEquals(1, updated.volumeUpCount)
+        assertFalse(updated.volumeDownPressed)
+        assertEquals(2, updated.volumeDownCount)
     }
 
     private class FakeResource {

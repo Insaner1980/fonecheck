@@ -149,6 +149,18 @@ class BiometricTestViewModelTest {
         assertFalse(viewModel.state.value.promptActive)
     }
 
+    @Test
+    fun anActiveAuthenticationCannotBeStartedAgain() {
+        val viewModel = availableViewModel()
+        assertTrue(viewModel.startAuthentication())
+        viewModel.onAuthFailed()
+        val activeState = viewModel.state.value
+
+        assertFalse(viewModel.startAuthentication())
+
+        assertEquals(activeState, viewModel.state.value)
+    }
+
     private fun availableViewModel() =
         BiometricTestViewModel(
             FakeBiometricCapabilityProvider(

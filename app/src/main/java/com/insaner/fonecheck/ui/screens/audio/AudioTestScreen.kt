@@ -1,7 +1,6 @@
 package com.insaner.fonecheck.ui.screens.audio
 
 import android.content.pm.PackageManager
-import android.view.KeyEvent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -16,7 +15,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.selected
@@ -80,7 +78,7 @@ fun AudioTestScreen(
 
     LaunchedEffect(microphonePermission.state) {
         if (microphonePermission.state != PermissionState.GRANTED) {
-            viewModel.stopRecording()
+            viewModel.cancelRecording()
         }
     }
 
@@ -93,39 +91,20 @@ fun AudioTestScreen(
 
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
         viewModel.stopTone()
-        viewModel.stopRecording()
+        viewModel.cancelRecording()
         viewModel.stopPlayback()
     }
 
     DisposableEffect(Unit) {
         onDispose {
             viewModel.stopTone()
-            viewModel.stopRecording()
+            viewModel.cancelRecording()
             viewModel.stopPlayback()
-            viewModel.discardRecordedSamples()
         }
     }
 
     TestScreenContent(
-        modifier =
-            modifier
-                .onKeyEvent { event ->
-                    if (event.nativeKeyEvent.action == KeyEvent.ACTION_DOWN) {
-                        when (event.nativeKeyEvent.keyCode) {
-                            KeyEvent.KEYCODE_VOLUME_UP -> {
-                                viewModel.onVolumeUp()
-                                true
-                            }
-                            KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                                viewModel.onVolumeDown()
-                                true
-                            }
-                            else -> false
-                        }
-                    } else {
-                        false
-                    }
-                },
+        modifier = modifier,
         liveStateUpdatedAtEpochMillis = liveStateUpdatedAtEpochMillis,
     ) {
         state.error?.let { error -> item { AudioErrorState(error) } }

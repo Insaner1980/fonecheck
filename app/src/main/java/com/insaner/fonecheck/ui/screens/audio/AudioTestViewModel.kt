@@ -14,6 +14,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.insaner.fonecheck.di.IoDispatcher
+import com.insaner.fonecheck.ui.screens.buttons.VolumeButtonDirection
+import com.insaner.fonecheck.ui.screens.buttons.VolumeButtonEventSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -21,6 +23,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -70,6 +73,12 @@ data class AudioTestState(
     val error: AudioOperationError? = null,
 )
 
+internal fun AudioTestState.recordVolumeButton(direction: VolumeButtonDirection): AudioTestState =
+    when (direction) {
+        VolumeButtonDirection.UP -> copy(volumeUpPressed = true, volumeUpCount = volumeUpCount + 1)
+        VolumeButtonDirection.DOWN -> copy(volumeDownPressed = true, volumeDownCount = volumeDownCount + 1)
+    }
+
 enum class StereoChannel { LEFT, RIGHT, BOTH }
 
 enum class HeadphoneTypeCode {
@@ -85,6 +94,7 @@ class AudioTestViewModel
     constructor(
         application: Application,
         @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+        volumeButtonEventSource: VolumeButtonEventSource,
     ) : AndroidViewModel(application) {
         private val audioManager = application.getSystemService(AudioManager::class.java)
 
@@ -105,6 +115,14 @@ class AudioTestViewModel
         private val playbackGate = AudioOperationGate()
 
         private val sampleRate = 44100
+
+        init {
+            viewModelScope.launch {
+                volumeButtonEventSource.events.collect { direction ->
+                    onVolumeButton(direction)
+                }
+            }
+        }
 
         fun updateHeadphoneState() {
             val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
@@ -287,8 +305,7 @@ class AudioTestViewModel
                     .packageManager
                     .hasSystemFeature(PackageManager.FEATURE_MICROPHONE)
             if (!AudioRecordingPolicy.canStart(hasMicrophone, permissionGranted, _state.value.isRecording)) return
-            stopRecording()
-            discardRecordedSamples()
+            cancelRecording()
             _state.value =
                 _state.value.copy(
                     hasRecordedAudio = false,
@@ -357,7 +374,7 @@ class AudioTestViewModel
                 while (isActive && totalSamples < maxRecordSamples) {
                     val read = record.read(buffer, 0, buffer.size)
                     if (read <= 0) {
-                        failed = true
+                        failed = isActive
                         break
                     }
                     val copyCount = minOf(read, maxRecordSamples - totalSamples)
@@ -372,10 +389,10 @@ class AudioTestViewModel
                 }
             } catch (_: IllegalStateException) {
                 // Recording can become unavailable after the permission and hardware checks.
-                failed = true
+                failed = isActive
             } catch (_: SecurityException) {
                 // Permission can be revoked between the check and AudioRecord.startRecording().
-                failed = true
+                failed = isActive
             } finally {
                 recordOwner.release(record)
                 if (recordGate.isCurrent(operationToken)) {
@@ -393,7 +410,16 @@ class AudioTestViewModel
         }
 
         fun stopRecording() {
-            recordGate.cancel()
+            stopRecording(AudioRecordingStopMode.KEEP_RESULT)
+        }
+
+        fun cancelRecording() {
+            stopRecording(AudioRecordingStopMode.DISCARD_RESULT)
+            discardRecordedSamples()
+        }
+
+        private fun stopRecording(mode: AudioRecordingStopMode) {
+            recordGate.stop(mode)
             recordJob?.cancel()
             recordJob = null
             recordOwner.release()
@@ -519,31 +545,16 @@ class AudioTestViewModel
             _state.value = _state.value.copy(volumeLevel = current, maxVolume = max)
         }
 
-        fun onVolumeUp() {
-            val s = _state.value
-            _state.value =
-                s.copy(
-                    volumeUpPressed = true,
-                    volumeUpCount = s.volumeUpCount + 1,
-                )
+        private fun onVolumeButton(direction: VolumeButtonDirection) {
+            _state.value = _state.value.recordVolumeButton(direction)
             updateVolumeState()
             viewModelScope.launch {
                 delay(300)
-                _state.value = _state.value.copy(volumeUpPressed = false)
-            }
-        }
-
-        fun onVolumeDown() {
-            val s = _state.value
-            _state.value =
-                s.copy(
-                    volumeDownPressed = true,
-                    volumeDownCount = s.volumeDownCount + 1,
-                )
-            updateVolumeState()
-            viewModelScope.launch {
-                delay(300)
-                _state.value = _state.value.copy(volumeDownPressed = false)
+                _state.value =
+                    when (direction) {
+                        VolumeButtonDirection.UP -> _state.value.copy(volumeUpPressed = false)
+                        VolumeButtonDirection.DOWN -> _state.value.copy(volumeDownPressed = false)
+                    }
             }
         }
 
@@ -560,9 +571,8 @@ class AudioTestViewModel
 
         override fun onCleared() {
             stopTone()
-            stopRecording()
+            cancelRecording()
             stopPlayback()
-            discardRecordedSamples()
         }
 
         private fun stopAndRelease(track: AudioTrack) {

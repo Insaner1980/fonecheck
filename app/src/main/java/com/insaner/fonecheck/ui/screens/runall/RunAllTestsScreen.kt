@@ -220,8 +220,7 @@ fun RunAllTestsScreen(
                 },
                 stopSimInfo = simViewModel::cancelCapture,
                 stopMicrophone = {
-                    audioViewModel.stopRecording()
-                    audioViewModel.discardRecordedSamples()
+                    audioViewModel.cancelRecording()
                 },
                 stopGps = connectivityViewModel::cancelGpsFix,
                 stopStorage = {
@@ -234,9 +233,8 @@ fun RunAllTestsScreen(
                 },
                 stopAudio = {
                     audioViewModel.stopTone()
-                    audioViewModel.stopRecording()
+                    audioViewModel.cancelRecording()
                     audioViewModel.stopPlayback()
-                    audioViewModel.discardRecordedSamples()
                 },
                 stopCamera = {
                     cameraViewModel.turnOffFlash()
@@ -459,15 +457,14 @@ fun RunAllTestsScreen(
                                         else -> null
                                     }
                             } finally {
-                                audioViewModel.stopRecording()
-                                audioViewModel.discardRecordedSamples()
+                                audioViewModel.cancelRecording()
                             }
                         }
                     } catch (error: CancellationException) {
                         throw error
                     } catch (_: Exception) {
                         microphoneIssue = RunAllStageOutcome.ERROR
-                        audioViewModel.stopRecording()
+                        audioViewModel.cancelRecording()
                     }
                     microphoneIssue?.let {
                         sessionViewModel.reportAutomaticIssue(
@@ -561,10 +558,10 @@ fun RunAllTestsScreen(
                 if (!available) {
                     sessionViewModel.markStageUnavailable(token)
                 } else if (activity == null) {
-                    biometricViewModel.startAuthentication()
-                    biometricViewModel.onPromptLaunchFailure()
-                } else {
-                    biometricViewModel.startAuthentication()
+                    if (biometricViewModel.startAuthentication()) {
+                        biometricViewModel.onPromptLaunchFailure()
+                    }
+                } else if (biometricViewModel.startAuthentication()) {
                     runCatching {
                         showBiometricPrompt(
                             activity = activity,

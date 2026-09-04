@@ -11,9 +11,9 @@ permissions:
 
 jobs:
   build-test-lint:
-    name: Debug and minified release builds, JVM unit tests, and debug lint
+    name: Builds, JVM unit tests, debug lint, and runtime dependency scan
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -26,8 +26,8 @@ jobs:
       - name: Install Android SDK packages
         run: sdkmanager "platform-tools" "platforms;android-37.0" "build-tools;37.0.0"
       - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
-      - name: Build debug and minified release, run JVM unit tests, and lint debug
-        run: ./gradlew :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:lintDebug --no-daemon --console=plain || { bash tools/print-gradle-verification-report.sh; exit 1; }
+      - name: Build, test, lint, and scan app runtime dependencies
+        run: ./gradlew :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:lintDebug :app:dependencyCheckAnalyze --no-daemon --console=plain || { bash tools/print-gradle-verification-report.sh; exit 1; }
 
   codeql:
     runs-on: ubuntu-latest

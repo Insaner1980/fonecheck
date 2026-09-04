@@ -286,6 +286,7 @@ class SimTelephonyProbeTest {
             17 to NetworkGenerationCode.THIRD_GENERATION,
             13 to NetworkGenerationCode.FOURTH_GENERATION,
             18 to NetworkGenerationCode.UNKNOWN,
+            19 to NetworkGenerationCode.FOURTH_GENERATION,
             20 to NetworkGenerationCode.FIFTH_GENERATION,
             -1 to NetworkGenerationCode.UNKNOWN,
         ).forEach { (code, expected) -> assertEquals(expected, SimTelephonyProbe.networkGeneration(code)) }

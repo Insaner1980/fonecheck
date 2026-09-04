@@ -125,11 +125,12 @@ class RunAllSnapshotMapperTest {
                 .filter { evidenceLabelResource(it) == null },
         )
 
-        val rawTextValues =
+        val persistedValues =
             snapshots
                 .flatMap { it.evidence }
-                .mapNotNull { (it.value as? EvidenceValue.RawTextValue)?.value }
-        assertFalse(sensitiveValues.any { sensitive -> rawTextValues.any { sensitive in it } })
+                .mapNotNull { it.value }
+                .map { it.testText() }
+        assertFalse(sensitiveValues.any { sensitive -> persistedValues.any { sensitive in it } })
     }
 
     @Test
@@ -1657,4 +1658,15 @@ class RunAllSnapshotMapperTest {
             gpuConfidence = Confidence.HIGH,
             capturedAt = Instant.parse("2026-08-07T12:00:00Z"),
         )
+
+    private fun EvidenceValue.testText(): String =
+        when (this) {
+            is EvidenceValue.BooleanValue -> value.toString()
+            is EvidenceValue.IntValue -> value.toString()
+            is EvidenceValue.LongValue -> value.toString()
+            is EvidenceValue.DecimalValue -> value.toPlainString()
+            is EvidenceValue.DoubleValue -> value.toString()
+            is EvidenceValue.RawTextValue -> value
+            is EvidenceValue.StableTextCodeValue -> value
+        }
 }

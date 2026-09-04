@@ -16,6 +16,7 @@ import com.insaner.fonecheck.domain.model.ReportDeviceContext
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.IdProvider
+import com.insaner.fonecheck.testing.testReport
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -35,6 +36,8 @@ class CategoryRetestFinalizerTest {
                     reportRepository = repository,
                 )
             val sourceReportId = "original-full-report"
+            val sourceReport = testReport(id = sourceReportId)
+            repository.insert(sourceReport)
 
             val retest =
                 finalizer.freeze(
@@ -49,7 +52,7 @@ class CategoryRetestFinalizerTest {
             assertNotEquals(sourceReportId, retest.stableId)
             assertTrue(finalizer.save(retest))
             assertEquals(retest, (repository.getById("retest-report") as ReportLoadResult.Available).report)
-            assertEquals(ReportLoadResult.NotFound, repository.getById(sourceReportId))
+            assertEquals(sourceReport, (repository.getById(sourceReportId) as ReportLoadResult.Available).report)
         }
 
     private fun snapshot() =

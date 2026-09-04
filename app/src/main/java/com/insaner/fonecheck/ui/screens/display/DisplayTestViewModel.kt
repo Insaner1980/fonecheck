@@ -3,10 +3,8 @@ package com.insaner.fonecheck.ui.screens.display
 import android.app.Application
 import android.content.Context
 import android.hardware.display.DisplayManager
-import android.os.Build
 import android.provider.Settings
 import android.view.Display
-import android.view.WindowManager
 import androidx.lifecycle.AndroidViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +17,22 @@ enum class DisplayResolutionSource {
     DISPLAY_MODE,
     PHYSICAL_METRICS,
 }
+
+internal data class ResolutionReading(
+    val width: Int,
+    val height: Int,
+    val source: DisplayResolutionSource,
+)
+
+internal fun appWindowResolution(
+    width: Int,
+    height: Int,
+): ResolutionReading? =
+    if (width > 0 && height > 0) {
+        ResolutionReading(width, height, DisplayResolutionSource.APP_WINDOW)
+    } else {
+        null
+    }
 
 data class DisplayInfoState(
     val widthPx: Int = 0,
@@ -69,6 +83,7 @@ class DisplayTestViewModel
 
         private val _state = MutableStateFlow(DisplayTestState())
         val state: StateFlow<DisplayTestState> = _state.asStateFlow()
+        private var windowResolution: ResolutionReading? = null
 
         init {
             loadDisplayInfo()
@@ -156,13 +171,22 @@ class DisplayTestViewModel
             loadDisplayInfo()
         }
 
+        fun updateWindowResolution(
+            width: Int,
+            height: Int,
+        ) {
+            val resolution = appWindowResolution(width, height) ?: return
+            if (resolution == windowResolution) return
+            windowResolution = resolution
+            loadDisplayInfo()
+        }
+
         private fun loadDisplayInfo() {
-            val windowManager = context.getSystemService(WindowManager::class.java)
             val display =
                 context
                     .getSystemService(DisplayManager::class.java)
                     .getDisplay(Display.DEFAULT_DISPLAY)
-            val resolution = readResolution(windowManager, display)
+            val resolution = readResolution(display)
             val brightness =
                 runCatching {
                     Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS)
@@ -198,18 +222,8 @@ class DisplayTestViewModel
                 )
         }
 
-        private fun readResolution(
-            windowManager: WindowManager,
-            display: Display?,
-        ): ResolutionReading {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                val bounds = windowManager.currentWindowMetrics.bounds
-                return ResolutionReading(
-                    width = bounds.width(),
-                    height = bounds.height(),
-                    source = DisplayResolutionSource.APP_WINDOW,
-                )
-            }
+        private fun readResolution(display: Display?): ResolutionReading {
+            windowResolution?.let { return it }
             val mode = display?.mode
             if (mode != null && mode.physicalWidth > 0 && mode.physicalHeight > 0) {
                 return ResolutionReading(
@@ -228,12 +242,6 @@ class DisplayTestViewModel
                 source = DisplayResolutionSource.PHYSICAL_METRICS,
             )
         }
-
-        private data class ResolutionReading(
-            val width: Int,
-            val height: Int,
-            val source: DisplayResolutionSource,
-        )
 
         companion object {
             private const val MIN_BRIGHTNESS = 0
