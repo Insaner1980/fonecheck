@@ -73,16 +73,17 @@ class ReportExportViewModel
         ) {
             val ready = _state.value as? ReportExportState.Ready ?: return
             if (ready.isGenerating) return
-            _state.value = ready.copy(isGenerating = true, error = null, shareRequest = null)
+            val generating = ready.copy(isGenerating = true, error = null, shareRequest = null)
+            _state.value = generating
             exportJob =
                 viewModelScope.launch {
                     try {
                         val exported = operation(ready.report)
-                        _state.value = ready.copy(shareRequest = exported)
+                        _state.value = generating.copy(isGenerating = false, shareRequest = exported)
                     } catch (error: CancellationException) {
                         throw error
                     } catch (_: Exception) {
-                        _state.value = ready.copy(error = errorCode)
+                        _state.value = generating.copy(isGenerating = false, error = errorCode)
                     }
                 }
         }

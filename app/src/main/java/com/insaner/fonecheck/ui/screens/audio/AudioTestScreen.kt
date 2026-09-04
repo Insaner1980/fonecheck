@@ -35,6 +35,8 @@ import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.PrimaryButton
 import com.insaner.fonecheck.ui.components.ReadoutWindow
+import com.insaner.fonecheck.ui.components.ScreenStateCard
+import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.StatusText
@@ -82,6 +84,13 @@ fun AudioTestScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        while (true) {
+            viewModel.updateHeadphoneState()
+            delay(1000)
+        }
+    }
+
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
         viewModel.stopTone()
         viewModel.stopRecording()
@@ -93,6 +102,7 @@ fun AudioTestScreen(
             viewModel.stopTone()
             viewModel.stopRecording()
             viewModel.stopPlayback()
+            viewModel.discardRecordedSamples()
         }
     }
 
@@ -118,6 +128,7 @@ fun AudioTestScreen(
                 },
         liveStateUpdatedAtEpochMillis = liveStateUpdatedAtEpochMillis,
     ) {
+        state.error?.let { error -> item { AudioErrorState(error) } }
         // Volume leads. It is the precondition for every test below it: at a low level a working
         // speaker still sounds wrong, and the reader would mark a good device as faulty.
         item { VolumeButtonSection(state, viewModel) }
@@ -135,6 +146,20 @@ fun AudioTestScreen(
         }
         item { HeadphoneJackSection(state, viewModel) }
     }
+}
+
+@Composable
+private fun AudioErrorState(error: AudioOperationError) {
+    ScreenStateCard(
+        type = ScreenStateType.NOT_TESTED,
+        message =
+            stringResource(
+                when (error) {
+                    AudioOperationError.OUTPUT_UNAVAILABLE -> R.string.audio_output_unavailable
+                    AudioOperationError.RECORDING_UNAVAILABLE -> R.string.audio_recording_unavailable
+                },
+            ),
+    )
 }
 
 @Composable
@@ -233,24 +258,40 @@ private fun EarpieceTestSection(
 ) {
     AudioSection(title = stringResource(R.string.audio_earpiece_title)) {
         Note(stringResource(R.string.audio_earpiece_description))
-        if (state.isPlaying) {
-            SecondaryButton(
-                label = stringResource(R.string.audio_stop),
-                onClick = viewModel::stopTone,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        } else {
-            PrimaryButton(
-                label = stringResource(R.string.audio_play_earpiece),
-                onClick = viewModel::playEarpieceTone,
-                modifier = Modifier.fillMaxWidth(),
-            )
+        when (state.earpieceAvailable) {
+            null ->
+                DataRow(
+                    label = stringResource(R.string.audio_headphone_status),
+                    value = null,
+                )
+
+            false ->
+                DataRow(
+                    label = stringResource(R.string.audio_headphone_status),
+                    value = stringResource(R.string.status_not_available),
+                )
+
+            true -> {
+                if (state.isPlaying) {
+                    SecondaryButton(
+                        label = stringResource(R.string.audio_stop),
+                        onClick = viewModel::stopTone,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                } else {
+                    PrimaryButton(
+                        label = stringResource(R.string.audio_play_earpiece),
+                        onClick = viewModel::playEarpieceTone,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                AudioManualResult(
+                    check = AudioManualCheck.EARPIECE,
+                    result = state.manualResults[AudioManualCheck.EARPIECE],
+                    onResult = { viewModel.recordManualResult(AudioManualCheck.EARPIECE, it) },
+                )
+            }
         }
-        AudioManualResult(
-            check = AudioManualCheck.EARPIECE,
-            result = state.manualResults[AudioManualCheck.EARPIECE],
-            onResult = { viewModel.recordManualResult(AudioManualCheck.EARPIECE, it) },
-        )
     }
 }
 
@@ -362,13 +403,6 @@ private fun HeadphoneJackSection(
     state: AudioTestState,
     viewModel: AudioTestViewModel,
 ) {
-    LaunchedEffect(Unit) {
-        while (true) {
-            viewModel.updateHeadphoneState()
-            delay(1000)
-        }
-    }
-
     AudioSection(title = stringResource(R.string.audio_headphone_title)) {
         Note(stringResource(R.string.audio_headphone_description))
         DataRow(

@@ -1,10 +1,15 @@
 package com.insaner.fonecheck.ui.screens.sensor
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Application
+import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Build
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -88,6 +93,7 @@ class SensorTestViewModel
             SensorListenerOwner<Int, SensorEventListener> { listener ->
                 sensorManager.unregisterListener(listener)
             }
+        private val callbackGate = SensorCallbackGate()
 
         private val _state = MutableStateFlow(SensorTestState())
         val state: StateFlow<SensorTestState> = _state.asStateFlow()
@@ -142,6 +148,10 @@ class SensorTestViewModel
             val sensorType = test.sensorType
             if (sensorType == null) {
                 _state.update { it.copy(expandedSensor = code) }
+                return
+            }
+            if (!canReadSensor(sensorType)) {
+                _state.update { it.copy(expandedSensor = code, error = null) }
                 return
             }
 
@@ -221,11 +231,13 @@ class SensorTestViewModel
             challengeClearJob = null
             sampler = null
             challengeRuntime = SensorChallengeRuntime()
+            callbackGate.cancel()
             listenerOwner.clear()
             _state.update {
                 it.copy(
                     activeSensorType = null,
                     expandedSensor = null,
+                    liveData = emptyMap(),
                     challenge = ChallengeState(),
                     guidedTests =
                         it.guidedTests.map { test ->
@@ -260,10 +272,11 @@ class SensorTestViewModel
 
         private fun startListening(sensorType: Int): Boolean {
             val sensor = sensorManager.getDefaultSensor(sensorType) ?: return false
+            val callbackToken = callbackGate.begin()
             val listener =
                 object : SensorEventListener {
                     override fun onSensorChanged(event: SensorEvent) {
-                        handleSensorEvent(event)
+                        if (callbackGate.isCurrent(callbackToken)) handleSensorEvent(event)
                     }
 
                     override fun onAccuracyChanged(
@@ -271,17 +284,24 @@ class SensorTestViewModel
                         accuracy: Int,
                     ) = Unit
                 }
-            val registered = sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI)
+            val registered =
+                try {
+                    sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI)
+                } catch (_: SecurityException) {
+                    false
+                }
             if (registered) {
                 listenerOwner.replace(sensorType, listener)
                 _state.update { it.copy(activeSensorType = sensorType) }
             }
+            if (!registered) callbackGate.cancel()
             return registered
         }
 
         @Synchronized
         private fun handleSensorEvent(event: SensorEvent) {
             val values = event.values.copyOf()
+            if (!SensorSamplePolicy.isValid(values)) return
             val accuracy = SensorAccuracyCode.fromAndroid(event.accuracy)
             _state.update { current ->
                 current.copy(
@@ -377,6 +397,11 @@ class SensorTestViewModel
 
         private fun clearActiveOperation() {
             val activeCode = _state.value.expandedSensor
+            val activeSensorType =
+                _state.value.activeSensorType
+                    ?: _state.value.guidedTests
+                        .firstOrNull { it.code == activeCode }
+                        ?.sensorType
             challengeClearJob?.cancel()
             challengeClearJob = null
             sampler = null
@@ -385,6 +410,12 @@ class SensorTestViewModel
             _state.update { current ->
                 current.copy(
                     challenge = ChallengeState(),
+                    liveData =
+                        if (activeSensorType == null) {
+                            current.liveData
+                        } else {
+                            current.liveData - activeSensorType
+                        },
                     guidedTests =
                         current.guidedTests.map { test ->
                             if (test.code == activeCode && test.status == GuidedSensorStatus.SAMPLING) {
@@ -398,6 +429,7 @@ class SensorTestViewModel
         }
 
         private fun stopListening() {
+            callbackGate.cancel()
             listenerOwner.clear()
             _state.update { it.copy(activeSensorType = null) }
         }
@@ -424,6 +456,14 @@ class SensorTestViewModel
                 Sensor.TYPE_STEP_COUNTER, Sensor.TYPE_STEP_DETECTOR -> 6
                 else -> 7
             }
+
+        @SuppressLint("InlinedApi")
+        private fun canReadSensor(sensorType: Int): Boolean =
+            !SensorPermissionPolicy.requiresActivityRecognition(sensorType, Build.VERSION.SDK_INT) ||
+                ContextCompat.checkSelfPermission(
+                    getApplication(),
+                    Manifest.permission.ACTIVITY_RECOGNITION,
+                ) == PackageManager.PERMISSION_GRANTED
 
         override fun onCleared() {
             stopAllTests()

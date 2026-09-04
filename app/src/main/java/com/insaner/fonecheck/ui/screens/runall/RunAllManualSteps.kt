@@ -23,8 +23,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.viewinterop.AndroidView
 import com.insaner.fonecheck.R
@@ -562,7 +564,10 @@ fun ButtonCheckStep(
             )
         }
         if (state.phase == ButtonTestPhase.TIMED_OUT) {
-            ObservationReasonNote(classifyButtonTest(state.phase))
+            ObservationReasonNote(
+                classification = classifyButtonTest(state.phase),
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
+            )
             Note(text = stringResource(R.string.button_timeout_hint))
         }
         RetryAndSkipButtons(
@@ -582,6 +587,7 @@ private fun ButtonDetectionRow(
         label = label,
         value = stringResource(if (detected) R.string.button_detected else R.string.status_not_measured),
         tone = if (detected) SemanticTone.PASS else SemanticTone.NEUTRAL,
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
     )
 }
 

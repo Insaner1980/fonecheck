@@ -25,7 +25,12 @@ object PreferencesModule {
         @ApplicationContext context: Context,
     ): DataStore<Preferences> =
         PreferenceDataStoreFactory.create {
-            context.preferencesDataStoreFile("fonecheck.preferences_pb")
+            val preferencesFile = context.preferencesDataStoreFile("fonecheck")
+            val legacyFile = context.preferencesDataStoreFile("fonecheck.preferences_pb")
+            if (!preferencesFile.exists() && legacyFile.exists()) {
+                check(legacyFile.renameTo(preferencesFile)) { "Could not migrate preferences DataStore." }
+            }
+            preferencesFile
         }
 
     @Provides

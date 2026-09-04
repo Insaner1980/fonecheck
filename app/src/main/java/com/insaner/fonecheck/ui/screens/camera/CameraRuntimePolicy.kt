@@ -55,7 +55,7 @@ object CameraDescriptorMapper {
     }
 }
 
-class CameraCaptureGate {
+class CameraOperationGate {
     private var nextToken = 0L
     var activeToken: Long? = null
         private set
@@ -67,16 +67,27 @@ class CameraCaptureGate {
         return token
     }
 
+    fun complete(token: Long): Boolean = complete(token) {}
+
     @Synchronized
-    fun complete(token: Long): Boolean {
+    fun complete(
+        token: Long,
+        commit: () -> Unit,
+    ): Boolean {
         if (activeToken != token) return false
-        activeToken = null
+        try {
+            commit()
+        } finally {
+            activeToken = null
+        }
         return true
     }
 
     @Synchronized
-    fun cancel(token: Long) {
-        if (activeToken == token) activeToken = null
+    fun cancel(token: Long): Boolean {
+        if (activeToken != token) return false
+        activeToken = null
+        return true
     }
 
     @Synchronized

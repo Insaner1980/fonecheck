@@ -76,7 +76,7 @@ Timing tags indicate when to revalidate a still-relevant item. They do not overr
 
 ## 5. Error Handling & Reliability
 
-- [ ] `NEXT TOUCH` **Reflection for PowerProfile** — `BatteryTestViewModel` lines ~252-257 uses `Class.forName("com.android.internal.os.PowerProfile")` to get battery design capacity. Works on most devices but may fail on custom ROMs. Verify fallback returns sensible UI state (not blank).
+- [x] `NEXT TOUCH` **PowerProfile reflection** — RESOLVED: the hidden-API design-capacity path is absent. `BatteryTestViewModel` uses public `BatteryManager` data and exposes unavailable values explicitly.
 - [ ] `NEXT TOUCH` **Silent catch blocks in CameraTestViewModel** — Lines ~108, ~220, ~284 catch `Exception` but don't log. Add at least `Log.w()` for production debugging.
 - [ ] `NEXT TOUCH` **Silent catch blocks in PerformanceInfoViewModel** — Lines ~61, ~80, ~90, ~141: four `catch (_: Exception)` returning null/default. Ensure UI shows "unavailable" rather than blank for each.
 - [ ] `NEXT TOUCH` **OpenGL setup in one big try-catch** — `PerformanceInfoViewModel` lines ~101-144 wraps 43 lines in a single try-catch. A failure at line 105 masks whether GPU info is partially available.
@@ -90,8 +90,8 @@ Timing tags indicate when to revalidate a still-relevant item. They do not overr
 ## 6. UI/UX Quality
 
 - [ ] `NEXT TOUCH` **Loading indicators for async operations** — Verify loading spinners/shimmer exist for: GPS fix, camera preview, audio recording, sensor challenge start, and initial data load in info screens.
-- [x] `NOW` **Color coding consistency** — VERIFIED OK: All screens consistently use Green400 (good/pass), Yellow400 (warning/caution), Red400 (error/fail). Pattern is uniform across Battery, Connectivity, Sensor, Audio, Camera, DeviceInfo, and SimTelephony screens.
-- [x] `NOW` **ConfidenceBadge usage** — VERIFIED: Used in BatteryTestScreen and PerformanceInfoScreen (via shared InfoCard). Not used in Sensor/Audio/Connectivity — these show real-time data where confidence is implicit in the reading accuracy fields. Design decision: add ConfidenceBadge to these screens only when Phase 4 scoring needs it.
+- [x] `NOW` **Semantic colour consistency** — VERIFIED: Screens pass `SemanticTone` to shared components; theme roles resolve the rendered colours. Raw legacy status colours are not a screen-level API.
+- [x] `NOW` **Confidence presentation** — VERIFIED: Per-row confidence stays in `DataRow` or `LongValueRow`, while section-wide confidence uses `SectionHeader` trailing content. The same confidence is not shown in both places.
 - [ ] `NEXT TOUCH` **Expandable card animation** — Some screens use expandable detail cards. Verify animation is consistent (same duration, easing) across BatteryTestScreen, ConnectivityTestScreen, and SensorTestScreen.
 - [ ] `NEXT TOUCH` **Button state management** — For interactive tests (sensor challenges, audio recording, GPS fix): verify buttons are disabled during operation to prevent double-tap issues.
 - [x] `PRE-RELEASE` **Accessibility: touch targets** — VERIFIED: Material controls provide their standard minimum targets; remaining custom click surfaces are full-width cards/rows or the full-screen touch grid, and the shared expandable card has a 48dp semantics test.
@@ -99,13 +99,13 @@ Timing tags indicate when to revalidate a still-relevant item. They do not overr
 - [x] `NOW` **Home screen is placeholder** — DONE: Home renders the device summary, category grid, and an automatic 12-category "Run All Tests" session.
 - [ ] `DECIDE` **Home category rows after a category retest** — Rows intentionally describe the latest Full Check. Decide later whether a newer category-only retest should replace that category's row value without changing the “Last full check” context.
 - [ ] `PRE-RELEASE` **ConnectivityTestScreen is 783 lines** — The longest screen file. Evaluate whether sub-sections (WiFi, Bluetooth, GPS, Mobile) should be extracted into separate composables in their own files.
-- [ ] `NOW` **Consistent card component naming** — BatteryTestScreen uses `BatteryCard`, ConnectivityTestScreen uses `ConnectivityCard`, but the pattern is the same. Consider a shared `TestSectionCard` component. *Extract before Phase 1 adds more card variants. Note: these are expandable cards with onClick — different from the simple InfoCard already extracted.*
+- [x] `NOW` **Shared section structure** — DONE: Screens use `SectionHeader`, shared rules, and `DisclosureHeader` where expansion is required; the retired card layer is not an available migration path.
 
 ---
 
 ## 7. Localization
 
-- [ ] `NEXT TOUCH` **EN/FI string parity** — `values/strings.xml` (303 lines) and `values-fi/strings.xml` (301 lines) are nearly matched. Identify the 2-line discrepancy and verify no keys are missing in Finnish.
+- [x] `NEXT TOUCH` **EN/FI string parity** — VERIFIED: Resource keys match; only the non-translatable source-language `app_name` is intentionally absent from `values-fi`.
 - [ ] `PRE-RELEASE` **Plural forms** — Verify `plurals` resources are used where counts appear (e.g. satellite count in GPS, sensor count, camera count) instead of naive string concatenation.
 - [ ] `NEXT TOUCH` **Hardcoded strings in code** — Icon labels in `BatteryTestScreen` ("BAT", "CHG", "HP", "CAP") are not string resources. Move to `strings.xml` for consistency.
 - [ ] `PRE-RELEASE` **Dynamic unit formatting** — Verify temperature (°C), frequency (GHz/MHz), memory (GB/MB), voltage (mV), and current (mA) use locale-aware number formatting.
@@ -118,11 +118,11 @@ Timing tags indicate when to revalidate a still-relevant item. They do not overr
 
 - [ ] `NEXT TOUCH` **Magic numbers in sensor challenges** — `SensorTestViewModel` lines ~207-277 use raw thresholds: `20` (shake), `200` (delay), `5`/`7`/`9` (tilt angles), `0.95`/`0.8` (proximity), `31` (multiplier). Extract to companion object constants with descriptive names.
 - [ ] `NEXT TOUCH` **Magic numbers in connectivity** — `ConnectivityTestViewModel`: `60000` (GPS timeout, line ~480), `500` (delay, line ~493). Extract to named constants.
-- [x] `NOW` **Duplicate `InfoRow` composable** — DONE: Extracted to `ui/components/InfoRow.kt`. DeviceInfoScreen, SimTelephonyScreen, PerformanceInfoScreen now use shared component.
-- [x] `NOW` **Duplicate `InfoCard` composable** — DONE: Extracted to `ui/components/InfoCard.kt` with optional `confidence: Confidence?` parameter. All 3 screens updated.
-- [x] `NOW` **Duplicate `StatusRow` composable** — DONE: Extracted to `ui/components/StatusRow.kt`. DeviceInfoScreen and SimTelephonyScreen updated. Unified param name: `isHighlighted`.
+- [x] `NOW` **Shared data rows** — DONE: Screens use `DataRow` and `LongValueRow`; retired legacy row components are absent from current source.
+- [x] `NOW` **Shared section presentation** — DONE: `SectionHeader` plus shared rules replaces the retired card components.
+- [x] `NOW` **Shared status presentation** — DONE: `StatusText`, `StatusLamp`, and `DisclosureHeader` own status presentation without a parallel status-row component.
 - [ ] `NEXT TOUCH` **Method length** — `ConnectivityTestViewModel` has methods that handle entire connectivity domains inline. Verify no single method exceeds ~50 lines.
-- [ ] `NEXT TOUCH` **Documentation for complex logic** — Reflection code (`BatteryTestViewModel:252-257`), OpenGL probing (`PerformanceInfoViewModel:101-144`), and sensor challenge physics (`SensorTestViewModel:207-277`) need inline comments explaining the approach.
+- [ ] `NEXT TOUCH` **Documentation for complex logic** — OpenGL probing (`PerformanceInfoViewModel:101-144`) and sensor challenge physics (`SensorTestViewModel:207-277`) need inline comments explaining the approach.
 - [x] `NOW` **Consistent state class field naming** — REVIEWED (see item 2.5 above). Naming is consistent within each pattern. No conflicting conventions found.
 
 ---
@@ -130,7 +130,7 @@ Timing tags indicate when to revalidate a still-relevant item. They do not overr
 ## 9. Build & Dependencies
 
 - [ ] `NEXT TOUCH` **Version catalog completeness** — Verify `gradle/libs.versions.toml` defines versions for all dependencies used in `build.gradle.kts` files. No hardcoded version strings in build files.
-- [ ] `PRE-RELEASE` **ProGuard / R8 rules** — If release builds are configured, verify rules exist for: Hilt (generated code), Room (entities), Kotlin serialization (routes), and reflection (`PowerProfile`).
+- [ ] `PRE-RELEASE` **ProGuard / R8 rules** — Verify minified release behavior for Hilt generated code, Room entities, Kotlin serialization routes, CameraX and report export.
 - [ ] `NEXT TOUCH` **Unused dependencies** — Room is declared but only has a placeholder entity. Verify no other declared dependencies are unused (check `libs.versions.toml` entries against actual imports).
 - [ ] `PRE-PHASE 4` **Room schema export** — `FonecheckDatabase` has `exportSchema = false`. When real entities are added (Phase 4), enable schema export for migration testing.
 - [ ] `PRE-RELEASE` **Kotlin compiler options** — Verify compose compiler reports are configured for release builds to catch unnecessary recompositions.
@@ -157,7 +157,7 @@ Timing tags indicate when to revalidate a still-relevant item. They do not overr
 - [ ] `PRE-RELEASE` **Permission model** — Permissions are checked via `ContextCompat.checkSelfPermission()` in `ConnectivityTestViewModel` (lines ~189-194), `SimTelephonyViewModel` (lines ~26-28). Verify all permission-gated APIs have checks, not just suppression annotations.
 - [x] `PRE-RELEASE` **Audio permission suppression** — DONE: an explicit runtime permission guard runs before microphone access.
 - [ ] `PRE-RELEASE` **Data exposure through logs** — Search for `Log.d()`, `Log.i()`, `Log.e()` calls that might expose device identifiers, IMEI, SIM info, or network details in logcat. These are readable by other apps on older Android versions.
-- [ ] `PRE-RELEASE` **Reflection usage risk** — `BatteryTestViewModel` accesses hidden API `com.android.internal.os.PowerProfile`. On Android 9+ this may be blocked by hidden API restrictions. Test on latest API level.
+- [x] `PRE-RELEASE` **Reflection usage risk** — RESOLVED: production source contains no hidden `PowerProfile` reflection path.
 - [ ] `PRE-RELEASE` **Root detection** — `DeviceInfoViewModel` checks for root indicators (lines ~64-69, file existence checks for `/system/bin/su` etc.). Verify the check is informational only and doesn't gate app functionality.
 
 ---

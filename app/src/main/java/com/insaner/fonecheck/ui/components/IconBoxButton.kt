@@ -37,7 +37,7 @@ fun IconBoxButton(
                     .size(BoxSize)
                     .border(
                         width = BorderWidth,
-                        color = FonecheckTheme.colors.edge,
+                        color = FonecheckTheme.colors.textMuted,
                     ),
             contentAlignment = Alignment.Center,
         ) {

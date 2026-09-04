@@ -378,6 +378,7 @@ private fun PermissionSection(
         PermissionRow(R.string.settings_permission_phone, permissions.phone)
         PermissionRow(R.string.settings_permission_location, permissions.location)
         PermissionRow(R.string.settings_permission_bluetooth, permissions.bluetooth)
+        PermissionRow(R.string.settings_permission_physical_activity, permissions.physicalActivity)
         SecondaryButton(
             label = stringResource(R.string.settings_open_app_settings),
             onClick = onOpenAppSettings,

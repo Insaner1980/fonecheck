@@ -176,6 +176,8 @@
     <string name="audio_level">Suhteellinen tulotaso</string>
     <string name="audio_relative_level_value">%1$s%%</string>
     <string name="audio_relative_level_disclaimer">Vain suhteellinen PCM-amplitudi, ei kalibroitu äänenpaine- tai äänekkyysmittaus. Tallenne säilyy vain muistissa ja poistetaan testin sulkeutuessa.</string>
+    <string name="audio_output_unavailable">Äänentoistoa ei voitu aloittaa. Yritä uudelleen.</string>
+    <string name="audio_recording_unavailable">Äänitystä ei voitu aloittaa tai suorittaa loppuun. Tarkista mikrofonin käyttöoikeus ja yritä uudelleen.</string>
     <string name="audio_manual_confirmation">Vahvista kuulemasi. Laitetunnistus ei yksin todista kuuluvaa ääntä.</string>
     <string name="audio_manual_problem">Kuulin ongelman</string>
     <string name="audio_manual_pass">Kuulosti oikealta</string>
@@ -210,6 +212,7 @@
     <string name="camera_open_unknown">Avaa kamera</string>
     <string name="camera_duplicate_selection">%1$s (kamera %2$s)</string>
     <string name="camera_capture">Kuvaa</string>
+    <string name="camera_capturing">Kuvaa otetaan…</string>
     <string name="camera_stop">Pysäytä</string>
     <string name="camera_captured">Kuvattu</string>
     <string name="camera_capture_result">%1$s (%2$s)</string>
@@ -267,6 +270,7 @@
     <string name="sensor_guided_title">Ohjatut testit</string>
     <string name="sensor_not_available_description">Tätä anturia ei ole saatavilla tällä laitteella.</string>
     <string name="sensor_skip_test">Ohita testi</string>
+    <string name="permission_rationale_activity_recognition">Fyysisen aktiivisuuden lupaa käytetään vain askelanturin testin aikana.</string>
     <string name="sensor_status_sampling">Näytteistetään</string>
     <string name="sensor_status_skipped">Ohitettu</string>
     <string name="sensor_status_label">Tila</string>
@@ -455,8 +459,8 @@
     <string name="batt_voltage">Jännite</string>
     <string name="batt_temperature">Lämpötila</string>
     <string name="batt_technology">Teknologia</string>
-    <string name="batt_value_percent">%1$d%%</string>
-    <string name="batt_value_millivolts">%1$d mV</string>
+    <string name="batt_value_percent">%1$s%%</string>
+    <string name="batt_value_millivolts">%1$s mV</string>
     <string name="batt_value_celsius">%1$s °C</string>
 
     <!-- Health statuses -->
@@ -572,6 +576,7 @@
     <string name="storage_benchmark_skipped">Testi ohitettiin. Väliaikaistiedostoa ei kirjoitettu.</string>
     <string name="storage_benchmark_cancelled">Testi peruttiin ja väliaikaistietojen siivous pyydettiin.</string>
     <string name="storage_benchmark_insufficient_space">Testiä ei suoritettu, koska sovelluksen välimuistissa ei ole riittävästi vapaata tilaa väliaikaistiedostolle ja turvavaralle.</string>
+    <string name="storage_benchmark_timeout">Tallennustilatesti aikakatkaistiin ennen valmistumista.</string>
     <string name="storage_benchmark_error">Tallennustilatestiä ei voitu suorittaa loppuun.</string>
     <string name="storage_benchmark_data_mismatch">Väliaikaistiedoston luettu koko ja tarkistussumma eivät vastanneet odotettua.</string>
     <string name="storage_benchmark_cleanup_error">fonecheck ei voinut vahvistaa vertailumittauksen väliaikaistiedoston poistamista.</string>
@@ -755,6 +760,7 @@
     <string name="settings_permission_phone">Puhelimen tila</string>
     <string name="settings_permission_location">Sijainti</string>
     <string name="settings_permission_bluetooth">Lähellä olevat laitteet</string>
+    <string name="settings_permission_physical_activity">Fyysinen aktiivisuus</string>
     <string name="settings_permission_granted">Myönnetty</string>
     <string name="settings_permission_not_granted">Ei myönnetty</string>
     <string name="settings_open_app_settings">Avaa Androidin sovellusasetukset</string>
@@ -903,8 +909,7 @@
     <string name="comparison_attention_changed">Varoituksen tai ongelman tila muuttui</string>
     <string name="comparison_no_checks">Kumpaankaan raporttiin ei tallennettu tämän kategorian tarkistuksia.</string>
     <string name="comparison_loading">Raporttien vertailua ladataan…</string>
-    <string name="comparison_not_found">Toista tai kumpaakaan tallennettua raporttia ei löytynyt.</string>
-    <string name="comparison_unavailable">Toista tai kumpaakaan raporttia ei voi lukea tällä sovellusversiolla.</string>
+    <string name="comparison_report_issue">%1$s: %2$s</string>
     <string name="comparison_error">Raportteja ei voitu vertailla.</string>
     <string name="run_all_status_pass">Läpäisty</string>
     <string name="run_all_status_warning">Varoitus</string>
@@ -1015,6 +1020,9 @@
     <string name="vibration_stop">Pysäytä värinä</string>
     <string name="vibration_skip">Ohita fyysinen vahvistus</string>
     <string name="vibration_unavailable">Android ilmoittaa, ettei laitteessa ole värinämoottoria.</string>
+    <string name="vibration_capability_read_error">fonecheck ei voinut lukea kaikkia värinäominaisuuksia. Avaa näkymä uudelleen.</string>
+    <string name="vibration_playback_error">fonecheck ei voinut käynnistää värinää. Yritä uudelleen.</string>
+    <string name="vibration_read_failed">Luku epäonnistui</string>
     <string name="vibration_strength_warning">Pitkä tai kuvioitu värinä voi tuntua voimakkaalta tai epämiellyttävältä. Sen voi pysäyttää milloin tahansa.</string>
     <string name="vibration_accessibility_note">Jos värinä tuntuu epämiellyttävältä tai sitä ei voi havaita luotettavasti, ohita fyysinen vahvistus. API-ominaisuudet raportoidaan erikseen.</string>
     <string name="vibration_api_requires_android_11">Vaatii Android 11:n tai uudemman</string>

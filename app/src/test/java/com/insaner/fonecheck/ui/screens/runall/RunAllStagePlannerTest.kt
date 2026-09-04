@@ -66,6 +66,20 @@ class RunAllStagePlannerTest {
     }
 
     @Test
+    fun failedVibratorDiscoveryIsAutomaticErrorEvidenceInsteadOfAbsentHardware() {
+        val plan =
+            RunAllStagePlanner.plan(
+                hardware = fullHardware().copy(vibratorAvailable = false, vibratorReadFailed = true),
+                permissions = fullPermissions(),
+                selections = RunAllSelections(),
+                categories = listOf(DiagnosticCategoryId.VIBRATION),
+            )
+
+        assertEquals(RunAllCategoryDisposition.AUTOMATIC, plan.category(DiagnosticCategoryId.VIBRATION).disposition)
+        assertEquals(listOf(RunAllStage.AUTOMATIC, RunAllStage.RESULTS), plan.stages)
+    }
+
+    @Test
     fun userChoicesSkipWorkloadsWithoutRemovingAutomaticCategoryEvidence() {
         val plan =
             RunAllStagePlanner.plan(

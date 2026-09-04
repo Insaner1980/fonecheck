@@ -15,7 +15,7 @@ import org.junit.runner.RunWith
 class ExternalActivityLauncherTest {
     @Test
     fun returnsTrueWhenExternalActivityStarts() {
-        val context = RecordingContext(shouldThrow = false)
+        val context = RecordingContext()
 
         assertTrue(context.startExternalActivity(Intent(Intent.ACTION_VIEW)))
         assertTrue(context.started)
@@ -23,19 +23,26 @@ class ExternalActivityLauncherTest {
 
     @Test
     fun returnsFalseWhenNoExternalActivityCanHandleIntent() {
-        val context = RecordingContext(shouldThrow = true)
+        val context = RecordingContext(ActivityNotFoundException())
 
         assertFalse(context.startExternalActivity(Intent(Intent.ACTION_VIEW)))
     }
 
+    @Test
+    fun returnsFalseWhenExternalActivityRejectsTheUriGrant() {
+        val context = RecordingContext(SecurityException("URI grant rejected"))
+
+        assertFalse(context.startExternalActivity(Intent(Intent.ACTION_SEND)))
+    }
+
     private class RecordingContext(
-        private val shouldThrow: Boolean,
+        private val failure: RuntimeException? = null,
     ) : ContextWrapper(InstrumentationRegistry.getInstrumentation().targetContext) {
         var started = false
             private set
 
         override fun startActivity(intent: Intent) {
-            if (shouldThrow) throw ActivityNotFoundException()
+            failure?.let { throw it }
             started = true
         }
     }

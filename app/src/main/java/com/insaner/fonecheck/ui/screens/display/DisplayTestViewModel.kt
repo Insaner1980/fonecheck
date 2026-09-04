@@ -25,11 +25,11 @@ data class DisplayInfoState(
     val heightPx: Int = 0,
     val resolutionSource: DisplayResolutionSource = DisplayResolutionSource.APP_WINDOW,
     val densityDpi: Int = 0,
-    val refreshRate: Float = 0f,
-    val hdrSupported: Boolean = false,
-    val wideColorGamut: Boolean = false,
-    val currentBrightness: Int = 0,
-    val autoBrightness: Boolean = false,
+    val refreshRate: Float? = null,
+    val hdrSupported: Boolean? = null,
+    val wideColorGamut: Boolean? = null,
+    val currentBrightness: Int? = null,
+    val autoBrightness: Boolean? = null,
 )
 
 data class TouchTestState(
@@ -166,14 +166,20 @@ class DisplayTestViewModel
             val brightness =
                 runCatching {
                     Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS)
-                }.getOrDefault(0)
+                }.getOrNull()?.takeIf { it in MIN_BRIGHTNESS..MAX_BRIGHTNESS }
             val autoBrightness =
                 runCatching {
                     Settings.System.getInt(
                         context.contentResolver,
                         Settings.System.SCREEN_BRIGHTNESS_MODE,
-                    ) == Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC
-                }.getOrDefault(false)
+                    )
+                }.getOrNull()?.let { mode ->
+                    when (mode) {
+                        Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL -> false
+                        Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC -> true
+                        else -> null
+                    }
+                }
 
             _state.value =
                 _state.value.copy(
@@ -183,9 +189,9 @@ class DisplayTestViewModel
                             heightPx = resolution.height,
                             resolutionSource = resolution.source,
                             densityDpi = context.resources.displayMetrics.densityDpi,
-                            refreshRate = display?.refreshRate ?: 0f,
-                            hdrSupported = display?.isHdr == true,
-                            wideColorGamut = display?.isWideColorGamut == true,
+                            refreshRate = display?.refreshRate?.takeIf { it.isFinite() && it > 0f },
+                            hdrSupported = display?.isHdr,
+                            wideColorGamut = display?.isWideColorGamut,
                             currentBrightness = brightness,
                             autoBrightness = autoBrightness,
                         ),
@@ -230,6 +236,8 @@ class DisplayTestViewModel
         )
 
         companion object {
+            private const val MIN_BRIGHTNESS = 0
+            const val MAX_BRIGHTNESS = 255
             const val TOUCH_GRID_COLS = 6
             const val TOUCH_GRID_ROWS = 10
             const val VISUAL_TEST_TIMEOUT_MS = 120_000L

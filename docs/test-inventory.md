@@ -2,6 +2,8 @@
 
 Updated: 2026-08-08
 
+Verification revision: `3e55b583ef4355625f445865e5a13efed14fa219` (historical RC snapshot, not the current checkout)
+
 This inventory maps release risks to the smallest existing automated suite that proves them. Hardware behavior and Android framework integration still require an emulator or physical device; compilation alone is not recorded as execution.
 
 | Risk / flow | JVM coverage | Android coverage | Latest local result |

@@ -101,7 +101,8 @@ class CameraTestViewModel
         private var imageCapture: ImageCapture? = null
         private var cameraProvider: ProcessCameraProvider? = null
         private var previewGeneration = 0L
-        private val captureGate = CameraCaptureGate()
+        private val capabilityGate = CameraOperationGate()
+        private val captureGate = CameraOperationGate()
         private var captureTimeoutJob: Job? = null
 
         init {
@@ -109,16 +110,20 @@ class CameraTestViewModel
         }
 
         fun refreshCapabilities() {
+            stopPreview()
             loadCapabilities()
         }
 
         private fun loadCapabilities() {
+            val token = capabilityGate.begin()
             _state.value = _state.value.copy(isLoading = true, error = null)
             viewModelScope.launch(ioDispatcher) {
                 runCameraOperation(
                     action = "load camera capabilities",
                     onFailure = { error ->
-                        _state.value = _state.value.copy(isLoading = false, error = error.message)
+                        capabilityGate.complete(token) {
+                            _state.value = _state.value.copy(isLoading = false, error = error.message)
+                        }
                     },
                 ) {
                     val cameraIds = cameraManager.cameraIdList
@@ -134,16 +139,28 @@ class CameraTestViewModel
                         }
                     val front = cameras.firstOrNull { it.facingCode == CameraFacingCode.FRONT }
                     val rear = cameras.firstOrNull { it.facingCode == CameraFacingCode.REAR }
+                    capabilityGate.complete(token) {
+                        val selectedCameraId =
+                            _state.value.selectedCameraId?.takeIf { selectedId ->
+                                cameras.any { it.cameraId == selectedId }
+                            } ?: cameras.firstOrNull()?.cameraId
 
-                    _state.value =
-                        _state.value.copy(
-                            frontCapabilities = front,
-                            rearCapabilities = rear,
-                            cameras = cameras,
-                            selectedCameraId = cameras.firstOrNull()?.cameraId,
-                            isLoading = false,
-                            error = "camera_no_public_cameras".takeIf { cameras.isEmpty() },
-                        )
+                        _state.value =
+                            _state.value.copy(
+                                frontCapabilities = front,
+                                rearCapabilities = rear,
+                                cameras = cameras,
+                                selectedCameraId = selectedCameraId,
+                                flashTestResult =
+                                    if (rear?.hasFlash == true) {
+                                        FlashTestResult.NOT_TESTED
+                                    } else {
+                                        FlashTestResult.NOT_AVAILABLE
+                                    },
+                                isLoading = false,
+                                error = "camera_no_public_cameras".takeIf { cameras.isEmpty() },
+                            )
+                    }
                 }
             }
         }
@@ -196,7 +213,7 @@ class CameraTestViewModel
                         "${formatUiNumber(range.lower, uiLocale, 1, 1)}× – " +
                             "${formatUiNumber(range.upper, uiLocale, 1, 1)}×"
                     } else {
-                        "${formatUiNumber(1.0, uiLocale, 1, 1)}×"
+                        ""
                     }
                 } else {
                     val maxZoom = chars.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM) ?: 1f
@@ -314,7 +331,9 @@ class CameraTestViewModel
                 runCameraOperation(
                     action = "start camera preview",
                     onFailure = { error ->
-                        _state.value = _state.value.copy(error = error.message)
+                        if (generation == previewGeneration) {
+                            _state.value = _state.value.copy(error = error.message)
+                        }
                     },
                 ) {
                     val provider = cameraProviderFuture.get()
@@ -361,14 +380,16 @@ class CameraTestViewModel
 
         fun capturePhoto() {
             val capture = imageCapture ?: return
+            if (_state.value.isCapturing) return
             val token = captureGate.begin()
             _state.value = _state.value.copy(isCapturing = true)
             captureTimeoutJob?.cancel()
             captureTimeoutJob =
                 viewModelScope.launch {
                     delay(CAPTURE_TIMEOUT_MS)
-                    captureGate.cancel(token)
-                    _state.value = _state.value.copy(isCapturing = false, error = "camera_capture_timeout")
+                    if (captureGate.cancel(token)) {
+                        _state.value = _state.value.copy(isCapturing = false, error = "camera_capture_timeout")
+                    }
                 }
 
             capture.takePicture(
@@ -464,6 +485,7 @@ class CameraTestViewModel
         }
 
         override fun onCleared() {
+            capabilityGate.cancelAll()
             turnOffFlash()
             stopPreview()
             cameraExecutor.shutdown()

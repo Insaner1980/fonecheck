@@ -76,9 +76,14 @@ fun HistoryScreen(
     var compareBaseId by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingDeleteId by rememberSaveable { mutableStateOf<String?>(null) }
     val locale = uiLanguageLocale(LocalLocale.current.platformLocale)
+    val comparableReportIds =
+        state.reports
+            .filter { it.unavailableReason == null }
+            .map(SavedReportSummary::stableId)
+            .toSet()
     LaunchedEffect(state.reports) {
         val reportIds = state.reports.map(SavedReportSummary::stableId).toSet()
-        if (compareBaseId !in reportIds) compareBaseId = null
+        if (compareBaseId !in comparableReportIds) compareBaseId = null
         if (pendingDeleteId !in reportIds) pendingDeleteId = null
     }
 
@@ -111,7 +116,7 @@ fun HistoryScreen(
                         isDeleting = report.stableId in state.deletingReportIds,
                         onOpen = { onOpen(report.stableId) },
                         onCompare = {
-                            val baseId = compareBaseId
+                            val baseId = compareBaseId?.takeIf { it in comparableReportIds }
                             when {
                                 baseId == null -> compareBaseId = report.stableId
                                 baseId == report.stableId -> compareBaseId = null
@@ -191,18 +196,19 @@ private fun HistoryErrorCard(
     error: String,
     onRetry: () -> Unit,
 ) {
+    val isDeleteError = error == "history_delete_failed"
     ScreenStateCard(
         type = ScreenStateType.ERROR,
         message =
             stringResource(
-                if (error == "history_delete_failed") {
+                if (isDeleteError) {
                     R.string.history_delete_error
                 } else {
                     R.string.history_error
                 },
             ),
-        actionLabel = stringResource(R.string.history_retry),
-        onAction = onRetry,
+        actionLabel = stringResource(R.string.history_retry).takeUnless { isDeleteError },
+        onAction = onRetry.takeUnless { isDeleteError },
     )
 }
 
@@ -255,11 +261,11 @@ private fun HistoryReportSection(
         )
         DataRow(
             label = stringResource(R.string.history_warnings),
-            value = uiNumber(report.warningCount),
+            value = uiNumber(report.warningCount).takeIf { isAvailable },
         )
         DataRow(
             label = stringResource(R.string.history_issues),
-            value = uiNumber(report.failureCount),
+            value = uiNumber(report.failureCount).takeIf { isAvailable },
         )
         FlowRow(
             modifier = Modifier.fillMaxWidth(),

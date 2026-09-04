@@ -2,6 +2,7 @@ package com.insaner.fonecheck.export
 
 import android.content.ComponentName
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.net.Uri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -33,9 +34,27 @@ import org.junit.runner.RunWith
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.time.Instant
+import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
 class ReportPdfExporterTest {
+    @Test
+    fun labelsUseThePdfContextLanguageForNumbersAndDates() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val englishConfiguration =
+            Configuration(context.resources.configuration).apply { setLocale(Locale.ENGLISH) }
+        val finnishConfiguration =
+            Configuration(context.resources.configuration).apply { setLocale(Locale.forLanguageTag("fi")) }
+        val english = ReportPdfRenderer(context.createConfigurationContext(englishConfiguration)).labels()
+        val finnish = ReportPdfRenderer(context.createConfigurationContext(finnishConfiguration)).labels()
+        val completedAt = Instant.parse("2026-08-11T10:18:00Z")
+
+        assertEquals("12.5", english.numberValue(12.5))
+        assertEquals("12,5", finnish.numberValue(12.5))
+        assertFalse(english.completedValue(completedAt).contains("klo"))
+        assertTrue(finnish.completedValue(completedAt).contains("klo"))
+    }
+
     @Test
     fun rendererCreatesReadableMultipagePdf() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
@@ -53,8 +72,13 @@ class ReportPdfExporterTest {
             val context = InstrumentationRegistry.getInstrumentation().targetContext
             val exportRoot = File(context.cacheDir, "report-exports").apply { mkdirs() }
             val stale =
-                File(exportRoot, "stale.tmp").apply {
+                File(exportRoot, "fonecheck-stale.pdf.tmp").apply {
                     writeText("stale")
+                    setLastModified(0L)
+                }
+            val unrelated =
+                File(exportRoot, "unrelated.tmp").apply {
+                    writeText("unrelated")
                     setLastModified(0L)
                 }
             val exporter = AndroidReportExporter(context, ReportPdfRenderer(context), Dispatchers.IO)
@@ -65,6 +89,13 @@ class ReportPdfExporterTest {
             val uri = Uri.parse(exported.uri)
             assertEquals("content", uri.scheme)
             assertFalse(stale.exists())
+            assertTrue(unrelated.exists())
+            assertFalse(
+                exportRoot
+                    .listFiles()
+                    .orEmpty()
+                    .any { it.name.endsWith(".tmp") && it.name.startsWith("fonecheck-") },
+            )
             val prefix =
                 context.contentResolver.openInputStream(uri)!!.use { stream ->
                     ByteArray(4).also { stream.read(it) }.decodeToString()
@@ -77,6 +108,7 @@ class ReportPdfExporterTest {
                 )
             assertFalse(provider.exported)
             assertTrue(provider.grantUriPermissions)
+            assertTrue(unrelated.delete())
         }
 
     @Test

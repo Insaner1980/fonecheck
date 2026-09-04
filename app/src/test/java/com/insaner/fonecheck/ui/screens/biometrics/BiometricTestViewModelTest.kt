@@ -137,6 +137,18 @@ class BiometricTestViewModelTest {
         assertFalse(viewModel.state.value.promptActive)
     }
 
+    @Test
+    fun promptLaunchFailureDoesNotRetainRawExceptionText() {
+        val viewModel = availableViewModel()
+        viewModel.startAuthentication()
+
+        viewModel.onPromptLaunchFailure()
+
+        assertEquals(AuthResult.ERROR, viewModel.state.value.authResult)
+        assertEquals(null, viewModel.state.value.authErrorMessage)
+        assertFalse(viewModel.state.value.promptActive)
+    }
+
     private fun availableViewModel() =
         BiometricTestViewModel(
             FakeBiometricCapabilityProvider(

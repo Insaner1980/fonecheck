@@ -30,7 +30,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.sp
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.navigation.DiagnosticDestination
@@ -52,7 +51,7 @@ internal fun HomeStatusPanel(
     val density = LocalDensity.current
     val spacing = FonecheckTheme.spacing
     val textMeasurer = rememberTextMeasurer()
-    val labelStyle = FonecheckTheme.type.rowValue.copy(fontSize = 12.sp, lineHeight = 16.sp)
+    val labelStyle = FonecheckTheme.type.rowLabel
     val labels =
         diagnosticDestinations.associate { destination ->
             destination.category to stringResource(destination.labelResId)

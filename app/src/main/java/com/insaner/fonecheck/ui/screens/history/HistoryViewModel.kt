@@ -69,7 +69,7 @@ class HistoryViewModel
                         reportRepository.observeSummaries().collect { reports ->
                             _state.update {
                                 it.copy(
-                                    reports = reports.sortedByDescending(SavedReportSummary::completedAt),
+                                    reports = reports.sortedWith(REPORT_ORDER),
                                     isLoading = false,
                                     error = null,
                                 )
@@ -91,5 +91,8 @@ class HistoryViewModel
         private companion object {
             const val LOAD_ERROR = "history_load_failed"
             const val DELETE_ERROR = "history_delete_failed"
+            val REPORT_ORDER =
+                compareByDescending<SavedReportSummary>(SavedReportSummary::completedAt)
+                    .thenByDescending(SavedReportSummary::stableId)
         }
     }

@@ -1,5 +1,8 @@
 package com.insaner.fonecheck.ui.screens.sensor
 
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
@@ -12,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -25,12 +29,15 @@ import com.insaner.fonecheck.domain.observation.DeviceObservation
 import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
 import com.insaner.fonecheck.domain.observation.MeasurementKind
 import com.insaner.fonecheck.domain.observation.MeasurementOutcome
+import com.insaner.fonecheck.domain.permission.PermissionKind
+import com.insaner.fonecheck.domain.permission.PermissionState
 import com.insaner.fonecheck.localization.observationReasonStringRes
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.DisclosureHeader
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.ObservationReasonNote
+import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.ReadoutWindow
 import com.insaner.fonecheck.ui.components.ScreenStateCard
 import com.insaner.fonecheck.ui.components.ScreenStateType
@@ -44,6 +51,7 @@ import com.insaner.fonecheck.ui.components.WindowReading
 import com.insaner.fonecheck.ui.components.WindowRow
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.format.uiScientificNumber
+import com.insaner.fonecheck.ui.permissions.rememberPermissionController
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.toSemanticTone
 
@@ -54,6 +62,27 @@ fun SensorTestScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val liveStateUpdatedAtEpochMillis = remember(state) { System.currentTimeMillis() }
+    val stepSensorAvailable =
+        state.guidedTests.any { it.code == GuidedSensorCode.STEP && it.sensorType != null }
+    val activityPermission =
+        rememberPermissionController(
+            kind = PermissionKind.ACTIVITY_RECOGNITION,
+            hardwareAvailable = stepSensorAvailable,
+        )
+    val activityPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+            activityPermission.refresh()
+        }
+    val requestActivityPermission = {
+        activityPermission.onRequestLaunched()
+        activityPermissionLauncher.launch(activityPermission.permissions.toTypedArray())
+    }
+
+    LaunchedEffect(activityPermission.state) {
+        if (state.expandedSensor == GuidedSensorCode.STEP) {
+            viewModel.startGuidedTest(GuidedSensorCode.STEP)
+        }
+    }
 
     DisposableEffect(viewModel) {
         onDispose(viewModel::stopAllTests)
@@ -93,6 +122,14 @@ fun SensorTestScreen(
                         onToggle = { viewModel.toggleSensorExpanded(test.code) },
                         onChallenge = { viewModel.startChallenge(it, test.code) },
                         onSkip = { viewModel.skipGuidedTest(test.code) },
+                        activityPermissionState =
+                            activityPermission.state.takeIf {
+                                test.code == GuidedSensorCode.STEP &&
+                                    test.sensorType != null &&
+                                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                            },
+                        onRequestActivityPermission = requestActivityPermission,
+                        onOpenActivityPermissionSettings = activityPermission::openSettings,
                     )
                 }
             }
@@ -184,6 +221,9 @@ private fun GuidedSensorSection(
     onToggle: () -> Unit,
     onChallenge: (InteractiveChallenge) -> Unit,
     onSkip: () -> Unit,
+    activityPermissionState: PermissionState?,
+    onRequestActivityPermission: () -> Unit,
+    onOpenActivityPermissionSettings: () -> Unit,
 ) {
     val classification = test.status.classification()
     Column {
@@ -215,6 +255,14 @@ private fun GuidedSensorSection(
                 if (sensorInfo == null) {
                     Note(text = stringResource(R.string.sensor_not_available_description))
                 } else {
+                    activityPermissionState?.let { permissionState ->
+                        PermissionStatusCard(
+                            state = permissionState,
+                            rationale = stringResource(R.string.permission_rationale_activity_recognition),
+                            onRequest = onRequestActivityPermission,
+                            onOpenSettings = onOpenActivityPermissionSettings,
+                        )
+                    }
                     Note(text = test.code.guidance())
                     liveData?.let {
                         LiveValuesSection(

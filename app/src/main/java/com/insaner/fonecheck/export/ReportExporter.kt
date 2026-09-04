@@ -33,14 +33,11 @@ class AndroidReportExporter
         override suspend fun exportPdf(report: DiagnosticReport): ExportedReport =
             withContext(ioDispatcher) {
                 val target = prepareTarget(report, "pdf")
-                try {
-                    target.temporaryFile
+                target.writeAndFinalize("PDF") { temporaryFile ->
+                    temporaryFile
                         .outputStream()
                         .buffered()
                         .use { pdfRenderer.render(report, it) }
-                    finalizeExport(target, "PDF")
-                } finally {
-                    target.deleteTemporaryFile()
                 }
                 target.toExportedReport(PDF_MIME_TYPE)
             }
@@ -48,11 +45,8 @@ class AndroidReportExporter
         override suspend fun exportJson(report: DiagnosticReport): ExportedReport =
             withContext(ioDispatcher) {
                 val target = prepareTarget(report, "json")
-                try {
-                    target.temporaryFile.writeText(ReportPayloadCodec.encode(report), Charsets.UTF_8)
-                    finalizeExport(target, "JSON")
-                } finally {
-                    target.deleteTemporaryFile()
+                target.writeAndFinalize("JSON") { temporaryFile ->
+                    temporaryFile.writeText(ReportPayloadCodec.encode(report), Charsets.UTF_8)
                 }
                 target.toExportedReport(JSON_MIME_TYPE)
             }
@@ -68,8 +62,25 @@ class AndroidReportExporter
             return ExportTarget(
                 displayName = displayName,
                 outputFile = File(exportRoot, displayName),
-                temporaryFile = File(exportRoot, "$displayName.tmp"),
+                temporaryFile = File.createTempFile("$displayName.", ".tmp", exportRoot),
             )
+        }
+
+        @Suppress("TooGenericExceptionCaught")
+        private inline fun ExportTarget.writeAndFinalize(
+            format: String,
+            write: (File) -> Unit,
+        ) {
+            var primaryFailure: Throwable? = null
+            try {
+                write(temporaryFile)
+                finalizeExport(this, format)
+            } catch (error: Throwable) {
+                primaryFailure = error
+                throw error
+            } finally {
+                deleteTemporaryFile(primaryFailure)
+            }
         }
 
         private fun finalizeExport(
@@ -82,9 +93,14 @@ class AndroidReportExporter
             check(target.temporaryFile.renameTo(target.outputFile)) { "Could not finalize $format export." }
         }
 
-        private fun ExportTarget.deleteTemporaryFile() {
-            if (temporaryFile.exists()) {
-                check(temporaryFile.delete()) { "Could not delete temporary export." }
+        private fun ExportTarget.deleteTemporaryFile(primaryFailure: Throwable?) {
+            if (temporaryFile.exists() && !temporaryFile.delete()) {
+                val cleanupFailure = IllegalStateException("Could not delete temporary export.")
+                if (primaryFailure == null) {
+                    throw cleanupFailure
+                } else {
+                    primaryFailure.addSuppressed(cleanupFailure)
+                }
             }
         }
 
@@ -106,12 +122,15 @@ class AndroidReportExporter
             exportRoot
                 .listFiles()
                 .orEmpty()
+                .filter { it.isFile && it.name.startsWith(EXPORT_FILENAME_PREFIX) }
+                .filter { it.name.endsWith(".pdf") || it.name.endsWith(".json") || it.name.endsWith(".tmp") }
                 .filter { it.lastModified() < cutoff }
                 .forEach(File::delete)
         }
 
         private companion object {
             const val EXPORT_DIRECTORY = "report-exports"
+            const val EXPORT_FILENAME_PREFIX = "fonecheck-"
             const val PDF_MIME_TYPE = "application/pdf"
             const val JSON_MIME_TYPE = "application/json"
             const val EXPORT_RETENTION_MILLIS = 24L * 60L * 60L * 1000L

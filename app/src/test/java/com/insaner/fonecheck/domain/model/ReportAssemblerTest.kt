@@ -145,6 +145,37 @@ class ReportAssemblerTest {
         assertEquals(100, report.coverage.percentage)
     }
 
+    @Test
+    fun `assembled report does not retain a mutable snapshot evidence list`() {
+        val mutableEvidence =
+            snapshot(DiagnosticCategoryId.BATTERY, DiagnosticStatus.PASS)
+                .evidence
+                .toMutableList()
+        val report =
+            ReportAssembler.assemble(
+                request(
+                    kind = ReportKind.CATEGORY_ONLY,
+                    snapshots =
+                        listOf(
+                            DiagnosticCategorySnapshot(
+                                version = DiagnosticSnapshotVersion.CURRENT,
+                                categoryId = DiagnosticCategoryId.BATTERY,
+                                evidence = mutableEvidence,
+                            ),
+                        ),
+                ),
+            )
+
+        mutableEvidence.clear()
+
+        assertEquals(
+            1,
+            report.categories
+                .single()
+                .evidence.size,
+        )
+    }
+
     private fun request(
         kind: ReportKind = ReportKind.FULL_CHECK,
         snapshots: List<DiagnosticCategorySnapshot>,

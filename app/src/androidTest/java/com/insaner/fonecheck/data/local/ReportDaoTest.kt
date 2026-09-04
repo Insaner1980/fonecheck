@@ -51,6 +51,8 @@ class ReportDaoTest {
     fun summariesAreNewestFirstAndExcludeThePayload() =
         runBlocking {
             database.reportDao().insert(report(id = "older", completedAt = 2_000L, payload = "older-payload"))
+            database.reportDao().insert(report(id = "a-tie", completedAt = 2_500L, payload = "a-payload"))
+            database.reportDao().insert(report(id = "b-tie", completedAt = 2_500L, payload = "b-payload"))
             database.reportDao().insert(report(id = "newer", completedAt = 3_000L, payload = "newer-payload"))
 
             val summaries = database.reportDao().observeSummaries().first()
@@ -58,6 +60,8 @@ class ReportDaoTest {
             assertEquals(
                 listOf(
                     summary(id = "newer", completedAt = 3_000L),
+                    summary(id = "b-tie", completedAt = 2_500L),
+                    summary(id = "a-tie", completedAt = 2_500L),
                     summary(id = "older", completedAt = 2_000L),
                 ),
                 summaries,

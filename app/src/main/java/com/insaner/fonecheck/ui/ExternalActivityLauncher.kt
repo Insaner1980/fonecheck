@@ -10,4 +10,6 @@ internal fun Context.startExternalActivity(intent: Intent): Boolean =
         true
     } catch (_: ActivityNotFoundException) {
         false
+    } catch (_: SecurityException) {
+        false
     }

@@ -57,10 +57,13 @@ import com.insaner.fonecheck.ui.screens.performance.PerformanceInfoViewModel
 import com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge
 import com.insaner.fonecheck.ui.screens.sensor.SensorTestViewModel
 import com.insaner.fonecheck.ui.screens.simtelephony.SimTelephonyViewModel
+import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkErrorCode
 import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkPhase
 import com.insaner.fonecheck.ui.screens.storage.StorageTestViewModel
 import com.insaner.fonecheck.ui.screens.thermal.ThermalTestViewModel
+import com.insaner.fonecheck.ui.screens.vibration.VibrationCapabilityRead
 import com.insaner.fonecheck.ui.screens.vibration.VibrationTestViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -145,6 +148,7 @@ fun RunAllTestsScreen(
             cameraAvailable = cameraHardwareAvailable,
             motionSensorAvailable = motionSensorAvailable,
             vibratorAvailable = vibrationState.haptic.hasVibrator,
+            vibratorReadFailed = VibrationCapabilityRead.HARDWARE in vibrationState.haptic.readErrors,
             biometricsAvailable =
                 biometricState.capability.strongAvailable ||
                     biometricState.capability.weakAvailable,
@@ -193,7 +197,9 @@ fun RunAllTestsScreen(
         )
     val resourceOwner =
         remember(
+            deviceViewModel,
             performanceViewModel,
+            simViewModel,
             displayViewModel,
             audioViewModel,
             cameraViewModel,
@@ -207,10 +213,21 @@ fun RunAllTestsScreen(
             biometricPromptState,
         ) {
             RunAllResourceOwner(
-                stopPerformance = performanceViewModel::cancelBenchmark,
-                stopMicrophone = audioViewModel::stopRecording,
+                stopDeviceInfo = deviceViewModel::cancelCapture,
+                stopPerformance = {
+                    performanceViewModel.cancelInfoCapture()
+                    performanceViewModel.cancelBenchmark()
+                },
+                stopSimInfo = simViewModel::cancelCapture,
+                stopMicrophone = {
+                    audioViewModel.stopRecording()
+                    audioViewModel.discardRecordedSamples()
+                },
                 stopGps = connectivityViewModel::cancelGpsFix,
-                stopStorage = storageViewModel::cancelBenchmark,
+                stopStorage = {
+                    storageViewModel.cancelInfoCapture()
+                    storageViewModel.cancelBenchmark()
+                },
                 stopDisplay = {
                     displayViewModel.stopVisualTest()
                     displayViewModel.stopTouchTest()
@@ -219,6 +236,7 @@ fun RunAllTestsScreen(
                     audioViewModel.stopTone()
                     audioViewModel.stopRecording()
                     audioViewModel.stopPlayback()
+                    audioViewModel.discardRecordedSamples()
                 },
                 stopCamera = {
                     cameraViewModel.turnOffFlash()
@@ -239,7 +257,21 @@ fun RunAllTestsScreen(
     LaunchedEffect(sessionState.runStatus) {
         if (sessionState.runStatus == RunAllRunStatus.RUNNING) {
             resourceOwner.markRunStarted()
-            thermalViewModel.startMonitoring()
+            if (sessionState.targetCategory == null || sessionState.targetCategory == DiagnosticCategoryId.DEVICE) {
+                deviceViewModel.refresh()
+            }
+            if (
+                sessionState.targetCategory == null ||
+                sessionState.targetCategory == DiagnosticCategoryId.PERFORMANCE
+            ) {
+                performanceViewModel.refreshInfo()
+            }
+            if (sessionState.targetCategory == null || sessionState.targetCategory == DiagnosticCategoryId.SIM) {
+                simViewModel.refresh()
+            }
+            if (sessionState.targetCategory == null || sessionState.targetCategory == DiagnosticCategoryId.THERMAL) {
+                thermalViewModel.startMonitoring()
+            }
         } else {
             resourceOwner.stopAll()
         }
@@ -314,51 +346,149 @@ fun RunAllTestsScreen(
             RunAllStage.AUTOMATIC -> {
                 val retestCategory = sessionState.targetCategory
                 if (retestCategory == null || retestCategory == DiagnosticCategoryId.DEVICE) {
-                    withTimeoutOrNull(DEVICE_INFO_TIMEOUT_MS) {
-                        deviceViewModel.state.first { !it.isLoading }
+                    val result =
+                        withTimeoutOrNull(DEVICE_INFO_TIMEOUT_MS) {
+                            deviceViewModel.state.first { !it.isLoading }
+                        }
+                    when {
+                        result == null -> {
+                            deviceViewModel.cancelCapture()
+                            sessionViewModel.reportAutomaticIssue(
+                                token,
+                                DiagnosticCategoryId.DEVICE,
+                                RunAllStageOutcome.TIMED_OUT,
+                            )
+                        }
+                        result.error != null ->
+                            sessionViewModel.reportAutomaticIssue(
+                                token,
+                                DiagnosticCategoryId.DEVICE,
+                                RunAllStageOutcome.ERROR,
+                            )
                     }
                 }
                 if (retestCategory == null || retestCategory == DiagnosticCategoryId.SIM) {
-                    withTimeoutOrNull(DEVICE_INFO_TIMEOUT_MS) {
-                        simViewModel.state.first { !it.isLoading }
+                    val result =
+                        withTimeoutOrNull(DEVICE_INFO_TIMEOUT_MS) {
+                            simViewModel.state.first { !it.isLoading }
+                        }
+                    when {
+                        result == null -> {
+                            simViewModel.cancelCapture()
+                            sessionViewModel.reportAutomaticIssue(
+                                token,
+                                DiagnosticCategoryId.SIM,
+                                RunAllStageOutcome.TIMED_OUT,
+                            )
+                        }
+                        result.error != null ->
+                            sessionViewModel.reportAutomaticIssue(
+                                token,
+                                DiagnosticCategoryId.SIM,
+                                RunAllStageOutcome.ERROR,
+                            )
                     }
                 }
                 if (retestCategory == null || retestCategory == DiagnosticCategoryId.PERFORMANCE) {
-                    withTimeoutOrNull(PERFORMANCE_TIMEOUT_MS) {
-                        performanceViewModel.state.first { !it.isInfoLoading }
-                        performanceViewModel.startBenchmark()
-                        performanceViewModel.state.first { it.benchmarkPhase != BenchmarkPhase.RUNNING }
+                    val result =
+                        withTimeoutOrNull(PERFORMANCE_TIMEOUT_MS) {
+                            performanceViewModel.state.first { !it.isInfoLoading }
+                            performanceViewModel.startBenchmark()
+                            performanceViewModel.state.first { it.benchmarkPhase != BenchmarkPhase.RUNNING }
+                        }
+                    val issue =
+                        when {
+                            result == null || result.benchmarkError == "benchmark_timeout" ->
+                                RunAllStageOutcome.TIMED_OUT
+                            result.infoError != null || result.benchmarkError != null -> RunAllStageOutcome.ERROR
+                            else -> null
+                        }
+                    if (result == null) {
+                        performanceViewModel.cancelInfoCapture()
+                        performanceViewModel.cancelBenchmark()
                     }
+                    issue?.let { sessionViewModel.reportAutomaticIssue(token, DiagnosticCategoryId.PERFORMANCE, it) }
                 }
                 if (retestCategory == null || retestCategory == DiagnosticCategoryId.STORAGE) {
-                    if (sessionState.selections.includeStorageBenchmark) {
-                        val storageCompleted =
-                            withTimeoutOrNull(STORAGE_TIMEOUT_MS) {
-                                storageViewModel.state.first { !it.isInfoLoading }
+                    val result =
+                        withTimeoutOrNull(STORAGE_TIMEOUT_MS) {
+                            storageViewModel.state.first { !it.isInfoLoading }
+                            if (sessionState.selections.includeStorageBenchmark) {
                                 storageViewModel.startBenchmark()
                                 storageViewModel.state.first {
                                     it.benchmarkPhase != StorageBenchmarkPhase.RUNNING
                                 }
-                            } != null
-                        if (!storageCompleted) storageViewModel.cancelBenchmark()
-                    } else {
-                        storageViewModel.skipBenchmark()
-                    }
-                }
-                if (retestCategory == null || retestCategory == DiagnosticCategoryId.AUDIO) {
-                    audioViewModel.updateHeadphoneState()
-                    if (sessionState.selections.includeMicrophone && sessionState.permissions.microphone) {
-                        audioViewModel.startRecording(AUTOMATIC_MICROPHONE_DURATION_MS)
-                        withTimeoutOrNull(AUTOMATIC_MICROPHONE_TIMEOUT_MS) {
-                            while (audioViewModel.state.value.isRecording) {
-                                delay(AUTOMATIC_STATE_POLL_INTERVAL_MS)
+                            } else {
+                                storageViewModel.skipBenchmark()
+                                storageViewModel.state.first {
+                                    it.benchmarkPhase != StorageBenchmarkPhase.RUNNING
+                                }
                             }
                         }
+                    val issue =
+                        when {
+                            result == null || result.benchmarkError == StorageBenchmarkErrorCode.TIMEOUT ->
+                                RunAllStageOutcome.TIMED_OUT
+                            result.infoError != null -> RunAllStageOutcome.ERROR
+                            result.benchmarkPhase == StorageBenchmarkPhase.ERROR -> RunAllStageOutcome.ERROR
+                            else -> null
+                        }
+                    if (result == null) {
+                        storageViewModel.cancelInfoCapture()
+                        storageViewModel.cancelBenchmark()
+                    }
+                    issue?.let { sessionViewModel.reportAutomaticIssue(token, DiagnosticCategoryId.STORAGE, it) }
+                }
+                if (retestCategory == null || retestCategory == DiagnosticCategoryId.AUDIO) {
+                    var microphoneIssue: RunAllStageOutcome? = null
+                    try {
+                        audioViewModel.updateHeadphoneState()
+                        if (sessionState.selections.includeMicrophone && sessionState.permissions.microphone) {
+                            try {
+                                audioViewModel.startRecording(AUTOMATIC_MICROPHONE_DURATION_MS)
+                                val completed =
+                                    withTimeoutOrNull(AUTOMATIC_MICROPHONE_TIMEOUT_MS) {
+                                        while (audioViewModel.state.value.isRecording) {
+                                            delay(AUTOMATIC_STATE_POLL_INTERVAL_MS)
+                                        }
+                                    } != null
+                                microphoneIssue =
+                                    when {
+                                        !completed -> RunAllStageOutcome.TIMED_OUT
+                                        !audioViewModel.state.value.hasRecordedAudio -> RunAllStageOutcome.ERROR
+                                        else -> null
+                                    }
+                            } finally {
+                                audioViewModel.stopRecording()
+                                audioViewModel.discardRecordedSamples()
+                            }
+                        }
+                    } catch (error: CancellationException) {
+                        throw error
+                    } catch (_: Exception) {
+                        microphoneIssue = RunAllStageOutcome.ERROR
                         audioViewModel.stopRecording()
+                    }
+                    microphoneIssue?.let {
+                        sessionViewModel.reportAutomaticIssue(
+                            token,
+                            DiagnosticCategoryId.AUDIO,
+                            it,
+                        )
                     }
                 }
                 if (retestCategory == null || retestCategory == DiagnosticCategoryId.CONNECTIVITY) {
-                    connectivityViewModel.onPermissionsGranted()
+                    try {
+                        connectivityViewModel.onPermissionsGranted()
+                    } catch (error: CancellationException) {
+                        throw error
+                    } catch (_: Exception) {
+                        sessionViewModel.reportAutomaticIssue(
+                            token,
+                            DiagnosticCategoryId.CONNECTIVITY,
+                            RunAllStageOutcome.ERROR,
+                        )
+                    }
                 }
                 sessionViewModel.onAutomaticChecksComplete(token)
             }
@@ -409,10 +539,12 @@ fun RunAllTestsScreen(
             }
 
             RunAllStage.VIBRATION -> {
-                if (vibrationState.haptic.hasVibrator) {
-                    vibrationViewModel.vibratePattern()
-                } else {
-                    sessionViewModel.markStageUnavailable(token)
+                when {
+                    VibrationCapabilityRead.HARDWARE in vibrationState.haptic.readErrors ->
+                        sessionViewModel.recordVibration(token, null, RunAllStageOutcome.ERROR)
+                    vibrationState.haptic.hasVibrator && !vibrationViewModel.vibratePattern() ->
+                        sessionViewModel.recordVibration(token, null, RunAllStageOutcome.ERROR)
+                    !vibrationState.haptic.hasVibrator -> sessionViewModel.markStageUnavailable(token)
                 }
             }
 
@@ -430,10 +562,7 @@ fun RunAllTestsScreen(
                     sessionViewModel.markStageUnavailable(token)
                 } else if (activity == null) {
                     biometricViewModel.startAuthentication()
-                    biometricViewModel.onAuthError(
-                        BiometricPrompt.ERROR_VENDOR,
-                        "Biometric host activity unavailable",
-                    )
+                    biometricViewModel.onPromptLaunchFailure()
                 } else {
                     biometricViewModel.startAuthentication()
                     runCatching {
@@ -450,12 +579,7 @@ fun RunAllTestsScreen(
                             },
                         )
                     }.onSuccess { biometricPrompt = it }
-                        .onFailure {
-                            biometricViewModel.onAuthError(
-                                BiometricPrompt.ERROR_VENDOR,
-                                it.message.orEmpty(),
-                            )
-                        }
+                        .onFailure { biometricViewModel.onPromptLaunchFailure() }
                 }
             }
 
@@ -738,7 +862,7 @@ fun RunAllTestsScreen(
         RunAllStage.VIBRATION ->
             VibrationCheckStep(
                 progress = requireNotNull(sessionState.progress),
-                onPlayAgain = vibrationViewModel::vibratePattern,
+                onPlayAgain = { vibrationViewModel.vibratePattern() },
                 onStop = vibrationViewModel::cancelVibration,
                 onSkip = {
                     vibrationViewModel.cancelVibration()
@@ -775,24 +899,28 @@ fun RunAllTestsScreen(
             )
 
         RunAllStage.RESULTS -> {
-            val deviceInfo = deviceState.info
-            val performanceInfo = performanceState.info
-            val simInfo = simState.info
-            if (deviceInfo == null || performanceInfo == null || simInfo == null) {
-                AutomaticCheckScreen(
-                    title = stringResource(R.string.run_all_results_title),
-                    description = stringResource(R.string.run_all_results_description),
-                    modifier = modifier,
+            val deviceInfo = deviceState.info.takeIf { !deviceState.isLoading && deviceState.error == null }
+            val performanceInfo =
+                performanceState.info.takeIf {
+                    !performanceState.isInfoLoading && performanceState.infoError == null
+                }
+            val performanceBenchmark = performanceState.benchmarkResult
+            val simInfo = simState.info.takeIf { !simState.isLoading && simState.error == null }
+            val reportStorageState =
+                storageState.copy(
+                    info =
+                        storageState.info.takeIf {
+                            !storageState.isInfoLoading && storageState.infoError == null
+                        },
                 )
-                return
-            }
             val snapshots =
                 DiagnosticSnapshots(
                     device = deviceInfo,
                     performance = performanceInfo,
-                    performanceBenchmark = performanceState.benchmarkResult,
+                    performanceBenchmark = performanceBenchmark,
                     performanceBenchmarkPhase = performanceState.benchmarkPhase,
                     sim = simInfo,
+                    automaticIssues = sessionState.automaticIssues,
                     display = displayState,
                     audio = audioState,
                     camera = cameraState,
@@ -800,7 +928,7 @@ fun RunAllTestsScreen(
                     connectivity = connectivityState,
                     battery = batteryState,
                     thermal = thermalState,
-                    storage = storageState,
+                    storage = reportStorageState,
                     vibration = vibrationState,
                     buttons = buttonState,
                     biometrics = biometricState,
@@ -826,17 +954,7 @@ fun RunAllTestsScreen(
                 }
             val deviceContext =
                 remember(deviceInfo) {
-                    with(deviceInfo) {
-                        ReportDeviceContext(
-                            manufacturer = manufacturer,
-                            model = model,
-                            brand = brand,
-                            product = product,
-                            androidRelease = androidVersion,
-                            apiLevel = apiLevel,
-                            securityPatch = securityPatch.takeUnless { it == DeviceInfo.UNAVAILABLE },
-                        )
-                    }
+                    reportDeviceContext(deviceInfo)
                 }
             val appContext =
                 remember(context) {
@@ -862,12 +980,7 @@ fun RunAllTestsScreen(
                     onOpenCategory = onOpenCategory,
                     onDone = onDone,
                     modifier = modifier.fillMaxSize(),
-                    mode =
-                        if (sessionState.targetCategory == null) {
-                            ReportResultMode.COMPLETED_RUN
-                        } else {
-                            ReportResultMode.SAVED_REPORT
-                        },
+                    mode = ReportResultMode.COMPLETED_RUN,
                 )
             } ?: AutomaticCheckScreen(
                 title = stringResource(R.string.run_all_results_title),
@@ -881,6 +994,29 @@ fun RunAllTestsScreen(
 private fun playSpeakerTone(viewModel: AudioTestViewModel) {
     viewModel.playTone(SPEAKER_TEST_FREQUENCY_HZ)
 }
+
+private fun reportDeviceContext(deviceInfo: DeviceInfo?): ReportDeviceContext =
+    deviceInfo?.let { info ->
+        ReportDeviceContext(
+            manufacturer = info.manufacturer,
+            model = info.model,
+            brand = info.brand,
+            product = info.product,
+            androidRelease = info.androidVersion,
+            apiLevel = info.apiLevel,
+            securityPatch = info.securityPatch.takeUnless { it == DeviceInfo.UNAVAILABLE },
+        )
+    } ?: ReportDeviceContext(
+        manufacturer = Build.MANUFACTURER.orUnavailable(),
+        model = Build.MODEL.orUnavailable(),
+        brand = Build.BRAND.orUnavailable(),
+        product = Build.PRODUCT.orUnavailable(),
+        androidRelease = Build.VERSION.RELEASE.orUnavailable(),
+        apiLevel = Build.VERSION.SDK_INT,
+        securityPatch = Build.VERSION.SECURITY_PATCH.takeUnless(String::isBlank),
+    )
+
+private fun String.orUnavailable(): String = ifBlank { DeviceInfo.UNAVAILABLE }
 
 private fun currentPermissions(context: Context): RunAllPermissions =
     RunAllPermissions(

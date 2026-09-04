@@ -86,7 +86,7 @@ class ReportComparisonEngineTest {
                                 DiagnosticStatus.PASS,
                                 EvidenceValue.IntValue(80),
                             ),
-                            evidence(DiagnosticCategoryId.BATTERY, "health", DiagnosticStatus.PASS),
+                            evidence(DiagnosticCategoryId.BATTERY, "health", DiagnosticStatus.NOT_AVAILABLE),
                         ),
                     ),
             )
@@ -153,6 +153,26 @@ class ReportComparisonEngineTest {
             incompatible.score,
         )
         assertNull(incompatible.score.deltaOrNull())
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun duplicateEvidenceIdsAreRejected() {
+        val duplicate = evidence(DiagnosticCategoryId.BATTERY, "level", DiagnosticStatus.PASS)
+        val malformed =
+            report(
+                id = "malformed",
+                categories =
+                    listOf(
+                        category(
+                            DiagnosticCategoryId.BATTERY,
+                            DiagnosticStatus.PASS,
+                            duplicate,
+                            duplicate.copy(value = EvidenceValue.IntValue(50)),
+                        ),
+                    ),
+            )
+
+        ReportComparisonEngine.compare(malformed, report(id = "after"))
     }
 
     private fun category(

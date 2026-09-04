@@ -2,10 +2,22 @@ package com.insaner.fonecheck.ui.screens.display
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DisplayInteractionTest {
+    @Test
+    fun unavailableDisplayInfoDoesNotInventPlatformReadings() {
+        val info = DisplayInfoState()
+
+        assertNull(info.refreshRate)
+        assertNull(info.hdrSupported)
+        assertNull(info.wideColorGamut)
+        assertNull(info.currentBrightness)
+        assertNull(info.autoBrightness)
+    }
+
     @Test
     fun visualPatternsIncludeRgbWhiteBlackAndGrayGradientInOrder() {
         assertEquals(

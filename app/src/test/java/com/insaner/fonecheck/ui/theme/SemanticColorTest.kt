@@ -52,10 +52,15 @@ class SemanticColorTest {
     }
 
     @Test
-    fun `secondary button outline stays visible as a control boundary`() {
+    fun `outlined control boundaries stay visible on every app surface`() {
         bothThemes().forEach { colors ->
-            val ratio = contrast(colors.textMuted, colors.background)
-            assertTrue("Outline is $ratio:1", ratio >= MINIMUM_BOUNDARY_CONTRAST)
+            listOf(
+                "background" to colors.background,
+                "panel" to colors.panel,
+            ).forEach { (surfaceName, surface) ->
+                val ratio = contrast(colors.textMuted, surface)
+                assertTrue("Outline on $surfaceName is $ratio:1", ratio >= MINIMUM_BOUNDARY_CONTRAST)
+            }
         }
     }
 

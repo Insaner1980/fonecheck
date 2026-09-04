@@ -25,7 +25,11 @@ object ScoreCalculator {
                 notTestedCount = notTestedCount,
                 unavailableCount = unavailableCount,
                 percentage =
-                    if (applicableEvidence.isEmpty()) 0 else completedCount * 100 / applicableEvidence.size,
+                    if (applicableEvidence.isEmpty()) {
+                        0
+                    } else {
+                        (completedCount.toLong() * 100L / applicableEvidence.size).toInt()
+                    },
             )
         val categoryScores = categories.mapNotNull(::scoreCategory)
         val scoreValue = categoryScores.takeIf { it.isNotEmpty() }?.averageFloor()
@@ -54,7 +58,7 @@ object ScoreCalculator {
             .takeIf { it.isNotEmpty() }
             ?.averageFloor()
 
-    private fun List<Int>.averageFloor(): Int = sum() / size
+    private fun List<Int>.averageFloor(): Int = (sumOf { it.toLong() } / size).toInt()
 
     private val COMPLETED_STATUSES =
         setOf(

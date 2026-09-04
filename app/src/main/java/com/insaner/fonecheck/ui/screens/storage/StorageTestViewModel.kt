@@ -72,6 +72,11 @@ class StorageTestViewModel
                 }
         }
 
+        fun cancelInfoCapture() {
+            infoJob?.cancel()
+            infoJob = null
+        }
+
         // The runner performs blocking file I/O and intentionally inherits this background context.
         @Suppress("kotlin:S3776", "kotlin:S6311")
         fun startBenchmark() {
@@ -102,7 +107,7 @@ class StorageTestViewModel
                             _state.value =
                                 _state.value.copy(
                                     benchmarkPhase = StorageBenchmarkPhase.ERROR,
-                                    benchmarkError = StorageBenchmarkErrorCode.IO_ERROR,
+                                    benchmarkError = StorageBenchmarkErrorCode.TIMEOUT,
                                 )
                         }
                     } catch (_: CancellationException) {
@@ -156,6 +161,7 @@ class StorageTestViewModel
             when (result.error) {
                 null -> StorageBenchmarkPhase.COMPLETED
                 StorageBenchmarkErrorCode.INSUFFICIENT_SPACE -> StorageBenchmarkPhase.NOT_RUN
+                StorageBenchmarkErrorCode.TIMEOUT,
                 StorageBenchmarkErrorCode.IO_ERROR,
                 StorageBenchmarkErrorCode.DATA_MISMATCH,
                 StorageBenchmarkErrorCode.CLEANUP_FAILED,

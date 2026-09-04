@@ -180,6 +180,8 @@
     <string name="audio_level">Relative input level</string>
     <string name="audio_relative_level_value">%1$s%%</string>
     <string name="audio_relative_level_disclaimer">Relative PCM amplitude only, not a calibrated sound-pressure or loudness measurement. Recorded audio stays in memory and is discarded when the test closes.</string>
+    <string name="audio_output_unavailable">Audio output could not be started. Try again.</string>
+    <string name="audio_recording_unavailable">Audio recording could not be started or completed. Check microphone access and try again.</string>
     <string name="audio_manual_confirmation">Confirm what you heard. Device detection alone cannot verify audible output.</string>
     <string name="audio_manual_problem">Problem heard</string>
     <string name="audio_manual_pass">Sounded correct</string>
@@ -214,6 +216,7 @@
     <string name="camera_open_unknown">Open camera</string>
     <string name="camera_duplicate_selection">%1$s (camera %2$s)</string>
     <string name="camera_capture">Capture</string>
+    <string name="camera_capturing">Capturing photo…</string>
     <string name="camera_stop">Stop</string>
     <string name="camera_captured">Captured</string>
     <string name="camera_capture_result">%1$s (%2$s)</string>
@@ -271,6 +274,7 @@
     <string name="sensor_guided_title">Guided tests</string>
     <string name="sensor_not_available_description">This sensor is not available on this device.</string>
     <string name="sensor_skip_test">Skip test</string>
+    <string name="permission_rationale_activity_recognition">Physical activity access is used only while you run the step sensor test.</string>
     <string name="sensor_status_sampling">Sampling</string>
     <string name="sensor_status_skipped">Skipped</string>
     <string name="sensor_status_label">Status</string>
@@ -459,8 +463,8 @@
     <string name="batt_voltage">Voltage</string>
     <string name="batt_temperature">Temperature</string>
     <string name="batt_technology">Technology</string>
-    <string name="batt_value_percent">%1$d%%</string>
-    <string name="batt_value_millivolts">%1$d mV</string>
+    <string name="batt_value_percent">%1$s%%</string>
+    <string name="batt_value_millivolts">%1$s mV</string>
     <string name="batt_value_celsius">%1$s °C</string>
 
     <!-- Health statuses -->
@@ -576,6 +580,7 @@
     <string name="storage_benchmark_skipped">Benchmark skipped. No temporary file was written.</string>
     <string name="storage_benchmark_cancelled">Benchmark cancelled and temporary data cleanup requested.</string>
     <string name="storage_benchmark_insufficient_space">Not run because the app cache does not have enough free space for the temporary file and safety reserve.</string>
+    <string name="storage_benchmark_timeout">The storage benchmark timed out before it completed.</string>
     <string name="storage_benchmark_error">The storage benchmark could not be completed.</string>
     <string name="storage_benchmark_data_mismatch">The temporary file did not read back with the expected size and checksum.</string>
     <string name="storage_benchmark_cleanup_error">fonecheck could not confirm deletion of the temporary benchmark file.</string>
@@ -759,6 +764,7 @@
     <string name="settings_permission_phone">Phone state</string>
     <string name="settings_permission_location">Location</string>
     <string name="settings_permission_bluetooth">Nearby devices</string>
+    <string name="settings_permission_physical_activity">Physical activity</string>
     <string name="settings_permission_granted">Granted</string>
     <string name="settings_permission_not_granted">Not granted</string>
     <string name="settings_open_app_settings">Open Android app settings</string>
@@ -907,8 +913,7 @@
     <string name="comparison_attention_changed">Warning or issue status changed</string>
     <string name="comparison_no_checks">No checks were saved for this category in either report.</string>
     <string name="comparison_loading">Loading report comparison…</string>
-    <string name="comparison_not_found">One or both saved reports were not found.</string>
-    <string name="comparison_unavailable">One or both reports cannot be read by this app version.</string>
+    <string name="comparison_report_issue">%1$s: %2$s</string>
     <string name="comparison_error">The reports could not be compared.</string>
     <string name="run_all_status_pass">Pass</string>
     <string name="run_all_status_warning">Warning</string>
@@ -1019,6 +1024,9 @@
     <string name="vibration_stop">Stop vibration</string>
     <string name="vibration_skip">Skip physical confirmation</string>
     <string name="vibration_unavailable">Android reports that this device has no vibrator.</string>
+    <string name="vibration_capability_read_error">fonecheck could not read all vibration capabilities. Try reopening the screen.</string>
+    <string name="vibration_playback_error">fonecheck could not start the vibration. Try again.</string>
+    <string name="vibration_read_failed">Read failed</string>
     <string name="vibration_strength_warning">Long and patterned vibrations may feel strong or uncomfortable. Stop at any time.</string>
     <string name="vibration_accessibility_note">If vibration is uncomfortable or cannot be perceived reliably, skip the physical confirmation. API capability remains reported separately.</string>
     <string name="vibration_api_requires_android_11">Requires Android 11+</string>

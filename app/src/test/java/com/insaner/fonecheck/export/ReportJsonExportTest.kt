@@ -2,6 +2,7 @@ package com.insaner.fonecheck.export
 
 import com.insaner.fonecheck.data.repository.ReportPayloadCodec
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
+import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreVersion
 import com.insaner.fonecheck.testing.batteryReport
@@ -61,6 +62,7 @@ class ReportJsonExportTest {
                 .single()
 
         assertEquals("battery.level", evidence.checkId.value)
+        assertEquals(ReportKind.CATEGORY_ONLY, report.kind)
         assertEquals(DiagnosticStatus.INFO, evidence.status)
         assertEquals(DiagnosticStatus.INFO, report.categories.single().aggregateStatus)
         assertEquals(ScoreVersion.CURRENT, report.score.version)

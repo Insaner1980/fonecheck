@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "stableId": "example-report-id",
-  "kind": "full_check",
+  "kind": "category_only",
   "startedAt": "2026-08-08T10:00:00Z",
   "completedAt": "2026-08-08T10:01:00Z",
   "device": {

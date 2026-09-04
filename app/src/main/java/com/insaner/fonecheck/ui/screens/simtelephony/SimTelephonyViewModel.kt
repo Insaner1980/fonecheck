@@ -40,6 +40,11 @@ class SimTelephonyViewModel
             beginRefresh()
         }
 
+        fun cancelCapture() {
+            refreshJob?.cancel()
+            refreshJob = null
+        }
+
         private fun beginRefresh() {
             refreshJob?.cancel()
             _state.value = _state.value.copy(isLoading = true, error = null)

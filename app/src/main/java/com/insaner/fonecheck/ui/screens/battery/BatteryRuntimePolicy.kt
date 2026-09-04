@@ -15,6 +15,16 @@ object BatteryLevelNormalizer {
     }
 }
 
+object BatteryTemperatureNormalizer {
+    fun normalize(rawTenthsCelsius: Int?): Float? =
+        rawTenthsCelsius
+            ?.takeIf { it in MIN_TEMPERATURE_TENTHS..MAX_TEMPERATURE_TENTHS }
+            ?.div(10f)
+
+    private const val MIN_TEMPERATURE_TENTHS = -500
+    private const val MAX_TEMPERATURE_TENTHS = 1_000
+}
+
 enum class BatteryFlowStatus {
     CHARGING,
     DISCHARGING,

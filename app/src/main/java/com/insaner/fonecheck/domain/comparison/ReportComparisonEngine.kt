@@ -87,6 +87,8 @@ object ReportComparisonEngine {
         before: DiagnosticReport,
         after: DiagnosticReport,
     ): ReportComparison {
+        before.requireValidComparisonKeys()
+        after.requireValidComparisonKeys()
         val score =
             if (before.score.version.isCompatibleWith(after.score.version)) {
                 ScoreComparison.Compatible(
@@ -165,12 +167,12 @@ object ReportComparisonEngine {
         when {
             before == null -> EvidenceChange.ADDED
             after == null -> EvidenceChange.REMOVED
+            before.status != DiagnosticStatus.NOT_TESTED &&
+                after.status == DiagnosticStatus.NOT_TESTED -> EvidenceChange.NOT_RUN
             before.status == DiagnosticStatus.NOT_AVAILABLE &&
                 after.status != DiagnosticStatus.NOT_AVAILABLE -> EvidenceChange.NEWLY_AVAILABLE
             before.status != DiagnosticStatus.NOT_AVAILABLE &&
                 after.status == DiagnosticStatus.NOT_AVAILABLE -> EvidenceChange.NEWLY_UNAVAILABLE
-            before.status != DiagnosticStatus.NOT_TESTED &&
-                after.status == DiagnosticStatus.NOT_TESTED -> EvidenceChange.NOT_RUN
             before.status != after.status -> EvidenceChange.STATUS_CHANGED
             before.withoutTimestamp() != after.withoutTimestamp() -> EvidenceChange.VALUE_CHANGED
             else -> EvidenceChange.UNCHANGED
@@ -191,4 +193,23 @@ object ReportComparisonEngine {
     }
 
     private fun DiagnosticEvidence.withoutTimestamp() = copy(capturedAt = java.time.Instant.EPOCH)
+
+    private fun DiagnosticReport.requireValidComparisonKeys() {
+        require(categories.map { it.categoryId }.distinct().size == categories.size) {
+            "A report must not contain duplicate categories."
+        }
+        categories.forEach { category ->
+            require(category.evidence.all { it.categoryId == category.categoryId }) {
+                "Evidence must belong to its containing category."
+            }
+            require(
+                category.evidence
+                    .map { it.checkId }
+                    .distinct()
+                    .size == category.evidence.size,
+            ) {
+                "A report category must not contain duplicate check IDs."
+            }
+        }
+    }
 }

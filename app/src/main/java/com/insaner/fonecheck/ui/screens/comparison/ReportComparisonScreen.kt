@@ -27,7 +27,8 @@ import com.insaner.fonecheck.domain.comparison.EvidenceComparison
 import com.insaner.fonecheck.domain.comparison.ReportComparison
 import com.insaner.fonecheck.domain.comparison.ScoreComparison
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
-import com.insaner.fonecheck.localization.evidenceLabelStringRes
+import com.insaner.fonecheck.localization.evidenceLabelResource
+import com.insaner.fonecheck.localization.stableCodeDisplayText
 import com.insaner.fonecheck.navigation.diagnosticDestinations
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.DisclosureHeader
@@ -47,6 +48,7 @@ import com.insaner.fonecheck.ui.components.statusLabel
 import com.insaner.fonecheck.ui.format.formatUiDateTime
 import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import com.insaner.fonecheck.ui.format.uiNumber
+import com.insaner.fonecheck.ui.screens.runall.evidenceDetail
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
 import com.insaner.fonecheck.ui.theme.toSemanticTone
@@ -86,23 +88,18 @@ fun ReportComparisonScreen(
         is ReportComparisonState.Content ->
             ComparisonContent(state.comparison, modifier)
 
-        ReportComparisonState.NotFound ->
+        is ReportComparisonState.Issues -> {
+            val hasUnreadableReport =
+                state.first?.let { it != ComparisonReportIssue.NOT_FOUND } == true ||
+                    state.second?.let { it != ComparisonReportIssue.NOT_FOUND } == true
             ReportStateScreen(
-                type = ScreenStateType.EMPTY,
-                message = stringResource(R.string.comparison_not_found),
-                onRetry = null,
+                type = if (hasUnreadableReport) ScreenStateType.UNAVAILABLE else ScreenStateType.EMPTY,
+                message = comparisonIssueMessage(state),
+                onRetry = onRetry.takeIf { hasUnreadableReport },
                 onBack = onBack,
                 modifier = modifier,
             )
-
-        is ReportComparisonState.Unavailable ->
-            ReportStateScreen(
-                type = ScreenStateType.UNAVAILABLE,
-                message = stringResource(R.string.comparison_unavailable),
-                onRetry = onRetry,
-                onBack = onBack,
-                modifier = modifier,
-            )
+        }
 
         ReportComparisonState.Error ->
             ReportStateScreen(
@@ -344,7 +341,12 @@ private fun EvidenceRows(evidence: EvidenceComparison) {
         label = stringResource(R.string.comparison_check),
         // The report screen names its checks; showing a raw `battery.health` here instead was the
         // same evidence in two vocabularies.
-        value = evidenceLabelStringRes(evidence.checkId)?.let { stringResource(it) } ?: evidence.checkId,
+        value =
+            evidenceLabelResource(evidence.checkId)?.let { resource ->
+                resource.formatArgument?.let { argument ->
+                    stringResource(resource.stringResId, uiNumber(argument))
+                } ?: stringResource(resource.stringResId)
+            } ?: stableCodeDisplayText(evidence.checkId.substringAfter('.')),
     )
     DataRow(
         label = stringResource(changeLabel(evidence.change)),
@@ -356,6 +358,22 @@ private fun EvidenceRows(evidence: EvidenceComparison) {
             ),
         tone = evidence.after?.status?.toSemanticTone() ?: SemanticTone.NEUTRAL,
     )
+    LongValueRow(
+        label = stringResource(R.string.comparison_first_report),
+        value = evidence.before?.let { evidenceDetail(it) },
+        unavailableLabel =
+            stringResource(
+                if (evidence.before == null) R.string.comparison_missing else R.string.value_unavailable_short,
+            ),
+    )
+    LongValueRow(
+        label = stringResource(R.string.comparison_second_report),
+        value = evidence.after?.let { evidenceDetail(it) },
+        unavailableLabel =
+            stringResource(
+                if (evidence.after == null) R.string.comparison_missing else R.string.value_unavailable_short,
+            ),
+    )
     if (evidence.attentionChange != AttentionChange.NONE) {
         StatusText(
             text = stringResource(attentionLabel(evidence.attentionChange)),
@@ -364,6 +382,35 @@ private fun EvidenceRows(evidence: EvidenceComparison) {
         )
     }
 }
+
+@Composable
+private fun comparisonIssueMessage(state: ReportComparisonState.Issues): String {
+    val firstMessage =
+        state.first?.let { issue ->
+            stringResource(
+                R.string.comparison_report_issue,
+                stringResource(R.string.comparison_first_report),
+                stringResource(issue.messageResId),
+            )
+        }
+    val secondMessage =
+        state.second?.let { issue ->
+            stringResource(
+                R.string.comparison_report_issue,
+                stringResource(R.string.comparison_second_report),
+                stringResource(issue.messageResId),
+            )
+        }
+    return listOfNotNull(firstMessage, secondMessage).joinToString(separator = "\n")
+}
+
+private val ComparisonReportIssue.messageResId: Int
+    get() =
+        when (this) {
+            ComparisonReportIssue.NOT_FOUND -> R.string.report_not_found
+            ComparisonReportIssue.UNSUPPORTED_SCHEMA_VERSION -> R.string.report_unsupported
+            ComparisonReportIssue.CORRUPT_DATA -> R.string.report_corrupt
+        }
 
 /**
  * The shared status word, except that a null here means the report does not carry the check at all

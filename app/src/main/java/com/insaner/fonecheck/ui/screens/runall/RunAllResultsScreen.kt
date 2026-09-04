@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.CategoryTestResult
+import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryResult
 import com.insaner.fonecheck.domain.model.DiagnosticEvidence
 import com.insaner.fonecheck.domain.model.DiagnosticReport
@@ -40,7 +41,7 @@ import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.TestResult
 import com.insaner.fonecheck.domain.model.TestStatus
-import com.insaner.fonecheck.localization.evidenceLabelStringRes
+import com.insaner.fonecheck.localization.evidenceLabelResource
 import com.insaner.fonecheck.localization.evidenceReasonStringRes
 import com.insaner.fonecheck.localization.shouldShowEvidenceReason
 import com.insaner.fonecheck.localization.stableTextStringRes
@@ -90,6 +91,7 @@ fun RunAllResultsScreen(
     mode: ReportResultMode = ReportResultMode.COMPLETED_RUN,
 ) {
     val presentation = remember(report) { ReportDetailPresenter.present(report) }
+    val representedCategoryIds = remember(report) { report.categories.map { it.categoryId }.toSet() }
     val categories =
         presentation.categories.mapNotNull { category ->
             if (diagnosticDestinations.none { it.category == category.categoryId }) {
@@ -136,6 +138,7 @@ fun RunAllResultsScreen(
             onExpandedChange = { expandedCategoryName = it },
             onOpenCategory = onOpenCategory,
             mode = mode,
+            representedCategoryIds = representedCategoryIds,
         )
         resultGroup(
             titleResId = R.string.run_all_completed,
@@ -144,6 +147,7 @@ fun RunAllResultsScreen(
             onExpandedChange = { expandedCategoryName = it },
             onOpenCategory = onOpenCategory,
             mode = mode,
+            representedCategoryIds = representedCategoryIds,
         )
         resultGroup(
             titleResId = R.string.run_all_not_completed,
@@ -152,6 +156,7 @@ fun RunAllResultsScreen(
             onExpandedChange = { expandedCategoryName = it },
             onOpenCategory = onOpenCategory,
             mode = mode,
+            representedCategoryIds = representedCategoryIds,
         )
 
         // Provenance last. A saved report used to open with seven rows of device and version
@@ -187,6 +192,7 @@ private fun LazyListScope.resultGroup(
     onExpandedChange: (String?) -> Unit,
     onOpenCategory: (Any) -> Unit,
     mode: ReportResultMode,
+    representedCategoryIds: Set<DiagnosticCategoryId>,
 ) {
     if (results.isEmpty()) return
 
@@ -208,6 +214,7 @@ private fun LazyListScope.resultGroup(
             },
             onOpenCategory = onOpenCategory,
             mode = mode,
+            canOpenCategory = mode != ReportResultMode.SAVED_REPORT || result.category in representedCategoryIds,
         )
     }
 }
@@ -411,6 +418,7 @@ private fun CategoryResult(
     onToggle: () -> Unit,
     onOpenCategory: (Any) -> Unit,
     mode: ReportResultMode,
+    canOpenCategory: Boolean,
 ) {
     val destination = diagnosticDestinations.first { it.category == result.category }
     val title = stringResource(destination.labelResId)
@@ -421,6 +429,12 @@ private fun CategoryResult(
             CategoryRetest(result.category.stableId)
         } else {
             destination.route
+        }
+    val openAction =
+        if (canOpenCategory) {
+            { onOpenCategory(route) }
+        } else {
+            null
         }
 
     Column(
@@ -442,7 +456,7 @@ private fun CategoryResult(
         if (isExpanded) {
             ResultDetails(
                 results = result.results,
-                onOpen = { onOpenCategory(route) },
+                onOpen = openAction,
                 mode = mode,
             )
         }
@@ -452,7 +466,7 @@ private fun CategoryResult(
 @Composable
 private fun ResultDetails(
     results: List<TestResult>,
-    onOpen: () -> Unit,
+    onOpen: (() -> Unit)?,
     mode: ReportResultMode,
 ) {
     Column(
@@ -473,18 +487,20 @@ private fun ResultDetails(
                 )
             }
         }
-        SecondaryButton(
-            label =
-                stringResource(
-                    if (mode == ReportResultMode.SAVED_REPORT) {
-                        R.string.report_retest
-                    } else {
-                        R.string.run_all_open_test
-                    },
-                ),
-            onClick = onOpen,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        onOpen?.let {
+            SecondaryButton(
+                label =
+                    stringResource(
+                        if (mode == ReportResultMode.SAVED_REPORT) {
+                            R.string.report_retest
+                        } else {
+                            R.string.run_all_open_test
+                        },
+                    ),
+                onClick = it,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 
@@ -577,10 +593,14 @@ private fun categorySummary(status: DiagnosticStatus): String =
 
 @Composable
 private fun evidenceLabel(checkId: String): String =
-    evidenceLabelStringRes(checkId)?.let { stringResource(it) } ?: checkId
+    evidenceLabelResource(checkId)?.let { resource ->
+        resource.formatArgument?.let { argument ->
+            stringResource(resource.stringResId, uiNumber(argument))
+        } ?: stringResource(resource.stringResId)
+    } ?: stableCodeFallback(checkId.substringAfter('.'))
 
 @Composable
-private fun evidenceDetail(evidence: DiagnosticEvidence): String? =
+internal fun evidenceDetail(evidence: DiagnosticEvidence): String? =
     evidence.value?.let { evidenceValueLabel(it, evidence.unit) }
 
 @Composable

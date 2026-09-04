@@ -24,13 +24,18 @@ sealed interface ReportComparisonState {
         val comparison: ReportComparison,
     ) : ReportComparisonState
 
-    data object NotFound : ReportComparisonState
-
-    data class Unavailable(
-        val reasons: Set<ReportReadFailure>,
+    data class Issues(
+        val first: ComparisonReportIssue?,
+        val second: ComparisonReportIssue?,
     ) : ReportComparisonState
 
     data object Error : ReportComparisonState
+}
+
+enum class ComparisonReportIssue {
+    NOT_FOUND,
+    UNSUPPORTED_SCHEMA_VERSION,
+    CORRUPT_DATA,
 }
 
 @HiltViewModel
@@ -58,7 +63,11 @@ class ReportComparisonViewModel
             loadJob?.cancel()
             _state.value = ReportComparisonState.Loading
             if (firstReportId.isBlank() || secondReportId.isBlank()) {
-                _state.value = ReportComparisonState.NotFound
+                _state.value =
+                    ReportComparisonState.Issues(
+                        first = ComparisonReportIssue.NOT_FOUND.takeIf { firstReportId.isBlank() },
+                        second = ComparisonReportIssue.NOT_FOUND.takeIf { secondReportId.isBlank() },
+                    )
                 return
             }
             loadJob =
@@ -67,18 +76,12 @@ class ReportComparisonViewModel
                         val result = reportRepository.getForComparison(firstReportId, secondReportId)
                         val first = result.first
                         val second = result.second
+                        val firstIssue = first.comparisonIssue()
+                        val secondIssue = second.comparisonIssue()
                         _state.value =
                             when {
-                                first is ReportLoadResult.NotFound || second is ReportLoadResult.NotFound ->
-                                    ReportComparisonState.NotFound
-
-                                first is ReportLoadResult.Unavailable || second is ReportLoadResult.Unavailable ->
-                                    ReportComparisonState.Unavailable(
-                                        listOfNotNull(
-                                            (first as? ReportLoadResult.Unavailable)?.reason,
-                                            (second as? ReportLoadResult.Unavailable)?.reason,
-                                        ).toSet(),
-                                    )
+                                firstIssue != null || secondIssue != null ->
+                                    ReportComparisonState.Issues(firstIssue, secondIssue)
 
                                 first is ReportLoadResult.Available && second is ReportLoadResult.Available ->
                                     ReportComparisonState.Content(
@@ -99,4 +102,15 @@ class ReportComparisonViewModel
             const val FIRST_REPORT_ID_ARGUMENT = "firstReportId"
             const val SECOND_REPORT_ID_ARGUMENT = "secondReportId"
         }
+    }
+
+private fun ReportLoadResult.comparisonIssue(): ComparisonReportIssue? =
+    when (this) {
+        is ReportLoadResult.Available -> null
+        ReportLoadResult.NotFound -> ComparisonReportIssue.NOT_FOUND
+        is ReportLoadResult.Unavailable ->
+            when (reason) {
+                ReportReadFailure.UNSUPPORTED_SCHEMA_VERSION -> ComparisonReportIssue.UNSUPPORTED_SCHEMA_VERSION
+                ReportReadFailure.CORRUPT_DATA -> ComparisonReportIssue.CORRUPT_DATA
+            }
     }

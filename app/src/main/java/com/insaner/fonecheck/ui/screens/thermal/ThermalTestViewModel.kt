@@ -43,6 +43,7 @@ class ThermalTestViewModel
         val state: StateFlow<ThermalTestState> = _state.asStateFlow()
 
         private var registration: ThermalStatusRegistration? = null
+        private var monitoringGeneration = 0L
         private var lastHeadroomAttemptMillis: Long? = null
 
         fun startMonitoring() {
@@ -50,24 +51,27 @@ class ThermalTestViewModel
             refresh()
             if (!platform.statusApiSupported) return
 
+            val generation = ++monitoringGeneration
             val nextRegistration =
                 platform.registerStatusListener { status ->
-                    _state.update { current ->
-                        current.copy(
-                            status = status,
-                            severity = ThermalRuntimePolicy.severity(status),
-                            statusConfidence =
-                                if (status == ThermalStatusCode.UNAVAILABLE) {
-                                    Confidence.UNAVAILABLE
-                                } else {
-                                    Confidence.HIGH
-                                },
-                            capturedAt = Instant.ofEpochMilli(clock.currentTimeMillis()),
-                            error =
-                                ThermalErrorCode.STATUS_UNAVAILABLE.takeIf {
-                                    status == ThermalStatusCode.UNAVAILABLE
-                                },
-                        )
+                    if (generation == monitoringGeneration) {
+                        _state.update { current ->
+                            current.copy(
+                                status = status,
+                                severity = ThermalRuntimePolicy.severity(status),
+                                statusConfidence =
+                                    if (status == ThermalStatusCode.UNAVAILABLE) {
+                                        Confidence.UNAVAILABLE
+                                    } else {
+                                        Confidence.HIGH
+                                    },
+                                capturedAt = Instant.ofEpochMilli(clock.currentTimeMillis()),
+                                error =
+                                    ThermalErrorCode.STATUS_UNAVAILABLE.takeIf {
+                                        status == ThermalStatusCode.UNAVAILABLE
+                                    },
+                            )
+                        }
                     }
                 }
             registration = nextRegistration
@@ -126,6 +130,11 @@ class ThermalTestViewModel
             }
         }
 
+        fun restartMonitoring() {
+            stopMonitoring()
+            startMonitoring()
+        }
+
         private fun readHeadroomIfDue(nowMillis: Long): Float? {
             val shouldReadHeadroom =
                 platform.headroomApiSupported &&
@@ -140,9 +149,10 @@ class ThermalTestViewModel
         }
 
         fun stopMonitoring() {
-            val currentRegistration = registration ?: return
+            monitoringGeneration += 1
+            val currentRegistration = registration
             registration = null
-            currentRegistration.close()
+            currentRegistration?.close()
             _state.update { it.copy(isMonitoring = false) }
         }
 

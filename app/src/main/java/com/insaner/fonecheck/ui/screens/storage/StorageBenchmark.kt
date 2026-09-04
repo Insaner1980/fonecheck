@@ -41,6 +41,7 @@ data class StorageBenchmarkConfig(
 
 enum class StorageBenchmarkErrorCode {
     INSUFFICIENT_SPACE,
+    TIMEOUT,
     IO_ERROR,
     DATA_MISMATCH,
     CLEANUP_FAILED,

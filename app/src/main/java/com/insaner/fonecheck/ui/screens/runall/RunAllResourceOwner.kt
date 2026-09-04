@@ -1,7 +1,9 @@
 package com.insaner.fonecheck.ui.screens.runall
 
 class RunAllResourceOwner(
+    private val stopDeviceInfo: () -> Unit,
     private val stopPerformance: () -> Unit,
+    private val stopSimInfo: () -> Unit,
     private val stopMicrophone: () -> Unit,
     private val stopGps: () -> Unit,
     private val stopStorage: () -> Unit,
@@ -22,20 +24,23 @@ class RunAllResourceOwner(
 
     fun stopStage(stage: RunAllStage) {
         when (stage) {
-            RunAllStage.AUTOMATIC -> {
-                stopPerformance()
-                stopMicrophone()
-                stopGps()
-                stopStorage()
-            }
+            RunAllStage.AUTOMATIC ->
+                stopEach(
+                    stopDeviceInfo,
+                    stopPerformance,
+                    stopSimInfo,
+                    stopMicrophone,
+                    stopGps,
+                    stopStorage,
+                )
 
-            RunAllStage.DISPLAY -> stopDisplay()
-            RunAllStage.AUDIO -> stopAudio()
-            RunAllStage.CAMERA -> stopCamera()
-            RunAllStage.SENSORS -> stopSensors()
-            RunAllStage.VIBRATION -> stopVibration()
-            RunAllStage.BUTTONS -> stopButtons()
-            RunAllStage.BIOMETRICS -> stopBiometrics()
+            RunAllStage.DISPLAY -> stopEach(stopDisplay)
+            RunAllStage.AUDIO -> stopEach(stopAudio)
+            RunAllStage.CAMERA -> stopEach(stopCamera)
+            RunAllStage.SENSORS -> stopEach(stopSensors)
+            RunAllStage.VIBRATION -> stopEach(stopVibration)
+            RunAllStage.BUTTONS -> stopEach(stopButtons)
+            RunAllStage.BIOMETRICS -> stopEach(stopBiometrics)
             RunAllStage.PREFLIGHT,
             RunAllStage.PERMISSIONS,
             RunAllStage.RESULTS,
@@ -46,17 +51,31 @@ class RunAllResourceOwner(
     fun stopAll() {
         if (allStopped) return
         allStopped = true
-        stopPerformance()
-        stopMicrophone()
-        stopGps()
-        stopStorage()
-        stopDisplay()
-        stopAudio()
-        stopCamera()
-        stopSensors()
-        stopVibration()
-        stopButtons()
-        stopBiometrics()
-        stopThermal()
+        stopEach(
+            stopDeviceInfo,
+            stopPerformance,
+            stopSimInfo,
+            stopMicrophone,
+            stopGps,
+            stopStorage,
+            stopDisplay,
+            stopAudio,
+            stopCamera,
+            stopSensors,
+            stopVibration,
+            stopButtons,
+            stopBiometrics,
+            stopThermal,
+        )
+    }
+
+    private fun stopEach(vararg stops: () -> Unit) {
+        stops.forEach { stop ->
+            try {
+                stop()
+            } catch (_: Exception) {
+                // Cleanup is best-effort; one resource must not prevent the remaining releases.
+            }
+        }
     }
 }

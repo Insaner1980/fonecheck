@@ -1,6 +1,7 @@
 package com.insaner.fonecheck.export
 
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
+import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.testing.batteryReport
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -36,6 +37,37 @@ class ReportPdfContentTest {
         assertTrue(scoreIndex >= 0)
         assertEquals(scoreIndex + 1, scoreStateIndex)
         assertEquals(scoreStateIndex + 1, coverageIndex)
+    }
+
+    @Test
+    fun booleanEvidenceUsesTheLocalizedDisplayValue() {
+        val report =
+            report().let { source ->
+                source.copy(
+                    categories =
+                        source.categories.map { category ->
+                            category.copy(
+                                evidence =
+                                    category.evidence.map { evidence ->
+                                        evidence.copy(value = EvidenceValue.BooleanValue(true), unit = null)
+                                    },
+                            )
+                        },
+                )
+            }
+
+        val blocks = ReportPdfContentBuilder.build(report, PdfReportLabels.english())
+
+        assertTrue(blocks.any { it.text == "yes" })
+    }
+
+    @Test
+    fun completedAndCapturedTimestampsUseTheLocalizedDateFormatter() {
+        val labels = PdfReportLabels.english().copy(completedValue = { "localized date" })
+
+        val blocks = ReportPdfContentBuilder.build(report(), labels)
+
+        assertEquals(2, blocks.count { it.text.endsWith("localized date") })
     }
 
     @Test

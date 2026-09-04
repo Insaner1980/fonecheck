@@ -93,6 +93,27 @@ class PerformanceInfoViewModelTest {
             assertNull(viewModel.state.value.benchmarkError)
         }
 
+    @Test
+    fun queuedInformationCaptureCanBeCancelledBeforeItStarts() =
+        runTest(dispatcher.scheduler) {
+            var captureCount = 0
+            val viewModel =
+                PerformanceInfoViewModel(
+                    performanceInfoProvider =
+                        PerformanceInfoProvider {
+                            captureCount += 1
+                            performanceInfo()
+                        },
+                    benchmarkRunner = PerformanceBenchmarkRunner { benchmarkResult() },
+                    ioDispatcher = dispatcher,
+                )
+            viewModel.cancelInfoCapture()
+            advanceUntilIdle()
+
+            assertEquals(0, captureCount)
+            assertNull(viewModel.state.value.info)
+        }
+
     private fun viewModel(benchmarkRunner: PerformanceBenchmarkRunner) =
         PerformanceInfoViewModel(
             performanceInfoProvider = PerformanceInfoProvider(::performanceInfo),

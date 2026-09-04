@@ -28,6 +28,7 @@ data class SettingsPermissionSnapshot(
     val phone: Boolean = false,
     val location: Boolean = false,
     val bluetooth: Boolean = false,
+    val physicalActivity: Boolean = false,
 )
 
 fun interface SettingsPermissionProvider {
@@ -48,6 +49,9 @@ class AndroidSettingsPermissionProvider
                 bluetooth =
                     Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
                         granted(Manifest.permission.BLUETOOTH_CONNECT),
+                physicalActivity =
+                    Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
+                        granted(Manifest.permission.ACTIVITY_RECOGNITION),
             )
 
         private fun granted(permission: String) =

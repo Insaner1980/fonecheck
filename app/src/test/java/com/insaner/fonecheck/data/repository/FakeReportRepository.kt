@@ -59,8 +59,10 @@ class FakeReportRepository(
     private fun publishSummaries() {
         summaries.value =
             reports.values
-                .sortedByDescending(DiagnosticReport::completedAt)
-                .map { report ->
+                .sortedWith(
+                    compareByDescending<DiagnosticReport>(DiagnosticReport::completedAt)
+                        .thenByDescending(DiagnosticReport::stableId),
+                ).map { report ->
                     val evidence = report.categories.flatMap { it.evidence }
                     SavedReportSummary(
                         stableId = report.stableId,

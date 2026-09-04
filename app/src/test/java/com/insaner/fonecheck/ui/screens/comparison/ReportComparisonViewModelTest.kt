@@ -49,17 +49,28 @@ class ReportComparisonViewModelTest {
         runTest(dispatcher.scheduler) {
             val repository = FakeReportRepository()
             repository.getByIdOverrides["before"] = ReportLoadResult.NotFound
-            repository.getByIdOverrides["after"] = ReportLoadResult.Available(report("after", 86))
+            repository.getByIdOverrides["after"] =
+                ReportLoadResult.Unavailable("after", ReportReadFailure.UNSUPPORTED_SCHEMA_VERSION)
             val viewModel = viewModel(repository)
             advanceUntilIdle()
-            assertEquals(ReportComparisonState.NotFound, viewModel.state.value)
+            assertEquals(
+                ReportComparisonState.Issues(
+                    first = ComparisonReportIssue.NOT_FOUND,
+                    second = ComparisonReportIssue.UNSUPPORTED_SCHEMA_VERSION,
+                ),
+                viewModel.state.value,
+            )
 
             repository.getByIdOverrides["before"] =
                 ReportLoadResult.Unavailable("before", ReportReadFailure.CORRUPT_DATA)
+            repository.getByIdOverrides["after"] = ReportLoadResult.Available(report("after", 86))
             viewModel.retry()
             advanceUntilIdle()
             assertEquals(
-                ReportComparisonState.Unavailable(setOf(ReportReadFailure.CORRUPT_DATA)),
+                ReportComparisonState.Issues(
+                    first = ComparisonReportIssue.CORRUPT_DATA,
+                    second = null,
+                ),
                 viewModel.state.value,
             )
         }

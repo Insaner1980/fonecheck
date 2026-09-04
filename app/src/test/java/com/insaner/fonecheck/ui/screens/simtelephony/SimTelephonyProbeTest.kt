@@ -209,7 +209,7 @@ class SimTelephonyProbeTest {
         assertEquals(SimFormFactorCode.PHYSICAL, info.simSlots[0].formFactor)
         assertEquals("Example Mobile", info.simSlots[0].operatorName)
         assertEquals("FI", info.simSlots[0].countryIso)
-        assertEquals(NetworkGenerationCode.FOURTH_GENERATION, info.simSlots[0].networkType)
+        assertEquals(NetworkGenerationCode.UNKNOWN, info.simSlots[0].networkType)
         assertEquals(SimActivityCode.ACTIVE, info.simSlots[1].activity)
         assertEquals(SimFormFactorCode.EMBEDDED, info.simSlots[1].formFactor)
         assertEquals(null, info.simSlots[1].operatorName)
@@ -285,7 +285,7 @@ class SimTelephonyProbeTest {
             15 to NetworkGenerationCode.THIRD_GENERATION,
             17 to NetworkGenerationCode.THIRD_GENERATION,
             13 to NetworkGenerationCode.FOURTH_GENERATION,
-            18 to NetworkGenerationCode.FOURTH_GENERATION,
+            18 to NetworkGenerationCode.UNKNOWN,
             20 to NetworkGenerationCode.FIFTH_GENERATION,
             -1 to NetworkGenerationCode.UNKNOWN,
         ).forEach { (code, expected) -> assertEquals(expected, SimTelephonyProbe.networkGeneration(code)) }

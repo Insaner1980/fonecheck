@@ -117,6 +117,7 @@ data class PdfReportLabels(
     val confidenceName: (Confidence) -> String,
     val reasonName: (EvidenceReasonCode) -> String,
     val stableTextName: (String) -> String,
+    val booleanValue: (Boolean) -> String,
     val numberValue: (Number) -> String,
     val unitName: (EvidenceUnitCode) -> String,
     val countsValue: (CoverageSummary, Int, Int) -> String,
@@ -159,6 +160,7 @@ data class PdfReportLabels(
                 confidenceName = { it.name.lowercase() },
                 reasonName = { it.value.replace('_', ' ') },
                 stableTextName = { it.replace('_', ' ') },
+                booleanValue = { if (it) "yes" else "no" },
                 numberValue = Number::toString,
                 unitName = ::englishUnitName,
                 countsValue = { coverage, warnings, failures ->
@@ -270,7 +272,12 @@ object ReportPdfContentBuilder {
                     item.reason?.takeIf { shouldShowEvidenceReason(item.status, it) }?.let {
                         add(PdfTextBlock("${labels.reason}: ${labels.reasonName(it)}", PdfTextStyle.BODY))
                     }
-                    add(PdfTextBlock("${labels.captured}: ${item.capturedAt}", PdfTextStyle.BODY))
+                    add(
+                        PdfTextBlock(
+                            "${labels.captured}: ${labels.completedValue(item.capturedAt)}",
+                            PdfTextStyle.BODY,
+                        ),
+                    )
                 }
             }
         }
@@ -281,7 +288,7 @@ object ReportPdfContentBuilder {
         labels: PdfReportLabels,
     ): String =
         when (value) {
-            is EvidenceValue.BooleanValue -> value.value.toString()
+            is EvidenceValue.BooleanValue -> labels.booleanValue(value.value)
             is EvidenceValue.IntValue -> labels.numberValue(value.value)
             is EvidenceValue.LongValue -> labels.numberValue(value.value)
             is EvidenceValue.DecimalValue -> labels.numberValue(value.value)

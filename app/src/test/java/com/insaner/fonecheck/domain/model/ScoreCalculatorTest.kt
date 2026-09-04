@@ -46,6 +46,15 @@ class ScoreCalculatorTest {
     }
 
     @Test
+    fun `double evidence must be finite`() {
+        EvidenceValue.DoubleValue(12.5)
+
+        assertValidationFails { EvidenceValue.DoubleValue(Double.NaN) }
+        assertValidationFails { EvidenceValue.DoubleValue(Double.POSITIVE_INFINITY) }
+        assertValidationFails { EvidenceValue.DoubleValue(Double.NEGATIVE_INFINITY) }
+    }
+
+    @Test
     fun `pass warning and fail use version one point values`() {
         assertScore(DiagnosticStatus.PASS, 100)
         assertScore(DiagnosticStatus.WARNING, 65)

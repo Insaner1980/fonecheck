@@ -1588,7 +1588,7 @@ public fun com.insaner.fonecheck.ui.screens.runall.DisplayCheckStep(colorIndex: 
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.runall.CategoryResult(result: com.insaner.fonecheck.domain.model.CategoryTestResult, isExpanded: kotlin.Boolean, onToggle: kotlin.Function0<kotlin.Unit>, onOpenCategory: kotlin.Function1<kotlin.Any, kotlin.Unit>, mode: com.insaner.fonecheck.ui.screens.runall.ReportResultMode): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.runall.CategoryResult(result: com.insaner.fonecheck.domain.model.CategoryTestResult, isExpanded: kotlin.Boolean, onToggle: kotlin.Function0<kotlin.Unit>, onOpenCategory: kotlin.Function1<kotlin.Any, kotlin.Unit>, mode: com.insaner.fonecheck.ui.screens.runall.ReportResultMode, canOpenCategory: kotlin.Boolean): kotlin.Unit
   skippable: false
   restartable: true
   params:
@@ -1597,6 +1597,7 @@ private fun com.insaner.fonecheck.ui.screens.runall.CategoryResult(result: com.i
     - onToggle: STABLE (function type)
     - onOpenCategory: STABLE (function type)
     - mode: STABLE (class with no mutable properties)
+    - canOpenCategory: STABLE (primitive type)
 
 @Composable
 public fun com.insaner.fonecheck.ui.screens.runall.FullCheckPreflightScreen(selections: com.insaner.fonecheck.ui.screens.runall.RunAllSelections, onSelectionsChange: kotlin.Function1<com.insaner.fonecheck.ui.screens.runall.RunAllSelections, kotlin.Unit>, onContinue: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, showWarnings: kotlin.Boolean): kotlin.Unit
@@ -1907,7 +1908,7 @@ private fun com.insaner.fonecheck.ui.screens.sensor.ChallengesSection(challenges
     - onChallenge: STABLE (function type)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.sensor.GuidedSensorSection(test: com.insaner.fonecheck.ui.screens.sensor.GuidedSensorTestState, sensorInfo: com.insaner.fonecheck.ui.screens.sensor.SensorInfo?, isExpanded: kotlin.Boolean, liveData: com.insaner.fonecheck.ui.screens.sensor.SensorLiveData?, challenges: kotlin.collections.List<com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge>, onToggle: kotlin.Function0<kotlin.Unit>, onChallenge: kotlin.Function1<com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge, kotlin.Unit>, onSkip: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.sensor.GuidedSensorSection(test: com.insaner.fonecheck.ui.screens.sensor.GuidedSensorTestState, sensorInfo: com.insaner.fonecheck.ui.screens.sensor.SensorInfo?, isExpanded: kotlin.Boolean, liveData: com.insaner.fonecheck.ui.screens.sensor.SensorLiveData?, challenges: kotlin.collections.List<com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge>, onToggle: kotlin.Function0<kotlin.Unit>, onChallenge: kotlin.Function1<com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge, kotlin.Unit>, onSkip: kotlin.Function0<kotlin.Unit>, activityPermissionState: com.insaner.fonecheck.domain.permission.PermissionState?, onRequestActivityPermission: kotlin.Function0<kotlin.Unit>, onOpenActivityPermissionSettings: kotlin.Function0<kotlin.Unit>): kotlin.Unit
   skippable: false
   restartable: true
   params:
@@ -1919,6 +1920,9 @@ private fun com.insaner.fonecheck.ui.screens.sensor.GuidedSensorSection(test: co
     - onToggle: STABLE (function type)
     - onChallenge: STABLE (function type)
     - onSkip: STABLE (function type)
+    - activityPermissionState: STABLE (class with no mutable properties)
+    - onRequestActivityPermission: STABLE (function type)
+    - onOpenActivityPermissionSettings: STABLE (function type)
 
 @Composable
 private fun com.insaner.fonecheck.ui.screens.sensor.LiveValuesSection(code: com.insaner.fonecheck.ui.screens.sensor.GuidedSensorCode, data: com.insaner.fonecheck.ui.screens.sensor.SensorLiveData): kotlin.Unit
@@ -2297,12 +2301,13 @@ private fun com.insaner.fonecheck.ui.screens.thermal.thermalSeverityLabel(severi
     - severity: STABLE (class with no mutable properties)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.vibration.HapticCapabilityList(label: kotlin.String, apiSupported: kotlin.Boolean, values: kotlin.collections.List<kotlin.String>): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.vibration.HapticCapabilityList(label: kotlin.String, apiSupported: kotlin.Boolean, readFailed: kotlin.Boolean, values: kotlin.collections.List<kotlin.String>): kotlin.Unit
   skippable: false
   restartable: true
   params:
     - label: STABLE (String is immutable)
     - apiSupported: STABLE (primitive type)
+    - readFailed: STABLE (primitive type)
     - values: RUNTIME (requires runtime check)
 
 @Composable
