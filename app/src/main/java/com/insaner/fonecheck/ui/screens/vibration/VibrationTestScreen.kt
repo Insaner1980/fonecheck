@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -37,10 +36,9 @@ fun VibrationTestScreen(
     viewModel: VibrationTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val liveStateUpdatedAtEpochMillis = remember(state) { System.currentTimeMillis() }
     VibrationLifecycleEffect(onCancelVibration = viewModel::cancelVibration)
 
-    TestScreenContent(modifier = modifier, liveStateUpdatedAtEpochMillis = liveStateUpdatedAtEpochMillis) {
+    TestScreenContent(modifier = modifier, liveStateUpdatedAtEpochMillis = state.capturedAt.toEpochMilli()) {
         if (state.haptic.readErrors.isNotEmpty()) {
             item {
                 Note(

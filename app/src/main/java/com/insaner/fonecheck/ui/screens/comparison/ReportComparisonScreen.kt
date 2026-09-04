@@ -101,6 +101,15 @@ fun ReportComparisonScreen(
             )
         }
 
+        ReportComparisonState.IncompatibleScope ->
+            ReportStateScreen(
+                type = ScreenStateType.UNAVAILABLE,
+                message = stringResource(R.string.comparison_scope_mismatch),
+                onRetry = null,
+                onBack = onBack,
+                modifier = modifier,
+            )
+
         ReportComparisonState.Error ->
             ReportStateScreen(
                 type = ScreenStateType.ERROR,

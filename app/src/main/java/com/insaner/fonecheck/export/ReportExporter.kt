@@ -7,8 +7,10 @@ import com.insaner.fonecheck.di.IoDispatcher
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 data class ExportedReport(
@@ -67,14 +69,16 @@ class AndroidReportExporter
         }
 
         @Suppress("TooGenericExceptionCaught")
-        private inline fun ExportTarget.writeAndFinalize(
+        private suspend inline fun ExportTarget.writeAndFinalize(
             format: String,
             write: (File) -> Unit,
         ) {
             var primaryFailure: Throwable? = null
             try {
                 write(temporaryFile)
-                finalizeExport(this, format)
+                ExportTargetLockRegistry.withLock(outputFile) {
+                    finalizeExport(this, format)
+                }
             } catch (error: Throwable) {
                 primaryFailure = error
                 throw error
@@ -142,5 +146,43 @@ class AndroidReportExporter
             val temporaryFile: File,
         )
     }
+
+internal object ExportTargetLockRegistry {
+    private val locks = ConcurrentHashMap<String, LockEntry>()
+
+    suspend fun <T> withLock(
+        outputFile: File,
+        action: suspend () -> T,
+    ): T {
+        val path = outputFile.absolutePath
+        val entry =
+            requireNotNull(
+                locks.compute(path) { _, current ->
+                    (current ?: LockEntry()).also { it.references += 1 }
+                },
+            )
+        var acquired = false
+        return try {
+            entry.mutex.lock()
+            acquired = true
+            action()
+        } finally {
+            if (acquired) entry.mutex.unlock()
+            locks.computeIfPresent(path) { _, current ->
+                if (current !== entry) {
+                    current
+                } else {
+                    current.references -= 1
+                    current.takeIf { it.references > 0 }
+                }
+            }
+        }
+    }
+
+    private data class LockEntry(
+        val mutex: Mutex = Mutex(),
+        var references: Int = 0,
+    )
+}
 
 class FonecheckFileProvider : FileProvider()

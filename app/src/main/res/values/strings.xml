@@ -915,6 +915,7 @@
     <string name="comparison_loading">Loading report comparison…</string>
     <string name="comparison_report_issue">%1$s: %2$s</string>
     <string name="comparison_error">The reports could not be compared.</string>
+    <string name="comparison_scope_mismatch">These reports cover different diagnostic scopes and cannot be compared.</string>
     <string name="run_all_status_pass">Pass</string>
     <string name="run_all_status_warning">Warning</string>
     <string name="run_all_status_fail">Fail</string>

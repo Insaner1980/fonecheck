@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.insaner.fonecheck.data.repository.ReportLoadResult
 import com.insaner.fonecheck.data.repository.ReportReadFailure
 import com.insaner.fonecheck.data.repository.ReportRepository
+import com.insaner.fonecheck.domain.comparison.IncompatibleReportScopeException
 import com.insaner.fonecheck.domain.comparison.ReportComparison
 import com.insaner.fonecheck.domain.comparison.ReportComparisonEngine
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,6 +29,8 @@ sealed interface ReportComparisonState {
         val first: ComparisonReportIssue?,
         val second: ComparisonReportIssue?,
     ) : ReportComparisonState
+
+    data object IncompatibleScope : ReportComparisonState
 
     data object Error : ReportComparisonState
 }
@@ -92,6 +95,8 @@ class ReportComparisonViewModel
                             }
                     } catch (error: CancellationException) {
                         throw error
+                    } catch (_: IncompatibleReportScopeException) {
+                        _state.value = ReportComparisonState.IncompatibleScope
                     } catch (_: Exception) {
                         _state.value = ReportComparisonState.Error
                     }

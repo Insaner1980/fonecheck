@@ -61,7 +61,8 @@ class BiometricTestViewModel
                 )
         }
 
-        fun startAuthentication() {
+        fun startAuthentication(): Boolean {
+            if (_state.value.promptActive) return false
             if (!canAuthenticate()) {
                 _state.value =
                     _state.value.copy(
@@ -70,7 +71,7 @@ class BiometricTestViewModel
                         promptActive = false,
                         failedAttempts = 0,
                     )
-                return
+                return false
             }
             _state.value =
                 _state.value.copy(
@@ -79,6 +80,7 @@ class BiometricTestViewModel
                     promptActive = true,
                     failedAttempts = 0,
                 )
+            return true
         }
 
         fun onAuthSuccess() {

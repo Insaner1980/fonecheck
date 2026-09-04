@@ -24,6 +24,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.data.repository.SavedReportSummary
+import com.insaner.fonecheck.domain.comparison.reportScopesAreComparable
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.navigation.diagnosticDestinations
@@ -76,11 +77,11 @@ fun HistoryScreen(
     var compareBaseId by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingDeleteId by rememberSaveable { mutableStateOf<String?>(null) }
     val locale = uiLanguageLocale(LocalLocale.current.platformLocale)
-    val comparableReportIds =
+    val comparableReports =
         state.reports
-            .filter { it.unavailableReason == null }
-            .map(SavedReportSummary::stableId)
-            .toSet()
+            .filter { it.unavailableReason == null && it.hasValidComparisonScope() }
+    val comparableReportIds = comparableReports.map(SavedReportSummary::stableId).toSet()
+    val compareBase = comparableReports.firstOrNull { it.stableId == compareBaseId }
     LaunchedEffect(state.reports) {
         val reportIds = state.reports.map(SavedReportSummary::stableId).toSet()
         if (compareBaseId !in comparableReportIds) compareBaseId = null
@@ -113,16 +114,24 @@ fun HistoryScreen(
                         report = report,
                         completedAt = completedAt,
                         isCompareBase = compareBaseId == report.stableId,
+                        isCompareEnabled =
+                            report.unavailableReason == null &&
+                                report.hasValidComparisonScope() &&
+                                (
+                                    compareBase == null ||
+                                        compareBase.stableId == report.stableId ||
+                                        compareBase.hasComparableScopeWith(report)
+                                ),
                         isDeleting = report.stableId in state.deletingReportIds,
                         onOpen = { onOpen(report.stableId) },
                         onCompare = {
-                            val baseId = compareBaseId?.takeIf { it in comparableReportIds }
+                            val base = comparableReports.firstOrNull { it.stableId == compareBaseId }
                             when {
-                                baseId == null -> compareBaseId = report.stableId
-                                baseId == report.stableId -> compareBaseId = null
-                                else -> {
+                                base == null -> compareBaseId = report.stableId
+                                base.stableId == report.stableId -> compareBaseId = null
+                                base.hasComparableScopeWith(report) -> {
                                     compareBaseId = null
-                                    onCompare(baseId, report.stableId)
+                                    onCompare(base.stableId, report.stableId)
                                 }
                             }
                         },
@@ -218,6 +227,7 @@ private fun HistoryReportSection(
     report: SavedReportSummary,
     completedAt: String,
     isCompareBase: Boolean,
+    isCompareEnabled: Boolean,
     isDeleting: Boolean,
     onOpen: () -> Unit,
     onCompare: () -> Unit,
@@ -287,7 +297,7 @@ private fun HistoryReportSection(
                         },
                     ),
                 onClick = onCompare,
-                enabled = isAvailable,
+                enabled = isCompareEnabled,
                 modifier = Modifier.testTag("history_compare_${report.stableId}"),
             )
             SecondaryButton(
@@ -305,6 +315,16 @@ private fun HistoryReportSection(
         }
     }
 }
+
+private fun SavedReportSummary.hasValidComparisonScope(): Boolean = hasComparableScopeWith(this)
+
+private fun SavedReportSummary.hasComparableScopeWith(other: SavedReportSummary): Boolean =
+    reportScopesAreComparable(
+        firstKind = kind,
+        firstCategoryId = categoryId,
+        secondKind = other.kind,
+        secondCategoryId = other.categoryId,
+    )
 
 @Composable
 private fun historyKindLabel(report: SavedReportSummary): String {

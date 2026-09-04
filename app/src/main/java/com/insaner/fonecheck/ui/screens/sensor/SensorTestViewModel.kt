@@ -82,6 +82,13 @@ data class SensorTestState(
     val error: String? = null,
 )
 
+internal fun SensorTestState.withChallengeListenerFailure(): SensorTestState =
+    copy(
+        activeSensorType = null,
+        challenge = ChallengeState(),
+        error = "listener_registration_failed",
+    )
+
 @HiltViewModel
 class SensorTestViewModel
     @Inject
@@ -208,7 +215,8 @@ class SensorTestViewModel
                 )
             }
             if (!startListening(sensorType)) {
-                _state.update { it.copy(error = "listener_registration_failed") }
+                challengeRuntime = SensorChallengeRuntime()
+                _state.update(SensorTestState::withChallengeListenerFailure)
             }
         }
 

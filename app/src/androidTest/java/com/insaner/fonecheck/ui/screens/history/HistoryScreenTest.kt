@@ -5,6 +5,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -292,6 +294,49 @@ class HistoryScreenTest {
         composeRule.onNodeWithTag("history_compare_second").performScrollTo().performClick()
 
         assertEquals(null, compared)
+    }
+
+    @Test
+    fun comparisonSelectionOffersOnlyReportsWithTheSameScope() {
+        setHistoryContent(
+            HistoryState(
+                reports =
+                    listOf(
+                        summary("full", "2026-08-08T12:00:00Z", ScoreState.COMPLETE),
+                        summary(
+                            "battery-new",
+                            "2026-08-08T11:00:00Z",
+                            ScoreState.COMPLETE,
+                            kind = ReportKind.CATEGORY_ONLY,
+                            categoryId = DiagnosticCategoryId.BATTERY,
+                        ),
+                        summary(
+                            "battery-old",
+                            "2026-08-08T10:00:00Z",
+                            ScoreState.COMPLETE,
+                            kind = ReportKind.CATEGORY_ONLY,
+                            categoryId = DiagnosticCategoryId.BATTERY,
+                        ),
+                        summary(
+                            "storage",
+                            "2026-08-08T09:00:00Z",
+                            ScoreState.COMPLETE,
+                            kind = ReportKind.CATEGORY_ONLY,
+                            categoryId = DiagnosticCategoryId.STORAGE,
+                        ),
+                    ),
+                isLoading = false,
+            ),
+        )
+
+        composeRule.onNodeWithTag("history_compare_full").performClick()
+        composeRule.onNodeWithTag("history_compare_battery-new").performScrollTo().assertIsNotEnabled()
+
+        composeRule.onNodeWithTag("history_compare_full").performScrollTo().performClick()
+        composeRule.onNodeWithTag("history_compare_battery-new").performScrollTo().performClick()
+        composeRule.onNodeWithTag("history_compare_battery-old").performScrollTo().assertIsEnabled()
+        composeRule.onNodeWithTag("history_compare_storage").performScrollTo().assertIsNotEnabled()
+        composeRule.onNodeWithTag("history_compare_full").performScrollTo().assertIsNotEnabled()
     }
 
     @Test

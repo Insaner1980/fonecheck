@@ -45,6 +45,22 @@ class AudioOperationGate {
     fun isCurrent(token: Long): Boolean = token == generation
 }
 
+enum class AudioRecordingStopMode {
+    KEEP_RESULT,
+    DISCARD_RESULT,
+}
+
+fun AudioOperationGate.stop(mode: AudioRecordingStopMode) {
+    if (mode == AudioRecordingStopMode.DISCARD_RESULT) cancel()
+}
+
+internal inline fun cancelActiveRecording(
+    isRecording: Boolean,
+    cancelRecording: () -> Unit,
+) {
+    if (isRecording) cancelRecording()
+}
+
 enum class AudioOutputRoute {
     MEDIA,
     EARPIECE,

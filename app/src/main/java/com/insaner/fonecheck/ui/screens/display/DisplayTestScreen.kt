@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -89,6 +90,11 @@ fun DisplayTestScreen(
     val state by viewModel.state.collectAsState()
     val isFullscreen = state.visual.isActive || state.touch.isActive
     val currentOnFullscreenChange by rememberUpdatedState(onFullscreenChange)
+    val windowSize = LocalWindowInfo.current.containerSize
+
+    LaunchedEffect(windowSize) {
+        viewModel.updateWindowResolution(windowSize.width, windowSize.height)
+    }
 
     RegisterRefreshTopBarAction(
         contentDescriptionResId = R.string.display_refresh_info,

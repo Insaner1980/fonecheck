@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.insaner.fonecheck.data.repository.FakeReportRepository
 import com.insaner.fonecheck.data.repository.ReportLoadResult
 import com.insaner.fonecheck.data.repository.ReportReadFailure
+import com.insaner.fonecheck.testing.batteryReport
 import com.insaner.fonecheck.testing.testReport
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -86,6 +87,20 @@ class ReportComparisonViewModelTest {
             viewModel.retry()
             advanceUntilIdle()
             assert(viewModel.state.value is ReportComparisonState.Content)
+        }
+
+    @Test
+    fun incompatibleReportScopesProduceANormalUiState() =
+        runTest(dispatcher.scheduler) {
+            val repository = FakeReportRepository()
+            repository.getByIdOverrides["before"] = ReportLoadResult.Available(report("before", 80))
+            repository.getByIdOverrides["after"] =
+                ReportLoadResult.Available(batteryReport("after", "Test"))
+
+            val viewModel = viewModel(repository)
+            advanceUntilIdle()
+
+            assertEquals(ReportComparisonState.IncompatibleScope, viewModel.state.value)
         }
 
     private fun viewModel(repository: FakeReportRepository) =

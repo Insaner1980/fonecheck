@@ -2,6 +2,7 @@ package com.insaner.fonecheck.ui.screens.vibration
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.insaner.fonecheck.runtime.EpochMillisClock
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -9,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.Instant
 import javax.inject.Inject
 
 enum class VibrationMotorResult {
@@ -33,6 +35,7 @@ data class VibrationTestState(
     val isPlaying: Boolean = false,
     val lastPattern: VibrationPattern? = null,
     val playbackError: Boolean = false,
+    val capturedAt: Instant = Instant.EPOCH,
 )
 
 @HiltViewModel
@@ -40,8 +43,15 @@ class VibrationTestViewModel
     @Inject
     constructor(
         private val platform: VibrationPlatform,
+        private val clock: EpochMillisClock = EpochMillisClock { System.currentTimeMillis() },
     ) : ViewModel() {
-        private val _state = MutableStateFlow(VibrationTestState(haptic = platform.capabilities))
+        private val _state =
+            MutableStateFlow(
+                VibrationTestState(
+                    haptic = platform.capabilities,
+                    capturedAt = captureTime(),
+                ),
+            )
         val state: StateFlow<VibrationTestState> = _state.asStateFlow()
 
         private var ownsVibration = false
@@ -79,6 +89,7 @@ class VibrationTestViewModel
                             result = if (felt) VibrationMotorResult.FELT else VibrationMotorResult.NOT_FELT,
                         ),
                     playbackError = false,
+                    capturedAt = captureTime(),
                 )
         }
 
@@ -88,6 +99,7 @@ class VibrationTestViewModel
                 _state.value.copy(
                     motor = MotorTestState(result = VibrationMotorResult.SKIPPED),
                     playbackError = false,
+                    capturedAt = captureTime(),
                 )
         }
 
@@ -105,6 +117,7 @@ class VibrationTestViewModel
                         isPlaying = false,
                         lastPattern = pattern,
                         playbackError = true,
+                        capturedAt = captureTime(),
                     )
                 return false
             }
@@ -114,6 +127,7 @@ class VibrationTestViewModel
                     isPlaying = true,
                     lastPattern = pattern,
                     playbackError = false,
+                    capturedAt = captureTime(),
                 )
             completionJob =
                 viewModelScope.launch {
@@ -124,4 +138,6 @@ class VibrationTestViewModel
                 }
             return true
         }
+
+        private fun captureTime(): Instant = Instant.ofEpochMilli(clock.currentTimeMillis())
     }

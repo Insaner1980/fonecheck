@@ -98,7 +98,7 @@ class ReportComparisonScreenTest {
     }
 
     @Test
-    fun incompatibleVersionsAndLoadFailuresAreExplained() {
+    fun incompatibleScoreVersionsAreExplained() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val comparison =
             ReportComparisonEngine.compare(
@@ -117,7 +117,11 @@ class ReportComparisonScreenTest {
         composeRule
             .onNodeWithText(context.getString(R.string.comparison_score_incompatible, 1, 2))
             .assertIsDisplayed()
+    }
 
+    @Test
+    fun genericLoadFailureIsExplained() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
         composeRule.setContent {
             FonecheckTheme {
                 ReportComparisonScreen(
@@ -128,7 +132,26 @@ class ReportComparisonScreenTest {
             }
         }
         composeRule.onNodeWithText(context.getString(R.string.comparison_error)).assertIsDisplayed()
+    }
 
+    @Test
+    fun incompatibleReportScopesAreExplained() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        composeRule.setContent {
+            FonecheckTheme {
+                ReportComparisonScreen(
+                    state = ReportComparisonState.IncompatibleScope,
+                    onRetry = {},
+                    onBack = {},
+                )
+            }
+        }
+        composeRule.onNodeWithText(context.getString(R.string.comparison_scope_mismatch)).assertIsDisplayed()
+    }
+
+    @Test
+    fun reportSpecificLoadFailuresAreExplained() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
         composeRule.setContent {
             FonecheckTheme {
                 ReportComparisonScreen(

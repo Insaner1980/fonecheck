@@ -1,5 +1,6 @@
 package com.insaner.fonecheck.ui.components
 
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,6 +15,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
@@ -50,31 +52,34 @@ fun LongValueRow(
     contentVerticalPadding: Dp = FonecheckTheme.spacing.sm,
 ) {
     // CPD-ON
-    val useLongLayout = valueExceedsRowValueWidth(value)
-    Column(modifier = modifier.fillMaxWidth()) {
-        if (useLongLayout && value != null) {
-            LongValueLayout(
-                label = label,
-                value = value,
-                tone = tone,
-                confidence = confidence,
-                showDivider = showDivider,
-                onValueLongClick = onValueLongClick,
-                longClickLabel = longClickLabel,
-                contentVerticalPadding = contentVerticalPadding,
-            )
-        } else {
-            DataRow(
-                label = label,
-                value = value,
-                tone = tone,
-                confidence = confidence,
-                unavailableLabel = unavailableLabel,
-                showDivider = showDivider,
-                onValueLongClick = onValueLongClick,
-                longClickLabel = longClickLabel,
-                contentVerticalPadding = contentVerticalPadding,
-            )
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val availableValueWidth = (maxWidth - FonecheckTheme.spacing.md).coerceAtLeast(0.dp)
+        val useLongLayout = valueExceedsRowValueWidth(value, availableValueWidth)
+        Column(modifier = Modifier.fillMaxWidth()) {
+            if (useLongLayout && value != null) {
+                LongValueLayout(
+                    label = label,
+                    value = value,
+                    tone = tone,
+                    confidence = confidence,
+                    showDivider = showDivider,
+                    onValueLongClick = onValueLongClick,
+                    longClickLabel = longClickLabel,
+                    contentVerticalPadding = contentVerticalPadding,
+                )
+            } else {
+                DataRow(
+                    label = label,
+                    value = value,
+                    tone = tone,
+                    confidence = confidence,
+                    unavailableLabel = unavailableLabel,
+                    showDivider = showDivider,
+                    onValueLongClick = onValueLongClick,
+                    longClickLabel = longClickLabel,
+                    contentVerticalPadding = contentVerticalPadding,
+                )
+            }
         }
     }
 }
@@ -140,11 +145,15 @@ private fun LongValueLayout(
 
 internal fun shouldUseLongValueLayout(
     valueMaxWidth: Int,
+    availableValueWidth: Int,
     valueWidth: Int?,
-): Boolean = valueWidth != null && valueWidth > valueMaxWidth
+): Boolean = valueWidth != null && valueWidth > minOf(valueMaxWidth, availableValueWidth.coerceAtLeast(0))
 
 @Composable
-internal fun valueExceedsRowValueWidth(value: String?): Boolean {
+internal fun valueExceedsRowValueWidth(
+    value: String?,
+    availableValueWidth: Dp,
+): Boolean {
     val textMeasurer = rememberTextMeasurer()
     val density = LocalDensity.current
     val valueWidth =
@@ -159,6 +168,7 @@ internal fun valueExceedsRowValueWidth(value: String?): Boolean {
         }
     return shouldUseLongValueLayout(
         valueMaxWidth = with(density) { FonecheckTheme.spacing.rowValueMaxWidth.roundToPx() },
+        availableValueWidth = with(density) { availableValueWidth.roundToPx() },
         valueWidth = valueWidth,
     )
 }

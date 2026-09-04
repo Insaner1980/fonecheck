@@ -1,6 +1,7 @@
 package com.insaner.fonecheck.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
@@ -68,51 +70,54 @@ fun DataRow(
     ) {
         // A value wider than its cap would be ellipsised beside the label, and an ellipsis is a
         // defect rather than a layout state. Stacking gives it the full width instead.
-        val valueOutgrowsRow = valueExceedsRowValueWidth(value)
-        if (stackedRowLayout() || valueOutgrowsRow) {
-            StackedDataRow(
-                label = label,
-                value = value,
-                tone = tone,
-                confidence = confidence,
-                unavailableLabel = unavailableLabel,
-                contentVerticalPadding = contentVerticalPadding,
-            )
-        } else {
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = contentVerticalPadding),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = label,
-                    style = FonecheckTheme.type.rowLabel,
-                    color = FonecheckTheme.colors.textSecondary,
-                    modifier = Modifier.weight(1f),
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val availableValueWidth = (maxWidth - FonecheckTheme.spacing.md).coerceAtLeast(0.dp)
+            val valueOutgrowsRow = valueExceedsRowValueWidth(value, availableValueWidth)
+            if (stackedRowLayout() || valueOutgrowsRow) {
+                StackedDataRow(
+                    label = label,
+                    value = value,
+                    tone = tone,
+                    confidence = confidence,
+                    unavailableLabel = unavailableLabel,
+                    contentVerticalPadding = contentVerticalPadding,
                 )
-                Spacer(modifier = Modifier.width(FonecheckTheme.spacing.md))
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    modifier = Modifier.widthIn(max = FonecheckTheme.spacing.rowValueMaxWidth),
+            } else {
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = contentVerticalPadding),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = value ?: unavailableLabel,
-                        style = FonecheckTheme.type.rowValue,
-                        color = if (value == null) FonecheckTheme.colors.textMuted else tone.contentColor(),
-                        textAlign = TextAlign.End,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        text = label,
+                        style = FonecheckTheme.type.rowLabel,
+                        color = FonecheckTheme.colors.textSecondary,
+                        modifier = Modifier.weight(1f),
                     )
-                    confidence?.let {
+                    Spacer(modifier = Modifier.width(FonecheckTheme.spacing.md))
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        modifier = Modifier.widthIn(max = FonecheckTheme.spacing.rowValueMaxWidth),
+                    ) {
                         Text(
-                            text = confidenceLabel(it),
-                            style = FonecheckTheme.type.sectionLabel,
-                            color = FonecheckTheme.colors.textMuted,
+                            text = value ?: unavailableLabel,
+                            style = FonecheckTheme.type.rowValue,
+                            color = if (value == null) FonecheckTheme.colors.textMuted else tone.contentColor(),
                             textAlign = TextAlign.End,
-                            modifier = Modifier.padding(top = FonecheckTheme.spacing.xs),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
+                        confidence?.let {
+                            Text(
+                                text = confidenceLabel(it),
+                                style = FonecheckTheme.type.sectionLabel,
+                                color = FonecheckTheme.colors.textMuted,
+                                textAlign = TextAlign.End,
+                                modifier = Modifier.padding(top = FonecheckTheme.spacing.xs),
+                            )
+                        }
                     }
                 }
             }

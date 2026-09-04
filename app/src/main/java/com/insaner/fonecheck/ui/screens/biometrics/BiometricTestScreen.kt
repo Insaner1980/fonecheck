@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -65,10 +66,13 @@ fun BiometricTestScreen(
     }
 
     fun authenticate() {
-        val currentActivity = activity ?: return
-        val currentPrompt = biometricPrompt ?: return
-        viewModel.startAuthentication()
-        if (!viewModel.state.value.promptActive) return
+        if (!viewModel.startAuthentication()) return
+        val currentActivity = activity
+        val currentPrompt = biometricPrompt
+        if (currentActivity == null || currentPrompt == null) {
+            viewModel.onPromptLaunchFailure()
+            return
+        }
         runCatching {
             authenticateWithBiometricPrompt(
                 activity = currentActivity,
@@ -99,8 +103,9 @@ fun BiometricTestScreen(
                 expanded = state.expandedSection == BiometricSection.AUTH_TEST,
                 onClick = { viewModel.toggleSection(BiometricSection.AUTH_TEST) },
             ) {
-                AuthTestSection(
+                BiometricAuthTestSection(
                     state = state,
+                    promptReady = activity != null && biometricPrompt != null,
                     onAuthenticate = ::authenticate,
                 )
             }
@@ -149,8 +154,9 @@ private fun CapabilitiesDetails(capability: BiometricCapability) {
 }
 
 @Composable
-private fun AuthTestSection(
+internal fun BiometricAuthTestSection(
     state: BiometricTestState,
+    promptReady: Boolean,
     onAuthenticate: () -> Unit,
 ) {
     ObservationReasonNote(classifyBiometric(state.authResult))
@@ -173,8 +179,8 @@ private fun AuthTestSection(
                 },
             ),
         onClick = onAuthenticate,
-        modifier = Modifier.fillMaxWidth(),
-        enabled = state.capability.weakAvailable && !state.promptActive,
+        modifier = Modifier.fillMaxWidth().testTag("biometric_authenticate"),
+        enabled = state.capability.weakAvailable && !state.promptActive && promptReady,
     )
     if (!state.capability.weakAvailable) {
         Note(text = biometricAvailabilityLabel(state.capability.weakStatus))

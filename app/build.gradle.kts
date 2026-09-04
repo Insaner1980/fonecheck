@@ -160,6 +160,7 @@ dependencyCheck {
         }
     }
     nvd {
+        datafeedUrl = "https://dependency-check.github.io/DependencyCheck_Builder/nvd_cache/nvdcve-{0}.json.gz"
         providers
             .environmentVariable("NVD_API_KEY")
             .orNull

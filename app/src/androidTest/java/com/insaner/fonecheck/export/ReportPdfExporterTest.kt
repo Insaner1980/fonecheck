@@ -1,7 +1,6 @@
 package com.insaner.fonecheck.export
 
 import android.content.ComponentName
-import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -25,6 +24,9 @@ import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -35,6 +37,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.time.Instant
 import java.util.Locale
+import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class ReportPdfExporterTest {
@@ -104,7 +107,7 @@ class ReportPdfExporterTest {
             val provider =
                 context.packageManager.getProviderInfo(
                     ComponentName(context, FonecheckFileProvider::class.java),
-                    PackageManager.ComponentInfoFlags.of(0),
+                    0,
                 )
             assertFalse(provider.exported)
             assertTrue(provider.grantUriPermissions)
@@ -130,6 +133,43 @@ class ReportPdfExporterTest {
                 report(),
                 com.insaner.fonecheck.data.repository.ReportPayloadCodec
                     .decode(json),
+            )
+        }
+
+    @Test
+    fun concurrentExportsOfTheSameReportProduceOneCompleteFileAndNoTemporaryFiles() =
+        runBlocking {
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            val report = report().copy(stableId = "concurrent-${UUID.randomUUID()}")
+            val exporters =
+                List(2) {
+                    AndroidReportExporter(context, ReportPdfRenderer(context), Dispatchers.IO)
+                }
+
+            val exported =
+                coroutineScope {
+                    exporters.map { exporter -> async { exporter.exportJson(report) } }.awaitAll()
+                }
+
+            assertEquals(1, exported.map(ExportedReport::uri).distinct().size)
+            val json =
+                context.contentResolver
+                    .openInputStream(Uri.parse(exported.first().uri))!!
+                    .bufferedReader()
+                    .use { it.readText() }
+            assertEquals(
+                report,
+                com.insaner.fonecheck.data.repository.ReportPayloadCodec
+                    .decode(json),
+            )
+            assertFalse(
+                File(context.cacheDir, "report-exports")
+                    .listFiles()
+                    .orEmpty()
+                    .any {
+                        it.name.startsWith("fonecheck-${report.stableId}.json.") &&
+                            it.name.endsWith(".tmp")
+                    },
             )
         }
 
