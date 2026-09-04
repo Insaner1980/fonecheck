@@ -113,7 +113,7 @@ fun InstrumentActionButton(
     ) {
         Text(
             text = label,
-            style = FonecheckTheme.type.rowValue,
+            style = FonecheckTheme.type.buttonLabel,
             textAlign = TextAlign.Center,
         )
     }

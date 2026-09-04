@@ -46,7 +46,7 @@ fun PanelToggle(
             modifier
                 .size(PanelToggleSize)
                 .background(if (checked) colors.primaryButtonBackground else Color.Transparent)
-                .border(PanelToggleBorderWidth, colors.edge)
+                .border(PanelToggleBorderWidth, colors.textMuted)
                 .clearAndSetSemantics { },
         contentAlignment = Alignment.Center,
     ) {
@@ -61,6 +61,6 @@ fun PanelToggle(
     }
 }
 
-/** The weight the panel uses for a lamp or an icon box; a control frame is the same. */
+/** The weight used by the panel's outlined controls. */
 private val PanelToggleBorderWidth = 2.dp
 private val PanelToggleMarkSize = 16.dp

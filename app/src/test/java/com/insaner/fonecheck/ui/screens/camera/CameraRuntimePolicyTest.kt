@@ -50,7 +50,7 @@ class CameraRuntimePolicyTest {
 
     @Test
     fun captureGateAcceptsOneSuccessAndIgnoresLateSuccessAfterTimeoutOrTeardown() {
-        val gate = CameraCaptureGate()
+        val gate = CameraOperationGate()
         val first = gate.begin()
         assertTrue(gate.complete(first))
         assertFalse(gate.complete(first))
@@ -63,5 +63,17 @@ class CameraRuntimePolicyTest {
         gate.cancelAll()
         assertFalse(gate.complete(tornDown))
         assertNull(gate.activeToken)
+    }
+
+    @Test
+    fun operationGateRejectsAnOlderRefreshAndOnlyLetsTheLatestTimeoutCancel() {
+        val gate = CameraOperationGate()
+        val older = gate.begin()
+        val latest = gate.begin()
+
+        assertFalse(gate.complete(older))
+        assertFalse(gate.cancel(older))
+        assertTrue(gate.cancel(latest))
+        assertFalse(gate.complete(latest))
     }
 }

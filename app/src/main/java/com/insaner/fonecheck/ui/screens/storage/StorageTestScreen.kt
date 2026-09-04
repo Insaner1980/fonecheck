@@ -264,7 +264,18 @@ private fun StorageBenchmarkSection(
                         tone = SemanticTone.FAIL,
                     )
                 }
-                Note(storageBenchmarkMessage(state))
+                Note(
+                    text = storageBenchmarkMessage(state),
+                    modifier =
+                        Modifier.semantics {
+                            liveRegion =
+                                if (state.benchmarkPhase == StorageBenchmarkPhase.ERROR) {
+                                    LiveRegionMode.Assertive
+                                } else {
+                                    LiveRegionMode.Polite
+                                }
+                        },
+                )
                 state.benchmarkResult?.let { StorageBenchmarkConditions(it) }
                 BenchmarkStartButton(onStart, R.string.storage_benchmark_start)
             }
@@ -378,6 +389,8 @@ private fun storageBenchmarkMessage(state: StorageTestState): String =
             state.benchmarkPhase == StorageBenchmarkPhase.CANCELLED -> R.string.storage_benchmark_cancelled
             state.benchmarkError == StorageBenchmarkErrorCode.INSUFFICIENT_SPACE ->
                 R.string.storage_benchmark_insufficient_space
+            state.benchmarkError == StorageBenchmarkErrorCode.TIMEOUT ->
+                R.string.storage_benchmark_timeout
             state.benchmarkError == StorageBenchmarkErrorCode.DATA_MISMATCH ->
                 R.string.storage_benchmark_data_mismatch
             state.benchmarkError == StorageBenchmarkErrorCode.CLEANUP_FAILED ->

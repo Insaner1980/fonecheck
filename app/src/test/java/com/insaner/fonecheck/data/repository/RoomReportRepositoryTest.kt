@@ -3,7 +3,10 @@ package com.insaner.fonecheck.data.repository
 import com.insaner.fonecheck.data.local.ReportDao
 import com.insaner.fonecheck.data.local.ReportEntity
 import com.insaner.fonecheck.data.local.ReportSummary
+import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
+import com.insaner.fonecheck.domain.model.DiagnosticCategoryResult
+import com.insaner.fonecheck.domain.model.DiagnosticCheckId
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.ReportSchemaVersion
@@ -23,26 +26,37 @@ class RoomReportRepositoryTest {
         runTest {
             val dao = FakeReportDao()
             val repository = RoomReportRepository(dao)
-            val base = batteryReport("first", "Alpha")
+            val base = fullReport("first", "Alpha")
             val evidence =
                 base.categories
-                    .single()
+                    .single { it.categoryId == DiagnosticCategoryId.BATTERY }
                     .evidence
                     .single()
             val first =
                 base.copy(
                     categories =
-                        listOf(
-                            base.categories.single().copy(
-                                evidence =
-                                    listOf(
-                                        evidence.copy(status = DiagnosticStatus.WARNING),
-                                        evidence.copy(status = DiagnosticStatus.FAIL),
-                                    ),
-                            ),
-                        ),
+                        base.categories.map { category ->
+                            if (category.categoryId == DiagnosticCategoryId.BATTERY) {
+                                category.copy(
+                                    evidence =
+                                        listOf(
+                                            evidence.copy(status = DiagnosticStatus.WARNING),
+                                            evidence.copy(
+                                                checkId =
+                                                    DiagnosticCheckId(
+                                                        DiagnosticCategoryId.BATTERY,
+                                                        "battery.secondary",
+                                                    ),
+                                                status = DiagnosticStatus.FAIL,
+                                            ),
+                                        ),
+                                )
+                            } else {
+                                category
+                            }
+                        },
                 )
-            val second = batteryReport("second", "Beta")
+            val second = fullReport("second", "Beta")
 
             repository.insert(first)
             repository.insert(second)
@@ -102,6 +116,9 @@ class RoomReportRepositoryTest {
                     incomplete,
                     validSummary(id = "complete").copy(scoreStateCode = "complete"),
                     validSummary(id = "future").copy(reportSchemaVersion = 2),
+                    validSummary(id = "invalid-schema").copy(reportSchemaVersion = 0),
+                    validSummary(id = "bad-score-version").copy(scoreVersion = 0),
+                    validSummary(id = " "),
                     validSummary(id = "bad-kind").copy(reportKindCode = "future_kind"),
                     validSummary(id = "full-with-category").copy(categoryId = "battery"),
                     validSummary(id = "missing-category").copy(reportKindCode = "category_only"),
@@ -128,6 +145,9 @@ class RoomReportRepositoryTest {
                 summaries.getValue("future").unavailableReason,
             )
             listOf(
+                "invalid-schema",
+                "bad-score-version",
+                " ",
                 "bad-kind",
                 "full-with-category",
                 "missing-category",
@@ -176,14 +196,28 @@ class RoomReportRepositoryTest {
             val repository = RoomReportRepository(FakeReportDao())
             val battery = batteryReport("battery", "Alpha")
             val category = battery.categories.single()
+            val full = fullReport("full", "Alpha")
 
             assertInvalid(repository, battery.copy(stableId = " "))
             assertInvalid(repository, battery.copy(startedAt = battery.completedAt.plusSeconds(1)))
             assertInvalid(repository, battery.copy(schemaVersion = ReportSchemaVersion(2)))
-            assertInvalid(repository, battery.copy(categories = listOf(category, category)))
+            assertInvalid(repository, battery.copy(kind = ReportKind.FULL_CHECK))
+            assertInvalid(repository, full.copy(categories = full.categories.reversed()))
             assertInvalid(
                 repository,
                 battery.copy(categories = listOf(category.copy(categoryId = DiagnosticCategoryId.CAMERA))),
+            )
+            assertInvalid(repository, battery.copy(categories = listOf(category.copy(evidence = emptyList()))))
+            assertInvalid(
+                repository,
+                battery.copy(
+                    categories =
+                        listOf(
+                            category.copy(
+                                evidence = listOf(category.evidence.single(), category.evidence.single()),
+                            ),
+                        ),
+                ),
             )
             assertInvalid(repository, testReport(id = "empty-category").copy(kind = ReportKind.CATEGORY_ONLY))
             assertInvalid(
@@ -198,6 +232,40 @@ class RoomReportRepositoryTest {
     ) {
         val error = runCatching { repository.insert(report) }.exceptionOrNull()
         assertTrue(error is IllegalArgumentException)
+    }
+
+    private fun fullReport(
+        id: String,
+        deviceModel: String,
+    ) = batteryReport(id, deviceModel).let { battery ->
+        val template =
+            battery.categories
+                .single()
+                .evidence
+                .single()
+        val categories =
+            DiagnosticCatalog.categories.map { categoryId ->
+                DiagnosticCategoryResult(
+                    categoryId = categoryId,
+                    aggregateStatus = DiagnosticStatus.INFO,
+                    evidence =
+                        listOf(
+                            template.copy(
+                                categoryId = categoryId,
+                                checkId = DiagnosticCheckId(categoryId, "${categoryId.stableId}.fixture"),
+                            ),
+                        ),
+                )
+            }
+        battery.copy(
+            kind = ReportKind.FULL_CHECK,
+            categories = categories,
+            coverage =
+                battery.coverage.copy(
+                    applicableCount = categories.size,
+                    completedCount = categories.size,
+                ),
+        )
     }
 
     private fun validSummary(id: String) =

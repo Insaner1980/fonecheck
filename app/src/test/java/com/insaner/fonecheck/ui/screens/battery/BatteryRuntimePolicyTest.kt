@@ -18,6 +18,14 @@ class BatteryRuntimePolicyTest {
     }
 
     @Test
+    fun temperatureNormalizerRejectsMissingAndImplausibleValues() {
+        assertNull(BatteryTemperatureNormalizer.normalize(null))
+        assertNull(BatteryTemperatureNormalizer.normalize(-501))
+        assertNull(BatteryTemperatureNormalizer.normalize(1_001))
+        assertEquals(32.5f, BatteryTemperatureNormalizer.normalize(325))
+    }
+
+    @Test
     fun currentNormalizerUsesDocumentedSignWhenItMatchesBatteryStatus() {
         val charging =
             requireNotNull(

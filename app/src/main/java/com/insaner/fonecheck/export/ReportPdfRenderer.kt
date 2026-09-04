@@ -13,17 +13,14 @@ import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.EvidenceUnitCode
 import com.insaner.fonecheck.domain.model.ScoreState
-import com.insaner.fonecheck.localization.evidenceLabelStringRes
+import com.insaner.fonecheck.localization.evidenceLabelResource
 import com.insaner.fonecheck.localization.evidenceReasonStringRes
 import com.insaner.fonecheck.localization.stableCodeDisplayText
 import com.insaner.fonecheck.localization.stableTextStringRes
+import com.insaner.fonecheck.ui.format.formatUiDateTime
+import com.insaner.fonecheck.ui.format.formatUiNumber
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.OutputStream
-import java.text.NumberFormat
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.util.Locale
 import javax.inject.Inject
 
 data class PdfRenderResult(
@@ -109,8 +106,9 @@ class ReportPdfRenderer
                     }
             }
 
-        private fun labels() =
-            PdfReportLabels(
+        internal fun labels(): PdfReportLabels {
+            val locale = context.resources.configuration.locales[0]
+            return PdfReportLabels(
                 title = context.getString(R.string.pdf_title),
                 reportId = context.getString(R.string.report_identifier),
                 reportFormat = context.getString(R.string.pdf_report_format),
@@ -132,8 +130,11 @@ class ReportPdfRenderer
                 disclaimer = context.getString(R.string.pdf_disclaimer),
                 categoryName = { context.getString(it.labelResource()) },
                 checkName = { checkId ->
-                    evidenceLabelStringRes(checkId.value)?.let(context::getString)
-                        ?: stableCodeDisplayText(checkId.value.substringAfter('.'))
+                    evidenceLabelResource(checkId.value)?.let { resource ->
+                        resource.formatArgument?.let { argument ->
+                            context.getString(resource.stringResId, argument)
+                        } ?: context.getString(resource.stringResId)
+                    } ?: stableCodeDisplayText(checkId.value.substringAfter('.'))
                 },
                 statusName = { context.getString(it.labelResource()) },
                 scoreStateName = { context.getString(it.labelResource()) },
@@ -146,7 +147,18 @@ class ReportPdfRenderer
                 stableTextName = { code ->
                     stableTextStringRes(code)?.let(context::getString) ?: stableCodeDisplayText(code)
                 },
-                numberValue = NumberFormat.getNumberInstance(Locale.getDefault())::format,
+                booleanValue = { value ->
+                    context.getString(if (value) R.string.status_yes else R.string.status_no)
+                },
+                numberValue = { value ->
+                    formatUiNumber(
+                        value = value,
+                        locale = locale,
+                        minimumFractionDigits = 0,
+                        maximumFractionDigits = 3,
+                        grouping = true,
+                    )
+                },
                 unitName = { unit -> localizedUnitName(context, unit) },
                 countsValue = { coverage, warnings, failures ->
                     context.getString(
@@ -158,11 +170,7 @@ class ReportPdfRenderer
                         failures,
                     )
                 },
-                completedValue =
-                    DateTimeFormatter
-                        .ofLocalizedDateTime(FormatStyle.MEDIUM)
-                        .withLocale(Locale.getDefault())
-                        .withZone(ZoneId.systemDefault())::format,
+                completedValue = { value -> formatUiDateTime(value, locale) },
                 durationValue = {
                     context.getString(
                         R.string.report_duration_value,
@@ -171,6 +179,7 @@ class ReportPdfRenderer
                     )
                 },
             )
+        }
 
         private companion object {
             const val PAGE_WIDTH = 595

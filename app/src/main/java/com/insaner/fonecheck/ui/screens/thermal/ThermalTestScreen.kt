@@ -46,7 +46,7 @@ fun ThermalTestScreen(
     RegisterRefreshTopBarAction(
         contentDescriptionResId = R.string.thermal_refresh,
         enabled = true,
-        onRefresh = viewModel::refresh,
+        onRefresh = viewModel::restartMonitoring,
         topBarActionRegistry = topBarActionRegistry,
     )
     ThermalMonitoringEffect(

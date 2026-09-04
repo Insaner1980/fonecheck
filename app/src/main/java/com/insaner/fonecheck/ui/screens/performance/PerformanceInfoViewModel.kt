@@ -68,6 +68,11 @@ class PerformanceInfoViewModel
                 }
         }
 
+        fun cancelInfoCapture() {
+            infoJob?.cancel()
+            infoJob = null
+        }
+
         @Suppress("kotlin:S6311") // The runner performs CPU work and intentionally inherits this background context.
         fun startBenchmark() {
             if (_state.value.benchmarkPhase == BenchmarkPhase.RUNNING) return

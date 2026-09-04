@@ -28,6 +28,7 @@ private val defaultCompletedAt = Instant.parse("2026-08-08T10:01:00Z")
 
 fun testReport(
     id: String = "saved-report",
+    kind: ReportKind = ReportKind.FULL_CHECK,
     completedAt: Instant = defaultCompletedAt,
     startedAt: Instant = completedAt.minusSeconds(60),
     deviceModel: String = "Test",
@@ -39,7 +40,7 @@ fun testReport(
 ): DiagnosticReport =
     DiagnosticReport(
         id,
-        ReportKind.FULL_CHECK,
+        kind,
         startedAt,
         completedAt,
         ReportDeviceContext("Finnvek", deviceModel, "fonecheck", "test", "16", 36, null),
@@ -69,6 +70,7 @@ fun batteryReport(
         )
     return testReport(
         id = id,
+        kind = ReportKind.CATEGORY_ONLY,
         deviceModel = deviceModel,
         categories =
             listOf(

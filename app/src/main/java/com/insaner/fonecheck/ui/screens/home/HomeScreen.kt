@@ -230,15 +230,10 @@ private fun HomeBrandHeader(
 @Composable
 private fun HomeBrand(modifier: Modifier = Modifier) {
     val appName = stringResource(R.string.app_name)
-    val density = LocalDensity.current
     Text(
         text = appName,
         modifier = modifier.semantics { heading() },
-        style =
-            FonecheckTheme.type.screenTitle.copy(
-                fontSize = with(density) { 28.dp.toSp() },
-                lineHeight = with(density) { 34.dp.toSp() },
-            ),
+        style = FonecheckTheme.type.screenTitle,
         color = FonecheckTheme.colors.textPrimary,
         maxLines = 1,
     )

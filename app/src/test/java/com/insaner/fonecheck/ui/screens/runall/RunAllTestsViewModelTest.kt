@@ -129,6 +129,32 @@ class RunAllTestsViewModelTest {
     }
 
     @Test
+    fun automaticIssuesAreRecordedOnlyForTheCurrentClaimedStage() {
+        val viewModel = runAllViewModel()
+        viewModel.onPreflightAccepted(RunAllSelections(), RunAllHardwareProfile.ALL_AVAILABLE)
+        viewModel.onPermissionsResolved(RunAllPermissions())
+        val automaticToken = viewModel.state.value.stageToken
+        assertTrue(viewModel.claimStage(automaticToken))
+
+        viewModel.reportAutomaticIssue(
+            automaticToken,
+            DiagnosticCategoryId.AUDIO,
+            RunAllStageOutcome.TIMED_OUT,
+        )
+        viewModel.onAutomaticChecksComplete(automaticToken)
+        viewModel.reportAutomaticIssue(
+            automaticToken,
+            DiagnosticCategoryId.STORAGE,
+            RunAllStageOutcome.ERROR,
+        )
+
+        assertEquals(
+            mapOf(DiagnosticCategoryId.AUDIO to RunAllStageOutcome.TIMED_OUT),
+            viewModel.state.value.automaticIssues,
+        )
+    }
+
+    @Test
     fun successWinsAgainstLateTimeout() {
         val viewModel = runAllViewModel()
         enterFirstInteractiveStage(viewModel)

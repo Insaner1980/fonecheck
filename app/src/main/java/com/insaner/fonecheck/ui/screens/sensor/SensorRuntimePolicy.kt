@@ -97,6 +97,21 @@ object GuidedSensorCatalog {
         }
 }
 
+object SensorPermissionPolicy {
+    fun requiresActivityRecognition(
+        sensorType: Int,
+        sdkInt: Int,
+    ): Boolean =
+        sdkInt >= ANDROID_10_API_LEVEL &&
+            (sensorType == SensorType.STEP_DETECTOR || sensorType == SensorType.STEP_COUNTER)
+
+    private const val ANDROID_10_API_LEVEL = 29
+}
+
+object SensorSamplePolicy {
+    fun isValid(values: FloatArray): Boolean = values.isNotEmpty() && values.all(Float::isFinite)
+}
+
 data class SensorSamplingResult(
     val sampleCount: Int,
     val passed: Boolean,
@@ -111,7 +126,10 @@ class GuidedSensorSampler(
 
     @Synchronized
     fun accept(values: FloatArray): SensorSamplingResult {
-        if (values.isEmpty() || values.any { !it.isFinite() }) {
+        if (!SensorSamplePolicy.isValid(values)) {
+            return SensorSamplingResult(sampleCount, passed = false)
+        }
+        if (code == GuidedSensorCode.BAROMETER && values[0] !in MIN_PRESSURE_HPA..MAX_PRESSURE_HPA) {
             return SensorSamplingResult(sampleCount, passed = false)
         }
 
@@ -122,7 +140,7 @@ class GuidedSensorSampler(
         val passed =
             when (code) {
                 GuidedSensorCode.BAROMETER ->
-                    sampleCount >= REQUIRED_SAMPLE_COUNT && values[0] in MIN_PRESSURE_HPA..MAX_PRESSURE_HPA
+                    sampleCount >= REQUIRED_SAMPLE_COUNT
 
                 GuidedSensorCode.STEP ->
                     if (sensorType == SensorType.STEP_DETECTOR) {
@@ -191,7 +209,7 @@ object SensorChallengeEvaluator {
         nowMillis: Long,
         runtime: SensorChallengeRuntime,
     ): SensorChallengeEvaluation {
-        if (values.isEmpty() || values.any { !it.isFinite() }) {
+        if (!SensorSamplePolicy.isValid(values)) {
             return SensorChallengeEvaluation(0f, completed = false, runtime)
         }
 
@@ -280,4 +298,19 @@ class SensorListenerOwner<K : Any, L : Any>(
 
     @Synchronized
     fun isEmpty(): Boolean = listeners.isEmpty()
+}
+
+class SensorCallbackGate {
+    private var generation = 0L
+
+    @Synchronized
+    fun begin(): Long = ++generation
+
+    @Synchronized
+    fun cancel() {
+        generation += 1
+    }
+
+    @Synchronized
+    fun isCurrent(token: Long): Boolean = token == generation
 }

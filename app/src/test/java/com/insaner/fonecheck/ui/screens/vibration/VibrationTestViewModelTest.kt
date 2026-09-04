@@ -85,6 +85,23 @@ class VibrationTestViewModelTest {
         }
 
     @Test
+    fun failedPlaybackIsNotReportedAsPlayingAndCanBeRetried() =
+        runTest(dispatcher.scheduler) {
+            val platform = FakeVibrationPlatform(playSucceeds = false)
+            val viewModel = VibrationTestViewModel(platform)
+
+            assertFalse(viewModel.vibratePattern())
+            assertFalse(viewModel.state.value.isPlaying)
+            assertTrue(viewModel.state.value.playbackError)
+            assertEquals(listOf("play:PATTERN", "cancel"), platform.events)
+
+            platform.playSucceeds = true
+            assertTrue(viewModel.vibratePattern())
+            assertTrue(viewModel.state.value.isPlaying)
+            assertFalse(viewModel.state.value.playbackError)
+        }
+
+    @Test
     fun apiCapabilitiesRemainSeparateFromPhysicalConfirmation() =
         runTest(dispatcher.scheduler) {
             val capabilities =
@@ -130,12 +147,14 @@ class VibrationTestViewModelTest {
                 primitivesApiSupported = true,
                 supportedPrimitives = listOf(VibrationPrimitiveCode.CLICK),
             ),
+        var playSucceeds: Boolean = true,
     ) : VibrationPlatform {
         val events = mutableListOf<String>()
         var cancelCount = 0
 
-        override fun play(pattern: VibrationPattern) {
+        override fun play(pattern: VibrationPattern): Boolean {
             events += "play:${pattern.name}"
+            return playSucceeds
         }
 
         override fun cancel() {

@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
@@ -137,6 +138,17 @@ class ReportDetailScreenTest {
             .onNodeWithText(context.getString(R.string.report_kind_category))
             .performScrollTo()
             .assertIsDisplayed()
+        composeRule
+            .onNodeWithText(context.getString(R.string.report_retest))
+            .performScrollTo()
+            .assertIsDisplayed()
+        composeRule
+            .onNodeWithTag("report_category_device", useUnmergedTree = true)
+            .performScrollTo()
+            .performClick()
+        composeRule
+            .onNodeWithText(context.getString(R.string.report_retest))
+            .assertDoesNotExist()
     }
 
     @Test

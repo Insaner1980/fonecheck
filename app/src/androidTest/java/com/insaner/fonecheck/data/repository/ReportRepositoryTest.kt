@@ -9,6 +9,7 @@ import com.insaner.fonecheck.data.local.ReportEntity
 import com.insaner.fonecheck.domain.model.Applicability
 import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.domain.model.CoverageSummary
+import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryResult
 import com.insaner.fonecheck.domain.model.DiagnosticCheckId
@@ -249,6 +250,32 @@ class ReportRepositoryTest {
                     capturedAt = completedAt.minusSeconds(index.toLong()),
                 )
             }
+        val categories =
+            if (kind == ReportKind.FULL_CHECK) {
+                DiagnosticCatalog.categories.map { reportCategoryId ->
+                    if (reportCategoryId == categoryId) {
+                        DiagnosticCategoryResult(categoryId, DiagnosticStatus.PASS, evidence)
+                    } else {
+                        DiagnosticCategoryResult(
+                            reportCategoryId,
+                            DiagnosticStatus.PASS,
+                            listOf(
+                                evidence.first().copy(
+                                    categoryId = reportCategoryId,
+                                    checkId =
+                                        DiagnosticCheckId(
+                                            reportCategoryId,
+                                            "${reportCategoryId.stableId}.repository_test",
+                                        ),
+                                ),
+                            ),
+                        )
+                    }
+                }
+            } else {
+                listOf(DiagnosticCategoryResult(categoryId, DiagnosticStatus.PASS, evidence))
+            }
+        val evidenceCount = categories.sumOf { it.evidence.size }
         return DiagnosticReport(
             stableId = id,
             kind = kind,
@@ -265,12 +292,12 @@ class ReportRepositoryTest {
                     securityPatch = "2026-08-01",
                 ),
             app = ReportAppContext(versionName = "1.0.0", versionCode = 1L),
-            categories = listOf(DiagnosticCategoryResult(categoryId, DiagnosticStatus.PASS, evidence)),
+            categories = categories,
             score = ScoreSummary(ScoreVersion.CURRENT, value = 100, state = ScoreState.COMPLETE),
             coverage =
                 CoverageSummary(
-                    applicableCount = evidence.size,
-                    completedCount = evidence.size,
+                    applicableCount = evidenceCount,
+                    completedCount = evidenceCount,
                     notTestedCount = 0,
                     unavailableCount = 0,
                     percentage = 100,

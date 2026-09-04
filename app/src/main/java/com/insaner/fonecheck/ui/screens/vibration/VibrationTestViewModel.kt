@@ -32,6 +32,7 @@ data class VibrationTestState(
     val expandedSection: VibrationSection? = null,
     val isPlaying: Boolean = false,
     val lastPattern: VibrationPattern? = null,
+    val playbackError: Boolean = false,
 )
 
 @HiltViewModel
@@ -54,17 +55,11 @@ class VibrationTestViewModel
                 )
         }
 
-        fun vibrateShort() {
-            play(VibrationPattern.SHORT)
-        }
+        fun vibrateShort(): Boolean = play(VibrationPattern.SHORT)
 
-        fun vibrateLong() {
-            play(VibrationPattern.LONG)
-        }
+        fun vibrateLong(): Boolean = play(VibrationPattern.LONG)
 
-        fun vibratePattern() {
-            play(VibrationPattern.PATTERN)
-        }
+        fun vibratePattern(): Boolean = play(VibrationPattern.PATTERN)
 
         fun cancelVibration() {
             completionJob?.cancel()
@@ -83,6 +78,7 @@ class VibrationTestViewModel
                         MotorTestState(
                             result = if (felt) VibrationMotorResult.FELT else VibrationMotorResult.NOT_FELT,
                         ),
+                    playbackError = false,
                 )
         }
 
@@ -91,6 +87,7 @@ class VibrationTestViewModel
             _state.value =
                 _state.value.copy(
                     motor = MotorTestState(result = VibrationMotorResult.SKIPPED),
+                    playbackError = false,
                 )
         }
 
@@ -98,15 +95,25 @@ class VibrationTestViewModel
             cancelVibration()
         }
 
-        private fun play(pattern: VibrationPattern) {
-            if (!_state.value.haptic.hasVibrator) return
+        private fun play(pattern: VibrationPattern): Boolean {
+            if (!_state.value.haptic.hasVibrator) return false
             cancelVibration()
-            platform.play(pattern)
+            if (!platform.play(pattern)) {
+                platform.cancel()
+                _state.value =
+                    _state.value.copy(
+                        isPlaying = false,
+                        lastPattern = pattern,
+                        playbackError = true,
+                    )
+                return false
+            }
             ownsVibration = true
             _state.value =
                 _state.value.copy(
                     isPlaying = true,
                     lastPattern = pattern,
+                    playbackError = false,
                 )
             completionJob =
                 viewModelScope.launch {
@@ -115,5 +122,6 @@ class VibrationTestViewModel
                     ownsVibration = false
                     _state.value = _state.value.copy(isPlaying = false)
                 }
+            return true
         }
     }

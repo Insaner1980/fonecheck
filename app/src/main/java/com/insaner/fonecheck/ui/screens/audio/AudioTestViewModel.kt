@@ -43,6 +43,11 @@ enum class AudioManualCheck {
     PLAYBACK,
 }
 
+enum class AudioOperationError {
+    OUTPUT_UNAVAILABLE,
+    RECORDING_UNAVAILABLE,
+}
+
 data class AudioTestState(
     val isPlaying: Boolean = false,
     val isRecording: Boolean = false,
@@ -51,6 +56,7 @@ data class AudioTestState(
     val relativeInputLevel: Float = 0f,
     val hasRecordedAudio: Boolean = false,
     val isPlayingRecording: Boolean = false,
+    val earpieceAvailable: Boolean? = null,
     val headphonePlugged: Boolean = false,
     val headphoneType: HeadphoneTypeCode? = null,
     val volumeLevel: Int = 0,
@@ -61,6 +67,7 @@ data class AudioTestState(
     val volumeUpCount: Int = 0,
     val volumeDownCount: Int = 0,
     val manualResults: Map<AudioManualCheck, Boolean> = emptyMap(),
+    val error: AudioOperationError? = null,
 )
 
 enum class StereoChannel { LEFT, RIGHT, BOTH }
@@ -109,6 +116,8 @@ class AudioTestViewModel
                 }
             _state.value =
                 _state.value.copy(
+                    earpieceAvailable =
+                        devices.any { it.type == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE },
                     headphonePlugged = headphone != null,
                     headphoneType = headphone?.let { headphoneTypeCode(it.type) },
                 )
@@ -120,6 +129,7 @@ class AudioTestViewModel
         ) {
             stopTone()
             stopPlayback()
+            _state.value = _state.value.copy(error = null)
             val route =
                 if (streamType == AudioManager.STREAM_VOICE_CALL) {
                     AudioOutputRoute.EARPIECE
@@ -156,6 +166,7 @@ class AudioTestViewModel
         fun playStereoTone(channel: StereoChannel) {
             stopTone()
             stopPlayback()
+            _state.value = _state.value.copy(error = null)
             val routeSession = openRoute(AudioOutputRoute.MEDIA) ?: return
             val operationToken = toneGate.start()
             _state.value = _state.value.copy(isPlaying = true, stereoChannel = channel)
@@ -186,7 +197,14 @@ class AudioTestViewModel
         ) {
             var track: AudioTrack? = null
             try {
-                val created = createAudioTrack(channelMask, usage, contentType)
+                val created =
+                    createAudioTrack(channelMask, usage, contentType)
+                        ?: run {
+                            if (toneGate.isCurrent(operationToken)) {
+                                _state.value = _state.value.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE)
+                            }
+                            return
+                        }
                 if (!toneGate.isCurrent(operationToken)) {
                     stopAndRelease(created.first)
                     return
@@ -199,7 +217,16 @@ class AudioTestViewModel
                 val phaseIncrement = 2.0 * PI * frequencyHz / sampleRate
                 while (isActive) {
                     phase = fillToneBuffer(buffer, phase, phaseIncrement, stereoChannel)
-                    created.first.write(buffer, 0, buffer.size)
+                    if (created.first.write(buffer, 0, buffer.size) <= 0) {
+                        if (toneGate.isCurrent(operationToken)) {
+                            _state.value = _state.value.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE)
+                        }
+                        break
+                    }
+                }
+            } catch (_: IllegalStateException) {
+                if (toneGate.isCurrent(operationToken)) {
+                    _state.value = _state.value.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE)
                 }
             } finally {
                 track?.let(toneOwner::release)
@@ -261,25 +288,41 @@ class AudioTestViewModel
                     .hasSystemFeature(PackageManager.FEATURE_MICROPHONE)
             if (!AudioRecordingPolicy.canStart(hasMicrophone, permissionGranted, _state.value.isRecording)) return
             stopRecording()
+            discardRecordedSamples()
+            _state.value =
+                _state.value.copy(
+                    hasRecordedAudio = false,
+                    relativeInputLevel = 0f,
+                    error = null,
+                )
             val bufferSize =
                 AudioRecord.getMinBufferSize(
                     sampleRate,
                     AudioFormat.CHANNEL_IN_MONO,
                     AudioFormat.ENCODING_PCM_16BIT,
                 )
-            if (bufferSize == AudioRecord.ERROR || bufferSize == AudioRecord.ERROR_BAD_VALUE) return
+            if (bufferSize <= 0) {
+                _state.value = _state.value.copy(error = AudioOperationError.RECORDING_UNAVAILABLE)
+                return
+            }
 
             val record =
-                AudioRecord(
-                    MediaRecorder.AudioSource.MIC,
-                    sampleRate,
-                    AudioFormat.CHANNEL_IN_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT,
-                    bufferSize,
-                )
+                try {
+                    AudioRecord(
+                        MediaRecorder.AudioSource.MIC,
+                        sampleRate,
+                        AudioFormat.CHANNEL_IN_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT,
+                        bufferSize,
+                    )
+                } catch (_: RuntimeException) {
+                    _state.value = _state.value.copy(error = AudioOperationError.RECORDING_UNAVAILABLE)
+                    return
+                }
 
             if (record.state != AudioRecord.STATE_INITIALIZED) {
                 record.release()
+                _state.value = _state.value.copy(error = AudioOperationError.RECORDING_UNAVAILABLE)
                 return
             }
 
@@ -305,25 +348,34 @@ class AudioTestViewModel
             operationToken: Long,
         ) {
             val allSamples = ShortArray(maxRecordSamples)
+            val buffer = ShortArray(bufferSize / 2)
             var totalSamples = 0
+            var failed = false
             try {
                 if (!recordGate.isCurrent(operationToken)) return
                 record.startRecording()
-                val buffer = ShortArray(bufferSize / 2)
                 while (isActive && totalSamples < maxRecordSamples) {
                     val read = record.read(buffer, 0, buffer.size)
-                    if (read > 0) {
-                        val copyCount = minOf(read, maxRecordSamples - totalSamples)
-                        buffer.copyInto(allSamples, totalSamples, 0, copyCount)
-                        totalSamples += copyCount
-                        if (recordGate.isCurrent(operationToken)) {
-                            _state.value =
-                                _state.value.copy(
-                                    relativeInputLevel = RelativeInputLevel.fromPcm16(buffer, read),
-                                )
-                        }
+                    if (read <= 0) {
+                        failed = true
+                        break
+                    }
+                    val copyCount = minOf(read, maxRecordSamples - totalSamples)
+                    buffer.copyInto(allSamples, totalSamples, 0, copyCount)
+                    totalSamples += copyCount
+                    if (recordGate.isCurrent(operationToken)) {
+                        _state.value =
+                            _state.value.copy(
+                                relativeInputLevel = RelativeInputLevel.fromPcm16(buffer, read),
+                            )
                     }
                 }
+            } catch (_: IllegalStateException) {
+                // Recording can become unavailable after the permission and hardware checks.
+                failed = true
+            } catch (_: SecurityException) {
+                // Permission can be revoked between the check and AudioRecord.startRecording().
+                failed = true
             } finally {
                 recordOwner.release(record)
                 if (recordGate.isCurrent(operationToken)) {
@@ -332,8 +384,11 @@ class AudioTestViewModel
                         _state.value.copy(
                             isRecording = false,
                             hasRecordedAudio = totalSamples > 0,
+                            error = AudioOperationError.RECORDING_UNAVAILABLE.takeIf { failed },
                         )
                 }
+                buffer.fill(0)
+                allSamples.fill(0)
             }
         }
 
@@ -345,10 +400,16 @@ class AudioTestViewModel
             _state.value = _state.value.copy(isRecording = false)
         }
 
+        fun discardRecordedSamples() {
+            recordedData?.fill(0)
+            recordedData = null
+        }
+
         fun playRecording() {
             val data = recordedData ?: return
             stopTone()
             stopPlayback()
+            _state.value = _state.value.copy(error = null)
             val routeSession = openRoute(AudioOutputRoute.MEDIA) ?: return
             val operationToken = playbackGate.start()
             _state.value = _state.value.copy(isPlayingRecording = true)
@@ -362,7 +423,14 @@ class AudioTestViewModel
                                 channelMask = AudioFormat.CHANNEL_OUT_MONO,
                                 usage = AudioAttributes.USAGE_MEDIA,
                                 contentType = AudioAttributes.CONTENT_TYPE_MUSIC,
-                            ).first
+                            )?.first
+                                ?: run {
+                                    if (playbackGate.isCurrent(operationToken)) {
+                                        _state.value =
+                                            _state.value.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE)
+                                    }
+                                    return@launch
+                                }
                         if (!playbackGate.isCurrent(operationToken)) {
                             stopAndRelease(created)
                             return@launch
@@ -370,7 +438,13 @@ class AudioTestViewModel
                         track = created
                         playbackOwner.replace(created)
                         created.play()
-                        created.write(data, 0, data.size)
+                        if (created.write(data, 0, data.size) <= 0 && playbackGate.isCurrent(operationToken)) {
+                            _state.value = _state.value.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE)
+                        }
+                    } catch (_: IllegalStateException) {
+                        if (playbackGate.isCurrent(operationToken)) {
+                            _state.value = _state.value.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE)
+                        }
                     } finally {
                         track?.let(playbackOwner::release)
                         routeOwner.release(routeSession)
@@ -385,32 +459,41 @@ class AudioTestViewModel
             channelMask: Int,
             usage: Int,
             contentType: Int,
-        ): Pair<AudioTrack, Int> {
+        ): Pair<AudioTrack, Int>? {
             val bufferSize =
                 AudioTrack.getMinBufferSize(
                     sampleRate,
                     channelMask,
                     AudioFormat.ENCODING_PCM_16BIT,
                 )
+            if (bufferSize <= 0) return null
             val track =
-                AudioTrack
-                    .Builder()
-                    .setAudioAttributes(
-                        AudioAttributes
-                            .Builder()
-                            .setUsage(usage)
-                            .setContentType(contentType)
-                            .build(),
-                    ).setAudioFormat(
-                        AudioFormat
-                            .Builder()
-                            .setSampleRate(sampleRate)
-                            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                            .setChannelMask(channelMask)
-                            .build(),
-                    ).setBufferSizeInBytes(bufferSize)
-                    .setTransferMode(AudioTrack.MODE_STREAM)
-                    .build()
+                try {
+                    AudioTrack
+                        .Builder()
+                        .setAudioAttributes(
+                            AudioAttributes
+                                .Builder()
+                                .setUsage(usage)
+                                .setContentType(contentType)
+                                .build(),
+                        ).setAudioFormat(
+                            AudioFormat
+                                .Builder()
+                                .setSampleRate(sampleRate)
+                                .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                                .setChannelMask(channelMask)
+                                .build(),
+                        ).setBufferSizeInBytes(bufferSize)
+                        .setTransferMode(AudioTrack.MODE_STREAM)
+                        .build()
+                } catch (_: RuntimeException) {
+                    return null
+                }
+            if (track.state != AudioTrack.STATE_INITIALIZED) {
+                track.release()
+                return null
+            }
             return track to bufferSize
         }
 
@@ -479,7 +562,7 @@ class AudioTestViewModel
             stopTone()
             stopRecording()
             stopPlayback()
-            recordedData = null
+            discardRecordedSamples()
         }
 
         private fun stopAndRelease(track: AudioTrack) {
@@ -495,7 +578,10 @@ class AudioTestViewModel
         private fun openRoute(route: AudioOutputRoute): AudioRouteSession? {
             routeOwner.release()
             val session = AudioRouteSession(routeController)
-            if (!session.open(route)) return null
+            if (!session.open(route)) {
+                _state.value = _state.value.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE)
+                return null
+            }
             routeOwner.replace(session)
             return session
         }

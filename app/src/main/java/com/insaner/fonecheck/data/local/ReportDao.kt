@@ -17,7 +17,7 @@ interface ReportDao {
             reportSchemaVersion, scoreVersion, scoreValue, scoreStateCode, coveragePercentage,
             warningCount, failureCount
         FROM reports
-        ORDER BY completedAtEpochMillis DESC
+        ORDER BY completedAtEpochMillis DESC, id DESC
         """,
     )
     fun observeSummaries(): Flow<List<ReportSummary>>

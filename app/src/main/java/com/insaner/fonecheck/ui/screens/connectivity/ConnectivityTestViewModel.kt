@@ -95,7 +95,7 @@ enum class GpsFailureCode {
 
 data class GpsSatelliteInfo(
     val svid: Int,
-    val constellation: String,
+    val constellation: String?,
     val cn0DbHz: Float,
     val usedInFix: Boolean,
     val elevationDeg: Float,
@@ -309,7 +309,12 @@ class ConnectivityTestViewModel
 
             val signalLevel = signalDbm?.let(::wifiSignalLevel)
 
-            val linkProperties = network?.let(connectivityManager::getLinkProperties)
+            val linkProperties =
+                if (wifiCapabilities != null) {
+                    network?.let(connectivityManager::getLinkProperties)
+                } else {
+                    null
+                }
             val ipAddress =
                 linkProperties
                     ?.linkAddresses
@@ -713,7 +718,7 @@ class ConnectivityTestViewModel
             }
         }
 
-        private fun getConstellationName(type: Int): String =
+        private fun getConstellationName(type: Int): String? =
             when (type) {
                 GnssStatus.CONSTELLATION_GPS -> "GPS"
                 GnssStatus.CONSTELLATION_SBAS -> "SBAS"
@@ -722,7 +727,7 @@ class ConnectivityTestViewModel
                 GnssStatus.CONSTELLATION_BEIDOU -> "BeiDou"
                 GnssStatus.CONSTELLATION_GALILEO -> "Galileo"
                 GnssStatus.CONSTELLATION_IRNSS -> "IRNSS"
-                else -> "Unknown"
+                else -> null
             }
 
         // ── Mobile Network ──────────────────────────────────────────────────────────
@@ -770,7 +775,7 @@ class ConnectivityTestViewModel
             val networkType: String?,
             val dataState: MobileDataStateCode,
             val isRoaming: Boolean,
-            val phoneType: String,
+            val phoneType: String?,
             val cell: CellNetworkSnapshot?,
         )
 
@@ -815,12 +820,12 @@ class ConnectivityTestViewModel
             }
 
         @Suppress("DEPRECATION")
-        private fun phoneType(type: Int): String =
+        private fun phoneType(type: Int): String? =
             when (type) {
                 TelephonyManager.PHONE_TYPE_GSM -> "GSM"
                 TelephonyManager.PHONE_TYPE_CDMA -> "CDMA"
                 TelephonyManager.PHONE_TYPE_SIP -> "SIP"
-                else -> "None"
+                else -> null
             }
 
         @SuppressLint("MissingPermission")
@@ -875,9 +880,9 @@ class ConnectivityTestViewModel
             identity: Int? = null,
         ): CellNetworkSnapshot =
             CellNetworkSnapshot(
-                signalDbm = dbm,
+                signalDbm = dbm.takeIf { it != CELL_INFO_UNAVAILABLE },
                 signalLevel = level,
-                cellId = identity?.takeIf { it != Int.MAX_VALUE }?.toString(),
+                cellId = identity?.takeIf { it != CELL_INFO_UNAVAILABLE }?.toString(),
             )
 
         private fun getCellNetworkCodes(
@@ -901,7 +906,7 @@ class ConnectivityTestViewModel
         }
 
         @Suppress("DEPRECATION")
-        private fun getNetworkTypeName(type: Int): String =
+        private fun getNetworkTypeName(type: Int): String? =
             when (type) {
                 TelephonyManager.NETWORK_TYPE_GPRS -> "GPRS"
                 TelephonyManager.NETWORK_TYPE_EDGE -> "EDGE"
@@ -919,12 +924,13 @@ class ConnectivityTestViewModel
                 TelephonyManager.NETWORK_TYPE_EHRPD -> "eHRPD"
                 TelephonyManager.NETWORK_TYPE_HSPAP -> "HSPA+"
                 TelephonyManager.NETWORK_TYPE_NR -> "5G NR"
-                else -> "Unknown"
+                else -> null
             }
 
         companion object {
             private const val NANOS_PER_MILLISECOND = 1_000_000L
             private const val IPV4_ADDRESS_BYTES = 4
+            private const val CELL_INFO_UNAVAILABLE = Int.MAX_VALUE
             private const val GPS_SEARCH_TIMEOUT_MILLIS = 60_000L
             private const val GPS_TICK_MILLIS = 500L
             private const val GPS_MIN_UPDATE_MILLIS = 100L

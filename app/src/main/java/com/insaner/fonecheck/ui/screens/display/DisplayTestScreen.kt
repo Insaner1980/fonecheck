@@ -266,7 +266,15 @@ private fun DisplayTouchSummary(
  */
 @Composable
 private fun BrightnessReadout(info: DisplayInfoState) {
-    val percent = (info.currentBrightness * PERCENT / MAX_BRIGHTNESS).coerceIn(0, PERCENT)
+    val brightness = info.currentBrightness
+    if (brightness == null) {
+        DataRow(
+            label = stringResource(R.string.display_brightness),
+            value = null,
+        )
+        return
+    }
+    val percent = brightness * PERCENT / DisplayTestViewModel.MAX_BRIGHTNESS
     Column {
         Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
         ReadoutWindow {
@@ -276,8 +284,8 @@ private fun BrightnessReadout(info: DisplayInfoState) {
                 value =
                     stringResource(
                         R.string.display_value_ratio,
-                        uiNumber(info.currentBrightness),
-                        uiNumber(MAX_BRIGHTNESS),
+                        uiNumber(brightness),
+                        uiNumber(DisplayTestViewModel.MAX_BRIGHTNESS),
                     ),
             )
             Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
@@ -287,8 +295,6 @@ private fun BrightnessReadout(info: DisplayInfoState) {
     }
 }
 
-/** The scale Android's brightness setting is reported on. */
-private const val MAX_BRIGHTNESS = 255
 private const val PERCENT = 100
 
 @Composable
@@ -327,19 +333,22 @@ private fun DisplayInfoDetails(info: DisplayInfoState) {
     )
     DataRow(
         label = stringResource(R.string.display_refresh_rate),
-        value = stringResource(R.string.display_refresh_rate_value, uiNumber(info.refreshRate)),
+        value = info.refreshRate?.let { stringResource(R.string.display_refresh_rate_value, uiNumber(it)) },
     )
     DataRow(
         label = stringResource(R.string.display_hdr),
-        value = supportedLabel(info.hdrSupported),
+        value = info.hdrSupported?.let { supportedLabel(it) },
     )
     DataRow(
         label = stringResource(R.string.display_wide_color),
-        value = supportedLabel(info.wideColorGamut),
+        value = info.wideColorGamut?.let { supportedLabel(it) },
     )
     DataRow(
         label = stringResource(R.string.display_auto_brightness),
-        value = stringResource(if (info.autoBrightness) R.string.status_enabled else R.string.status_disabled),
+        value =
+            info.autoBrightness?.let {
+                stringResource(if (it) R.string.status_enabled else R.string.status_disabled)
+            },
     )
 }
 

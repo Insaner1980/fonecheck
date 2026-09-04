@@ -47,6 +47,12 @@ class SensorRuntimePolicyTest {
 
         val invalid = GuidedSensorSampler(GuidedSensorCode.MAGNETOMETER)
         assertEquals(0, invalid.accept(floatArrayOf(Float.NaN, 1f, 2f)).sampleCount)
+
+        val mixedPressure = GuidedSensorSampler(GuidedSensorCode.BAROMETER)
+        repeat(GuidedSensorSampler.REQUIRED_SAMPLE_COUNT - 1) {
+            assertEquals(0, mixedPressure.accept(floatArrayOf(299f)).sampleCount)
+        }
+        assertFalse(mixedPressure.accept(floatArrayOf(1_013f)).passed)
     }
 
     @Test
@@ -251,5 +257,21 @@ class SensorRuntimePolicyTest {
         assertTrue(stopped.isEmpty())
         owner.clear()
         assertEquals(listOf(listener), stopped)
+    }
+
+    @Test
+    fun stepPermissionAndCallbackGenerationAreNarrowlyScoped() {
+        assertFalse(SensorPermissionPolicy.requiresActivityRecognition(SensorType.STEP_COUNTER, 28))
+        assertTrue(SensorPermissionPolicy.requiresActivityRecognition(SensorType.STEP_COUNTER, 29))
+        assertTrue(SensorPermissionPolicy.requiresActivityRecognition(SensorType.STEP_DETECTOR, 36))
+        assertFalse(SensorPermissionPolicy.requiresActivityRecognition(SensorType.ACCELEROMETER, 36))
+
+        val gate = SensorCallbackGate()
+        val old = gate.begin()
+        val current = gate.begin()
+        assertFalse(gate.isCurrent(old))
+        assertTrue(gate.isCurrent(current))
+        gate.cancel()
+        assertFalse(gate.isCurrent(current))
     }
 }

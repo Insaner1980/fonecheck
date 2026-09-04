@@ -55,7 +55,7 @@ object CameraDescriptorMapper {
     }
 }
 
-class CameraCaptureGate {
+class CameraOperationGate {
     private var nextToken = 0L
     var activeToken: Long? = null
         private set
@@ -75,8 +75,10 @@ class CameraCaptureGate {
     }
 
     @Synchronized
-    fun cancel(token: Long) {
-        if (activeToken == token) activeToken = null
+    fun cancel(token: Long): Boolean {
+        if (activeToken != token) return false
+        activeToken = null
+        return true
     }
 
     @Synchronized

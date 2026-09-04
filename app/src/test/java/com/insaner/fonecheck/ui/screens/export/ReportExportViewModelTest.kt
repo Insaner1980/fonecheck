@@ -66,7 +66,9 @@ class ReportExportViewModelTest {
 
             viewModel.exportPdf()
             advanceUntilIdle()
-            assertEquals(exporter.result, (viewModel.state.value as ReportExportState.Ready).shareRequest)
+            val retriedState = viewModel.state.value as ReportExportState.Ready
+            assertEquals(exporter.result, retriedState.shareRequest)
+            assertNull(retriedState.error)
         }
 
     @Test

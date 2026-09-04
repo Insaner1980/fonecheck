@@ -56,6 +56,11 @@ class DeviceInfoViewModel
                 }
         }
 
+        fun cancelCapture() {
+            refreshJob?.cancel()
+            refreshJob = null
+        }
+
         private companion object {
             const val CAPTURE_ERROR = "device_capture_failed"
         }

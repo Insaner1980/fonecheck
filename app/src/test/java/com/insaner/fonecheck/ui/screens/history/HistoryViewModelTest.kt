@@ -1,6 +1,7 @@
 package com.insaner.fonecheck.ui.screens.history
 
 import com.insaner.fonecheck.data.repository.FakeReportRepository
+import com.insaner.fonecheck.data.repository.SavedReportSummary
 import com.insaner.fonecheck.domain.model.CoverageSummary
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.testing.testReport
@@ -64,6 +65,23 @@ class HistoryViewModelTest {
                 listOf("older"),
                 viewModel.state.value.reports
                     .map { it.stableId },
+            )
+        }
+
+    @Test
+    fun equalCompletionTimesUseStableIdAsDeterministicTieBreaker() =
+        runTest(dispatcher.scheduler) {
+            val repository = FakeReportRepository()
+            repository.insert(report("a-report", "2026-08-08T10:00:00Z"))
+            repository.insert(report("b-report", "2026-08-08T10:00:00Z"))
+
+            val viewModel = HistoryViewModel(repository)
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf("b-report", "a-report"),
+                viewModel.state.value.reports
+                    .map(SavedReportSummary::stableId),
             )
         }
 

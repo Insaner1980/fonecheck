@@ -62,7 +62,7 @@ object ReportAssembler {
                 DiagnosticCategoryResult(
                     categoryId = snapshot.categoryId,
                     aggregateStatus = aggregate(snapshot.evidence),
-                    evidence = snapshot.evidence,
+                    evidence = snapshot.evidence.toList(),
                 )
             }
         val calculation = ScoreCalculator.calculate(categories)

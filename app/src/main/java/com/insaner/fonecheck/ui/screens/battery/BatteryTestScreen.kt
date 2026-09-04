@@ -76,7 +76,7 @@ private fun BatteryLevelReadout(level: Int?) {
             Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
             WindowFigure(
                 value =
-                    level?.let { stringResource(R.string.batt_value_percent, it) }
+                    level?.let { stringResource(R.string.batt_value_percent, uiNumber(it)) }
                         ?: stringResource(R.string.value_unavailable_short),
             )
             level?.let {
@@ -96,7 +96,7 @@ private fun BasicDetails(basic: BasicBatteryState) {
         )
     DataRow(
         label = stringResource(R.string.batt_voltage),
-        value = basic.voltageMv?.let { stringResource(R.string.batt_value_millivolts, it) },
+        value = basic.voltageMv?.let { stringResource(R.string.batt_value_millivolts, uiNumber(it)) },
     )
     DataRow(
         label = stringResource(R.string.batt_temperature),

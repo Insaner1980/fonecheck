@@ -130,6 +130,7 @@ private val AppPermission.manifestName: String
             AppPermission.FINE_LOCATION -> android.Manifest.permission.ACCESS_FINE_LOCATION
             AppPermission.PHONE -> android.Manifest.permission.READ_PHONE_STATE
             AppPermission.BLUETOOTH_CONNECT -> "android.permission.BLUETOOTH_CONNECT"
+            AppPermission.ACTIVITY_RECOGNITION -> "android.permission.ACTIVITY_RECOGNITION"
         }
 
 private tailrec fun Context.findActivity(): Activity? =

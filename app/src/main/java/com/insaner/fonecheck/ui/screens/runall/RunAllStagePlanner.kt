@@ -15,6 +15,7 @@ data class RunAllHardwareProfile(
     val cameraAvailable: Boolean = false,
     val motionSensorAvailable: Boolean = false,
     val vibratorAvailable: Boolean = false,
+    val vibratorReadFailed: Boolean = false,
     val biometricsAvailable: Boolean = false,
 ) {
     companion object {
@@ -149,10 +150,10 @@ object RunAllStagePlanner {
                 }
 
             DiagnosticCategoryId.VIBRATION ->
-                if (hardware.vibratorAvailable) {
-                    interactive(categoryId, RunAllStage.VIBRATION)
-                } else {
-                    notApplicable(categoryId)
+                when {
+                    hardware.vibratorReadFailed -> automatic(categoryId)
+                    hardware.vibratorAvailable -> interactive(categoryId, RunAllStage.VIBRATION)
+                    else -> notApplicable(categoryId)
                 }
 
             DiagnosticCategoryId.BUTTONS -> interactive(categoryId, RunAllStage.BUTTONS)

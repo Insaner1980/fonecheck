@@ -36,7 +36,14 @@ suspend fun ReportRepository.insertOrConfirm(report: DiagnosticReport): Boolean 
     } catch (error: CancellationException) {
         throw error
     } catch (_: Exception) {
-        val existing = runCatching { getById(report.stableId) }.getOrNull()
+        val existing =
+            try {
+                getById(report.stableId)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                null
+            }
         existing is ReportLoadResult.Available && existing.report == report
     }
 

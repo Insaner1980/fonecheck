@@ -147,7 +147,7 @@ object SimTelephonyProbe {
         when (code) {
             1, 2, 4, 7, 11, 16 -> NetworkGenerationCode.SECOND_GENERATION
             3, 5, 6, 8, 9, 10, 12, 14, 15, 17 -> NetworkGenerationCode.THIRD_GENERATION
-            13, 18 -> NetworkGenerationCode.FOURTH_GENERATION
+            13 -> NetworkGenerationCode.FOURTH_GENERATION
             20 -> NetworkGenerationCode.FIFTH_GENERATION
             else -> NetworkGenerationCode.UNKNOWN
         }

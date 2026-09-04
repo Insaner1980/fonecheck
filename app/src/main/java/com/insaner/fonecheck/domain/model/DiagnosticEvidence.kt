@@ -94,7 +94,11 @@ sealed interface EvidenceValue {
 
     data class DoubleValue(
         val value: Double,
-    ) : EvidenceValue
+    ) : EvidenceValue {
+        init {
+            require(value.isFinite()) { "Double evidence must be finite." }
+        }
+    }
 
     data class RawTextValue(
         val value: String,

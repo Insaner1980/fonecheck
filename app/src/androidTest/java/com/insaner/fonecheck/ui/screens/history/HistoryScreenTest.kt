@@ -229,6 +229,8 @@ class HistoryScreenTest {
                             scoreState = ScoreState.COMPLETE,
                             scoreValue = 99,
                             unavailableReason = ReportReadFailure.CORRUPT_DATA,
+                            warningCount = 98,
+                            failureCount = 97,
                         ),
                     ),
                 isLoading = false,
@@ -241,6 +243,70 @@ class HistoryScreenTest {
         composeRule.onNodeWithText(context.getString(R.string.history_status_unavailable)).assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.value_unavailable_short)).assertIsDisplayed()
         composeRule.onNodeWithText("99").assertDoesNotExist()
+        composeRule.onNodeWithText("98").assertDoesNotExist()
+        composeRule.onNodeWithText("97").assertDoesNotExist()
+    }
+
+    @Test
+    fun comparisonSelectionIsClearedWhenItsReportBecomesUnavailable() {
+        var compared: Pair<String, String>? = null
+        var state by
+            mutableStateOf(
+                HistoryState(
+                    reports =
+                        listOf(
+                            summary("first", "2026-08-08T11:00:00Z", ScoreState.COMPLETE),
+                            summary("second", "2026-08-08T10:00:00Z", ScoreState.COMPLETE),
+                        ),
+                    isLoading = false,
+                ),
+            )
+        composeRule.setContent {
+            FonecheckTheme {
+                HistoryScreen(
+                    state = state,
+                    onRetry = {},
+                    onOpen = {},
+                    onCompare = { first, second -> compared = first to second },
+                    onExport = {},
+                    onDelete = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("history_compare_first").performClick()
+        state =
+            state.copy(
+                reports =
+                    listOf(
+                        summary(
+                            "first",
+                            "2026-08-08T11:00:00Z",
+                            ScoreState.COMPLETE,
+                            unavailableReason = ReportReadFailure.CORRUPT_DATA,
+                        ),
+                        summary("second", "2026-08-08T10:00:00Z", ScoreState.COMPLETE),
+                    ),
+            )
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("history_compare_second").performScrollTo().performClick()
+
+        assertEquals(null, compared)
+    }
+
+    @Test
+    fun deleteFailureDoesNotOfferTheLoadRetryAction() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        setHistoryContent(
+            HistoryState(
+                reports = listOf(summary("saved", "2026-08-08T10:00:00Z", ScoreState.COMPLETE)),
+                isLoading = false,
+                error = "history_delete_failed",
+            ),
+        )
+
+        composeRule.onNodeWithText(context.getString(R.string.history_delete_error)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.history_retry)).assertDoesNotExist()
     }
 
     private fun setHistoryContent(state: HistoryState) {

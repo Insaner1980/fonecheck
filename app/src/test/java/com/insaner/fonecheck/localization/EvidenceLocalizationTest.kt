@@ -3,6 +3,7 @@ package com.insaner.fonecheck.localization
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
+import com.insaner.fonecheck.domain.model.SimSlotStateCode
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import com.insaner.fonecheck.domain.observation.ObservationClassification
 import com.insaner.fonecheck.domain.observation.ObservationReason
@@ -128,10 +129,42 @@ class EvidenceLocalizationTest {
 
     @Test
     fun `report evidence labels and stable values resolve through resources`() {
-        assertNotNull(evidenceLabelStringRes("battery.level"))
+        assertEquals(
+            EvidenceLabelResource(R.string.batt_level),
+            evidenceLabelResource("battery.level"),
+        )
+        assertEquals(
+            EvidenceLabelResource(R.string.sim_slot_title, 1),
+            evidenceLabelResource("sim.slot_0_state"),
+        )
         assertNotNull(stableTextStringRes("app_cache"))
-        assertNull(evidenceLabelStringRes("future.vendor_check"))
+        assertNull(evidenceLabelResource("future.vendor_check"))
         assertNull(stableTextStringRes("future_vendor_value"))
+    }
+
+    @Test
+    fun `sim slot state values resolve through localized resources`() {
+        val expectedResources =
+            mapOf(
+                SimSlotStateCode.READY to R.string.sim_state_ready,
+                SimSlotStateCode.ABSENT to R.string.sim_state_absent,
+                SimSlotStateCode.NETWORK_LOCKED to R.string.sim_state_network_locked,
+                SimSlotStateCode.PIN_REQUIRED to R.string.sim_state_pin_required,
+                SimSlotStateCode.PUK_REQUIRED to R.string.sim_state_puk_required,
+                SimSlotStateCode.NOT_READY to R.string.sim_state_not_ready,
+                SimSlotStateCode.PERMANENTLY_DISABLED to R.string.sim_state_permanently_disabled,
+                SimSlotStateCode.CARD_IO_ERROR to R.string.sim_state_card_io_error,
+                SimSlotStateCode.CARD_RESTRICTED to R.string.sim_state_card_restricted,
+                SimSlotStateCode.UNKNOWN to R.string.sim_value_unknown,
+            )
+
+        assertEquals(
+            SimSlotStateCode.entries.toSet(),
+            expectedResources.keys,
+        )
+        expectedResources.forEach { (state, expectedResource) ->
+            assertEquals(expectedResource, stableTextStringRes(state.name.lowercase()))
+        }
     }
 
     @Test

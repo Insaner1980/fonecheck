@@ -106,6 +106,10 @@ class BiometricTestViewModel
             )
         }
 
+        fun onPromptLaunchFailure() {
+            complete(AuthResult.ERROR)
+        }
+
         fun cancelAuthentication() {
             if (!_state.value.promptActive || _state.value.authResult.isTerminal) return
             complete(AuthResult.CANCELLED)

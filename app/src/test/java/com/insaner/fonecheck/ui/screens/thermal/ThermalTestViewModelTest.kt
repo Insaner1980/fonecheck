@@ -55,6 +55,23 @@ class ThermalTestViewModelTest {
     }
 
     @Test
+    fun callbackFromAClosedListenerCannotOverwriteANewerMonitoringSession() {
+        val platform = FakeThermalPlatform(currentStatus = ThermalStatusCode.NONE)
+        val viewModel = ThermalTestViewModel(platform, EpochMillisClock { 1_000L })
+
+        viewModel.startMonitoring()
+        viewModel.stopMonitoring()
+        platform.currentStatus = ThermalStatusCode.LIGHT
+        viewModel.startMonitoring()
+
+        platform.emitAfterClose(ThermalStatusCode.SEVERE)
+
+        assertEquals(ThermalStatusCode.LIGHT, viewModel.state.value.status)
+        assertEquals(ThermalSeverityCode.LIGHT, viewModel.state.value.severity)
+        assertTrue(viewModel.state.value.isMonitoring)
+    }
+
+    @Test
     fun unavailableHeadroomRemainsUnavailableAndSamplingIsRateLimited() {
         var now = 1_000L
         val platform = FakeThermalPlatform(headroom = null)
@@ -93,6 +110,21 @@ class ThermalTestViewModelTest {
         assertNull(viewModel.state.value.error)
     }
 
+    @Test
+    fun restartMonitoringRetriesListenerRegistrationAfterFailure() {
+        val platform = FakeThermalPlatform(registrationSucceeds = false)
+        val viewModel = ThermalTestViewModel(platform, EpochMillisClock { 1_000L })
+
+        viewModel.startMonitoring()
+        platform.registrationSucceeds = true
+
+        viewModel.restartMonitoring()
+
+        assertTrue(viewModel.state.value.isMonitoring)
+        assertNull(viewModel.state.value.error)
+        assertEquals(1, platform.registrationCount)
+    }
+
     private class FakeThermalPlatform(
         override val statusApiSupported: Boolean = true,
         override val headroomApiSupported: Boolean = true,
@@ -105,6 +137,7 @@ class ThermalTestViewModelTest {
         var closeCount = 0
         var headroomReadCount = 0
         private var listener: ((ThermalStatusCode) -> Unit)? = null
+        private var closedListener: ((ThermalStatusCode) -> Unit)? = null
 
         override fun readStatus(): ThermalStatusCode? = currentStatus
 
@@ -121,12 +154,17 @@ class ThermalTestViewModelTest {
             this.listener = listener
             return ThermalStatusRegistration {
                 closeCount += 1
-                this.listener = null
+                closedListener = listener
+                if (this.listener === listener) this.listener = null
             }
         }
 
         fun emit(status: ThermalStatusCode) {
             listener?.invoke(status)
+        }
+
+        fun emitAfterClose(status: ThermalStatusCode) {
+            closedListener?.invoke(status)
         }
     }
 }

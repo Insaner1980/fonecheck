@@ -5,6 +5,18 @@ import org.junit.Test
 
 class PermissionPolicyTest {
     @Test
+    fun activityRecognitionIsRequiredOnlyFromApi29() {
+        assertEquals(
+            emptySet<AppPermission>(),
+            PermissionPolicy.requiredPermissions(PermissionKind.ACTIVITY_RECOGNITION, 28),
+        )
+        assertEquals(
+            setOf(AppPermission.ACTIVITY_RECOGNITION),
+            PermissionPolicy.requiredPermissions(PermissionKind.ACTIVITY_RECOGNITION, 29),
+        )
+    }
+
+    @Test
     fun bluetoothConnectIsNotRequiredBeforeApi31() {
         val state =
             PermissionPolicy.evaluate(

@@ -9,6 +9,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -39,6 +41,22 @@ fun VibrationTestScreen(
     VibrationLifecycleEffect(onCancelVibration = viewModel::cancelVibration)
 
     TestScreenContent(modifier = modifier, liveStateUpdatedAtEpochMillis = liveStateUpdatedAtEpochMillis) {
+        if (state.haptic.readErrors.isNotEmpty()) {
+            item {
+                Note(
+                    text = stringResource(R.string.vibration_capability_read_error),
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
+                )
+            }
+        }
+        if (state.playbackError) {
+            item {
+                Note(
+                    text = stringResource(R.string.vibration_playback_error),
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
+                )
+            }
+        }
         item {
             val classification = classifyVibrationResult(state.motor.result)
             DisclosureSection(
@@ -54,9 +72,9 @@ fun VibrationTestScreen(
                 )
                 MotorTestDetails(
                     state = state,
-                    onShort = viewModel::vibrateShort,
-                    onLong = viewModel::vibrateLong,
-                    onPattern = viewModel::vibratePattern,
+                    onShort = { viewModel.vibrateShort() },
+                    onLong = { viewModel.vibrateLong() },
+                    onPattern = { viewModel.vibratePattern() },
                     onStop = viewModel::cancelVibration,
                     onConfirmSuccess = { viewModel.reportFelt(true) },
                     onConfirmFailure = { viewModel.reportFelt(false) },
@@ -70,10 +88,11 @@ fun VibrationTestScreen(
                 label = stringResource(R.string.vibration_haptic_title),
                 summary =
                     stringResource(
-                        if (state.haptic.hasVibrator) {
-                            R.string.conn_supported
-                        } else {
-                            R.string.conn_not_supported
+                        when {
+                            VibrationCapabilityRead.HARDWARE in state.haptic.readErrors ->
+                                R.string.status_not_measured
+                            state.haptic.hasVibrator -> R.string.conn_supported
+                            else -> R.string.conn_not_supported
                         },
                     ),
                 tone = SemanticTone.NEUTRAL,
@@ -98,7 +117,8 @@ private fun MotorTestDetails(
     onConfirmFailure: () -> Unit,
     onSkip: () -> Unit,
 ) {
-    val enabled = state.haptic.hasVibrator
+    val hardwareReadFailed = VibrationCapabilityRead.HARDWARE in state.haptic.readErrors
+    val enabled = state.haptic.hasVibrator && !hardwareReadFailed
 
     Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md)) {
         Note(text = stringResource(R.string.vibration_strength_warning))
@@ -131,7 +151,7 @@ private fun MotorTestDetails(
             enabled = state.isPlaying,
             modifier = Modifier.fillMaxWidth(),
         )
-        if (!enabled) {
+        if (!enabled && !hardwareReadFailed) {
             Note(text = stringResource(R.string.vibration_unavailable))
         }
         Text(
@@ -182,30 +202,40 @@ private fun VibrationPatternButton(
 
 @Composable
 private fun HapticDetails(haptic: HapticCapabilityState) {
+    val readFailedLabel = stringResource(R.string.vibration_read_failed)
+    val hardwareReadFailed = VibrationCapabilityRead.HARDWARE in haptic.readErrors
     Column {
         DataRow(
             label = stringResource(R.string.vibration_has_vibrator),
-            value = yesNoLabel(haptic.hasVibrator),
+            value = if (hardwareReadFailed) null else yesNoLabel(haptic.hasVibrator),
+            unavailableLabel = readFailedLabel,
         )
         DataRow(
             label = stringResource(R.string.vibration_amplitude_control),
             value =
-                stringResource(
-                    if (haptic.hasAmplitudeControl) {
-                        R.string.conn_supported
-                    } else {
-                        R.string.conn_not_supported
-                    },
-                ),
+                if (hardwareReadFailed || VibrationCapabilityRead.AMPLITUDE_CONTROL in haptic.readErrors) {
+                    null
+                } else {
+                    stringResource(
+                        if (haptic.hasAmplitudeControl) {
+                            R.string.conn_supported
+                        } else {
+                            R.string.conn_not_supported
+                        },
+                    )
+                },
+            unavailableLabel = readFailedLabel,
         )
         HapticCapabilityList(
             label = stringResource(R.string.vibration_effects_supported),
             apiSupported = haptic.effectsApiSupported,
+            readFailed = hardwareReadFailed || VibrationCapabilityRead.EFFECTS in haptic.readErrors,
             values = haptic.supportedEffects.map { vibrationEffectLabel(it) },
         )
         HapticCapabilityList(
             label = stringResource(R.string.vibration_primitives_supported),
             apiSupported = haptic.primitivesApiSupported,
+            readFailed = hardwareReadFailed || VibrationCapabilityRead.PRIMITIVES in haptic.readErrors,
             values = haptic.supportedPrimitives.map { vibrationPrimitiveLabel(it) },
         )
         Note(text = stringResource(R.string.vibration_capability_note))
@@ -216,18 +246,26 @@ private fun HapticDetails(haptic: HapticCapabilityState) {
 private fun HapticCapabilityList(
     label: String,
     apiSupported: Boolean,
+    readFailed: Boolean,
     values: List<String>,
 ) {
     val emptyLabel = stringResource(R.string.vibration_none)
     LongValueRow(
         label = label,
         value =
-            if (apiSupported) {
-                values.joinToString().ifEmpty { emptyLabel }
-            } else {
-                null
+            when {
+                readFailed -> null
+                apiSupported -> values.joinToString().ifEmpty { emptyLabel }
+                else -> null
             },
-        unavailableLabel = stringResource(R.string.vibration_api_requires_android_11),
+        unavailableLabel =
+            stringResource(
+                if (readFailed) {
+                    R.string.vibration_read_failed
+                } else {
+                    R.string.vibration_api_requires_android_11
+                },
+            ),
     )
 }
 

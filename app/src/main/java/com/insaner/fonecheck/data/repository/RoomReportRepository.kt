@@ -3,6 +3,7 @@ package com.insaner.fonecheck.data.repository
 import com.insaner.fonecheck.data.local.ReportDao
 import com.insaner.fonecheck.data.local.ReportEntity
 import com.insaner.fonecheck.data.local.ReportSummary
+import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
@@ -47,12 +48,30 @@ private fun DiagnosticReport.toEntity(payloadJson: String): ReportEntity {
     require(categories.map { it.categoryId }.distinct().size == categories.size) {
         "A report must not contain duplicate categories."
     }
+    require(categories.all { it.evidence.isNotEmpty() }) {
+        "Every report category must contain evidence."
+    }
     require(categories.all { category -> category.evidence.all { it.categoryId == category.categoryId } }) {
         "Evidence must belong to its containing category."
     }
+    require(
+        categories.all { category ->
+            category.evidence
+                .map { it.checkId }
+                .distinct()
+                .size == category.evidence.size
+        },
+    ) {
+        "A report category must not contain duplicate check IDs."
+    }
     val categoryId =
         when (kind) {
-            ReportKind.FULL_CHECK -> null
+            ReportKind.FULL_CHECK -> {
+                require(categories.map { it.categoryId } == DiagnosticCatalog.categories) {
+                    "A full report must contain every catalog category in catalog order."
+                }
+                null
+            }
             ReportKind.CATEGORY_ONLY -> {
                 require(categories.size == 1) { "A category-only report must contain exactly one category." }
                 categories.single().categoryId.stableId
@@ -104,7 +123,9 @@ private fun ReportSummary.toDomain(): SavedReportSummary {
         }
     val domainScoreState = enumFromStableCodeOrNull<ScoreState>(scoreStateCode)
     val metadataIsValid =
-        reportSchemaVersion > 0 &&
+        id.isNotBlank() &&
+            reportSchemaVersion > 0 &&
+            scoreVersion > 0 &&
             domainKind != null &&
             domainScoreState != null &&
             coveragePercentage in 0..100 &&
@@ -122,6 +143,7 @@ private fun ReportSummary.toDomain(): SavedReportSummary {
             }
     val unavailableReason =
         when {
+            reportSchemaVersion <= 0 -> ReportReadFailure.CORRUPT_DATA
             reportSchemaVersion != ReportSchemaVersion.CURRENT.value -> ReportReadFailure.UNSUPPORTED_SCHEMA_VERSION
             !metadataIsValid -> ReportReadFailure.CORRUPT_DATA
             else -> null

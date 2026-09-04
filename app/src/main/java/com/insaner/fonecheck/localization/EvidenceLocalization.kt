@@ -162,8 +162,20 @@ fun thermalStatusStringRes(status: ThermalStatusCode): Int =
         ThermalStatusCode.UNAVAILABLE -> R.string.device_value_unavailable
     }
 
-@StringRes
-fun evidenceLabelStringRes(checkId: String): Int? = EVIDENCE_LABEL_RESOURCES[checkId]
+data class EvidenceLabelResource(
+    @StringRes val stringResId: Int,
+    val formatArgument: Int? = null,
+)
+
+fun evidenceLabelResource(checkId: String): EvidenceLabelResource? =
+    EVIDENCE_LABEL_RESOURCES[checkId]?.let { EvidenceLabelResource(it) }
+        ?: SIM_SLOT_STATE_CHECK_ID
+            .matchEntire(checkId)
+            ?.groupValues
+            ?.get(1)
+            ?.toIntOrNull()
+            ?.takeIf { it < Int.MAX_VALUE }
+            ?.let { slotIndex -> EvidenceLabelResource(R.string.sim_slot_title, slotIndex + 1) }
 
 @StringRes
 fun stableTextStringRes(code: String): Int? = STABLE_TEXT_RESOURCES[code]
@@ -299,6 +311,17 @@ private val STABLE_TEXT_RESOURCES =
         "fourth_generation" to R.string.sim_network_4g,
         "fifth_generation" to R.string.sim_network_5g,
         "unknown" to R.string.sim_value_unknown,
+        "ready" to R.string.sim_state_ready,
+        "absent" to R.string.sim_state_absent,
+        "network_locked" to R.string.sim_state_network_locked,
+        "pin_required" to R.string.sim_state_pin_required,
+        "puk_required" to R.string.sim_state_puk_required,
+        "not_ready" to R.string.sim_state_not_ready,
+        "permanently_disabled" to R.string.sim_state_permanently_disabled,
+        "card_io_error" to R.string.sim_state_card_io_error,
+        "card_restricted" to R.string.sim_state_card_restricted,
         "observed" to R.string.sensor_orientation_observed,
         "app_cache" to R.string.storage_app_cache,
     )
+
+private val SIM_SLOT_STATE_CHECK_ID = Regex("""sim\.slot_(\d+)_state""")

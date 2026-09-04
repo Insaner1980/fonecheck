@@ -74,12 +74,7 @@ fun BiometricTestScreen(
                 activity = currentActivity,
                 prompt = currentPrompt,
             )
-        }.onFailure {
-            viewModel.onAuthError(
-                BiometricPrompt.ERROR_VENDOR,
-                it.message.orEmpty(),
-            )
-        }
+        }.onFailure { viewModel.onPromptLaunchFailure() }
     }
 
     TestScreenContent(modifier = modifier, liveStateUpdatedAtEpochMillis = liveStateUpdatedAtEpochMillis) {

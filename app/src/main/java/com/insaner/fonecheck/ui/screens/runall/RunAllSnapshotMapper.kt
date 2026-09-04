@@ -46,6 +46,7 @@ import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestState
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestState
 import com.insaner.fonecheck.ui.screens.camera.CameraClassCode
 import com.insaner.fonecheck.ui.screens.camera.CameraTestState
+import com.insaner.fonecheck.ui.screens.camera.CaptureResult
 import com.insaner.fonecheck.ui.screens.connectivity.BluetoothAccessCode
 import com.insaner.fonecheck.ui.screens.connectivity.ConnectivityTestState
 import com.insaner.fonecheck.ui.screens.connectivity.GpsFixStatus
@@ -59,15 +60,17 @@ import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkPhase
 import com.insaner.fonecheck.ui.screens.storage.StorageTestState
 import com.insaner.fonecheck.ui.screens.thermal.ThermalSeverityCode
 import com.insaner.fonecheck.ui.screens.thermal.ThermalTestState
+import com.insaner.fonecheck.ui.screens.vibration.VibrationCapabilityRead
 import com.insaner.fonecheck.ui.screens.vibration.VibrationTestState
 import java.time.Instant
 
 data class DiagnosticSnapshots(
-    val device: DeviceInfo,
-    val performance: PerformanceInfo,
+    val device: DeviceInfo?,
+    val performance: PerformanceInfo?,
     val performanceBenchmark: PerformanceBenchmarkResult? = null,
     val performanceBenchmarkPhase: BenchmarkPhase = BenchmarkPhase.IDLE,
-    val sim: SimTelephonyInfo,
+    val sim: SimTelephonyInfo?,
+    val automaticIssues: Map<DiagnosticCategoryId, RunAllStageOutcome> = emptyMap(),
     val display: DisplayTestState,
     val audio: AudioTestState,
     val camera: CameraTestState,
@@ -91,21 +94,50 @@ object RunAllSnapshotMapper {
         hardware: RunAllHardwareProfile = RunAllHardwareProfile.ALL_AVAILABLE,
         capturedAt: Instant,
     ): List<DiagnosticCategorySnapshot> {
+        val enclosingAutomaticIssue =
+            manual.outcomes[RunAllStage.AUTOMATIC]
+                ?.takeIf { it == RunAllStageOutcome.TIMED_OUT || it == RunAllStageOutcome.ERROR }
+
+        fun automaticIssue(categoryId: DiagnosticCategoryId): RunAllStageOutcome? =
+            snapshots.automaticIssues[categoryId] ?: enclosingAutomaticIssue
+
         val evidenceByCategory =
             mapOf(
-                DiagnosticCategoryId.DEVICE to deviceEvidence(snapshots),
-                DiagnosticCategoryId.PERFORMANCE to performanceEvidence(snapshots, capturedAt),
-                DiagnosticCategoryId.SIM to simEvidence(snapshots, permissions, capturedAt),
+                DiagnosticCategoryId.DEVICE to
+                    deviceEvidence(snapshots, capturedAt, automaticIssue(DiagnosticCategoryId.DEVICE)),
+                DiagnosticCategoryId.PERFORMANCE to
+                    performanceEvidence(snapshots, capturedAt, automaticIssue(DiagnosticCategoryId.PERFORMANCE)),
+                DiagnosticCategoryId.SIM to
+                    simEvidence(snapshots, permissions, capturedAt, automaticIssue(DiagnosticCategoryId.SIM)),
                 DiagnosticCategoryId.DISPLAY to displayEvidence(snapshots, manual, capturedAt),
                 DiagnosticCategoryId.AUDIO to
-                    audioEvidence(snapshots, manual, permissions, selections, hardware, capturedAt),
+                    audioEvidence(
+                        snapshots,
+                        manual,
+                        permissions,
+                        selections,
+                        hardware,
+                        automaticIssue(DiagnosticCategoryId.AUDIO),
+                        capturedAt,
+                    ),
                 DiagnosticCategoryId.CAMERA to
                     cameraEvidence(snapshots, manual, permissions, selections, hardware, capturedAt),
-                DiagnosticCategoryId.SENSORS to sensorEvidence(snapshots, manual, capturedAt),
-                DiagnosticCategoryId.CONNECTIVITY to connectivityEvidence(snapshots, capturedAt),
+                DiagnosticCategoryId.SENSORS to sensorEvidence(snapshots, manual, hardware, capturedAt),
+                DiagnosticCategoryId.CONNECTIVITY to
+                    connectivityEvidence(
+                        snapshots,
+                        snapshots.automaticIssues[DiagnosticCategoryId.CONNECTIVITY],
+                        capturedAt,
+                    ),
                 DiagnosticCategoryId.BATTERY to batteryEvidence(snapshots, capturedAt),
                 DiagnosticCategoryId.THERMAL to thermalEvidence(snapshots, capturedAt),
-                DiagnosticCategoryId.STORAGE to storageEvidence(snapshots, selections, capturedAt),
+                DiagnosticCategoryId.STORAGE to
+                    storageEvidence(
+                        snapshots,
+                        selections,
+                        automaticIssue(DiagnosticCategoryId.STORAGE),
+                        capturedAt,
+                    ),
                 DiagnosticCategoryId.VIBRATION to vibrationEvidence(snapshots, manual, capturedAt),
                 DiagnosticCategoryId.BUTTONS to buttonEvidence(snapshots.buttons, manual, capturedAt),
                 DiagnosticCategoryId.BIOMETRICS to biometricEvidence(snapshots, manual, capturedAt),
@@ -120,8 +152,21 @@ object RunAllSnapshotMapper {
         }
     }
 
-    private fun deviceEvidence(snapshots: DiagnosticSnapshots): List<DiagnosticEvidence> {
-        val device = snapshots.device
+    private fun deviceEvidence(
+        snapshots: DiagnosticSnapshots,
+        capturedAt: Instant,
+        automaticIssue: RunAllStageOutcome?,
+    ): List<DiagnosticEvidence> {
+        val device =
+            snapshots.device
+                ?: return listOf("identity", "security", "developer_options", "usb_debugging").map { id ->
+                    notTested(
+                        categoryId = DiagnosticCategoryId.DEVICE,
+                        id = id,
+                        capturedAt = capturedAt,
+                        reason = automaticIssue.toFailureReason() ?: EvidenceReasonCode.ERROR,
+                    )
+                }
         val rootClassification =
             DeviceObservationClassifier.classify(DeviceObservation.RootArtifact(device.rootArtifactDetected))
         return listOf(
@@ -176,97 +221,145 @@ object RunAllSnapshotMapper {
     private fun performanceEvidence(
         snapshots: DiagnosticSnapshots,
         capturedAt: Instant,
+        automaticIssue: RunAllStageOutcome?,
     ): List<DiagnosticEvidence> {
         val performance = snapshots.performance
         val benchmark = snapshots.performanceBenchmark
-        val benchmarkReason = performanceBenchmarkReason(snapshots.performanceBenchmarkPhase)
-        val hasRamReading = performance.totalRamBytes?.let { it > 0L } == true
-        val hasGpuReading = performance.glRenderer != PerformanceInfo.UNAVAILABLE && performance.glRenderer.isNotBlank()
-        return listOf(
-            classifiedEvidence(
-                categoryId = DiagnosticCategoryId.PERFORMANCE,
-                id = "cpu",
-                classification =
-                    classifyMeasurement(
-                        MeasurementKind.CPU,
-                        available = performance.cpuCores > 0,
+        val benchmarkReason = performanceBenchmarkReason(snapshots.performanceBenchmarkPhase, automaticIssue)
+        val infoEvidence =
+            if (performance == null) {
+                listOf("cpu", "ram", "gpu").map { id ->
+                    notTested(
+                        categoryId = DiagnosticCategoryId.PERFORMANCE,
+                        id = id,
+                        capturedAt = capturedAt,
+                        reason = automaticIssue.toFailureReason() ?: EvidenceReasonCode.ERROR,
+                    )
+                }
+            } else {
+                val hasRamReading = performance.totalRamBytes?.let { it > 0L } == true
+                val hasGpuReading =
+                    performance.glRenderer != PerformanceInfo.UNAVAILABLE && performance.glRenderer.isNotBlank()
+                listOf(
+                    classifiedEvidence(
+                        categoryId = DiagnosticCategoryId.PERFORMANCE,
+                        id = "cpu",
+                        classification =
+                            classifyMeasurement(
+                                MeasurementKind.CPU,
+                                available = performance.cpuCores > 0,
+                            ),
+                        informationalPass = true,
+                        confidence = performance.cpuConfidence,
+                        value = performance.cpuCores.takeIf { it > 0 }?.let(EvidenceValue::IntValue),
+                        unit = EvidenceUnitCode("count"),
+                        capturedAt = performance.capturedAt,
                     ),
-                informationalPass = true,
-                confidence = performance.cpuConfidence,
-                value = performance.cpuCores.takeIf { it > 0 }?.let(EvidenceValue::IntValue),
-                unit = EvidenceUnitCode("count"),
-                capturedAt = capturedAt,
-            ),
-            classifiedEvidence(
-                categoryId = DiagnosticCategoryId.PERFORMANCE,
-                id = "ram",
-                classification = classifyMeasurement(MeasurementKind.RAM, hasRamReading),
-                informationalPass = true,
-                confidence = performance.ramConfidence,
-                value = EvidenceValue.BooleanValue(true).takeIf { hasRamReading },
-                capturedAt = capturedAt,
-            ),
-            classifiedEvidence(
-                categoryId = DiagnosticCategoryId.PERFORMANCE,
-                id = "gpu",
-                classification = classifyMeasurement(MeasurementKind.GPU, hasGpuReading),
-                informationalPass = true,
-                confidence = performance.gpuConfidence,
-                value = EvidenceValue.BooleanValue(true).takeIf { hasGpuReading },
-                capturedAt = capturedAt,
-            ),
-            benchmark?.let {
-                evidence(
+                    classifiedEvidence(
+                        categoryId = DiagnosticCategoryId.PERFORMANCE,
+                        id = "ram",
+                        classification = classifyMeasurement(MeasurementKind.RAM, hasRamReading),
+                        informationalPass = true,
+                        confidence = performance.ramConfidence,
+                        value = EvidenceValue.BooleanValue(true).takeIf { hasRamReading },
+                        capturedAt = performance.capturedAt,
+                    ),
+                    classifiedEvidence(
+                        categoryId = DiagnosticCategoryId.PERFORMANCE,
+                        id = "gpu",
+                        classification = classifyMeasurement(MeasurementKind.GPU, hasGpuReading),
+                        informationalPass = true,
+                        confidence = performance.gpuConfidence,
+                        value = EvidenceValue.BooleanValue(true).takeIf { hasGpuReading },
+                        capturedAt = performance.capturedAt,
+                    ),
+                )
+            }
+        return infoEvidence +
+            listOf(
+                benchmark?.let {
+                    evidence(
+                        categoryId = DiagnosticCategoryId.PERFORMANCE,
+                        id = "cpu_benchmark",
+                        confidence = Confidence.LOW,
+                        source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                        value = EvidenceValue.LongValue(it.cpuOperationsPerSecond),
+                        unit = EvidenceUnitCode("operations_per_second"),
+                        capturedAt = it.capturedAt,
+                    )
+                } ?: notTested(
                     categoryId = DiagnosticCategoryId.PERFORMANCE,
                     id = "cpu_benchmark",
-                    confidence = Confidence.LOW,
+                    capturedAt = capturedAt,
+                    reason = benchmarkReason,
                     source = EvidenceSource.AUTOMATIC_MEASUREMENT,
-                    value = EvidenceValue.LongValue(it.cpuOperationsPerSecond),
-                    unit = EvidenceUnitCode("operations_per_second"),
-                    capturedAt = it.capturedAt,
-                )
-            } ?: notTested(
-                categoryId = DiagnosticCategoryId.PERFORMANCE,
-                id = "cpu_benchmark",
-                capturedAt = capturedAt,
-                reason = benchmarkReason,
-            ),
-            benchmark?.memoryMebibytesPerSecond?.let { throughput ->
-                evidence(
+                ),
+                benchmark?.memoryMebibytesPerSecond?.let { throughput ->
+                    evidence(
+                        categoryId = DiagnosticCategoryId.PERFORMANCE,
+                        id = "memory_benchmark",
+                        confidence = Confidence.LOW,
+                        source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                        value = EvidenceValue.DoubleValue(throughput),
+                        unit = EvidenceUnitCode("mebibytes_per_second"),
+                        capturedAt = benchmark.capturedAt,
+                    )
+                } ?: notTested(
                     categoryId = DiagnosticCategoryId.PERFORMANCE,
                     id = "memory_benchmark",
-                    confidence = Confidence.LOW,
+                    capturedAt = benchmark?.capturedAt ?: capturedAt,
+                    reason = benchmarkReason,
                     source = EvidenceSource.AUTOMATIC_MEASUREMENT,
-                    value = EvidenceValue.DoubleValue(throughput),
-                    unit = EvidenceUnitCode("mebibytes_per_second"),
-                    capturedAt = benchmark.capturedAt,
-                )
-            } ?: notTested(
-                categoryId = DiagnosticCategoryId.PERFORMANCE,
-                id = "memory_benchmark",
-                capturedAt = benchmark?.capturedAt ?: capturedAt,
-                reason = benchmarkReason,
-            ),
-        )
+                ),
+            )
     }
 
-    private fun performanceBenchmarkReason(phase: BenchmarkPhase): EvidenceReasonCode =
-        when (phase) {
-            BenchmarkPhase.CANCELLED -> EvidenceReasonCode.CANCELLED
-            BenchmarkPhase.ERROR,
-            BenchmarkPhase.COMPLETED,
-            -> EvidenceReasonCode.ERROR
-            BenchmarkPhase.IDLE,
-            BenchmarkPhase.RUNNING,
-            -> EvidenceReasonCode.NOT_RUN
+    private fun performanceBenchmarkReason(
+        phase: BenchmarkPhase,
+        automaticIssue: RunAllStageOutcome?,
+    ): EvidenceReasonCode =
+        automaticIssue.toFailureReason()
+            ?: when (phase) {
+                BenchmarkPhase.CANCELLED -> EvidenceReasonCode.CANCELLED
+                BenchmarkPhase.ERROR,
+                BenchmarkPhase.COMPLETED,
+                -> EvidenceReasonCode.ERROR
+                BenchmarkPhase.IDLE,
+                BenchmarkPhase.RUNNING,
+                -> EvidenceReasonCode.NOT_RUN
+            }
+
+    private fun RunAllStageOutcome?.toFailureReason(): EvidenceReasonCode? =
+        when (this) {
+            RunAllStageOutcome.TIMED_OUT -> EvidenceReasonCode.TIMEOUT
+            RunAllStageOutcome.ERROR -> EvidenceReasonCode.ERROR
+            else -> null
         }
 
     private fun simEvidence(
         snapshots: DiagnosticSnapshots,
         permissions: RunAllPermissions,
         capturedAt: Instant,
+        automaticIssue: RunAllStageOutcome?,
     ): List<DiagnosticEvidence> {
         val info = snapshots.sim
+        if (info == null) {
+            val captureReason = automaticIssue.toFailureReason() ?: EvidenceReasonCode.ERROR
+            return listOf(
+                notTested(
+                    categoryId = DiagnosticCategoryId.SIM,
+                    id = "inventory",
+                    capturedAt = capturedAt,
+                    reason = captureReason,
+                ),
+                notTested(
+                    categoryId = DiagnosticCategoryId.SIM,
+                    id = "network",
+                    capturedAt = capturedAt,
+                    reason = if (permissions.phone) captureReason else EvidenceReasonCode.PERMISSION_DENIED,
+                ),
+            )
+        }
         val inventoryClassification =
             DeviceObservationClassifier.classify(DeviceObservation.SimInventory(info.inventory))
         val inventory =
@@ -297,6 +390,9 @@ object RunAllSnapshotMapper {
                         capturedAt = capturedAt,
                         reason = EvidenceReasonCode.PERMISSION_DENIED,
                     )
+
+                info.dataNetworkType == NetworkGenerationCode.UNKNOWN ->
+                    unavailableReading(DiagnosticCategoryId.SIM, "network", capturedAt)
 
                 else ->
                     evidence(
@@ -387,6 +483,7 @@ object RunAllSnapshotMapper {
         permissions: RunAllPermissions,
         selections: RunAllSelections,
         hardware: RunAllHardwareProfile,
+        automaticIssue: RunAllStageOutcome?,
         capturedAt: Instant,
     ): List<DiagnosticEvidence> {
         val microphone =
@@ -397,6 +494,7 @@ object RunAllSnapshotMapper {
                         "microphone",
                         capturedAt,
                         EvidenceReasonCode.SKIPPED,
+                        EvidenceSource.USER_CONFIRMATION,
                     )
                 !hardware.microphoneAvailable ->
                     unavailable(
@@ -415,7 +513,14 @@ object RunAllSnapshotMapper {
                     evidence(
                         categoryId = DiagnosticCategoryId.AUDIO,
                         id = "microphone",
+                        source = EvidenceSource.AUTOMATIC_MEASUREMENT,
                         value = EvidenceValue.BooleanValue(true),
+                        capturedAt = capturedAt,
+                    )
+                manual.outcomes[RunAllStage.AUDIO] == RunAllStageOutcome.UNAVAILABLE ->
+                    unavailable(
+                        categoryId = DiagnosticCategoryId.AUDIO,
+                        id = "microphone",
                         capturedAt = capturedAt,
                     )
                 else ->
@@ -423,7 +528,19 @@ object RunAllSnapshotMapper {
                         categoryId = DiagnosticCategoryId.AUDIO,
                         id = "microphone",
                         capturedAt = capturedAt,
-                        reason = EvidenceReasonCode.ERROR,
+                        reason =
+                            automaticIssue.toFailureReason()
+                                ?: when (manual.outcomes[RunAllStage.AUDIO]) {
+                                    RunAllStageOutcome.TIMED_OUT -> EvidenceReasonCode.TIMEOUT
+                                    RunAllStageOutcome.SKIPPED -> EvidenceReasonCode.SKIPPED
+                                    else -> EvidenceReasonCode.ERROR
+                                },
+                        source =
+                            if (manual.outcomes[RunAllStage.AUDIO] == RunAllStageOutcome.SKIPPED) {
+                                EvidenceSource.USER_CONFIRMATION
+                            } else {
+                                EvidenceSource.AUTOMATIC_MEASUREMENT
+                            },
                     )
             }
         return listOf(
@@ -505,7 +622,7 @@ object RunAllSnapshotMapper {
                         "capture",
                         capturedAt,
                         EvidenceReasonCode.PERMISSION_DENIED,
-                        EvidenceSource.USER_CONFIRMATION,
+                        EvidenceSource.ANDROID_API,
                     )
             },
             evidence(
@@ -525,21 +642,77 @@ object RunAllSnapshotMapper {
                 unit = EvidenceUnitCode("count"),
                 capturedAt = capturedAt,
             ),
-            capture?.let {
-                evidence(
-                    categoryId = DiagnosticCategoryId.CAMERA,
-                    id = "capture_dimensions",
-                    value = EvidenceValue.LongValue(it.width.toLong() * it.height.toLong()),
-                    unit = EvidenceUnitCode("pixels"),
-                    capturedAt = Instant.ofEpochMilli(it.timestamp),
-                )
-            } ?: notTested(
-                categoryId = DiagnosticCategoryId.CAMERA,
-                id = "capture_dimensions",
+            cameraCaptureDimensionsEvidence(
+                capture = capture,
+                hasError = snapshots.camera.error != null,
+                outcome = manual.outcomes[RunAllStage.CAMERA],
+                included = selections.includeCamera,
+                hardwareAvailable = hardware.cameraAvailable,
+                permissionGranted = permissions.camera,
                 capturedAt = capturedAt,
             ),
         )
     }
+
+    @Suppress("LongParameterList") // Mirrors the conditions that determine whether a capture can exist.
+    private fun cameraCaptureDimensionsEvidence(
+        capture: CaptureResult?,
+        hasError: Boolean,
+        outcome: RunAllStageOutcome?,
+        included: Boolean,
+        hardwareAvailable: Boolean,
+        permissionGranted: Boolean,
+        capturedAt: Instant,
+    ): DiagnosticEvidence =
+        when {
+            !included ->
+                notTested(
+                    DiagnosticCategoryId.CAMERA,
+                    "capture_dimensions",
+                    capturedAt,
+                    EvidenceReasonCode.SKIPPED,
+                    EvidenceSource.USER_CONFIRMATION,
+                )
+            !hardwareAvailable || outcome == RunAllStageOutcome.UNAVAILABLE ->
+                unavailable(DiagnosticCategoryId.CAMERA, "capture_dimensions", capturedAt)
+            !permissionGranted ->
+                notTested(
+                    DiagnosticCategoryId.CAMERA,
+                    "capture_dimensions",
+                    capturedAt,
+                    EvidenceReasonCode.PERMISSION_DENIED,
+                )
+            outcome == RunAllStageOutcome.SKIPPED ->
+                notTested(
+                    DiagnosticCategoryId.CAMERA,
+                    "capture_dimensions",
+                    capturedAt,
+                    EvidenceReasonCode.SKIPPED,
+                    EvidenceSource.USER_CONFIRMATION,
+                )
+            capture != null ->
+                evidence(
+                    categoryId = DiagnosticCategoryId.CAMERA,
+                    id = "capture_dimensions",
+                    source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                    value = EvidenceValue.LongValue(capture.width.toLong() * capture.height.toLong()),
+                    unit = EvidenceUnitCode("pixels"),
+                    capturedAt = Instant.ofEpochMilli(capture.timestamp),
+                )
+            else ->
+                notTested(
+                    categoryId = DiagnosticCategoryId.CAMERA,
+                    id = "capture_dimensions",
+                    capturedAt = capturedAt,
+                    reason =
+                        when {
+                            hasError || outcome == RunAllStageOutcome.ERROR -> EvidenceReasonCode.ERROR
+                            outcome == RunAllStageOutcome.TIMED_OUT -> EvidenceReasonCode.TIMEOUT
+                            else -> EvidenceReasonCode.NOT_RUN
+                        },
+                    source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                )
+        }
 
     private fun cameraCaptureEvidence(
         completed: Boolean,
@@ -568,29 +741,37 @@ object RunAllSnapshotMapper {
             id = "capture",
             classification = classification,
             source =
+                when {
+                    !completed && outcome == RunAllStageOutcome.UNAVAILABLE -> EvidenceSource.ANDROID_API
+                    !completed && outcome == RunAllStageOutcome.SKIPPED -> EvidenceSource.USER_CONFIRMATION
+                    else -> EvidenceSource.AUTOMATIC_MEASUREMENT
+                },
+            applicability =
                 if (!completed && outcome == RunAllStageOutcome.UNAVAILABLE) {
-                    EvidenceSource.ANDROID_API
+                    Applicability.NOT_APPLICABLE
                 } else {
-                    EvidenceSource.USER_CONFIRMATION
+                    Applicability.APPLICABLE
                 },
             value = EvidenceValue.BooleanValue(true).takeIf { completed },
             capturedAt = capturedAt,
         )
     }
 
+    private val orientationChallenges =
+        setOf(
+            InteractiveChallenge.TILT_LEFT,
+            InteractiveChallenge.TILT_RIGHT,
+            InteractiveChallenge.FACE_DOWN,
+            InteractiveChallenge.FACE_UP,
+        )
+
     private fun sensorEvidence(
         snapshots: DiagnosticSnapshots,
         manual: ManualCheckResults,
+        hardware: RunAllHardwareProfile,
         capturedAt: Instant,
     ): List<DiagnosticEvidence> {
         val sensorState = snapshots.sensors
-        val orientationChallenges =
-            setOf(
-                InteractiveChallenge.TILT_LEFT,
-                InteractiveChallenge.TILT_RIGHT,
-                InteractiveChallenge.FACE_DOWN,
-                InteractiveChallenge.FACE_UP,
-            )
         return buildList {
             add(
                 if (sensorState.sensorCount > 0) {
@@ -662,7 +843,14 @@ object RunAllSnapshotMapper {
                 )
             }
             add(
-                if (sensorState.completedChallenges.any(orientationChallenges::contains)) {
+                if (!hardware.motionSensorAvailable) {
+                    unavailable(
+                        categoryId = DiagnosticCategoryId.SENSORS,
+                        id = "orientation",
+                        capturedAt = capturedAt,
+                        source = EvidenceSource.DERIVED,
+                    )
+                } else if (sensorState.completedChallenges.any(orientationChallenges::contains)) {
                     evidence(
                         categoryId = DiagnosticCategoryId.SENSORS,
                         id = "orientation",
@@ -685,8 +873,9 @@ object RunAllSnapshotMapper {
                     "motion",
                     completed = manual.sensorsCompleted,
                     hasError = sensorState.error != null,
-                    manual.outcomes[RunAllStage.SENSORS],
-                    capturedAt,
+                    outcome = manual.outcomes[RunAllStage.SENSORS],
+                    hardwareAvailable = hardware.motionSensorAvailable,
+                    capturedAt = capturedAt,
                 ),
             )
         }
@@ -697,11 +886,13 @@ object RunAllSnapshotMapper {
         completed: Boolean,
         hasError: Boolean,
         outcome: RunAllStageOutcome?,
+        hardwareAvailable: Boolean,
         capturedAt: Instant,
     ): DiagnosticEvidence {
         val measurementOutcome =
             when {
                 completed -> MeasurementOutcome.MEASURED
+                !hardwareAvailable -> MeasurementOutcome.HARDWARE_ABSENT
                 hasError || outcome == RunAllStageOutcome.ERROR -> MeasurementOutcome.ERROR
                 outcome == RunAllStageOutcome.TIMED_OUT -> MeasurementOutcome.TIMED_OUT
                 outcome == RunAllStageOutcome.SKIPPED -> MeasurementOutcome.SKIPPED
@@ -712,7 +903,19 @@ object RunAllSnapshotMapper {
             categoryId = DiagnosticCategoryId.SENSORS,
             id = id,
             classification = classifyMeasurement(MeasurementKind.SENSORS, measurementOutcome),
-            source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+            source =
+                when {
+                    !completed && (!hardwareAvailable || outcome == RunAllStageOutcome.UNAVAILABLE) ->
+                        EvidenceSource.ANDROID_API
+                    !completed && outcome == RunAllStageOutcome.SKIPPED -> EvidenceSource.USER_CONFIRMATION
+                    else -> EvidenceSource.AUTOMATIC_MEASUREMENT
+                },
+            applicability =
+                if (!completed && (!hardwareAvailable || outcome == RunAllStageOutcome.UNAVAILABLE)) {
+                    Applicability.NOT_APPLICABLE
+                } else {
+                    Applicability.APPLICABLE
+                },
             value = EvidenceValue.BooleanValue(true).takeIf { completed },
             capturedAt = capturedAt,
         )
@@ -720,8 +923,20 @@ object RunAllSnapshotMapper {
 
     private fun connectivityEvidence(
         snapshots: DiagnosticSnapshots,
+        automaticIssue: RunAllStageOutcome?,
         capturedAt: Instant,
     ): List<DiagnosticEvidence> {
+        automaticIssue?.toFailureReason()?.let { reason ->
+            return listOf("wifi", "bluetooth", "nfc", "nfc_hce", "gps", "mobile").map { id ->
+                notTested(
+                    categoryId = DiagnosticCategoryId.CONNECTIVITY,
+                    id = id,
+                    capturedAt = capturedAt,
+                    reason = reason,
+                    source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                )
+            }
+        }
         val connectivity = snapshots.connectivity
         return listOf(
             capabilityStateEvidence(
@@ -806,7 +1021,7 @@ object RunAllSnapshotMapper {
             applicability = if (gps.isAvailable) Applicability.APPLICABLE else Applicability.NOT_APPLICABLE,
             value =
                 when {
-                    !gps.isEnabled -> EvidenceValue.BooleanValue(false)
+                    gps.isAvailable && !gps.isEnabled -> EvidenceValue.BooleanValue(false)
                     gps.fixStatus == GpsFixStatus.FIXED -> gps.fixTimeMs?.let(EvidenceValue::LongValue)
                     else -> null
                 },
@@ -861,16 +1076,17 @@ object RunAllSnapshotMapper {
             )
         val temperatureClassification =
             DeviceObservationClassifier.classify(DeviceObservation.BatteryTemperature(battery.temperatureCelsius))
+        val finiteTemperature = battery.temperatureCelsius?.takeIf { it.isFinite() }
         val temperatureEvidence =
             classifiedEvidence(
                 categoryId = DiagnosticCategoryId.BATTERY,
                 id = "temperature",
                 classification = temperatureClassification,
                 confidence =
-                    if (battery.temperatureCelsius == null) Confidence.UNAVAILABLE else Confidence.HIGH,
+                    if (finiteTemperature == null) Confidence.UNAVAILABLE else Confidence.HIGH,
                 source = EvidenceSource.AUTOMATIC_MEASUREMENT,
-                value = battery.temperatureCelsius?.toDouble()?.let(EvidenceValue::DoubleValue),
-                unit = EvidenceUnitCode("celsius").takeIf { battery.temperatureCelsius != null },
+                value = finiteTemperature?.toDouble()?.let(EvidenceValue::DoubleValue),
+                unit = EvidenceUnitCode("celsius").takeIf { finiteTemperature != null },
                 capturedAt = capturedAt,
             )
         val levelEvidence =
@@ -993,33 +1209,48 @@ object RunAllSnapshotMapper {
     ): List<DiagnosticEvidence> {
         val haptic = snapshots.vibration.haptic
         val hasVibrator = haptic.hasVibrator
+        val hardwareReadFailed = VibrationCapabilityRead.HARDWARE in haptic.readErrors
         return listOf(
-            capabilityPresence(DiagnosticCategoryId.VIBRATION, "hardware", hasVibrator, capturedAt),
-            if (hasVibrator) {
+            if (hardwareReadFailed) {
+                vibrationReadError("hardware", capturedAt)
+            } else {
+                capabilityPresence(DiagnosticCategoryId.VIBRATION, "hardware", hasVibrator, capturedAt)
+            },
+            if (hardwareReadFailed) {
+                vibrationReadError("amplitude_control", capturedAt)
+            } else if (hasVibrator && VibrationCapabilityRead.AMPLITUDE_CONTROL !in haptic.readErrors) {
                 evidence(
                     categoryId = DiagnosticCategoryId.VIBRATION,
                     id = "amplitude_control",
                     value = EvidenceValue.BooleanValue(haptic.hasAmplitudeControl),
                     capturedAt = capturedAt,
                 )
-            } else {
+            } else if (!hasVibrator) {
                 unavailable(DiagnosticCategoryId.VIBRATION, "amplitude_control", capturedAt)
+            } else {
+                vibrationReadError("amplitude_control", capturedAt)
             },
             vibrationCapabilityEvidence(
                 id = "effects",
                 hasVibrator = hasVibrator,
+                hardwareReadFailed = hardwareReadFailed,
                 apiSupported = haptic.effectsApiSupported,
+                readFailed = VibrationCapabilityRead.EFFECTS in haptic.readErrors,
                 count = haptic.supportedEffectsCount,
                 capturedAt = capturedAt,
             ),
             vibrationCapabilityEvidence(
                 id = "primitives",
                 hasVibrator = hasVibrator,
+                hardwareReadFailed = hardwareReadFailed,
                 apiSupported = haptic.primitivesApiSupported,
+                readFailed = VibrationCapabilityRead.PRIMITIVES in haptic.readErrors,
                 count = haptic.supportedPrimitivesCount,
                 capturedAt = capturedAt,
             ),
-            if (hasVibrator) {
+            if (hardwareReadFailed) {
+                vibrationReadError("motor", capturedAt)
+            } else if (hasVibrator) {
                 confirmationEvidence(
                     DiagnosticCategoryId.VIBRATION,
                     "motor",
@@ -1041,11 +1272,14 @@ object RunAllSnapshotMapper {
     private fun vibrationCapabilityEvidence(
         id: String,
         hasVibrator: Boolean,
+        hardwareReadFailed: Boolean,
         apiSupported: Boolean,
+        readFailed: Boolean,
         count: Int,
         capturedAt: Instant,
     ): DiagnosticEvidence =
         when {
+            hardwareReadFailed || readFailed -> vibrationReadError(id, capturedAt)
             !hasVibrator -> unavailable(DiagnosticCategoryId.VIBRATION, id, capturedAt)
             !apiSupported ->
                 classifiedEvidence(
@@ -1069,6 +1303,17 @@ object RunAllSnapshotMapper {
                     capturedAt = capturedAt,
                 )
         }
+
+    private fun vibrationReadError(
+        id: String,
+        capturedAt: Instant,
+    ): DiagnosticEvidence =
+        notTested(
+            categoryId = DiagnosticCategoryId.VIBRATION,
+            id = id,
+            capturedAt = capturedAt,
+            reason = EvidenceReasonCode.ERROR,
+        )
 
     private fun thermalEvidence(
         snapshots: DiagnosticSnapshots,
@@ -1174,9 +1419,16 @@ object RunAllSnapshotMapper {
     private fun storageEvidence(
         snapshots: DiagnosticSnapshots,
         selections: RunAllSelections,
+        automaticIssue: RunAllStageOutcome?,
         capturedAt: Instant,
     ): List<DiagnosticEvidence> {
         val state = snapshots.storage
+        val infoFailureReason =
+            if (state.infoError != null) {
+                EvidenceReasonCode.ERROR
+            } else {
+                automaticIssue.toFailureReason() ?: EvidenceReasonCode.ERROR
+            }
         val infoEvidence =
             state.info?.let { info ->
                 val infoCapturedAt = info.capturedAt
@@ -1213,23 +1465,30 @@ object RunAllSnapshotMapper {
                     ),
                 )
             } ?: listOf(
-                storageUnavailable("total", capturedAt),
-                storageUnavailable("used", capturedAt),
-                storageUnavailable("available", capturedAt),
-                storageUnavailable("usage", capturedAt),
-                storageUnavailable("internal_access", capturedAt),
-                storageUnavailable("volume_count", capturedAt),
-                storageUnavailable("mounted_volume_count", capturedAt),
-                storageUnavailable("removable_volume_count", capturedAt),
+                storageUnavailable("total", capturedAt, infoFailureReason),
+                storageUnavailable("used", capturedAt, infoFailureReason),
+                storageUnavailable("available", capturedAt, infoFailureReason),
+                storageUnavailable("usage", capturedAt, infoFailureReason),
+                storageUnavailable("internal_access", capturedAt, infoFailureReason),
+                storageUnavailable("volume_count", capturedAt, infoFailureReason),
+                storageUnavailable("mounted_volume_count", capturedAt, infoFailureReason),
+                storageUnavailable("removable_volume_count", capturedAt, infoFailureReason),
             )
 
-        return infoEvidence + storageBenchmarkEvidence(state, selections.includeStorageBenchmark, capturedAt)
+        return infoEvidence +
+            storageBenchmarkEvidence(
+                state,
+                selections.includeStorageBenchmark,
+                automaticIssue,
+                capturedAt,
+            )
     }
 
     @Suppress("kotlin:S3776") // Benchmark validity and failure reasons form one evidence decision.
     private fun storageBenchmarkEvidence(
         state: StorageTestState,
         included: Boolean,
+        automaticIssue: RunAllStageOutcome?,
         capturedAt: Instant,
     ): List<DiagnosticEvidence> {
         val result = state.benchmarkResult
@@ -1240,7 +1499,24 @@ object RunAllSnapshotMapper {
         val hasRates = writeRate != null && readRate != null
         val allowsRates = resultError == null || resultError == StorageBenchmarkErrorCode.CLEANUP_FAILED
         val rateEvidence =
-            if (hasRates && benchmarkCapturedAt != null && allowsRates) {
+            if (!included) {
+                listOf(
+                    notTested(
+                        categoryId = DiagnosticCategoryId.STORAGE,
+                        id = "sequential_write",
+                        capturedAt = capturedAt,
+                        reason = EvidenceReasonCode.SKIPPED,
+                        source = EvidenceSource.USER_CONFIRMATION,
+                    ),
+                    notTested(
+                        categoryId = DiagnosticCategoryId.STORAGE,
+                        id = "sequential_read",
+                        capturedAt = capturedAt,
+                        reason = EvidenceReasonCode.SKIPPED,
+                        source = EvidenceSource.USER_CONFIRMATION,
+                    ),
+                )
+            } else if (hasRates && benchmarkCapturedAt != null && allowsRates) {
                 listOf(
                     storageRateEvidence(
                         "sequential_write",
@@ -1254,12 +1530,7 @@ object RunAllSnapshotMapper {
                     ),
                 )
             } else {
-                val reason =
-                    if (included) {
-                        storageBenchmarkReason(state)
-                    } else {
-                        EvidenceReasonCode.SKIPPED
-                    }
+                val reason = automaticIssue.toFailureReason() ?: storageBenchmarkReason(state)
                 listOf(
                     notTested(
                         categoryId = DiagnosticCategoryId.STORAGE,
@@ -1279,6 +1550,7 @@ object RunAllSnapshotMapper {
             }
         val conditions =
             result
+                ?.takeIf { included }
                 ?.let {
                     listOf(
                         storageLongEvidence("benchmark_data_size", it.dataSizeBytes, "bytes", it.capturedAt),
@@ -1304,6 +1576,7 @@ object RunAllSnapshotMapper {
         when {
             state.benchmarkError == StorageBenchmarkErrorCode.INSUFFICIENT_SPACE ->
                 EvidenceReasonCode.INSUFFICIENT_SPACE
+            state.benchmarkError == StorageBenchmarkErrorCode.TIMEOUT -> EvidenceReasonCode.TIMEOUT
             state.benchmarkPhase == StorageBenchmarkPhase.SKIPPED -> EvidenceReasonCode.SKIPPED
             state.benchmarkPhase == StorageBenchmarkPhase.CANCELLED -> EvidenceReasonCode.CANCELLED
             state.benchmarkPhase == StorageBenchmarkPhase.ERROR -> EvidenceReasonCode.ERROR
@@ -1355,13 +1628,13 @@ object RunAllSnapshotMapper {
     private fun storageUnavailable(
         id: String,
         capturedAt: Instant,
+        reason: EvidenceReasonCode,
     ): DiagnosticEvidence =
-        classifiedEvidence(
+        notTested(
             categoryId = DiagnosticCategoryId.STORAGE,
             id = id,
-            classification = classifyMeasurement(MeasurementKind.GENERIC, MeasurementOutcome.ERROR),
-            confidence = Confidence.UNAVAILABLE,
             capturedAt = capturedAt,
+            reason = reason,
         )
 
     private fun buttonEvidence(
@@ -1382,7 +1655,15 @@ object RunAllSnapshotMapper {
                 categoryId = DiagnosticCategoryId.BUTTONS,
                 id = "volume",
                 classification = volumeClassification,
-                source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                source =
+                    if (
+                        manual.buttons != true &&
+                        manual.outcomes[RunAllStage.BUTTONS] == RunAllStageOutcome.SKIPPED
+                    ) {
+                        EvidenceSource.USER_CONFIRMATION
+                    } else {
+                        EvidenceSource.AUTOMATIC_MEASUREMENT
+                    },
                 value = EvidenceValue.BooleanValue(true).takeIf { volumeClassification.state == ObservationState.PASS },
                 capturedAt = capturedAt,
             )
@@ -1496,11 +1777,11 @@ object RunAllSnapshotMapper {
     ): DiagnosticEvidence {
         val classification =
             when {
+                outcome == RunAllStageOutcome.SKIPPED ->
+                    classifyMeasurement(MeasurementKind.GENERIC, MeasurementOutcome.SKIPPED)
                 state.authResult != AuthResult.NONE -> classifyBiometric(state.authResult)
                 outcome == RunAllStageOutcome.UNAVAILABLE ->
                     classifyMeasurement(MeasurementKind.GENERIC, MeasurementOutcome.HARDWARE_ABSENT)
-                outcome == RunAllStageOutcome.SKIPPED ->
-                    classifyMeasurement(MeasurementKind.GENERIC, MeasurementOutcome.SKIPPED)
                 outcome == RunAllStageOutcome.TIMED_OUT ->
                     classifyMeasurement(MeasurementKind.GENERIC, MeasurementOutcome.TIMED_OUT)
                 outcome == RunAllStageOutcome.ERROR ->
@@ -1511,7 +1792,18 @@ object RunAllSnapshotMapper {
             categoryId = DiagnosticCategoryId.BIOMETRICS,
             id = "authentication",
             classification = classification,
-            source = EvidenceSource.ANDROID_API,
+            source =
+                if (outcome == RunAllStageOutcome.SKIPPED) {
+                    EvidenceSource.USER_CONFIRMATION
+                } else {
+                    EvidenceSource.ANDROID_API
+                },
+            applicability =
+                if (state.authResult == AuthResult.NONE && outcome == RunAllStageOutcome.UNAVAILABLE) {
+                    Applicability.NOT_APPLICABLE
+                } else {
+                    Applicability.APPLICABLE
+                },
             value = EvidenceValue.BooleanValue(true).takeIf { state.authResult == AuthResult.SUCCESS },
             capturedAt = capturedAt,
         )
@@ -1543,7 +1835,18 @@ object RunAllSnapshotMapper {
             categoryId = categoryId,
             id = id,
             classification = classification,
-            source = EvidenceSource.USER_CONFIRMATION,
+            source =
+                if (value == null && outcome == RunAllStageOutcome.UNAVAILABLE) {
+                    EvidenceSource.ANDROID_API
+                } else {
+                    EvidenceSource.USER_CONFIRMATION
+                },
+            applicability =
+                if (value == null && outcome == RunAllStageOutcome.UNAVAILABLE) {
+                    Applicability.NOT_APPLICABLE
+                } else {
+                    Applicability.APPLICABLE
+                },
             value = value?.let(EvidenceValue::BooleanValue),
             capturedAt = capturedAt,
         )
@@ -1656,7 +1959,12 @@ object RunAllSnapshotMapper {
             categoryId = categoryId,
             id = id,
             status = classification.toDiagnosticStatus(informationalPass),
-            confidence = confidence,
+            confidence =
+                if (classification.state == ObservationState.NOT_MEASURED && value == null) {
+                    Confidence.UNAVAILABLE
+                } else {
+                    confidence
+                },
             source = source,
             applicability = applicability,
             reason = classification.toEvidenceReasonCode(),

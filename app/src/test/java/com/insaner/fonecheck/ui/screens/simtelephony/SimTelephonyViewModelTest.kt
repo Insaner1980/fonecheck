@@ -16,6 +16,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
@@ -72,6 +73,27 @@ class SimTelephonyViewModelTest {
             )
             assertFalse(viewModel.state.value.isLoading)
             assertNotNull(viewModel.state.value.error)
+        }
+
+    @Test
+    fun queuedCaptureCanBeCancelledBeforeItStarts() =
+        runTest(dispatcher.scheduler) {
+            var captureCount = 0
+            val viewModel =
+                SimTelephonyViewModel(
+                    provider =
+                        SimTelephonyProvider {
+                            captureCount += 1
+                            simInfo()
+                        },
+                    ioDispatcher = dispatcher,
+                )
+
+            viewModel.cancelCapture()
+            advanceUntilIdle()
+
+            assertEquals(0, captureCount)
+            assertNull(viewModel.state.value.info)
         }
 
     private fun simInfo() =

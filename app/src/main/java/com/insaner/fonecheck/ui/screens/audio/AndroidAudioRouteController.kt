@@ -20,6 +20,7 @@ class AndroidAudioRouteController(
             ).setOnAudioFocusChangeListener {}
             .build()
     private var previousMode = AudioManager.MODE_NORMAL
+    private var previousSpeakerphoneOn = false
     private var earpieceRouteActive = false
 
     override fun request(route: AudioOutputRoute): Boolean {
@@ -28,30 +29,52 @@ class AndroidAudioRouteController(
         }
         if (route == AudioOutputRoute.EARPIECE) {
             previousMode = audioManager.mode
-            audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
-            earpieceRouteActive = true
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val earpiece =
-                    audioManager.availableCommunicationDevices.firstOrNull {
-                        it.type == android.media.AudioDeviceInfo.TYPE_BUILTIN_EARPIECE
+            val routed =
+                try {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                        @Suppress("DEPRECATION")
+                        previousSpeakerphoneOn = audioManager.isSpeakerphoneOn
                     }
-                if (earpiece != null) audioManager.setCommunicationDevice(earpiece)
-            } else {
-                @Suppress("DEPRECATION")
-                audioManager.isSpeakerphoneOn = false
+                    audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        val earpiece =
+                            audioManager.availableCommunicationDevices.firstOrNull {
+                                it.type == android.media.AudioDeviceInfo.TYPE_BUILTIN_EARPIECE
+                            }
+                        earpiece != null && audioManager.setCommunicationDevice(earpiece)
+                    } else {
+                        @Suppress("DEPRECATION")
+                        audioManager.isSpeakerphoneOn = false
+                        true
+                    }
+                } catch (_: RuntimeException) {
+                    false
+                }
+            if (!routed) {
+                restoreEarpieceRoute()
+                audioManager.abandonAudioFocusRequest(focusRequest)
+                return false
             }
+            earpieceRouteActive = true
         }
         return true
     }
 
     override fun clear() {
         if (earpieceRouteActive) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                audioManager.clearCommunicationDevice()
-            }
-            audioManager.mode = previousMode
+            restoreEarpieceRoute()
             earpieceRouteActive = false
         }
         audioManager.abandonAudioFocusRequest(focusRequest)
+    }
+
+    private fun restoreEarpieceRoute() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            runCatching { audioManager.clearCommunicationDevice() }
+        } else {
+            @Suppress("DEPRECATION")
+            runCatching { audioManager.isSpeakerphoneOn = previousSpeakerphoneOn }
+        }
+        runCatching { audioManager.mode = previousMode }
     }
 }

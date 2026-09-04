@@ -148,7 +148,7 @@ class BatteryTestViewModel
                 intent
                     .getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0)
                     .takeIf { intent.hasExtra(BatteryManager.EXTRA_TEMPERATURE) }
-                    ?.div(10.0f)
+                    .let(BatteryTemperatureNormalizer::normalize)
             val health =
                 intent.getIntExtra(
                     BatteryManager.EXTRA_HEALTH,

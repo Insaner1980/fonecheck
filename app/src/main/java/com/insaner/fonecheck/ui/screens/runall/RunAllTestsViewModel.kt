@@ -96,6 +96,7 @@ data class RunAllTestsState(
     val hardware: RunAllHardwareProfile = RunAllHardwareProfile(),
     val plan: RunAllPlan = RunAllPlan.EMPTY,
     val manualChecks: ManualCheckResults = ManualCheckResults(),
+    val automaticIssues: Map<DiagnosticCategoryId, RunAllStageOutcome> = emptyMap(),
     val displayColorIndex: Int = 0,
     val cameraIds: List<String> = emptyList(),
     val cameraIndex: Int = 0,
@@ -233,6 +234,19 @@ class RunAllTestsViewModel
 
         fun onAutomaticChecksComplete(token: Long) {
             finishStage(token, RunAllStage.AUTOMATIC, RunAllStageOutcome.COMPLETED)
+        }
+
+        fun reportAutomaticIssue(
+            token: Long,
+            categoryId: DiagnosticCategoryId,
+            issue: RunAllStageOutcome,
+        ) {
+            if (!isCurrentStage(token, RunAllStage.AUTOMATIC) || claimedStageToken != token) return
+            require(issue == RunAllStageOutcome.TIMED_OUT || issue == RunAllStageOutcome.ERROR)
+            _state.value =
+                _state.value.copy(
+                    automaticIssues = _state.value.automaticIssues + (categoryId to issue),
+                )
         }
 
         fun nextDisplayColor(

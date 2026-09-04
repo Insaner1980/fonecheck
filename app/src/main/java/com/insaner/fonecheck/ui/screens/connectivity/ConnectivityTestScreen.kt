@@ -524,7 +524,7 @@ internal fun SatelliteSection(satellites: List<GpsSatelliteInfo>) {
                     stringResource(
                         R.string.conn_gps_satellite_label,
                         uiNumber(satellite.svid),
-                        satellite.constellation,
+                        satellite.constellation ?: stringResource(R.string.value_unavailable_short),
                     ),
                 value =
                     stringResource(

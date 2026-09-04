@@ -22,6 +22,7 @@ import com.insaner.fonecheck.domain.model.DiagnosticEvidence
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceSource
+import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.ReportAppContext
 import com.insaner.fonecheck.domain.model.ReportDeviceContext
 import com.insaner.fonecheck.domain.model.ReportKind
@@ -50,7 +51,7 @@ class ReportComparisonScreenTest {
                 coverage = 75,
                 evidence =
                     listOf(
-                        evidence("security", DiagnosticStatus.PASS),
+                        evidence("security", DiagnosticStatus.PASS, 10),
                     ),
             )
         val after =
@@ -60,8 +61,8 @@ class ReportComparisonScreenTest {
                 coverage = 100,
                 evidence =
                     listOf(
-                        evidence("security", DiagnosticStatus.NOT_AVAILABLE),
-                        evidence("added", DiagnosticStatus.NOT_AVAILABLE),
+                        evidence("security", DiagnosticStatus.NOT_AVAILABLE, 11),
+                        evidence("added", DiagnosticStatus.NOT_AVAILABLE, 42),
                     ),
             )
 
@@ -89,6 +90,7 @@ class ReportComparisonScreenTest {
             .onNodeWithText(context.getString(R.string.comparison_change_newly_unavailable))
             .assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.comparison_change_added)).assertIsDisplayed()
+        composeRule.onNodeWithText("42").performScrollTo().assertIsDisplayed()
         composeRule
             .onNodeWithText(context.getString(R.string.comparison_disclaimer))
             .performScrollTo()
@@ -126,11 +128,44 @@ class ReportComparisonScreenTest {
             }
         }
         composeRule.onNodeWithText(context.getString(R.string.comparison_error)).assertIsDisplayed()
+
+        composeRule.setContent {
+            FonecheckTheme {
+                ReportComparisonScreen(
+                    state =
+                        ReportComparisonState.Issues(
+                            first = ComparisonReportIssue.NOT_FOUND,
+                            second = ComparisonReportIssue.CORRUPT_DATA,
+                        ),
+                    onRetry = {},
+                    onBack = {},
+                )
+            }
+        }
+        composeRule
+            .onNodeWithText(
+                context.getString(
+                    R.string.comparison_report_issue,
+                    context.getString(R.string.comparison_first_report),
+                    context.getString(R.string.report_not_found),
+                ),
+                substring = true,
+            ).assertIsDisplayed()
+        composeRule
+            .onNodeWithText(
+                context.getString(
+                    R.string.comparison_report_issue,
+                    context.getString(R.string.comparison_second_report),
+                    context.getString(R.string.report_corrupt),
+                ),
+                substring = true,
+            ).assertIsDisplayed()
     }
 
     private fun evidence(
         suffix: String,
         status: DiagnosticStatus,
+        value: Int? = null,
     ) = DiagnosticEvidence(
         categoryId = DiagnosticCategoryId.DEVICE,
         checkId = DiagnosticCheckId(DiagnosticCategoryId.DEVICE, "device.$suffix"),
@@ -138,6 +173,7 @@ class ReportComparisonScreenTest {
         confidence = Confidence.HIGH,
         source = EvidenceSource.ANDROID_API,
         applicability = Applicability.APPLICABLE,
+        value = value?.let { EvidenceValue.IntValue(it) },
         capturedAt = Instant.parse("2026-08-08T10:00:00Z"),
     )
 

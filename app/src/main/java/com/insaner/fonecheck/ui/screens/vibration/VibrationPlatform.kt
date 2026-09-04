@@ -36,6 +36,13 @@ enum class VibrationPrimitiveCode {
     LOW_TICK,
 }
 
+enum class VibrationCapabilityRead {
+    HARDWARE,
+    AMPLITUDE_CONTROL,
+    EFFECTS,
+    PRIMITIVES,
+}
+
 data class HapticCapabilityState(
     val hasVibrator: Boolean = false,
     val hasAmplitudeControl: Boolean = false,
@@ -43,6 +50,7 @@ data class HapticCapabilityState(
     val supportedEffects: List<VibrationEffectCode> = emptyList(),
     val primitivesApiSupported: Boolean = false,
     val supportedPrimitives: List<VibrationPrimitiveCode> = emptyList(),
+    val readErrors: Set<VibrationCapabilityRead> = emptySet(),
 ) {
     val supportedEffectsCount: Int get() = supportedEffects.size
     val supportedPrimitivesCount: Int get() = supportedPrimitives.size
@@ -51,7 +59,7 @@ data class HapticCapabilityState(
 interface VibrationPlatform {
     val capabilities: HapticCapabilityState
 
-    fun play(pattern: VibrationPattern)
+    fun play(pattern: VibrationPattern): Boolean
 
     fun cancel()
 }
@@ -65,8 +73,8 @@ class AndroidVibrationPlatform
 
         override val capabilities: HapticCapabilityState = readCapabilities()
 
-        override fun play(pattern: VibrationPattern) {
-            val currentVibrator = vibrator ?: return
+        override fun play(pattern: VibrationPattern): Boolean {
+            val currentVibrator = vibrator ?: return false
             val effect =
                 when (pattern) {
                     VibrationPattern.SHORT,
@@ -79,7 +87,7 @@ class AndroidVibrationPlatform
                     VibrationPattern.PATTERN ->
                         VibrationEffect.createWaveform(longArrayOf(0L, 100L, 100L, 200L, 100L, 300L), -1)
                 }
-            runCatching { currentVibrator.vibrate(effect) }
+            return runCatching { currentVibrator.vibrate(effect) }.isSuccess
         }
 
         override fun cancel() {
@@ -88,26 +96,38 @@ class AndroidVibrationPlatform
 
         private fun readCapabilities(): HapticCapabilityState {
             val currentVibrator = vibrator ?: return HapticCapabilityState()
-            val hasVibrator = runCatching { currentVibrator.hasVibrator() }.getOrDefault(false)
+            val hasVibratorResult = runCatching { currentVibrator.hasVibrator() }
+            val hasVibrator =
+                hasVibratorResult.getOrNull()
+                    ?: return HapticCapabilityState(readErrors = setOf(VibrationCapabilityRead.HARDWARE))
             if (!hasVibrator) return HapticCapabilityState()
             val effectsApiSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
             val primitivesApiSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+            val amplitudeControlResult = runCatching { currentVibrator.hasAmplitudeControl() }
+            val effectsResult =
+                if (effectsApiSupported) {
+                    runCatching { readSupportedEffects(currentVibrator) }
+                } else {
+                    Result.success(emptyList<VibrationEffectCode>())
+                }
+            val primitivesResult =
+                if (primitivesApiSupported) {
+                    runCatching { readSupportedPrimitives(currentVibrator) }
+                } else {
+                    Result.success(emptyList<VibrationPrimitiveCode>())
+                }
             return HapticCapabilityState(
                 hasVibrator = true,
-                hasAmplitudeControl = runCatching { currentVibrator.hasAmplitudeControl() }.getOrDefault(false),
+                hasAmplitudeControl = amplitudeControlResult.getOrDefault(false),
                 effectsApiSupported = effectsApiSupported,
-                supportedEffects =
-                    if (effectsApiSupported) {
-                        readSupportedEffects(currentVibrator)
-                    } else {
-                        emptyList()
-                    },
+                supportedEffects = effectsResult.getOrDefault(emptyList()),
                 primitivesApiSupported = primitivesApiSupported,
-                supportedPrimitives =
-                    if (primitivesApiSupported) {
-                        readSupportedPrimitives(currentVibrator)
-                    } else {
-                        emptyList()
+                supportedPrimitives = primitivesResult.getOrDefault(emptyList()),
+                readErrors =
+                    buildSet {
+                        if (amplitudeControlResult.isFailure) add(VibrationCapabilityRead.AMPLITUDE_CONTROL)
+                        if (effectsResult.isFailure) add(VibrationCapabilityRead.EFFECTS)
+                        if (primitivesResult.isFailure) add(VibrationCapabilityRead.PRIMITIVES)
                     },
             )
         }
@@ -115,40 +135,33 @@ class AndroidVibrationPlatform
         @RequiresApi(Build.VERSION_CODES.R)
         private fun readSupportedEffects(vibrator: Vibrator): List<VibrationEffectCode> {
             val support =
-                runCatching {
-                    vibrator.areEffectsSupported(
-                        VibrationEffect.EFFECT_CLICK,
-                        VibrationEffect.EFFECT_DOUBLE_CLICK,
-                        VibrationEffect.EFFECT_HEAVY_CLICK,
-                        VibrationEffect.EFFECT_TICK,
-                    )
-                }.getOrNull()
-            return support
-                ?.let {
-                    VibrationCapabilityPolicy.supportedEffects(
-                        results = it,
-                        supportedValue = Vibrator.VIBRATION_EFFECT_SUPPORT_YES,
-                    )
-                }.orEmpty()
+                vibrator.areEffectsSupported(
+                    VibrationEffect.EFFECT_CLICK,
+                    VibrationEffect.EFFECT_DOUBLE_CLICK,
+                    VibrationEffect.EFFECT_HEAVY_CLICK,
+                    VibrationEffect.EFFECT_TICK,
+                )
+            return VibrationCapabilityPolicy.supportedEffects(
+                results = support,
+                supportedValue = Vibrator.VIBRATION_EFFECT_SUPPORT_YES,
+            )
         }
 
         @SuppressLint("InlinedApi")
         @RequiresApi(Build.VERSION_CODES.R)
         private fun readSupportedPrimitives(vibrator: Vibrator): List<VibrationPrimitiveCode> {
             val support =
-                runCatching {
-                    vibrator.arePrimitivesSupported(
-                        VibrationEffect.Composition.PRIMITIVE_CLICK,
-                        VibrationEffect.Composition.PRIMITIVE_THUD,
-                        VibrationEffect.Composition.PRIMITIVE_SPIN,
-                        VibrationEffect.Composition.PRIMITIVE_QUICK_RISE,
-                        VibrationEffect.Composition.PRIMITIVE_SLOW_RISE,
-                        VibrationEffect.Composition.PRIMITIVE_QUICK_FALL,
-                        VibrationEffect.Composition.PRIMITIVE_TICK,
-                        VibrationEffect.Composition.PRIMITIVE_LOW_TICK,
-                    )
-                }.getOrNull()
-            return support?.let(VibrationCapabilityPolicy::supportedPrimitives).orEmpty()
+                vibrator.arePrimitivesSupported(
+                    VibrationEffect.Composition.PRIMITIVE_CLICK,
+                    VibrationEffect.Composition.PRIMITIVE_THUD,
+                    VibrationEffect.Composition.PRIMITIVE_SPIN,
+                    VibrationEffect.Composition.PRIMITIVE_QUICK_RISE,
+                    VibrationEffect.Composition.PRIMITIVE_SLOW_RISE,
+                    VibrationEffect.Composition.PRIMITIVE_QUICK_FALL,
+                    VibrationEffect.Composition.PRIMITIVE_TICK,
+                    VibrationEffect.Composition.PRIMITIVE_LOW_TICK,
+                )
+            return VibrationCapabilityPolicy.supportedPrimitives(support)
         }
 
         private fun resolveVibrator(context: Context): Vibrator? =

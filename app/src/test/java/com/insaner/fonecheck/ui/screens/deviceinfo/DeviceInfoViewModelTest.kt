@@ -96,5 +96,26 @@ class DeviceInfoViewModelTest {
             assertNotNull(viewModel.state.value.error)
         }
 
+    @Test
+    fun queuedCaptureCanBeCancelledBeforeItStarts() =
+        runTest(dispatcher.scheduler) {
+            var captureCount = 0
+            val viewModel =
+                DeviceInfoViewModel(
+                    deviceInfoProvider =
+                        DeviceInfoProvider {
+                            captureCount += 1
+                            device("late")
+                        },
+                    ioDispatcher = dispatcher,
+                )
+
+            viewModel.cancelCapture()
+            advanceUntilIdle()
+
+            assertEquals(0, captureCount)
+            assertNull(viewModel.state.value.info)
+        }
+
     private fun device(model: String) = testDeviceInfo(model = model)
 }

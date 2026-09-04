@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -42,6 +43,26 @@ class StorageTestViewModelTest {
             assertEquals(expected, viewModel.state.value.info)
             assertEquals(false, viewModel.state.value.isInfoLoading)
             assertNull(viewModel.state.value.infoError)
+        }
+
+    @Test
+    fun queuedInformationCaptureCanBeCancelledBeforeItStarts() =
+        runTest(dispatcher.scheduler) {
+            var captureCount = 0
+            val viewModel =
+                viewModel(
+                    infoProvider =
+                        StorageInfoProvider {
+                            captureCount += 1
+                            storageInfo()
+                        },
+                )
+
+            viewModel.cancelInfoCapture()
+            advanceUntilIdle()
+
+            assertEquals(0, captureCount)
+            assertNull(viewModel.state.value.info)
         }
 
     @Test
@@ -84,6 +105,22 @@ class StorageTestViewModelTest {
             runCurrent()
 
             assertEquals(StorageBenchmarkPhase.SKIPPED, viewModel.state.value.benchmarkPhase)
+            assertNull(viewModel.state.value.benchmarkResult)
+        }
+
+    @Test
+    fun benchmarkTimeoutHasADistinctTerminalReason() =
+        runTest(dispatcher.scheduler) {
+            val viewModel = viewModel(runner = StorageBenchmarkRunner { awaitCancellation() })
+            advanceUntilIdle()
+            viewModel.startBenchmark()
+            runCurrent()
+
+            advanceTimeBy(45_001L)
+            runCurrent()
+
+            assertEquals(StorageBenchmarkPhase.ERROR, viewModel.state.value.benchmarkPhase)
+            assertEquals(StorageBenchmarkErrorCode.TIMEOUT, viewModel.state.value.benchmarkError)
             assertNull(viewModel.state.value.benchmarkResult)
         }
 

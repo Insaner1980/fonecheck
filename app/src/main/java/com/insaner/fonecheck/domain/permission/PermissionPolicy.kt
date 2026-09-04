@@ -7,6 +7,7 @@ enum class AppPermission {
     FINE_LOCATION,
     PHONE,
     BLUETOOTH_CONNECT,
+    ACTIVITY_RECOGNITION,
 }
 
 enum class PermissionKind {
@@ -15,6 +16,7 @@ enum class PermissionKind {
     LOCATION,
     PHONE,
     BLUETOOTH,
+    ACTIVITY_RECOGNITION,
 }
 
 enum class PermissionState {
@@ -70,7 +72,14 @@ object PermissionPolicy {
                 } else {
                     emptySet()
                 }
+            PermissionKind.ACTIVITY_RECOGNITION ->
+                if (sdkInt >= ANDROID_10_API_LEVEL) {
+                    setOf(AppPermission.ACTIVITY_RECOGNITION)
+                } else {
+                    emptySet()
+                }
         }
 
+    private const val ANDROID_10_API_LEVEL = 29
     private const val ANDROID_12_API_LEVEL = 31
 }

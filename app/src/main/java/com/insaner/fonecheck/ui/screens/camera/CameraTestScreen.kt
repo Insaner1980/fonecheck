@@ -40,12 +40,12 @@ import com.insaner.fonecheck.localization.observationReasonStringRes
 import com.insaner.fonecheck.ui.classification.classifyCameraConfirmation
 import com.insaner.fonecheck.ui.components.ButtonRow
 import com.insaner.fonecheck.ui.components.DataRow
-import com.insaner.fonecheck.ui.components.IndeterminateRule
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.ManualResultButtons
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.PermissionStatusCard
 import com.insaner.fonecheck.ui.components.PrimaryButton
+import com.insaner.fonecheck.ui.components.ScreenLoadingNote
 import com.insaner.fonecheck.ui.components.ScreenStateCard
 import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.components.SecondaryButton
@@ -216,7 +216,7 @@ private fun CameraPreviewSection(
                 )
             }
             if (state.isCapturing) {
-                IndeterminateRule()
+                ScreenLoadingNote(message = stringResource(R.string.camera_capturing))
             }
             ButtonRow { buttonModifier ->
                 PrimaryButton(
