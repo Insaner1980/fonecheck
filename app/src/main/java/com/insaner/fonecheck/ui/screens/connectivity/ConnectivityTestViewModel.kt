@@ -309,7 +309,7 @@ class ConnectivityTestViewModel
 
             val linkProperties =
                 if (wifiCapabilities != null) {
-                    network?.let(connectivityManager::getLinkProperties)
+                    connectivityManager.getLinkProperties(network)
                 } else {
                     null
                 }

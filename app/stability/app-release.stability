@@ -428,12 +428,11 @@ private fun com.insaner.fonecheck.ui.screens.audio.FrequencyButton(frequency: ko
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.audio.HeadphoneJackSection(state: com.insaner.fonecheck.ui.screens.audio.AudioTestState, viewModel: com.insaner.fonecheck.ui.screens.audio.AudioTestViewModel): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.audio.HeadphoneJackSection(state: com.insaner.fonecheck.ui.screens.audio.AudioTestState): kotlin.Unit
   skippable: false
   restartable: true
   params:
     - state: RUNTIME (requires runtime check)
-    - viewModel: STABLE (stability configuration file type)
 
 @Composable
 private fun com.insaner.fonecheck.ui.screens.audio.MicrophoneTestSection(state: com.insaner.fonecheck.ui.screens.audio.AudioTestState, viewModel: com.insaner.fonecheck.ui.screens.audio.AudioTestViewModel, permissionState: com.insaner.fonecheck.domain.permission.PermissionState, onRequestPermission: kotlin.Function0<kotlin.Unit>, onOpenSettings: kotlin.Function0<kotlin.Unit>): kotlin.Unit

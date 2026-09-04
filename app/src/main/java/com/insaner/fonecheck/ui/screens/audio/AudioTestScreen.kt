@@ -144,7 +144,7 @@ fun AudioTestScreen(
                 onOpenSettings = microphonePermission::openSettings,
             )
         }
-        item { HeadphoneJackSection(state, viewModel) }
+        item { HeadphoneJackSection(state) }
     }
 }
 
@@ -399,10 +399,7 @@ private fun AudioManualResult(
 }
 
 @Composable
-private fun HeadphoneJackSection(
-    state: AudioTestState,
-    viewModel: AudioTestViewModel,
-) {
+private fun HeadphoneJackSection(state: AudioTestState) {
     AudioSection(title = stringResource(R.string.audio_headphone_title)) {
         Note(stringResource(R.string.audio_headphone_description))
         DataRow(
