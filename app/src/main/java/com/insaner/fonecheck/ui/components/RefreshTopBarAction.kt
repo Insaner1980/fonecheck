@@ -5,20 +5,20 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import com.insaner.fonecheck.ui.TopBarAction
-import com.insaner.fonecheck.ui.TopBarActionRegistry
 
 @Composable
 fun RegisterRefreshTopBarAction(
     @StringRes contentDescriptionResId: Int,
     enabled: Boolean,
     onRefresh: () -> Unit,
-    topBarActionRegistry: TopBarActionRegistry,
+    onTopBarActionChange: (TopBarAction?) -> Unit,
 ) {
-    val owner = remember { Any() }
+    val currentActionChange by rememberUpdatedState(onTopBarActionChange)
     val currentRefresh by rememberUpdatedState(onRefresh)
     val action =
         remember(contentDescriptionResId, enabled) {
@@ -30,8 +30,8 @@ fun RegisterRefreshTopBarAction(
             )
         }
 
-    DisposableEffect(action, topBarActionRegistry) {
-        topBarActionRegistry.register(owner, action)
-        onDispose { topBarActionRegistry.unregister(owner) }
+    SideEffect { currentActionChange(action) }
+    DisposableEffect(Unit) {
+        onDispose { currentActionChange(null) }
     }
 }

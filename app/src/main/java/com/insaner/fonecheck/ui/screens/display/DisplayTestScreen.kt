@@ -49,7 +49,7 @@ import com.insaner.fonecheck.domain.observation.DeviceObservation
 import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
 import com.insaner.fonecheck.domain.observation.MeasurementKind
 import com.insaner.fonecheck.domain.observation.MeasurementOutcome
-import com.insaner.fonecheck.ui.TopBarActionRegistry
+import com.insaner.fonecheck.ui.TopBarAction
 import com.insaner.fonecheck.ui.classification.classifyDisplayConfirmation
 import com.insaner.fonecheck.ui.components.ButtonRow
 import com.insaner.fonecheck.ui.components.DataRow
@@ -83,7 +83,7 @@ internal const val DISPLAY_EXIT_BUTTON_TAG = "display_exit_button"
 fun DisplayTestScreen(
     modifier: Modifier = Modifier,
     onFullscreenChange: (Boolean) -> Unit = {},
-    topBarActionRegistry: TopBarActionRegistry = TopBarActionRegistry.NoOp,
+    onTopBarActionChange: (TopBarAction?) -> Unit = {},
     viewModel: DisplayTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -94,7 +94,7 @@ fun DisplayTestScreen(
         contentDescriptionResId = R.string.display_refresh_info,
         enabled = true,
         onRefresh = viewModel::refreshInfo,
-        topBarActionRegistry = topBarActionRegistry,
+        onTopBarActionChange = onTopBarActionChange,
     )
 
     DisposableEffect(isFullscreen) {

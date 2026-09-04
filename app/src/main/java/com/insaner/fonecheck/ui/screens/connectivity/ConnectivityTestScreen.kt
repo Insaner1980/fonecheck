@@ -20,7 +20,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.permission.PermissionKind
 import com.insaner.fonecheck.domain.permission.PermissionState
-import com.insaner.fonecheck.ui.TopBarActionRegistry
+import com.insaner.fonecheck.ui.TopBarAction
 import com.insaner.fonecheck.ui.classification.classifyGpsFix
 import com.insaner.fonecheck.ui.classification.classifyGpsProvider
 import com.insaner.fonecheck.ui.components.DataRow
@@ -45,7 +45,7 @@ import com.insaner.fonecheck.ui.theme.toSemanticTone
 @Suppress("ViewModelForwarding", "ktlint:compose:vm-forwarding-check", "kotlin:S3776")
 fun ConnectivityTestScreen(
     modifier: Modifier = Modifier,
-    topBarActionRegistry: TopBarActionRegistry = TopBarActionRegistry.NoOp,
+    onTopBarActionChange: (TopBarAction?) -> Unit = {},
     viewModel: ConnectivityTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -91,7 +91,7 @@ fun ConnectivityTestScreen(
         contentDescriptionResId = R.string.conn_refresh,
         enabled = state.gps.fixStatus != GpsFixStatus.SEARCHING,
         onRefresh = viewModel::refreshAll,
-        topBarActionRegistry = topBarActionRegistry,
+        onTopBarActionChange = onTopBarActionChange,
     )
 
     LaunchedEffect(

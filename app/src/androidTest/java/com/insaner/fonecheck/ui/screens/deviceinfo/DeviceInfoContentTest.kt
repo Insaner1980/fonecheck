@@ -19,7 +19,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.DeviceInfo
-import com.insaner.fonecheck.ui.TopBarActionHostState
+import com.insaner.fonecheck.ui.TopBarAction
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -150,81 +150,29 @@ class DeviceInfoContentTest {
     }
 
     @Test
-    fun routeScopedTopBarActionsIgnoreStaleOwners() {
-        var showFirstAction by mutableStateOf(true)
-        var showSecondAction by mutableStateOf(false)
-        var showSecondRouteAction by mutableStateOf(false)
-        var secondActionEnabled by mutableStateOf(true)
-        val topBarActionHostState = TopBarActionHostState()
-        val firstRouteRegistry = topBarActionHostState.registryFor("first-route")
-        val secondRouteRegistry = topBarActionHostState.registryFor("second-route")
-        var firstRefreshCount = 0
-        var secondRefreshCount = 0
-        var secondRouteRefreshCount = 0
+    fun deviceRegistersAndClearsOneTopBarAction() {
+        var showAction by mutableStateOf(true)
+        var registeredAction: TopBarAction? = null
+        var refreshCount = 0
 
         composeRule.setContent {
-            if (showFirstAction) {
+            if (showAction) {
                 RegisterDeviceTopBarAction(
                     enabled = false,
-                    onRefresh = { firstRefreshCount += 1 },
-                    topBarActionRegistry = firstRouteRegistry,
-                )
-            }
-            if (showSecondAction) {
-                RegisterDeviceTopBarAction(
-                    enabled = secondActionEnabled,
-                    onRefresh = { secondRefreshCount += 1 },
-                    topBarActionRegistry = firstRouteRegistry,
-                )
-            }
-            if (showSecondRouteAction) {
-                RegisterDeviceTopBarAction(
-                    enabled = true,
-                    onRefresh = { secondRouteRefreshCount += 1 },
-                    topBarActionRegistry = secondRouteRegistry,
+                    onRefresh = { refreshCount += 1 },
+                    onTopBarActionChange = { registeredAction = it },
                 )
             }
         }
 
         composeRule.runOnIdle {
-            assertNotNull(topBarActionHostState.actionFor("first-route"))
-            assertEquals(false, topBarActionHostState.actionFor("first-route")?.enabled)
-            topBarActionHostState.actionFor("first-route")?.onClick?.invoke()
-            assertEquals(1, firstRefreshCount)
-            showSecondAction = true
+            assertNotNull(registeredAction)
+            assertEquals(false, registeredAction?.enabled)
+            registeredAction?.onClick?.invoke()
+            assertEquals(1, refreshCount)
+            showAction = false
         }
-        composeRule.runOnIdle {
-            assertNotNull(topBarActionHostState.actionFor("first-route"))
-            assertTrue(topBarActionHostState.actionFor("first-route")?.enabled == true)
-            topBarActionHostState.actionFor("first-route")?.onClick?.invoke()
-            assertEquals(1, secondRefreshCount)
-            showFirstAction = false
-        }
-        composeRule.runOnIdle {
-            assertNotNull(topBarActionHostState.actionFor("first-route"))
-            topBarActionHostState.actionFor("first-route")?.onClick?.invoke()
-            assertEquals(2, secondRefreshCount)
-            showSecondRouteAction = true
-        }
-        composeRule.runOnIdle {
-            assertNotNull(topBarActionHostState.actionFor("second-route"))
-            topBarActionHostState.actionFor("second-route")?.onClick?.invoke()
-            assertEquals(1, secondRouteRefreshCount)
-            secondActionEnabled = false
-        }
-        composeRule.runOnIdle {
-            assertTrue(topBarActionHostState.actionFor("first-route")?.enabled == false)
-            assertTrue(topBarActionHostState.actionFor("second-route")?.enabled == true)
-            topBarActionHostState.actionFor("second-route")?.onClick?.invoke()
-            assertEquals(2, secondRouteRefreshCount)
-            showSecondAction = false
-        }
-        composeRule.runOnIdle {
-            assertNull(topBarActionHostState.actionFor("first-route"))
-            assertNotNull(topBarActionHostState.actionFor("second-route"))
-            showSecondRouteAction = false
-        }
-        composeRule.runOnIdle { assertNull(topBarActionHostState.actionFor("second-route")) }
+        composeRule.runOnIdle { assertNull(registeredAction) }
     }
 
     @Test

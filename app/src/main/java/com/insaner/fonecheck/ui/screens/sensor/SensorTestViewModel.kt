@@ -313,7 +313,7 @@ class SensorTestViewModel
 
             val activeChallenge = _state.value.challenge
             if (activeChallenge.challenge != null) {
-                updateChallenge(activeChallenge, values, accuracy, event.timestamp)
+                updateChallenge(activeChallenge, values, accuracy)
                 return
             }
 
@@ -333,14 +333,13 @@ class SensorTestViewModel
             challenge: ChallengeState,
             values: FloatArray,
             accuracy: SensorAccuracyCode,
-            eventTimestampNanos: Long,
         ) {
             val activeChallenge = requireNotNull(challenge.challenge)
             val evaluation =
                 SensorChallengeEvaluator.evaluate(
                     challenge = activeChallenge,
                     values = values,
-                    nowMillis = eventTimestampNanos / NANOS_PER_MILLISECOND,
+                    nowMillis = System.currentTimeMillis(),
                     runtime = challengeRuntime,
                 )
             challengeRuntime = evaluation.runtime
@@ -472,7 +471,6 @@ class SensorTestViewModel
 
         companion object {
             private const val CHALLENGE_RESULT_DURATION_MILLIS = 2_000L
-            private const val NANOS_PER_MILLISECOND = 1_000_000L
         }
     }
 

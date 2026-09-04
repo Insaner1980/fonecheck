@@ -26,7 +26,7 @@ import com.insaner.fonecheck.domain.model.DeviceInfo
 import com.insaner.fonecheck.domain.observation.DeviceObservation
 import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
 import com.insaner.fonecheck.localization.observationStatusStringRes
-import com.insaner.fonecheck.ui.TopBarActionRegistry
+import com.insaner.fonecheck.ui.TopBarAction
 import com.insaner.fonecheck.ui.components.ButtonRow
 import com.insaner.fonecheck.ui.components.CaptureTimestamp
 import com.insaner.fonecheck.ui.components.DataRow
@@ -48,7 +48,7 @@ import java.util.Locale
 @Composable
 fun DeviceInfoScreen(
     modifier: Modifier = Modifier,
-    topBarActionRegistry: TopBarActionRegistry = TopBarActionRegistry.NoOp,
+    onTopBarActionChange: (TopBarAction?) -> Unit = {},
     viewModel: DeviceInfoViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -72,7 +72,7 @@ fun DeviceInfoScreen(
     RegisterDeviceTopBarAction(
         enabled = !state.isLoading,
         onRefresh = viewModel::refresh,
-        topBarActionRegistry = topBarActionRegistry,
+        onTopBarActionChange = onTopBarActionChange,
     )
 
     DeviceInfoContent(
@@ -97,13 +97,13 @@ fun DeviceInfoScreen(
 internal fun RegisterDeviceTopBarAction(
     enabled: Boolean,
     onRefresh: () -> Unit,
-    topBarActionRegistry: TopBarActionRegistry,
+    onTopBarActionChange: (TopBarAction?) -> Unit,
 ) {
     RegisterRefreshTopBarAction(
         contentDescriptionResId = R.string.device_refresh,
         enabled = enabled,
         onRefresh = onRefresh,
-        topBarActionRegistry = topBarActionRegistry,
+        onTopBarActionChange = onTopBarActionChange,
     )
 }
 

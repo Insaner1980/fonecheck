@@ -22,7 +22,7 @@ import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
 import com.insaner.fonecheck.domain.observation.MeasurementKind
 import com.insaner.fonecheck.domain.observation.MeasurementOutcome
 import com.insaner.fonecheck.localization.thermalStatusStringRes
-import com.insaner.fonecheck.ui.TopBarActionRegistry
+import com.insaner.fonecheck.ui.TopBarAction
 import com.insaner.fonecheck.ui.components.CaptureTimestamp
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
@@ -48,7 +48,7 @@ import com.insaner.fonecheck.ui.theme.FonecheckTheme
 @Composable
 fun PerformanceInfoScreen(
     modifier: Modifier = Modifier,
-    topBarActionRegistry: TopBarActionRegistry = TopBarActionRegistry.NoOp,
+    onTopBarActionChange: (TopBarAction?) -> Unit = {},
     viewModel: PerformanceInfoViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -57,7 +57,7 @@ fun PerformanceInfoScreen(
         contentDescriptionResId = R.string.perf_refresh_info,
         enabled = !state.isInfoLoading,
         onRefresh = viewModel::refreshInfo,
-        topBarActionRegistry = topBarActionRegistry,
+        onTopBarActionChange = onTopBarActionChange,
     )
 
     TestScreenContent(
