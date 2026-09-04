@@ -1,3 +1,5 @@
+$ErrorActionPreference = "Stop"
+
 $ProjectCheckCommand = "osv-scan"
 $ProjectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
 & "C:\Dev\Android-check\tools\InvokeProjectCheck.ps1" -ProjectCheckCommand $ProjectCheckCommand -Root $ProjectRoot @args

@@ -346,7 +346,7 @@ for text; `attention` is its text-safe form.
 
 ## Security tooling
 
-- Project-local DeepSec 2.2.9 lives under `.deepsec/`.
+- Project-local DeepSec 2.3.8 lives under `.deepsec/`.
 - The shared `ds` command is separate from combined security checks and requires
   explicit per-run external-AI provider, data-scope, cost, and retention approval.
 

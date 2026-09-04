@@ -174,7 +174,7 @@ class MainActivity : AppCompatActivity() {
         val currentDestination = backStackEntry?.destination
         val currentRoute = currentDestination?.route
         var isDisplayFullscreen by remember { mutableStateOf(false) }
-        var topBarAction by remember(currentRoute) { mutableStateOf<TopBarAction?>(null) }
+        val topBarActionHostState = remember { TopBarActionHostState() }
         val navigationChrome = navigationChromeFor(currentDestination)
 
         LaunchedEffect(currentRoute) { isDisplayFullscreen = false }
@@ -212,7 +212,7 @@ class MainActivity : AppCompatActivity() {
                                 }
                             },
                             actions = {
-                                topBarAction?.let { action ->
+                                topBarActionHostState.actionFor(backStackEntry?.id)?.let { action ->
                                     IconBoxButton(
                                         imageVector = action.icon,
                                         contentDescription = stringResource(action.contentDescriptionResId),
@@ -253,7 +253,7 @@ class MainActivity : AppCompatActivity() {
                     appPreferences = preferences,
                     modifier = Modifier.fillMaxSize(),
                     onDisplayFullscreenChange = { isDisplayFullscreen = it },
-                    onTopBarActionChange = { topBarAction = it },
+                    topBarActionHostState = topBarActionHostState,
                 )
             }
         }
@@ -274,10 +274,14 @@ class MainActivity : AppCompatActivity() {
                     WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                 controller.hide(WindowInsetsCompat.Type.systemBars())
             } else {
+                controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
                 controller.show(WindowInsetsCompat.Type.systemBars())
             }
             onDispose {
-                if (isDisplayFullscreen) controller.show(WindowInsetsCompat.Type.systemBars())
+                if (isDisplayFullscreen) {
+                    controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
+                    controller.show(WindowInsetsCompat.Type.systemBars())
+                }
             }
         }
     }

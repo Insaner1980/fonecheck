@@ -18,7 +18,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.Confidence
-import com.insaner.fonecheck.ui.TopBarAction
+import com.insaner.fonecheck.ui.TopBarActionRegistry
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.IndeterminateRule
@@ -43,7 +43,7 @@ import com.insaner.fonecheck.ui.theme.SemanticTone
 @Composable
 fun StorageTestScreen(
     modifier: Modifier = Modifier,
-    onTopBarActionChange: (TopBarAction?) -> Unit = {},
+    topBarActionRegistry: TopBarActionRegistry = TopBarActionRegistry.NoOp,
     viewModel: StorageTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -54,7 +54,7 @@ fun StorageTestScreen(
         contentDescriptionResId = R.string.storage_refresh,
         enabled = !state.isInfoLoading,
         onRefresh = viewModel::refreshInfo,
-        onTopBarActionChange = onTopBarActionChange,
+        topBarActionRegistry = topBarActionRegistry,
     )
 
     TestScreenContent(

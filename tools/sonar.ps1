@@ -93,15 +93,29 @@ function Test-GradleSonarTokenConfigured {
         return $true
     }
 
+    $gradleUserHome =
+        if (-not [string]::IsNullOrWhiteSpace($env:GRADLE_USER_HOME)) {
+            $env:GRADLE_USER_HOME
+        }
+        else {
+            Join-Path $env:USERPROFILE ".gradle"
+        }
     foreach ($path in @(
-        (Join-Path $env:USERPROFILE ".gradle\gradle.properties"),
+        (Join-Path $gradleUserHome "gradle.properties"),
         (Join-Path (Get-Location).Path "gradle.properties")
     )) {
-        if (
-            (Test-Path -LiteralPath $path -PathType Leaf) -and
-            (Select-String -LiteralPath $path -Pattern "^\s*systemProp\.sonar\.token\s*=" -Quiet)
-        ) {
-            return $true
+        if (Test-Path -LiteralPath $path -PathType Leaf) {
+            $tokenPropertyFound = $false
+            $tokenPropertyValue = $null
+            foreach ($line in Get-Content -LiteralPath $path -Encoding utf8) {
+                if ($line -match "^\s*systemProp\.sonar\.token\s*=\s*(?<Value>.*)$") {
+                    $tokenPropertyFound = $true
+                    $tokenPropertyValue = $Matches.Value
+                }
+            }
+            if ($tokenPropertyFound) {
+                return -not [string]::IsNullOrWhiteSpace($tokenPropertyValue)
+            }
         }
     }
 
@@ -116,6 +130,7 @@ if ($SonarArgs.Count -gt 0) {
 }
 
 $repoRoot = Get-RepositoryRoot -Start (Get-Location).Path
+$sonarPropertiesPath = Join-Path $repoRoot "sonar-project.properties"
 $sonarProperties = Get-SonarProjectProperties -RepoRoot $repoRoot
 $reportsDir = Join-Path $repoRoot "reports"
 $scanReport = Join-Path $reportsDir "sonar.txt"
@@ -148,6 +163,10 @@ if ($PlanOnly) {
 
 New-Item -ItemType Directory -Force -Path $reportsDir | Out-Null
 
+if (Test-Path -LiteralPath $issuesReport) {
+    Remove-Item -LiteralPath $issuesReport -Force
+}
+
 Set-Content -LiteralPath $scanReport -Encoding utf8 -Value @(
     "sonar"
     "Root: $repoRoot"
@@ -165,10 +184,6 @@ if (-not $AllowExternalUpload) {
     )
     Get-Content -LiteralPath $scanReport
     exit 2
-}
-
-if (Test-Path -LiteralPath $issuesReport) {
-    Remove-Item -LiteralPath $issuesReport -Force
 }
 
 Push-Location -LiteralPath $repoRoot
@@ -190,6 +205,8 @@ try {
         Import-Module "C:\Dev\Android-check\tools\AndroidProjectChecks.psm1" -Force -ErrorAction Stop
         Import-Module "C:\Dev\Android-check\tools\CheckRuntime.psm1" -Force -ErrorAction Stop
         $sourceStateBefore = Get-AndroidProjectSourceState -Root $repoRoot
+        $sonarPropertiesSha256Before =
+            (Get-FileHash -LiteralPath $sonarPropertiesPath -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
         Add-Content -LiteralPath $scanReport -Encoding utf8 -Value @(
             "Source HEAD: $($sourceStateBefore.gitHead)"
             "Source branch: $($sourceStateBefore.gitBranch)"
@@ -197,6 +214,7 @@ try {
             "Source Git status SHA-256: $($sourceStateBefore.gitStatusSha256)"
             "Source input files: $($sourceStateBefore.inputFileCount)"
             "Source input SHA-256: $($sourceStateBefore.inputSha256)"
+            "Sonar properties SHA-256: $sonarPropertiesSha256Before"
             ""
         )
         Write-Output "Sonar-analyysi kaynnistyi. Gradlen tuloste naytetaan ajon valmistuttua."
@@ -228,12 +246,18 @@ try {
     }
 
     $sourceStateAfter = Get-AndroidProjectSourceState -Root $repoRoot
-    if (-not (Test-AndroidProjectSourceStateStable -Before $sourceStateBefore -After $sourceStateAfter)) {
+    $sonarPropertiesSha256After =
+        (Get-FileHash -LiteralPath $sonarPropertiesPath -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+    if (
+        -not (Test-AndroidProjectSourceStateStable -Before $sourceStateBefore -After $sourceStateAfter) -or
+        $sonarPropertiesSha256Before -ne $sonarPropertiesSha256After
+    ) {
         Add-Content -LiteralPath $scanReport -Encoding utf8 -Value @(
             "ERROR: INPUTS_CHANGED: Sonar inputs changed during analysis."
             "After HEAD: $($sourceStateAfter.gitHead)"
             "After input files: $($sourceStateAfter.inputFileCount)"
             "After input SHA-256: $($sourceStateAfter.inputSha256)"
+            "After Sonar properties SHA-256: $sonarPropertiesSha256After"
         )
         exit 2
     }

@@ -32,6 +32,7 @@ import android.telephony.TelephonyManager
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.insaner.fonecheck.runtime.NanoTimeSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -178,6 +179,7 @@ class ConnectivityTestViewModel
     @Inject
     constructor(
         application: Application,
+        private val nanoTimeSource: NanoTimeSource,
     ) : AndroidViewModel(application) {
         private val context: Context get() = getApplication()
 
@@ -527,7 +529,7 @@ class ConnectivityTestViewModel
             val gps = _state.value.gps
             if (!_state.value.hasLocationPermission || !gps.isAvailable || !gps.isEnabled) return
 
-            val startTime = System.currentTimeMillis()
+            val startTime = monotonicMillis()
             val token = gpsSearchGate.start(startTime) ?: return
             _state.update {
                 it.copy(
@@ -584,7 +586,7 @@ class ConnectivityTestViewModel
             val locationListener =
                 LocationListener { location ->
                     if (!gpsSearchGate.complete(token)) return@LocationListener
-                    val fixTime = System.currentTimeMillis() - startTime
+                    val fixTime = (monotonicMillis() - startTime).coerceAtLeast(0L)
                     _state.update {
                         it.copy(
                             gps =
@@ -650,8 +652,9 @@ class ConnectivityTestViewModel
                 viewModelScope.launch {
                     while (gpsSearchGate.isActive(token)) {
                         delay(GPS_TICK_MILLIS)
-                        val elapsed = System.currentTimeMillis() - startTime
-                        when (gpsSearchGate.tick(token, System.currentTimeMillis())) {
+                        val now = monotonicMillis()
+                        val elapsed = (now - startTime).coerceAtLeast(0L)
+                        when (gpsSearchGate.tick(token, now)) {
                             GpsSearchTick.ACTIVE ->
                                 _state.update {
                                     it.copy(gps = it.gps.copy(elapsedSearchMs = elapsed))
@@ -691,6 +694,8 @@ class ConnectivityTestViewModel
             gnssCallbackOwner.clear()
             locationListenerOwner.clear()
         }
+
+        private fun monotonicMillis(): Long = nanoTimeSource.nanoTime() / NANOS_PER_MILLISECOND
 
         private fun unregisterGnssCallback(callback: GnssStatus.Callback) {
             try {
@@ -918,6 +923,7 @@ class ConnectivityTestViewModel
             }
 
         companion object {
+            private const val NANOS_PER_MILLISECOND = 1_000_000L
             private const val IPV4_ADDRESS_BYTES = 4
             private const val GPS_SEARCH_TIMEOUT_MILLIS = 60_000L
             private const val GPS_TICK_MILLIS = 500L

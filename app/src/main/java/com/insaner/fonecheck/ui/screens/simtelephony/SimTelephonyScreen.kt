@@ -28,7 +28,7 @@ import com.insaner.fonecheck.domain.observation.DeviceObservation
 import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
 import com.insaner.fonecheck.domain.observation.isUnusedSimSlot
 import com.insaner.fonecheck.domain.permission.PermissionKind
-import com.insaner.fonecheck.ui.TopBarAction
+import com.insaner.fonecheck.ui.TopBarActionRegistry
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.Note
@@ -46,7 +46,7 @@ import com.insaner.fonecheck.ui.theme.toSemanticTone
 @Composable
 fun SimTelephonyScreen(
     modifier: Modifier = Modifier,
-    onTopBarActionChange: (TopBarAction?) -> Unit = {},
+    topBarActionRegistry: TopBarActionRegistry = TopBarActionRegistry.NoOp,
     viewModel: SimTelephonyViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -77,7 +77,7 @@ fun SimTelephonyScreen(
         contentDescriptionResId = R.string.sim_refresh,
         enabled = !state.isLoading,
         onRefresh = viewModel::refresh,
-        onTopBarActionChange = onTopBarActionChange,
+        topBarActionRegistry = topBarActionRegistry,
     )
 
     val liveStateUpdatedAtEpochMillis = remember(state.info) { System.currentTimeMillis() }

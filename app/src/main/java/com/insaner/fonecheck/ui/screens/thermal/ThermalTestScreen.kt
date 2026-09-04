@@ -18,7 +18,7 @@ import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import com.insaner.fonecheck.domain.observation.DeviceObservation
 import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
 import com.insaner.fonecheck.localization.thermalStatusStringRes
-import com.insaner.fonecheck.ui.TopBarAction
+import com.insaner.fonecheck.ui.TopBarActionRegistry
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.Note
@@ -38,7 +38,7 @@ import com.insaner.fonecheck.ui.theme.toSemanticTone
 @Composable
 fun ThermalTestScreen(
     modifier: Modifier = Modifier,
-    onTopBarActionChange: (TopBarAction?) -> Unit = {},
+    topBarActionRegistry: TopBarActionRegistry = TopBarActionRegistry.NoOp,
     viewModel: ThermalTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -47,7 +47,7 @@ fun ThermalTestScreen(
         contentDescriptionResId = R.string.thermal_refresh,
         enabled = true,
         onRefresh = viewModel::refresh,
-        onTopBarActionChange = onTopBarActionChange,
+        topBarActionRegistry = topBarActionRegistry,
     )
     ThermalMonitoringEffect(
         onStartMonitoring = viewModel::startMonitoring,

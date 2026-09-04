@@ -1,6 +1,7 @@
 package com.insaner.fonecheck.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
@@ -10,7 +11,7 @@ import androidx.navigation.toRoute
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.data.preferences.AppPreferences
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
-import com.insaner.fonecheck.ui.TopBarAction
+import com.insaner.fonecheck.ui.TopBarActionHostState
 import com.insaner.fonecheck.ui.components.ScreenStateScreen
 import com.insaner.fonecheck.ui.components.ScreenStateType
 import com.insaner.fonecheck.ui.screens.audio.AudioTestScreen
@@ -40,9 +41,9 @@ import com.insaner.fonecheck.ui.screens.vibration.VibrationTestScreen
 @Composable
 fun FonecheckNavHost(
     navController: NavHostController,
+    topBarActionHostState: TopBarActionHostState,
     modifier: Modifier = Modifier,
     onDisplayFullscreenChange: (Boolean) -> Unit = {},
-    onTopBarActionChange: (TopBarAction?) -> Unit = {},
     appPreferences: AppPreferences = AppPreferences(),
 ) {
     NavHost(
@@ -52,18 +53,33 @@ fun FonecheckNavHost(
     ) {
         composable<Home> {
             HomeScreen(
-                onNavigate = { route -> navController.navigate(route) },
-                onRunAllTests = { navController.navigate(RunAllTests) },
+                onNavigate = navController::navigateSingleTop,
+                onRunAllTests = { navController.navigateSingleTop(RunAllTests) },
             )
         }
-        composable<DeviceInfo> {
-            DeviceInfoScreen(onTopBarActionChange = onTopBarActionChange)
+        composable<DeviceInfo> { backStackEntry ->
+            DeviceInfoScreen(
+                topBarActionRegistry =
+                    remember(backStackEntry) {
+                        topBarActionHostState.registryFor(backStackEntry.id)
+                    },
+            )
         }
-        composable<PerformanceInfo> {
-            PerformanceInfoScreen(onTopBarActionChange = onTopBarActionChange)
+        composable<PerformanceInfo> { backStackEntry ->
+            PerformanceInfoScreen(
+                topBarActionRegistry =
+                    remember(backStackEntry) {
+                        topBarActionHostState.registryFor(backStackEntry.id)
+                    },
+            )
         }
-        composable<SimTelephony> {
-            SimTelephonyScreen(onTopBarActionChange = onTopBarActionChange)
+        composable<SimTelephony> { backStackEntry ->
+            SimTelephonyScreen(
+                topBarActionRegistry =
+                    remember(backStackEntry) {
+                        topBarActionHostState.registryFor(backStackEntry.id)
+                    },
+            )
         }
         composable<AudioTest> {
             AudioTestScreen()
@@ -74,22 +90,40 @@ fun FonecheckNavHost(
         composable<SensorTest> {
             SensorTestScreen()
         }
-        composable<ConnectivityTest> {
-            ConnectivityTestScreen(onTopBarActionChange = onTopBarActionChange)
+        composable<ConnectivityTest> { backStackEntry ->
+            ConnectivityTestScreen(
+                topBarActionRegistry =
+                    remember(backStackEntry) {
+                        topBarActionHostState.registryFor(backStackEntry.id)
+                    },
+            )
         }
         composable<BatteryTest> {
             BatteryTestScreen()
         }
-        composable<ThermalTest> {
-            ThermalTestScreen(onTopBarActionChange = onTopBarActionChange)
+        composable<ThermalTest> { backStackEntry ->
+            ThermalTestScreen(
+                topBarActionRegistry =
+                    remember(backStackEntry) {
+                        topBarActionHostState.registryFor(backStackEntry.id)
+                    },
+            )
         }
-        composable<StorageTest> {
-            StorageTestScreen(onTopBarActionChange = onTopBarActionChange)
+        composable<StorageTest> { backStackEntry ->
+            StorageTestScreen(
+                topBarActionRegistry =
+                    remember(backStackEntry) {
+                        topBarActionHostState.registryFor(backStackEntry.id)
+                    },
+            )
         }
-        composable<DisplayTest> {
+        composable<DisplayTest> { backStackEntry ->
             DisplayTestScreen(
                 onFullscreenChange = onDisplayFullscreenChange,
-                onTopBarActionChange = onTopBarActionChange,
+                topBarActionRegistry =
+                    remember(backStackEntry) {
+                        topBarActionHostState.registryFor(backStackEntry.id)
+                    },
             )
         }
         composable<VibrationTest> {
@@ -104,15 +138,15 @@ fun FonecheckNavHost(
         composable<RunAllTests> {
             RunAllTestsScreen(
                 onDone = { navController.popBackStack() },
-                onOpenCategory = { route -> navController.navigate(route) },
+                onOpenCategory = navController::navigateSingleTop,
                 onDisplayFullscreenChange = onDisplayFullscreenChange,
                 showTestWarnings = appPreferences.testWarningsEnabled,
             )
         }
         composable<Settings> {
             SettingsRoute(
-                onOpenLicenses = { navController.navigate(Licenses) },
-                onOpenOnboarding = { navController.navigate(Onboarding(reopened = true)) },
+                onOpenLicenses = { navController.navigateSingleTop(Licenses) },
+                onOpenOnboarding = { navController.navigateSingleTop(Onboarding(reopened = true)) },
             )
         }
         composable<Licenses> { LicensesScreen() }
@@ -134,7 +168,7 @@ fun FonecheckNavHost(
         composable<Report> {
             ReportDetailRoute(
                 onBack = { navController.popBackStack() },
-                onRetest = { route -> navController.navigate(route) },
+                onRetest = navController::navigateSingleTop,
             )
         }
         composable<CategoryRetest> { backStackEntry ->
@@ -148,7 +182,7 @@ fun FonecheckNavHost(
             } else {
                 RunAllTestsScreen(
                     onDone = { navController.popBackStack() },
-                    onOpenCategory = { destination -> navController.navigate(destination) },
+                    onOpenCategory = navController::navigateSingleTop,
                     onDisplayFullscreenChange = onDisplayFullscreenChange,
                     targetCategory = category,
                     showTestWarnings = appPreferences.testWarningsEnabled,
@@ -157,11 +191,11 @@ fun FonecheckNavHost(
         }
         composable<History> {
             HistoryRoute(
-                onOpen = { reportId -> navController.navigate(Report(reportId)) },
+                onOpen = { reportId -> navController.navigateSingleTop(Report(reportId)) },
                 onCompare = { firstReportId, secondReportId ->
-                    navController.navigate(ReportComparison(firstReportId, secondReportId))
+                    navController.navigateSingleTop(ReportComparison(firstReportId, secondReportId))
                 },
-                onExport = { reportId -> navController.navigate(ReportExport(reportId)) },
+                onExport = { reportId -> navController.navigateSingleTop(ReportExport(reportId)) },
             )
         }
         composable<ReportComparison> {
@@ -175,3 +209,7 @@ fun FonecheckNavHost(
 
 internal fun initialDestination(preferences: AppPreferences): Any =
     if (preferences.onboardingComplete) Home else Onboarding()
+
+private fun NavHostController.navigateSingleTop(route: Any) {
+    navigate(route) { launchSingleTop = true }
+}
