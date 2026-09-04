@@ -67,10 +67,19 @@ class CameraOperationGate {
         return token
     }
 
+    fun complete(token: Long): Boolean = complete(token) {}
+
     @Synchronized
-    fun complete(token: Long): Boolean {
+    fun complete(
+        token: Long,
+        commit: () -> Unit,
+    ): Boolean {
         if (activeToken != token) return false
-        activeToken = null
+        try {
+            commit()
+        } finally {
+            activeToken = null
+        }
         return true
     }
 

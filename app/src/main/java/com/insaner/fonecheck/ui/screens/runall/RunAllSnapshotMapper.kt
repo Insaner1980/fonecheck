@@ -126,7 +126,7 @@ object RunAllSnapshotMapper {
                 DiagnosticCategoryId.CONNECTIVITY to
                     connectivityEvidence(
                         snapshots,
-                        snapshots.automaticIssues[DiagnosticCategoryId.CONNECTIVITY],
+                        automaticIssue(DiagnosticCategoryId.CONNECTIVITY),
                         capturedAt,
                     ),
                 DiagnosticCategoryId.BATTERY to batteryEvidence(snapshots, capturedAt),

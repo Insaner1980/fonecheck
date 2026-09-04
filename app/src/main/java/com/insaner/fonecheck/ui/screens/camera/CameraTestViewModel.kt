@@ -121,7 +121,7 @@ class CameraTestViewModel
                 runCameraOperation(
                     action = "load camera capabilities",
                     onFailure = { error ->
-                        if (capabilityGate.complete(token)) {
+                        capabilityGate.complete(token) {
                             _state.value = _state.value.copy(isLoading = false, error = error.message)
                         }
                     },
@@ -139,27 +139,28 @@ class CameraTestViewModel
                         }
                     val front = cameras.firstOrNull { it.facingCode == CameraFacingCode.FRONT }
                     val rear = cameras.firstOrNull { it.facingCode == CameraFacingCode.REAR }
-                    if (!capabilityGate.complete(token)) return@runCameraOperation
-                    val selectedCameraId =
-                        _state.value.selectedCameraId?.takeIf { selectedId ->
-                            cameras.any { it.cameraId == selectedId }
-                        } ?: cameras.firstOrNull()?.cameraId
+                    capabilityGate.complete(token) {
+                        val selectedCameraId =
+                            _state.value.selectedCameraId?.takeIf { selectedId ->
+                                cameras.any { it.cameraId == selectedId }
+                            } ?: cameras.firstOrNull()?.cameraId
 
-                    _state.value =
-                        _state.value.copy(
-                            frontCapabilities = front,
-                            rearCapabilities = rear,
-                            cameras = cameras,
-                            selectedCameraId = selectedCameraId,
-                            flashTestResult =
-                                if (rear?.hasFlash == true) {
-                                    FlashTestResult.NOT_TESTED
-                                } else {
-                                    FlashTestResult.NOT_AVAILABLE
-                                },
-                            isLoading = false,
-                            error = "camera_no_public_cameras".takeIf { cameras.isEmpty() },
-                        )
+                        _state.value =
+                            _state.value.copy(
+                                frontCapabilities = front,
+                                rearCapabilities = rear,
+                                cameras = cameras,
+                                selectedCameraId = selectedCameraId,
+                                flashTestResult =
+                                    if (rear?.hasFlash == true) {
+                                        FlashTestResult.NOT_TESTED
+                                    } else {
+                                        FlashTestResult.NOT_AVAILABLE
+                                    },
+                                isLoading = false,
+                                error = "camera_no_public_cameras".takeIf { cameras.isEmpty() },
+                            )
+                    }
                 }
             }
         }

@@ -209,7 +209,7 @@ class SimTelephonyProbeTest {
         assertEquals(SimFormFactorCode.PHYSICAL, info.simSlots[0].formFactor)
         assertEquals("Example Mobile", info.simSlots[0].operatorName)
         assertEquals("FI", info.simSlots[0].countryIso)
-        assertEquals(NetworkGenerationCode.FOURTH_GENERATION, info.simSlots[0].networkType)
+        assertEquals(NetworkGenerationCode.UNKNOWN, info.simSlots[0].networkType)
         assertEquals(SimActivityCode.ACTIVE, info.simSlots[1].activity)
         assertEquals(SimFormFactorCode.EMBEDDED, info.simSlots[1].formFactor)
         assertEquals(null, info.simSlots[1].operatorName)

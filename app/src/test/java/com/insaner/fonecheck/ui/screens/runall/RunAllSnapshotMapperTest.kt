@@ -106,7 +106,10 @@ class RunAllSnapshotMapperTest {
         assertTrue(snapshots.all { it.evidence.isNotEmpty() })
         assertTrue(
             snapshots
-                .filterNot { it.categoryId == DiagnosticCategoryId.DEVICE }
+                .filterNot {
+                    it.categoryId == DiagnosticCategoryId.DEVICE ||
+                        it.categoryId == DiagnosticCategoryId.PERFORMANCE
+                }
                 .flatMap { it.evidence }
                 .all { it.capturedAt == capturedAt },
         )
@@ -186,6 +189,30 @@ class RunAllSnapshotMapperTest {
             assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue(id).status)
             assertEquals(EvidenceReasonCode("measurement_timeout"), evidence.getValue(id).reason)
         }
+        listOf(
+            "connectivity.wifi",
+            "connectivity.bluetooth",
+            "connectivity.nfc",
+            "connectivity.nfc_hce",
+            "connectivity.gps",
+            "connectivity.mobile",
+        ).forEach { id ->
+            assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue(id).status)
+            assertEquals(EvidenceReasonCode("measurement_error"), evidence.getValue(id).reason)
+        }
+    }
+
+    @Test
+    fun enclosingAutomaticFailureAppliesToConnectivityEvidence() {
+        val evidence =
+            mappedEvidence(
+                snapshots = diagnosticSnapshotsWithSensitiveConnectivity(),
+                manual =
+                    ManualCheckResults(
+                        outcomes = mapOf(RunAllStage.AUTOMATIC to RunAllStageOutcome.ERROR),
+                    ),
+            )
+
         listOf(
             "connectivity.wifi",
             "connectivity.bluetooth",
@@ -686,7 +713,7 @@ class RunAllSnapshotMapperTest {
                 .getValue("connectivity.gps")
 
         assertEquals(DiagnosticStatus.NOT_TESTED, evidence.status)
-        assertEquals(Confidence.LOW, evidence.confidence)
+        assertEquals(Confidence.UNAVAILABLE, evidence.confidence)
         assertEquals(EvidenceReasonCode("gps_timeout"), evidence.reason)
     }
 

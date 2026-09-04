@@ -76,4 +76,31 @@ class CameraRuntimePolicyTest {
         assertTrue(gate.cancel(latest))
         assertFalse(gate.complete(latest))
     }
+
+    @Test
+    fun operationGateCommitsBeforeClearingTheCurrentTokenAndRejectsStaleCommits() {
+        val gate = CameraOperationGate()
+        val current = gate.begin()
+        var tokenDuringCommit: Long? = null
+
+        assertTrue(
+            gate.complete(current) {
+                tokenDuringCommit = gate.activeToken
+            },
+        )
+        assertEquals(current, tokenDuringCommit)
+        assertNull(gate.activeToken)
+
+        val stale = gate.begin()
+        val latest = gate.begin()
+        var staleCommitCalled = false
+
+        assertFalse(
+            gate.complete(stale) {
+                staleCommitCalled = true
+            },
+        )
+        assertFalse(staleCommitCalled)
+        assertEquals(latest, gate.activeToken)
+    }
 }

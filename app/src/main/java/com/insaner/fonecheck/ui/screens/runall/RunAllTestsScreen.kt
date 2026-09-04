@@ -904,8 +904,7 @@ fun RunAllTestsScreen(
                 performanceState.info.takeIf {
                     !performanceState.isInfoLoading && performanceState.infoError == null
                 }
-            val performanceBenchmark =
-                performanceState.benchmarkResult.takeUnless { performanceState.isInfoLoading }
+            val performanceBenchmark = performanceState.benchmarkResult
             val simInfo = simState.info.takeIf { !simState.isLoading && simState.error == null }
             val reportStorageState =
                 storageState.copy(
@@ -913,7 +912,6 @@ fun RunAllTestsScreen(
                         storageState.info.takeIf {
                             !storageState.isInfoLoading && storageState.infoError == null
                         },
-                    benchmarkResult = storageState.benchmarkResult.takeUnless { storageState.isInfoLoading },
                 )
             val snapshots =
                 DiagnosticSnapshots(

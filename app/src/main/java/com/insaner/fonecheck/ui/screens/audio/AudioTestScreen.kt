@@ -84,6 +84,13 @@ fun AudioTestScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        while (true) {
+            viewModel.updateHeadphoneState()
+            delay(1000)
+        }
+    }
+
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
         viewModel.stopTone()
         viewModel.stopRecording()
@@ -396,13 +403,6 @@ private fun HeadphoneJackSection(
     state: AudioTestState,
     viewModel: AudioTestViewModel,
 ) {
-    LaunchedEffect(Unit) {
-        while (true) {
-            viewModel.updateHeadphoneState()
-            delay(1000)
-        }
-    }
-
     AudioSection(title = stringResource(R.string.audio_headphone_title)) {
         Note(stringResource(R.string.audio_headphone_description))
         DataRow(
