@@ -9,6 +9,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import java.util.UUID
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -74,4 +75,22 @@ class ExportTargetLockRegistryTest {
             first.join()
             second.join()
         }
+
+    @Test
+    fun completedFinalPathIsEvictedAfterItsLastUserExits() =
+        runTest {
+            val target = File("completed-${UUID.randomUUID()}.json")
+
+            ExportTargetLockRegistry.withLock(target) {}
+
+            assertFalse(registeredPaths().contains(target.absolutePath))
+        }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun registeredPaths(): Set<String> {
+        val locksField = ExportTargetLockRegistry::class.java.getDeclaredField("locks")
+        locksField.isAccessible = true
+        val locks = locksField.get(ExportTargetLockRegistry) as ConcurrentHashMap<String, *>
+        return locks.keys.toSet()
+    }
 }

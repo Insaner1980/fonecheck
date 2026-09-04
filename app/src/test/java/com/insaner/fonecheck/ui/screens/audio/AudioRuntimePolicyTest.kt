@@ -94,6 +94,17 @@ class AudioRuntimePolicyTest {
         assertEquals(2, updated.volumeDownCount)
     }
 
+    @Test
+    fun lifecycleCleanupCancelsOnlyAnActiveRecording() {
+        var cancellationCount = 0
+
+        cancelActiveRecording(isRecording = false) { cancellationCount += 1 }
+        assertEquals(0, cancellationCount)
+
+        cancelActiveRecording(isRecording = true) { cancellationCount += 1 }
+        assertEquals(1, cancellationCount)
+    }
+
     private class FakeResource {
         var releaseCount = 0
 

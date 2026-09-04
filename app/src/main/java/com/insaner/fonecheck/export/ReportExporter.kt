@@ -148,20 +148,41 @@ class AndroidReportExporter
     }
 
 internal object ExportTargetLockRegistry {
-    private val locks = ConcurrentHashMap<String, Mutex>()
+    private val locks = ConcurrentHashMap<String, LockEntry>()
 
     suspend fun <T> withLock(
         outputFile: File,
         action: suspend () -> T,
     ): T {
-        val lock = locks.computeIfAbsent(outputFile.absolutePath) { Mutex() }
-        lock.lock()
+        val path = outputFile.absolutePath
+        val entry =
+            requireNotNull(
+                locks.compute(path) { _, current ->
+                    (current ?: LockEntry()).also { it.references += 1 }
+                },
+            )
+        var acquired = false
         return try {
+            entry.mutex.lock()
+            acquired = true
             action()
         } finally {
-            lock.unlock()
+            if (acquired) entry.mutex.unlock()
+            locks.computeIfPresent(path) { _, current ->
+                if (current !== entry) {
+                    current
+                } else {
+                    current.references -= 1
+                    current.takeIf { it.references > 0 }
+                }
+            }
         }
     }
+
+    private data class LockEntry(
+        val mutex: Mutex = Mutex(),
+        var references: Int = 0,
+    )
 }
 
 class FonecheckFileProvider : FileProvider()

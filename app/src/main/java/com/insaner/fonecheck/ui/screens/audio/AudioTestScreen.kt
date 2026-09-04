@@ -78,7 +78,7 @@ fun AudioTestScreen(
 
     LaunchedEffect(microphonePermission.state) {
         if (microphonePermission.state != PermissionState.GRANTED) {
-            viewModel.cancelRecording()
+            cancelActiveRecording(viewModel.state.value.isRecording, viewModel::cancelRecording)
         }
     }
 
@@ -91,14 +91,14 @@ fun AudioTestScreen(
 
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
         viewModel.stopTone()
-        viewModel.cancelRecording()
+        cancelActiveRecording(viewModel.state.value.isRecording, viewModel::cancelRecording)
         viewModel.stopPlayback()
     }
 
     DisposableEffect(Unit) {
         onDispose {
             viewModel.stopTone()
-            viewModel.cancelRecording()
+            cancelActiveRecording(viewModel.state.value.isRecording, viewModel::cancelRecording)
             viewModel.stopPlayback()
         }
     }

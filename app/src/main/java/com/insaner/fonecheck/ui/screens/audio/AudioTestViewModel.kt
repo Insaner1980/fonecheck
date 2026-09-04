@@ -24,6 +24,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -132,13 +133,14 @@ class AudioTestViewModel
                         device.type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
                         device.type == AudioDeviceInfo.TYPE_USB_HEADSET
                 }
-            _state.value =
-                _state.value.copy(
+            _state.update {
+                it.copy(
                     earpieceAvailable =
                         devices.any { it.type == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE },
                     headphonePlugged = headphone != null,
                     headphoneType = headphone?.let { headphoneTypeCode(it.type) },
                 )
+            }
         }
 
         fun playTone(
@@ -147,7 +149,7 @@ class AudioTestViewModel
         ) {
             stopTone()
             stopPlayback()
-            _state.value = _state.value.copy(error = null)
+            _state.update { it.copy(error = null) }
             val route =
                 if (streamType == AudioManager.STREAM_VOICE_CALL) {
                     AudioOutputRoute.EARPIECE
@@ -156,7 +158,7 @@ class AudioTestViewModel
                 }
             val routeSession = openRoute(route) ?: return
             val operationToken = toneGate.start()
-            _state.value = _state.value.copy(isPlaying = true, currentFrequency = frequencyHz)
+            _state.update { it.copy(isPlaying = true, currentFrequency = frequencyHz) }
 
             toneJob =
                 viewModelScope.launch(ioDispatcher) {
@@ -184,10 +186,10 @@ class AudioTestViewModel
         fun playStereoTone(channel: StereoChannel) {
             stopTone()
             stopPlayback()
-            _state.value = _state.value.copy(error = null)
+            _state.update { it.copy(error = null) }
             val routeSession = openRoute(AudioOutputRoute.MEDIA) ?: return
             val operationToken = toneGate.start()
-            _state.value = _state.value.copy(isPlaying = true, stereoChannel = channel)
+            _state.update { it.copy(isPlaying = true, stereoChannel = channel) }
             val frequencyHz = 440
 
             toneJob =
@@ -219,7 +221,7 @@ class AudioTestViewModel
                     createAudioTrack(channelMask, usage, contentType)
                         ?: run {
                             if (toneGate.isCurrent(operationToken)) {
-                                _state.value = _state.value.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE)
+                                _state.update { it.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE) }
                             }
                             return
                         }
@@ -237,20 +239,20 @@ class AudioTestViewModel
                     phase = fillToneBuffer(buffer, phase, phaseIncrement, stereoChannel)
                     if (created.first.write(buffer, 0, buffer.size) <= 0) {
                         if (toneGate.isCurrent(operationToken)) {
-                            _state.value = _state.value.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE)
+                            _state.update { it.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE) }
                         }
                         break
                     }
                 }
             } catch (_: IllegalStateException) {
                 if (toneGate.isCurrent(operationToken)) {
-                    _state.value = _state.value.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE)
+                    _state.update { it.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE) }
                 }
             } finally {
                 track?.let(toneOwner::release)
                 routeOwner.release(routeSession)
                 if (toneGate.isCurrent(operationToken)) {
-                    _state.value = _state.value.copy(isPlaying = false)
+                    _state.update { it.copy(isPlaying = false) }
                 }
             }
         }
@@ -290,7 +292,7 @@ class AudioTestViewModel
             toneJob = null
             toneOwner.release()
             routeOwner.release()
-            _state.value = _state.value.copy(isPlaying = false)
+            _state.update { it.copy(isPlaying = false) }
         }
 
         @Suppress("MissingPermission")
@@ -306,12 +308,13 @@ class AudioTestViewModel
                     .hasSystemFeature(PackageManager.FEATURE_MICROPHONE)
             if (!AudioRecordingPolicy.canStart(hasMicrophone, permissionGranted, _state.value.isRecording)) return
             cancelRecording()
-            _state.value =
-                _state.value.copy(
+            _state.update {
+                it.copy(
                     hasRecordedAudio = false,
                     relativeInputLevel = 0f,
                     error = null,
                 )
+            }
             val bufferSize =
                 AudioRecord.getMinBufferSize(
                     sampleRate,
@@ -319,7 +322,7 @@ class AudioTestViewModel
                     AudioFormat.ENCODING_PCM_16BIT,
                 )
             if (bufferSize <= 0) {
-                _state.value = _state.value.copy(error = AudioOperationError.RECORDING_UNAVAILABLE)
+                _state.update { it.copy(error = AudioOperationError.RECORDING_UNAVAILABLE) }
                 return
             }
 
@@ -333,19 +336,19 @@ class AudioTestViewModel
                         bufferSize,
                     )
                 } catch (_: RuntimeException) {
-                    _state.value = _state.value.copy(error = AudioOperationError.RECORDING_UNAVAILABLE)
+                    _state.update { it.copy(error = AudioOperationError.RECORDING_UNAVAILABLE) }
                     return
                 }
 
             if (record.state != AudioRecord.STATE_INITIALIZED) {
                 record.release()
-                _state.value = _state.value.copy(error = AudioOperationError.RECORDING_UNAVAILABLE)
+                _state.update { it.copy(error = AudioOperationError.RECORDING_UNAVAILABLE) }
                 return
             }
 
             recordOwner.replace(record)
             val operationToken = recordGate.start()
-            _state.value = _state.value.copy(isRecording = true, relativeInputLevel = 0f)
+            _state.update { it.copy(isRecording = true, relativeInputLevel = 0f) }
 
             val maxRecordSamples =
                 (
@@ -381,10 +384,11 @@ class AudioTestViewModel
                     buffer.copyInto(allSamples, totalSamples, 0, copyCount)
                     totalSamples += copyCount
                     if (recordGate.isCurrent(operationToken)) {
-                        _state.value =
-                            _state.value.copy(
+                        _state.update {
+                            it.copy(
                                 relativeInputLevel = RelativeInputLevel.fromPcm16(buffer, read),
                             )
+                        }
                     }
                 }
             } catch (_: IllegalStateException) {
@@ -397,12 +401,13 @@ class AudioTestViewModel
                 recordOwner.release(record)
                 if (recordGate.isCurrent(operationToken)) {
                     recordedData = allSamples.copyOf(totalSamples)
-                    _state.value =
-                        _state.value.copy(
+                    _state.update {
+                        it.copy(
                             isRecording = false,
                             hasRecordedAudio = totalSamples > 0,
                             error = AudioOperationError.RECORDING_UNAVAILABLE.takeIf { failed },
                         )
+                    }
                 }
                 buffer.fill(0)
                 allSamples.fill(0)
@@ -423,7 +428,7 @@ class AudioTestViewModel
             recordJob?.cancel()
             recordJob = null
             recordOwner.release()
-            _state.value = _state.value.copy(isRecording = false)
+            _state.update { it.copy(isRecording = false) }
         }
 
         fun discardRecordedSamples() {
@@ -435,10 +440,10 @@ class AudioTestViewModel
             val data = recordedData ?: return
             stopTone()
             stopPlayback()
-            _state.value = _state.value.copy(error = null)
+            _state.update { it.copy(error = null) }
             val routeSession = openRoute(AudioOutputRoute.MEDIA) ?: return
             val operationToken = playbackGate.start()
-            _state.value = _state.value.copy(isPlayingRecording = true)
+            _state.update { it.copy(isPlayingRecording = true) }
 
             playbackJob =
                 viewModelScope.launch(ioDispatcher) {
@@ -452,8 +457,7 @@ class AudioTestViewModel
                             )?.first
                                 ?: run {
                                     if (playbackGate.isCurrent(operationToken)) {
-                                        _state.value =
-                                            _state.value.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE)
+                                        _state.update { it.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE) }
                                     }
                                     return@launch
                                 }
@@ -465,17 +469,17 @@ class AudioTestViewModel
                         playbackOwner.replace(created)
                         created.play()
                         if (created.write(data, 0, data.size) <= 0 && playbackGate.isCurrent(operationToken)) {
-                            _state.value = _state.value.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE)
+                            _state.update { it.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE) }
                         }
                     } catch (_: IllegalStateException) {
                         if (playbackGate.isCurrent(operationToken)) {
-                            _state.value = _state.value.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE)
+                            _state.update { it.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE) }
                         }
                     } finally {
                         track?.let(playbackOwner::release)
                         routeOwner.release(routeSession)
                         if (playbackGate.isCurrent(operationToken)) {
-                            _state.value = _state.value.copy(isPlayingRecording = false)
+                            _state.update { it.copy(isPlayingRecording = false) }
                         }
                     }
                 }
@@ -529,43 +533,45 @@ class AudioTestViewModel
             playbackJob = null
             playbackOwner.release()
             routeOwner.release()
-            _state.value = _state.value.copy(isPlayingRecording = false)
+            _state.update { it.copy(isPlayingRecording = false) }
         }
 
         fun recordManualResult(
             check: AudioManualCheck,
             passed: Boolean,
         ) {
-            _state.value = _state.value.copy(manualResults = _state.value.manualResults + (check to passed))
+            _state.update { it.copy(manualResults = it.manualResults + (check to passed)) }
         }
 
         fun updateVolumeState() {
             val current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
             val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-            _state.value = _state.value.copy(volumeLevel = current, maxVolume = max)
+            _state.update { it.copy(volumeLevel = current, maxVolume = max) }
         }
 
         private fun onVolumeButton(direction: VolumeButtonDirection) {
-            _state.value = _state.value.recordVolumeButton(direction)
+            _state.update { it.recordVolumeButton(direction) }
             updateVolumeState()
             viewModelScope.launch {
                 delay(300)
-                _state.value =
+                _state.update {
                     when (direction) {
-                        VolumeButtonDirection.UP -> _state.value.copy(volumeUpPressed = false)
-                        VolumeButtonDirection.DOWN -> _state.value.copy(volumeDownPressed = false)
+                        VolumeButtonDirection.UP -> it.copy(volumeUpPressed = false)
+                        VolumeButtonDirection.DOWN -> it.copy(volumeDownPressed = false)
                     }
+                }
             }
         }
 
         fun resetVolumeTest() {
-            _state.value =
-                _state.value.copy(
+            _state.update {
+                it.copy(
                     volumeUpPressed = false,
                     volumeDownPressed = false,
                     volumeUpCount = 0,
                     volumeDownCount = 0,
                 )
+            }
             updateVolumeState()
         }
 
@@ -589,7 +595,7 @@ class AudioTestViewModel
             routeOwner.release()
             val session = AudioRouteSession(routeController)
             if (!session.open(route)) {
-                _state.value = _state.value.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE)
+                _state.update { it.copy(error = AudioOperationError.OUTPUT_UNAVAILABLE) }
                 return null
             }
             routeOwner.replace(session)

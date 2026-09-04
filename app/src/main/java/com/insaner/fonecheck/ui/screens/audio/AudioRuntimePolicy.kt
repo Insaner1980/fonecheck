@@ -54,6 +54,13 @@ fun AudioOperationGate.stop(mode: AudioRecordingStopMode) {
     if (mode == AudioRecordingStopMode.DISCARD_RESULT) cancel()
 }
 
+internal inline fun cancelActiveRecording(
+    isRecording: Boolean,
+    cancelRecording: () -> Unit,
+) {
+    if (isRecording) cancelRecording()
+}
+
 enum class AudioOutputRoute {
     MEDIA,
     EARPIECE,
