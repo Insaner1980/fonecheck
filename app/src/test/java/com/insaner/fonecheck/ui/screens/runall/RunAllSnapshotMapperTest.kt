@@ -109,8 +109,7 @@ class RunAllSnapshotMapperTest {
                 .filterNot {
                     it.categoryId == DiagnosticCategoryId.DEVICE ||
                         it.categoryId == DiagnosticCategoryId.PERFORMANCE
-                }
-                .flatMap { it.evidence }
+                }.flatMap { it.evidence }
                 .all { it.capturedAt == capturedAt },
         )
         assertTrue(
