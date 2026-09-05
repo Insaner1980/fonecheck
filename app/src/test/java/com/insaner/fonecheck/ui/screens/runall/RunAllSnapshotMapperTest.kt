@@ -81,6 +81,50 @@ import java.time.Instant
 @Suppress("LargeClass") // Mirrors the canonical mapper's complete category contract in one suite.
 class RunAllSnapshotMapperTest {
     @Test
+    fun cameraAndUserResponseTimesSurviveLaterAssemblyAndLegacyImageCountsRemainHonest() {
+        val cameraAt = Instant.ofEpochMilli(400L)
+        val responses =
+            mapOf(
+                RunAllStage.DISPLAY to Instant.ofEpochMilli(100L),
+                RunAllStage.AUDIO to Instant.ofEpochMilli(200L),
+                RunAllStage.VIBRATION to Instant.ofEpochMilli(500L),
+            )
+        val evidence =
+            mappedEvidence(
+                snapshots =
+                    diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                        camera = CameraTestState(lastCapture = CaptureResult(1920, 1080, cameraAt.toEpochMilli())),
+                        vibration = VibrationTestState(haptic = HapticCapabilityState(hasVibrator = true)),
+                    ),
+                manual =
+                    ManualCheckResults(
+                        display = true,
+                        speaker = false,
+                        vibration = true,
+                        cameraCompleted = true,
+                        completedAt = responses + (RunAllStage.CAMERA to cameraAt),
+                    ),
+                permissions = RunAllPermissions(camera = true),
+            )
+        assertEquals(cameraAt, evidence.getValue("camera.capture").capturedAt)
+        assertEquals(cameraAt, evidence.getValue("camera.capture_dimensions").capturedAt)
+        assertEquals(responses[RunAllStage.DISPLAY], evidence.getValue("display.visual").capturedAt)
+        assertEquals(responses[RunAllStage.AUDIO], evidence.getValue("audio.speaker").capturedAt)
+        assertEquals(responses[RunAllStage.VIBRATION], evidence.getValue("vibration.motor").capturedAt)
+        val dimensions = evidence.getValue("camera.capture_dimensions")
+        assertEquals(EvidenceValue.RawTextValue("1920 × 1080"), dimensions.value)
+        assertEquals(
+            com.insaner.fonecheck.R.string.camera_last_image_dimensions,
+            evidenceLabelResource(dimensions)?.stringResId,
+        )
+        val legacy = dimensions.copy(value = EvidenceValue.LongValue(2073600L))
+        assertEquals(
+            com.insaner.fonecheck.R.string.camera_last_image_pixel_count,
+            evidenceLabelResource(legacy)?.stringResId,
+        )
+    }
+
+    @Test
     fun thermalSnapshotPreservesIndividualReadingTimes() {
         val statusAt = Instant.ofEpochMilli(5_000L)
         val readingAt = Instant.ofEpochMilli(1_000L)
@@ -223,17 +267,7 @@ class RunAllSnapshotMapperTest {
             assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue(id).status)
             assertEquals(EvidenceReasonCode("measurement_timeout"), evidence.getValue(id).reason)
         }
-        listOf(
-            "connectivity.wifi",
-            "connectivity.bluetooth",
-            "connectivity.nfc",
-            "connectivity.nfc_hce",
-            "connectivity.gps",
-            "connectivity.mobile",
-        ).forEach { id ->
-            assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue(id).status)
-            assertEquals(EvidenceReasonCode("measurement_error"), evidence.getValue(id).reason)
-        }
+        assertConnectivityMeasurementError(evidence)
     }
 
     @Test
@@ -247,17 +281,7 @@ class RunAllSnapshotMapperTest {
                     ),
             )
 
-        listOf(
-            "connectivity.wifi",
-            "connectivity.bluetooth",
-            "connectivity.nfc",
-            "connectivity.nfc_hce",
-            "connectivity.gps",
-            "connectivity.mobile",
-        ).forEach { id ->
-            assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue(id).status)
-            assertEquals(EvidenceReasonCode("measurement_error"), evidence.getValue(id).reason)
-        }
+        assertConnectivityMeasurementError(evidence)
     }
 
     @Test
@@ -1670,6 +1694,20 @@ class RunAllSnapshotMapperTest {
                     camera = true,
                 ),
         )
+
+    private fun assertConnectivityMeasurementError(evidence: Map<String, DiagnosticEvidence>) {
+        listOf(
+            "connectivity.wifi",
+            "connectivity.bluetooth",
+            "connectivity.nfc",
+            "connectivity.nfc_hce",
+            "connectivity.gps",
+            "connectivity.mobile",
+        ).forEach { id ->
+            assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue(id).status)
+            assertEquals(EvidenceReasonCode("measurement_error"), evidence.getValue(id).reason)
+        }
+    }
 
     private companion object {
         const val MEBIBYTE = 1_048_576

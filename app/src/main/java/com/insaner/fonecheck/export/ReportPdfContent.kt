@@ -5,7 +5,7 @@ import com.insaner.fonecheck.domain.model.CoverageSummary
 import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryResult
-import com.insaner.fonecheck.domain.model.DiagnosticCheckId
+import com.insaner.fonecheck.domain.model.DiagnosticEvidence
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
@@ -116,8 +116,11 @@ data class PdfReportLabels(
     val disclaimer: String,
     val scope: (DiagnosticReport) -> String,
     val scoreScopeNote: String,
+    val timeSemantics: String =
+        "Observation times may be callback, user response or report assembly times, " +
+            "including in older reports; not camera exposure times.",
     val categoryName: (DiagnosticCategoryId) -> String,
-    val checkName: (DiagnosticCheckId) -> String,
+    val checkName: (DiagnosticEvidence) -> String,
     val statusName: (DiagnosticStatus) -> String,
     val scoreStateName: (ScoreState) -> String,
     val sourceName: (EvidenceSource) -> String,
@@ -166,7 +169,7 @@ data class PdfReportLabels(
                         "and excludes unavailable or inapplicable observations; " +
                         "it does not certify physical condition.",
                 categoryName = { it.name.lowercase().replaceFirstChar(Char::uppercase) },
-                checkName = { it.value },
+                checkName = { it.checkId.value },
                 statusName = {
                     if (it == DiagnosticStatus.NOT_TESTED) {
                         "not measured"
@@ -232,6 +235,7 @@ object ReportPdfContentBuilder {
             add(PdfTextBlock("${labels.duration}: ${labels.durationValue(duration)}", PdfTextStyle.BODY))
             add(PdfTextBlock(labels.scope(report), PdfTextStyle.BODY))
             add(PdfTextBlock(labels.scoreScopeNote, PdfTextStyle.BODY))
+            add(PdfTextBlock(labels.timeSemantics, PdfTextStyle.BODY))
             add(
                 PdfTextBlock(
                     "${labels.score}: ${report.score.value ?: "—"}",
@@ -279,7 +283,7 @@ object ReportPdfContentBuilder {
         category?.evidence.orEmpty().forEach { item ->
             add(
                 PdfTextBlock(
-                    "${labels.checkName(item.checkId)} — ${labels.statusName(item.status)}",
+                    "${labels.checkName(item)} — ${labels.statusName(item.status)}",
                     PdfTextStyle.MONO,
                 ),
             )

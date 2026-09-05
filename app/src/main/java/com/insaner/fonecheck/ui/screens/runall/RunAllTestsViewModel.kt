@@ -15,6 +15,7 @@ import com.insaner.fonecheck.domain.model.ReportDeviceContext
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.IdProvider
+import com.insaner.fonecheck.ui.screens.camera.CaptureResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -84,6 +85,7 @@ data class ManualCheckResults(
     val vibration: Boolean? = null,
     val buttons: Boolean? = null,
     val outcomes: Map<RunAllStage, RunAllStageOutcome> = emptyMap(),
+    val completedAt: Map<RunAllStage, Instant> = emptyMap(),
 )
 
 data class RunAllTestsState(
@@ -296,9 +298,16 @@ class RunAllTestsViewModel
             return _state.value.currentCameraId != null
         }
 
-        fun recordCameraCapture(token: Long) {
+        fun recordCameraCapture(capture: CaptureResult): Boolean {
             val current = _state.value
-            if (!isCurrentStage(token, RunAllStage.CAMERA) || claimedStageToken != token) return
+            val attempt = capture.attempt ?: return false
+            val token = attempt.stageToken ?: return false
+            if (!isCurrentStage(token, RunAllStage.CAMERA) || claimedStageToken != token) {
+                return false
+            }
+            if (attempt.cameraId != current.currentCameraId || current.stageIssue != null) {
+                return false
+            }
             val hasNextCamera = current.cameraIndex + 1 < current.cameraIds.size
             if (hasNextCamera) {
                 enterStage(
@@ -309,8 +318,15 @@ class RunAllTestsViewModel
                     ),
                 )
             } else {
-                finishStage(token, RunAllStage.CAMERA, RunAllStageOutcome.PASSED, true)
+                finishStage(
+                    token,
+                    RunAllStage.CAMERA,
+                    RunAllStageOutcome.PASSED,
+                    true,
+                    Instant.ofEpochMilli(capture.timestamp),
+                )
             }
+            return true
         }
 
         fun reportStageIssue(
@@ -439,6 +455,7 @@ class RunAllTestsViewModel
             expectedStage: RunAllStage,
             outcome: RunAllStageOutcome,
             result: Boolean? = null,
+            occurredAt: Instant? = null,
         ) {
             if (!isCurrentStage(token, expectedStage) || claimedStageToken != token) return
             cancelStageTimeout()
@@ -448,6 +465,13 @@ class RunAllTestsViewModel
                 updateManualResult(
                     current.manualChecks.copy(
                         outcomes = current.manualChecks.outcomes + (expectedStage to outcome),
+                        completedAt =
+                            if (result != null) {
+                                current.manualChecks.completedAt +
+                                    (expectedStage to (occurredAt ?: Instant.ofEpochMilli(clock.currentTimeMillis())))
+                            } else {
+                                current.manualChecks.completedAt
+                            },
                     ),
                     expectedStage,
                     result,

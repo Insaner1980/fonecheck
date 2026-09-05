@@ -17,8 +17,13 @@ import com.insaner.fonecheck.domain.model.ReportDeviceContext
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.IdProvider
+import com.insaner.fonecheck.ui.screens.camera.CameraCaptureAttempt
+import com.insaner.fonecheck.ui.screens.camera.CameraCaptureSession
+import com.insaner.fonecheck.ui.screens.camera.CameraTestState
+import com.insaner.fonecheck.ui.screens.camera.CaptureResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -44,6 +49,29 @@ class RunAllTestsViewModelTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+    }
+
+    @Test
+    fun userResponseIsTimestampedWhenAcceptedAndClearedOnInterruption() {
+        var now = 100L
+        val viewModel = RunAllTestsViewModel(EpochMillisClock { now }, IdProvider { "test" }, FakeReportRepository())
+        enterFirstInteractiveStage(viewModel)
+        val token = viewModel.state.value.stageToken
+        viewModel.claimStage(token)
+        now = 200L
+        viewModel.recordDisplay(token, true)
+        now = 9000L
+        viewModel.recordDisplay(token, false)
+        assertEquals(Instant.ofEpochMilli(200L), viewModel.state.value.manualChecks.completedAt[RunAllStage.DISPLAY])
+        viewModel.interruptRun(RunAllInterruptionReason.BACKGROUND)
+        assertTrue(
+            viewModel.state.value.manualChecks.completedAt
+                .isEmpty(),
+        )
+        assertEquals(RunAllInterruptionReason.BACKGROUND, viewModel.state.value.lastInterruption)
+        viewModel.onPreflightAccepted(RunAllSelections(), RunAllHardwareProfile())
+        assertEquals(null, viewModel.state.value.lastInterruption)
+        viewModel.interruptRun(RunAllInterruptionReason.USER_CANCEL)
     }
 
     @Test
@@ -224,7 +252,7 @@ class RunAllTestsViewModelTest {
             assertTrue(viewModel.claimStage(token))
             assertTrue(viewModel.prepareCameraStage(token, cameraIds))
             assertEquals(cameraId, viewModel.state.value.currentCameraId)
-            viewModel.recordCameraCapture(token)
+            viewModel.recordCameraCapture(CaptureResult(640, 480, 100L, CameraCaptureAttempt(1L, cameraId, token)))
             if (index < cameraIds.lastIndex) {
                 assertEquals(RunAllStage.CAMERA, viewModel.state.value.stage)
             }
@@ -234,6 +262,39 @@ class RunAllTestsViewModelTest {
         assertTrue(viewModel.state.value.manualChecks.cameraCompleted)
         assertEquals(RunAllStageOutcome.PASSED, viewModel.state.value.stageOutcomes[RunAllStage.CAMERA])
     }
+
+    @Test
+    fun publishedCaptureCannotAdvanceARetryOrTheNextCamera() =
+        runTest {
+            val viewModel = runAllViewModel()
+            enterCameraStage(viewModel)
+            val state = MutableStateFlow(CameraTestState())
+            val camera = CameraCaptureSession(state, EpochMillisClock { 100L }, backgroundScope)
+            val token = viewModel.state.value.stageToken
+            viewModel.claimStage(token)
+            viewModel.prepareCameraStage(token, listOf("rear", "front"))
+            val attempt = requireNotNull(camera.begin("rear", token))
+            camera.succeed(attempt, 640, 480)
+            val published = requireNotNull(state.value.lastCapture)
+
+            camera.cancel()
+            viewModel.retryStage(token)
+            val retryToken = viewModel.state.value.stageToken
+            viewModel.claimStage(retryToken)
+            assertFalse(viewModel.recordCameraCapture(published))
+            assertEquals("rear", viewModel.state.value.currentCameraId)
+
+            val retry = requireNotNull(camera.begin("rear", retryToken))
+            assertFalse(camera.fail(attempt, "late error"))
+            camera.succeed(retry, 800, 600)
+            val current = requireNotNull(state.value.lastCapture)
+            assertTrue(viewModel.recordCameraCapture(current))
+            assertEquals("front", viewModel.state.value.currentCameraId)
+            viewModel.claimStage(viewModel.state.value.stageToken)
+            assertFalse(viewModel.recordCameraCapture(current))
+            assertEquals("front", viewModel.state.value.currentCameraId)
+            viewModel.interruptRun(RunAllInterruptionReason.USER_CANCEL)
+        }
 
     @Test
     fun cameraErrorAndTimeoutRemainRecoverable() {

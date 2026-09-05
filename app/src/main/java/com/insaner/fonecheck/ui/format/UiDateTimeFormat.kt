@@ -42,3 +42,12 @@ internal fun formatTechnicalUiDateTime(
         }
     return formatter.withZone(zoneId).format(value)
 }
+
+internal fun formatPdfDateTime(
+    value: Instant,
+    locale: Locale,
+    zoneId: ZoneId = ZoneId.systemDefault(),
+): String {
+    val offset = DateTimeFormatter.ofPattern("xxx", Locale.ROOT).withZone(zoneId).format(value)
+    return "${formatUiDateTime(value, locale, zoneId)} UTC$offset"
+}

@@ -8,6 +8,20 @@ import java.util.Locale
 
 class UiDateTimeFormatTest {
     @Test
+    fun pdfDatesUseEachInstantsOffsetAcrossDaylightSavingTime() {
+        val zone = ZoneId.of("Europe/Helsinki")
+        val locale = Locale.forLanguageTag("fi")
+        assertEquals(
+            "25.10.2026 klo 03.30 UTC+03:00",
+            formatPdfDateTime(Instant.parse("2026-10-25T00:30:00Z"), locale, zone),
+        )
+        assertEquals(
+            "25.10.2026 klo 03.30 UTC+02:00",
+            formatPdfDateTime(Instant.parse("2026-10-25T01:30:00Z"), locale, zone),
+        )
+    }
+
+    @Test
     fun `English UI uses its language format in the supplied zone`() {
         assertEquals(
             "Aug 11, 2026, 1:18:00 PM",

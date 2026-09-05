@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="camera_last_image_dimensions">Last test image dimensions</string>
+    <string name="camera_last_image_pixel_count">Last test image pixel count</string>
+    <string name="report_time_semantics">Observation times can record a callback, a user response or report assembly. Older reports may use assembly times. These are not camera exposure timestamps.</string>
+    <string name="report_evidence_reason_label">Reason</string>
+    <string name="comparison_change_metadata">Observation details changed</string>
+    <string name="comparison_other_metadata_changed">Confidence or applicability changed.</string>
+    <string name="run_all_interrupted">The running check was interrupted and did not produce a saved report. Start a new check separately. Previously saved reports are unchanged.</string>
+    <string name="run_all_interrupted_configuration">The screen configuration changed.</string>
+    <string name="run_all_interrupted_background">The check moved to the background.</string>
+    <string name="report_save_confirmed">Report saved on this device.</string>
+    <string name="report_save_unconfirmed">Report saving has not been confirmed.</string>
     <string name="report_read_at">Read or received</string>
     <string name="home_coverage_scope">Coverage concerns available, applicable observations in the saved Full Check, including information. Excluded checks and untested hardware can remain; see the report details.</string>
     <string name="comparison_score_basis_changed">The scored observations changed. These scores are not directly comparable.</string>

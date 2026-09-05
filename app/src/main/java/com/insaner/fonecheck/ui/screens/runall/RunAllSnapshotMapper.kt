@@ -475,7 +475,7 @@ object RunAllSnapshotMapper {
                 manual.display,
                 InteractiveCheck.DISPLAY,
                 manual.outcomes[RunAllStage.DISPLAY],
-                capturedAt,
+                manual.completedAt[RunAllStage.DISPLAY] ?: capturedAt,
             ),
         )
     }
@@ -554,7 +554,7 @@ object RunAllSnapshotMapper {
                     manual.speaker,
                     InteractiveCheck.SPEAKER,
                     manual.outcomes[RunAllStage.AUDIO],
-                    capturedAt,
+                    manual.completedAt[RunAllStage.AUDIO] ?: capturedAt,
                 )
             } else {
                 notTested(
@@ -617,7 +617,15 @@ object RunAllSnapshotMapper {
                         completed = manual.cameraCompleted,
                         hasError = snapshots.camera.error != null,
                         outcome = manual.outcomes[RunAllStage.CAMERA],
-                        capturedAt = capturedAt,
+                        capturedAt =
+                            manual.completedAt[RunAllStage.CAMERA]
+                                ?: snapshots.camera.captureCompletedAt?.let(Instant::ofEpochMilli)
+                                ?: capture?.takeIf { manual.cameraCompleted }?.let {
+                                    Instant.ofEpochMilli(
+                                        it.timestamp,
+                                    )
+                                }
+                                ?: capturedAt,
                     )
                 else ->
                     notTested(
@@ -698,7 +706,7 @@ object RunAllSnapshotMapper {
                     categoryId = DiagnosticCategoryId.CAMERA,
                     id = "capture_dimensions",
                     source = EvidenceSource.AUTOMATIC_MEASUREMENT,
-                    value = EvidenceValue.LongValue(capture.width.toLong() * capture.height.toLong()),
+                    value = EvidenceValue.RawTextValue("${capture.width} × ${capture.height}"),
                     unit = EvidenceUnitCode("pixels"),
                     capturedAt = Instant.ofEpochMilli(capture.timestamp),
                 )
@@ -1276,7 +1284,7 @@ object RunAllSnapshotMapper {
                     manual.vibration,
                     InteractiveCheck.VIBRATION,
                     manual.outcomes[RunAllStage.VIBRATION],
-                    capturedAt,
+                    manual.completedAt[RunAllStage.VIBRATION] ?: capturedAt,
                 )
             } else {
                 unavailable(

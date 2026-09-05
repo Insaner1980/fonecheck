@@ -10,6 +10,7 @@ import com.insaner.fonecheck.domain.model.DiagnosticCheckId
 import com.insaner.fonecheck.domain.model.DiagnosticEvidence
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
+import com.insaner.fonecheck.domain.model.EvidenceReasonCode
 import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.ReportKind
@@ -24,6 +25,24 @@ import org.junit.Test
 import java.time.Instant
 
 class ReportComparisonEngineTest {
+    @Test
+    fun changedReasonIsMetadataAndTimestampAloneIsNotAValueChange() {
+        val first =
+            evidence(DiagnosticCategoryId.CAMERA, "capture", DiagnosticStatus.NOT_TESTED).copy(
+                value = null,
+                reason = EvidenceReasonCode.PERMISSION_DENIED,
+                source = EvidenceSource.ANDROID_API,
+            )
+        val second = first.copy(reason = EvidenceReasonCode.SKIPPED, source = EvidenceSource.USER_CONFIRMATION)
+        val change = compareEvidence(first, second).single()
+        assertEquals(EvidenceChange.METADATA_CHANGED, change.change)
+        assertEquals(AttentionChange.NONE, change.attentionChange)
+        assertEquals(
+            EvidenceChange.UNCHANGED,
+            compareEvidence(first, first.copy(capturedAt = first.capturedAt.plusSeconds(60))).single().change,
+        )
+    }
+
     @Test
     fun disappearingFailureCannotBecomeANumericImprovement() {
         val health = evidence(DiagnosticCategoryId.BATTERY, "health", DiagnosticStatus.FAIL)

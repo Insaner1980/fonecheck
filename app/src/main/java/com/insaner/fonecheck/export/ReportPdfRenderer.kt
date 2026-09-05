@@ -17,7 +17,7 @@ import com.insaner.fonecheck.localization.evidenceLabelResource
 import com.insaner.fonecheck.localization.evidenceReasonStringRes
 import com.insaner.fonecheck.localization.stableCodeDisplayText
 import com.insaner.fonecheck.localization.stableTextStringRes
-import com.insaner.fonecheck.ui.format.formatUiDateTime
+import com.insaner.fonecheck.ui.format.formatPdfDateTime
 import com.insaner.fonecheck.ui.format.formatUiNumber
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.OutputStream
@@ -145,13 +145,14 @@ class ReportPdfRenderer
                     }
                 },
                 scoreScopeNote = context.getString(R.string.report_score_scope_note),
+                timeSemantics = context.getString(R.string.report_time_semantics),
                 categoryName = { context.getString(it.labelResource()) },
-                checkName = { checkId ->
-                    evidenceLabelResource(checkId.value)?.let { resource ->
+                checkName = { evidence ->
+                    evidenceLabelResource(evidence)?.let { resource ->
                         resource.formatArgument?.let { argument ->
                             context.getString(resource.stringResId, argument)
                         } ?: context.getString(resource.stringResId)
-                    } ?: stableCodeDisplayText(checkId.value.substringAfter('.'))
+                    } ?: stableCodeDisplayText(evidence.checkId.value.substringAfter('.'))
                 },
                 statusName = { context.getString(it.labelResource()) },
                 scoreStateName = { context.getString(it.labelResource()) },
@@ -187,7 +188,7 @@ class ReportPdfRenderer
                         failures,
                     )
                 },
-                completedValue = { value -> formatUiDateTime(value, locale) },
+                completedValue = { value -> formatPdfDateTime(value, locale) },
                 durationValue = {
                     context.getString(
                         R.string.report_duration_value,

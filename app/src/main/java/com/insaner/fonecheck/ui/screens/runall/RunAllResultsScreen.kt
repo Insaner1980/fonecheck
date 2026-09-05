@@ -132,6 +132,32 @@ fun RunAllResultsScreen(
                 ReportSaveSection(saveStatus, onRetrySave)
             }
         }
+        if (mode == ReportResultMode.COMPLETED_RUN && report.kind == ReportKind.CATEGORY_ONLY) {
+            item {
+                Column {
+                    LongValueRow(label = stringResource(R.string.report_identifier), value = report.stableId)
+                    LongValueRow(
+                        label = stringResource(R.string.report_completed_at),
+                        value =
+                            formatUiDateTime(
+                                report.completedAt,
+                                uiLanguageLocale(LocalLocale.current.platformLocale),
+                            ),
+                    )
+                    Note(
+                        stringResource(
+                            if (saveStatus ==
+                                ReportSaveStatus.SAVED
+                            ) {
+                                R.string.report_save_confirmed
+                            } else {
+                                R.string.report_save_unconfirmed
+                            },
+                        ),
+                    )
+                }
+            }
+        }
 
         resultGroup(
             titleResId = R.string.run_all_needs_attention,
@@ -259,6 +285,7 @@ private fun ResultsSummary(
             },
         )
         Note(stringResource(R.string.report_score_scope_note))
+        Note(stringResource(R.string.report_time_semantics))
         // One segment per category, in the colour of that category: the shape of the run, drawn
         // beside the score it produced and counted in words underneath.
         SegmentedBar(segments = categoryTones)
@@ -579,7 +606,7 @@ private fun DiagnosticCategoryResult.toUiResult(): CategoryTestResult =
 private fun DiagnosticEvidence.toUiResult(): TestResult =
     TestResult(
         id = checkId.value,
-        name = evidenceLabel(checkId.value),
+        name = evidenceLabel(this),
         status = status.toLegacyStatus(),
         detail = evidenceDetail(this),
         confidence = presentationConfidence(),
@@ -622,12 +649,12 @@ private fun categorySummary(status: DiagnosticStatus): String =
     )
 
 @Composable
-private fun evidenceLabel(checkId: String): String =
-    evidenceLabelResource(checkId)?.let { resource ->
+private fun evidenceLabel(evidence: DiagnosticEvidence): String =
+    evidenceLabelResource(evidence)?.let { resource ->
         resource.formatArgument?.let { argument ->
             stringResource(resource.stringResId, uiNumber(argument))
         } ?: stringResource(resource.stringResId)
-    } ?: stableCodeFallback(checkId.substringAfter('.'))
+    } ?: stableCodeFallback(evidence.checkId.value.substringAfter('.'))
 
 @Composable
 internal fun evidenceDetail(evidence: DiagnosticEvidence): String? =
@@ -690,11 +717,11 @@ private fun stableTextLabel(code: String): String =
     stableTextStringRes(code)?.let { stringResource(it) } ?: stableCodeFallback(code)
 
 @Composable
-private fun reasonLabel(reason: EvidenceReasonCode): String =
+internal fun reasonLabel(reason: EvidenceReasonCode): String =
     evidenceReasonStringRes(reason)?.let { stringResource(it) } ?: stableCodeFallback(reason.value)
 
 @Composable
-private fun sourceLabel(source: EvidenceSource): String =
+internal fun sourceLabel(source: EvidenceSource): String =
     stringResource(
         when (source) {
             EvidenceSource.AUTOMATIC_MEASUREMENT -> R.string.report_source_automatic

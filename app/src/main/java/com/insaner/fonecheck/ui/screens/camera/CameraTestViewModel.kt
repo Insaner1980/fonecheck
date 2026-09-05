@@ -20,17 +20,16 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewModelScope
 import com.insaner.fonecheck.di.IoDispatcher
+import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.ui.format.formatUiNumber
 import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Locale
-import java.util.concurrent.Executors
 import javax.inject.Inject
 import androidx.annotation.OptIn as ExperimentalOptIn
 
@@ -54,6 +53,7 @@ data class CaptureResult(
     val width: Int,
     val height: Int,
     val timestamp: Long,
+    val attempt: CameraCaptureAttempt? = null,
 )
 
 data class CameraTestState(
@@ -70,6 +70,8 @@ data class CameraTestState(
     val flashOn: Boolean = false,
     val flashTestResult: FlashTestResult = FlashTestResult.NOT_TESTED,
     val error: String? = null,
+    val previewStageToken: Long? = null,
+    val captureCompletedAt: Long? = null,
 )
 
 enum class FlashTestResult {
@@ -85,9 +87,9 @@ class CameraTestViewModel
     constructor(
         application: Application,
         @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+        private val clock: EpochMillisClock,
     ) : AndroidViewModel(application) {
         private val cameraManager = application.getSystemService(CameraManager::class.java)
-        private val cameraExecutor = Executors.newSingleThreadExecutor()
         private val uiLocale =
             uiLanguageLocale(
                 ContextCompat
@@ -102,8 +104,7 @@ class CameraTestViewModel
         private var cameraProvider: ProcessCameraProvider? = null
         private var previewGeneration = 0L
         private val capabilityGate = CameraOperationGate()
-        private val captureGate = CameraOperationGate()
-        private var captureTimeoutJob: Job? = null
+        private val captureSession = CameraCaptureSession(_state, clock, viewModelScope)
 
         init {
             loadCapabilities()
@@ -122,7 +123,7 @@ class CameraTestViewModel
                     action = "load camera capabilities",
                     onFailure = { error ->
                         capabilityGate.complete(token) {
-                            _state.value = _state.value.copy(isLoading = false, error = error.message)
+                            _state.update { it.copy(isLoading = false, error = error.message) }
                         }
                     },
                 ) {
@@ -140,13 +141,12 @@ class CameraTestViewModel
                     val front = cameras.firstOrNull { it.facingCode == CameraFacingCode.FRONT }
                     val rear = cameras.firstOrNull { it.facingCode == CameraFacingCode.REAR }
                     capabilityGate.complete(token) {
-                        val selectedCameraId =
-                            _state.value.selectedCameraId?.takeIf { selectedId ->
-                                cameras.any { it.cameraId == selectedId }
-                            } ?: cameras.firstOrNull()?.cameraId
-
-                        _state.value =
-                            _state.value.copy(
+                        _state.update { current ->
+                            val selectedCameraId =
+                                current.selectedCameraId?.takeIf { selectedId ->
+                                    cameras.any { it.cameraId == selectedId }
+                                } ?: cameras.firstOrNull()?.cameraId
+                            current.copy(
                                 frontCapabilities = front,
                                 rearCapabilities = rear,
                                 cameras = cameras,
@@ -160,6 +160,7 @@ class CameraTestViewModel
                                 isLoading = false,
                                 error = "camera_no_public_cameras".takeIf { cameras.isEmpty() },
                             )
+                        }
                     }
                 }
             }
@@ -304,8 +305,9 @@ class CameraTestViewModel
             previewView: PreviewView,
             lifecycleOwner: LifecycleOwner,
             cameraId: String,
+            stageToken: Long,
         ) {
-            startPreview(previewView, lifecycleOwner, cameraId)
+            startPreview(previewView, lifecycleOwner, cameraId, stageToken)
         }
 
         @ExperimentalCamera2Interop
@@ -313,6 +315,7 @@ class CameraTestViewModel
             previewView: PreviewView,
             lifecycleOwner: LifecycleOwner,
             cameraId: String,
+            stageToken: Long? = null,
         ) {
             stopPreview()
             val generation = ++previewGeneration
@@ -323,6 +326,8 @@ class CameraTestViewModel
                     isFrontCamera = selected.facingCode == CameraFacingCode.FRONT,
                     lastCapture = null,
                     error = null,
+                    previewStageToken = stageToken,
+                    captureCompletedAt = null,
                 )
             val context = getApplication<Application>()
 
@@ -332,7 +337,8 @@ class CameraTestViewModel
                     action = "start camera preview",
                     onFailure = { error ->
                         if (generation == previewGeneration) {
-                            _state.value = _state.value.copy(error = error.message)
+                            val completedAt = clock.currentTimeMillis()
+                            _state.update { it.copy(error = error.message, captureCompletedAt = completedAt) }
                         }
                     },
                 ) {
@@ -369,9 +375,7 @@ class CameraTestViewModel
         fun stopPreview() {
             turnOffFlash()
             previewGeneration += 1
-            captureTimeoutJob?.cancel()
-            captureTimeoutJob = null
-            captureGate.cancelAll()
+            captureSession.cancel()
             runCatching { cameraProvider?.unbindAll() }
             cameraProvider = null
             imageCapture = null
@@ -380,49 +384,13 @@ class CameraTestViewModel
 
         fun capturePhoto() {
             val capture = imageCapture ?: return
-            if (_state.value.isCapturing) return
-            val token = captureGate.begin()
-            _state.value = _state.value.copy(isCapturing = true)
-            captureTimeoutJob?.cancel()
-            captureTimeoutJob =
-                viewModelScope.launch {
-                    delay(CAPTURE_TIMEOUT_MS)
-                    if (captureGate.cancel(token)) {
-                        _state.value = _state.value.copy(isCapturing = false, error = "camera_capture_timeout")
-                    }
-                }
+            val current = _state.value
+            val cameraId = current.selectedCameraId ?: return
+            val attempt = captureSession.begin(cameraId, current.previewStageToken) ?: return
 
             capture.takePicture(
-                cameraExecutor,
-                object : ImageCapture.OnImageCapturedCallback() {
-                    override fun onCaptureSuccess(image: ImageProxy) {
-                        val width = image.width
-                        val height = image.height
-                        image.close()
-                        if (!captureGate.complete(token)) return
-                        captureTimeoutJob?.cancel()
-                        _state.value =
-                            _state.value.copy(
-                                isCapturing = false,
-                                lastCapture =
-                                    CaptureResult(
-                                        width = width,
-                                        height = height,
-                                        timestamp = System.currentTimeMillis(),
-                                    ),
-                            )
-                    }
-
-                    override fun onError(exception: ImageCaptureException) {
-                        if (!captureGate.complete(token)) return
-                        captureTimeoutJob?.cancel()
-                        _state.value =
-                            _state.value.copy(
-                                isCapturing = false,
-                                error = exception.message,
-                            )
-                    }
-                },
+                ContextCompat.getMainExecutor(getApplication()),
+                captureSession.callback(attempt),
             )
         }
 
@@ -488,20 +456,14 @@ class CameraTestViewModel
             capabilityGate.cancelAll()
             turnOffFlash()
             stopPreview()
-            cameraExecutor.shutdown()
         }
 
         private companion object {
             const val TAG = "CameraTestViewModel"
-            const val CAPTURE_TIMEOUT_MS = 8_000L
         }
 
         fun confirmSelectedCamera(passed: Boolean) {
-            val cameraId = _state.value.selectedCameraId ?: return
-            _state.value =
-                _state.value.copy(
-                    confirmations = _state.value.confirmations + (cameraId to passed),
-                )
+            captureSession.confirm(passed)
         }
     }
 
@@ -509,3 +471,17 @@ internal fun formatCameraMegapixels(
     pixelCount: Long,
     locale: Locale = uiLanguageLocale(Locale.getDefault()),
 ): String = "${formatUiNumber(pixelCount / 1_000_000.0, locale, 1, 1)} MP"
+
+internal fun CameraCaptureSession.callback(attempt: CameraCaptureAttempt): ImageCapture.OnImageCapturedCallback =
+    object : ImageCapture.OnImageCapturedCallback() {
+        override fun onCaptureSuccess(image: ImageProxy) {
+            val width = image.width
+            val height = image.height
+            image.close()
+            succeed(attempt, width, height)
+        }
+
+        override fun onError(exception: ImageCaptureException) {
+            fail(attempt, exception.message ?: "camera_capture_error")
+        }
+    }

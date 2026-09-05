@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="camera_last_image_dimensions">Viimeisen testikuvan mitat</string>
+    <string name="camera_last_image_pixel_count">Viimeisen testikuvan pikselimäärä</string>
+    <string name="report_time_semantics">Havaintoaika voi tarkoittaa vastauksen vastaanottoa, käyttäjän vastausta tai raportin koostamista. Vanhoissa raporteissa voi olla koostamisaikoja. Ajat eivät ole kameran valotusaikoja.</string>
+    <string name="report_evidence_reason_label">Syy</string>
+    <string name="comparison_change_metadata">Havainnon lisätiedot muuttuivat</string>
+    <string name="comparison_other_metadata_changed">Luottamustaso tai soveltuvuus muuttui.</string>
+    <string name="run_all_interrupted">Käynnissä ollut tarkistus keskeytyi, eikä siitä valmistunut tallennettua raporttia. Aloita uusi tarkistus erikseen. Aiemmat tallennetut raportit säilyvät ennallaan.</string>
+    <string name="run_all_interrupted_configuration">Näytön asetukset muuttuivat.</string>
+    <string name="run_all_interrupted_background">Tarkistus siirtyi taustalle.</string>
+    <string name="report_save_confirmed">Raportti tallennettu tälle laitteelle.</string>
+    <string name="report_save_unconfirmed">Raportin tallennusta ei ole vahvistettu.</string>
     <string name="report_read_at">Luettu tai vastaanotettu</string>
     <string name="home_coverage_scope">Kattavuus koskee tallennetun Full Checkin saatavilla olevia, soveltuvia havaintoja, myös tietohavaintoja. Tarkistuksia voi jäädä ulkopuolelle ja laitteistoa testaamatta; katso raportin tiedot.</string>
     <string name="comparison_score_basis_changed">Pisteytettävät havainnot muuttuivat. Pisteet eivät ole suoraan vertailukelpoisia.</string>

@@ -10,12 +10,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.model.ReportKind
+import com.insaner.fonecheck.navigation.diagnosticDestinations
 import com.insaner.fonecheck.ui.components.IndeterminateRule
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.Note
@@ -26,6 +29,8 @@ import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.StatusText
 import com.insaner.fonecheck.ui.components.TestScreenContent
+import com.insaner.fonecheck.ui.format.formatUiDateTime
+import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.startExternalActivity
 import com.insaner.fonecheck.ui.theme.SemanticTone
@@ -145,6 +150,32 @@ private fun ExportReady(
                 LongValueRow(
                     label = stringResource(R.string.report_identifier),
                     value = state.report.stableId,
+                )
+                Note(
+                    if (state.report.kind == ReportKind.FULL_CHECK) {
+                        stringResource(R.string.report_scope_full)
+                    } else {
+                        stringResource(
+                            R.string.report_scope_category,
+                            stringResource(
+                                diagnosticDestinations
+                                    .first {
+                                        it.category ==
+                                            state.report.categories
+                                                .single()
+                                                .categoryId
+                                    }.labelResId,
+                            ),
+                        )
+                    },
+                )
+                LongValueRow(
+                    label = stringResource(R.string.report_completed_at),
+                    value =
+                        formatUiDateTime(
+                            state.report.completedAt,
+                            uiLanguageLocale(LocalLocale.current.platformLocale),
+                        ),
                 )
                 LongValueRow(
                     label = stringResource(R.string.pdf_report_format),

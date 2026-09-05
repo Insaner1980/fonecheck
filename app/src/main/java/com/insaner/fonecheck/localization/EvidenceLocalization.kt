@@ -2,8 +2,10 @@ package com.insaner.fonecheck.localization
 
 import androidx.annotation.StringRes
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.model.DiagnosticEvidence
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
+import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import com.insaner.fonecheck.domain.observation.NotMeasuredKind
 import com.insaner.fonecheck.domain.observation.ObservationClassification
@@ -171,6 +173,13 @@ data class EvidenceLabelResource(
     val formatArgument: Int? = null,
 )
 
+fun evidenceLabelResource(evidence: DiagnosticEvidence): EvidenceLabelResource? =
+    if (evidence.checkId.value == "camera.capture_dimensions" && evidence.value is EvidenceValue.LongValue) {
+        EvidenceLabelResource(R.string.camera_last_image_pixel_count)
+    } else {
+        evidenceLabelResource(evidence.checkId.value)
+    }
+
 fun evidenceLabelResource(checkId: String): EvidenceLabelResource? =
     EVIDENCE_LABEL_RESOURCES[checkId]?.let { EvidenceLabelResource(it) }
         ?: SIM_SLOT_STATE_CHECK_ID
@@ -210,7 +219,7 @@ private val EVIDENCE_LABEL_RESOURCES =
         "camera.capture" to R.string.camera_capture_title,
         "camera.inventory" to R.string.camera_inventory_label,
         "camera.logical_count" to R.string.camera_logical_count_label,
-        "camera.capture_dimensions" to R.string.camera_max_resolution,
+        "camera.capture_dimensions" to R.string.camera_last_image_dimensions,
         "sensors.inventory" to R.string.sensor_count,
         "sensors.accelerometer" to R.string.sensor_type_accelerometer,
         "sensors.gyroscope" to R.string.sensor_type_gyroscope,

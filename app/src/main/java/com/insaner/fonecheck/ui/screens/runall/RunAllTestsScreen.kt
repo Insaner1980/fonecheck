@@ -515,6 +515,7 @@ fun RunAllTestsScreen(
                                 previewView = previewView,
                                 lifecycleOwner = lifecycleOwner,
                                 cameraId = cameraId,
+                                stageToken = token,
                             )
                         }
                     }
@@ -593,16 +594,20 @@ fun RunAllTestsScreen(
         cameraState.lastCapture,
         cameraState.error,
     ) {
-        if (sessionState.stage != RunAllStage.CAMERA || !sessionState.permissions.camera) return@LaunchedEffect
+        if (sessionState.stage != RunAllStage.CAMERA || !sessionState.permissions.camera) {
+            return@LaunchedEffect
+        }
+        if (cameraState.previewStageToken != sessionState.stageToken || sessionState.stageIssue != null) {
+            return@LaunchedEffect
+        }
 
         when {
             cameraState.lastCapture != null -> {
-                cameraViewModel.confirmSelectedCamera(true)
-                if (sessionState.cameraIndex + 1 < sessionState.cameraIds.size) {
+                val accepted = sessionViewModel.recordCameraCapture(requireNotNull(cameraState.lastCapture))
+                if (accepted && sessionState.cameraIndex + 1 < sessionState.cameraIds.size) {
                     cameraViewModel.stopPreview()
                     cameraViewModel.clearCaptureResult()
                 }
-                sessionViewModel.recordCameraCapture(sessionState.stageToken)
             }
             cameraState.error != null ->
                 sessionViewModel.reportStageIssue(sessionState.stageToken, RunAllStageOutcome.ERROR)
@@ -675,10 +680,12 @@ fun RunAllTestsScreen(
                         )
                     },
                     showWarnings = showTestWarnings,
+                    interruption = sessionState.lastInterruption,
                     modifier = modifier,
                 )
             } else {
                 CategoryRetestPreflightScreen(
+                    interruption = sessionState.lastInterruption,
                     categoryLabel =
                         stringResource(
                             diagnosticDestinations.first { it.category == targetCategory }.labelResId,

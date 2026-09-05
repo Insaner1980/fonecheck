@@ -49,6 +49,8 @@ import com.insaner.fonecheck.ui.format.formatUiDateTime
 import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.screens.runall.evidenceDetail
+import com.insaner.fonecheck.ui.screens.runall.reasonLabel
+import com.insaner.fonecheck.ui.screens.runall.sourceLabel
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
 import com.insaner.fonecheck.ui.theme.toSemanticTone
@@ -386,6 +388,35 @@ private fun EvidenceRows(evidence: EvidenceComparison) {
                 if (evidence.after == null) R.string.comparison_missing else R.string.value_unavailable_short,
             ),
     )
+    val before = evidence.before
+    val after = evidence.after
+    if (before != null && after != null) {
+        if (before.reason != after.reason) {
+            LongValueRow(
+                label = stringResource(R.string.report_evidence_reason_label),
+                value =
+                    stringResource(
+                        R.string.comparison_category_status,
+                        before.reason?.let { reasonLabel(it) } ?: stringResource(R.string.value_unavailable_short),
+                        after.reason?.let { reasonLabel(it) } ?: stringResource(R.string.value_unavailable_short),
+                    ),
+            )
+        }
+        if (before.source != after.source) {
+            LongValueRow(
+                label = stringResource(R.string.report_evidence_source),
+                value =
+                    stringResource(
+                        R.string.comparison_category_status,
+                        sourceLabel(before.source),
+                        sourceLabel(after.source),
+                    ),
+            )
+        }
+        if (before.confidence != after.confidence || before.applicability != after.applicability) {
+            Note(stringResource(R.string.comparison_other_metadata_changed))
+        }
+    }
     if (evidence.attentionChange != AttentionChange.NONE) {
         StatusText(
             text = stringResource(attentionLabel(evidence.attentionChange)),
@@ -440,6 +471,7 @@ private fun changeLabel(change: EvidenceChange): Int =
         EvidenceChange.REMOVED -> R.string.comparison_change_removed
         EvidenceChange.STATUS_CHANGED -> R.string.comparison_change_status
         EvidenceChange.VALUE_CHANGED -> R.string.comparison_change_value
+        EvidenceChange.METADATA_CHANGED -> R.string.comparison_change_metadata
         EvidenceChange.NEWLY_AVAILABLE -> R.string.comparison_change_newly_available
         EvidenceChange.NEWLY_UNAVAILABLE -> R.string.comparison_change_newly_unavailable
         EvidenceChange.NOT_RUN -> R.string.comparison_change_not_run

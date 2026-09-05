@@ -20,6 +20,7 @@ enum class EvidenceChange {
     REMOVED,
     STATUS_CHANGED,
     VALUE_CHANGED,
+    METADATA_CHANGED,
     NEWLY_AVAILABLE,
     NEWLY_UNAVAILABLE,
     NOT_RUN,
@@ -216,7 +217,8 @@ object ReportComparisonEngine {
             before.status != DiagnosticStatus.NOT_AVAILABLE &&
                 after.status == DiagnosticStatus.NOT_AVAILABLE -> EvidenceChange.NEWLY_UNAVAILABLE
             before.status != after.status -> EvidenceChange.STATUS_CHANGED
-            before.withoutTimestamp() != after.withoutTimestamp() -> EvidenceChange.VALUE_CHANGED
+            before.value != after.value || before.unit != after.unit -> EvidenceChange.VALUE_CHANGED
+            before.withoutTimestamp() != after.withoutTimestamp() -> EvidenceChange.METADATA_CHANGED
             else -> EvidenceChange.UNCHANGED
         }
 

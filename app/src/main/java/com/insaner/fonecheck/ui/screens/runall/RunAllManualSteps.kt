@@ -99,8 +99,10 @@ fun FullCheckPreflightScreen(
     onContinue: () -> Unit,
     modifier: Modifier = Modifier,
     showWarnings: Boolean = true,
+    interruption: RunAllInterruptionReason? = null,
 ) {
     ScrollableStepContent(modifier) {
+        InterruptedRunNote(interruption)
         Column {
             SectionHeader(stringResource(R.string.run_all_preflight_title))
             Note(stringResource(R.string.run_all_preflight_description))
@@ -250,8 +252,10 @@ fun CategoryRetestPreflightScreen(
     onStart: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
+    interruption: RunAllInterruptionReason? = null,
 ) {
     ScrollableStepContent(modifier) {
+        InterruptedRunNote(interruption)
         Column {
             SectionHeader(stringResource(R.string.report_retest_title, categoryLabel))
             Note(stringResource(R.string.report_retest_description))
@@ -266,6 +270,17 @@ fun CategoryRetestPreflightScreen(
             onClick = onCancel,
             modifier = Modifier.fillMaxWidth(),
         )
+    }
+}
+
+@Composable
+private fun InterruptedRunNote(reason: RunAllInterruptionReason?) {
+    if (reason == null) return
+    Note(stringResource(R.string.run_all_interrupted))
+    if (reason == RunAllInterruptionReason.CONFIGURATION_CHANGE) {
+        Note(stringResource(R.string.run_all_interrupted_configuration))
+    } else if (reason == RunAllInterruptionReason.BACKGROUND) {
+        Note(stringResource(R.string.run_all_interrupted_background))
     }
 }
 
