@@ -1,5 +1,7 @@
 package com.insaner.fonecheck.ui.screens.sensor
 
+import com.insaner.fonecheck.domain.model.Confidence
+import com.insaner.fonecheck.domain.model.EvidenceReasonCode
 import kotlin.math.sqrt
 
 object SensorType {
@@ -62,6 +64,54 @@ data class GuidedSensorTestState(
     val sampleCount: Int = 0,
     val accuracy: SensorAccuracyCode = SensorAccuracyCode.UNKNOWN,
 )
+
+object SensorAccuracyPolicy {
+    // Android's JNI dispatch forwards vector.status for these sensors. Scalar sensors receive a
+    // framework HIGH default, which is not evidence of calibration or physical accuracy.
+    private val vectorSensors =
+        setOf(
+            GuidedSensorCode.ACCELEROMETER,
+            GuidedSensorCode.GYROSCOPE,
+            GuidedSensorCode.GRAVITY,
+            GuidedSensorCode.MAGNETOMETER,
+        )
+
+    fun accumulate(
+        previous: SensorAccuracyCode,
+        next: SensorAccuracyCode,
+        previousSampleCount: Int,
+    ): SensorAccuracyCode =
+        if (previousSampleCount == 0) {
+            next
+        } else {
+            listOf(previous, next).minBy { accuracy ->
+                when (accuracy) {
+                    SensorAccuracyCode.UNRELIABLE -> 0
+                    SensorAccuracyCode.LOW -> 1
+                    SensorAccuracyCode.UNKNOWN -> 2
+                    SensorAccuracyCode.MEDIUM -> 3
+                    SensorAccuracyCode.HIGH -> 4
+                }
+            }
+        }
+
+    fun confidence(test: GuidedSensorTestState): Confidence =
+        if (test.code !in vectorSensors || test.accuracy == SensorAccuracyCode.HIGH) Confidence.HIGH else Confidence.LOW
+
+    fun reason(test: GuidedSensorTestState): EvidenceReasonCode =
+        EvidenceReasonCode(
+            if (test.code !in vectorSensors) {
+                "sensor_response_only"
+            } else {
+                when (test.accuracy) {
+                    SensorAccuracyCode.UNRELIABLE -> "sensor_response_unreliable"
+                    SensorAccuracyCode.LOW, SensorAccuracyCode.MEDIUM -> "sensor_response_limited_accuracy"
+                    SensorAccuracyCode.UNKNOWN -> "sensor_response_accuracy_unknown"
+                    SensorAccuracyCode.HIGH -> "sensor_response_only"
+                }
+            },
+        )
+}
 
 object GuidedSensorCatalog {
     fun create(availableTypes: Set<Int>): List<GuidedSensorTestState> =

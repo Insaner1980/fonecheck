@@ -82,12 +82,22 @@ data class SensorTestState(
     val error: String? = null,
 )
 
-internal fun SensorTestState.withChallengeListenerFailure(): SensorTestState =
-    copy(
+internal fun SensorTestState.withChallengeListenerFailure(): SensorTestState {
+    val failedSensorCode = challenge.sensorCode
+    return copy(
+        guidedTests =
+            guidedTests.map { test ->
+                if (test.code == failedSensorCode && test.status == GuidedSensorStatus.SAMPLING) {
+                    test.copy(status = GuidedSensorStatus.NOT_TESTED)
+                } else {
+                    test
+                }
+            },
         activeSensorType = null,
         challenge = ChallengeState(),
         error = "listener_registration_failed",
     )
+}
 
 @HiltViewModel
 class SensorTestViewModel
@@ -207,6 +217,9 @@ class SensorTestViewModel
             }
 
             challengeRuntime = SensorChallengeRuntime()
+            updateGuidedTest(sensorCode) {
+                it.copy(status = GuidedSensorStatus.SAMPLING, sampleCount = 0, accuracy = SensorAccuracyCode.UNKNOWN)
+            }
             _state.update {
                 it.copy(
                     challenge = ChallengeState(challenge = challenge, sensorCode = sensorCode),
@@ -330,7 +343,7 @@ class SensorTestViewModel
             updateGuidedTest(activeCode) {
                 it.copy(
                     sampleCount = result.sampleCount,
-                    accuracy = accuracy,
+                    accuracy = SensorAccuracyPolicy.accumulate(it.accuracy, accuracy, it.sampleCount),
                     status = if (result.passed) GuidedSensorStatus.PASSED else GuidedSensorStatus.SAMPLING,
                 )
             }
@@ -352,6 +365,14 @@ class SensorTestViewModel
                 )
             challengeRuntime = evaluation.runtime
             val sampleCount = challenge.sampleCount + 1
+            challenge.sensorCode?.let { code ->
+                updateGuidedTest(code) { test ->
+                    test.copy(
+                        sampleCount = sampleCount,
+                        accuracy = SensorAccuracyPolicy.accumulate(test.accuracy, accuracy, challenge.sampleCount),
+                    )
+                }
+            }
             _state.update { current ->
                 current.copy(
                     challenge =
@@ -375,7 +396,6 @@ class SensorTestViewModel
                         test.copy(
                             status = GuidedSensorStatus.PASSED,
                             sampleCount = sampleCount,
-                            accuracy = accuracy,
                         )
                     }
                 }

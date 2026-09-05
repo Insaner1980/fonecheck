@@ -46,7 +46,7 @@ class ReportDetailPresenterTest {
     }
 
     @Test
-    fun categoryOnlyReportKeepsOneMeasuredCategoryAndFourteenCanonicalRows() {
+    fun categoryOnlyReportShowsOnlyItsOwnCategory() {
         val presentation =
             ReportDetailPresenter.present(
                 report(
@@ -55,9 +55,9 @@ class ReportDetailPresenterTest {
                 ),
             )
 
-        assertEquals(14, presentation.categories.size)
+        assertEquals(1, presentation.categories.size)
         assertEquals(1, presentation.counts.warning)
-        assertEquals(13, presentation.counts.notTested)
+        assertEquals(0, presentation.counts.notTested)
         assertEquals(60_000L, presentation.durationMillis)
     }
 

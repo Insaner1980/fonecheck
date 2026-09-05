@@ -280,7 +280,9 @@ private fun ScoreSection(comparison: ReportComparison) {
         Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
         when (score) {
             is ScoreComparison.Compatible ->
-                if (score.delta == null) {
+                if (!score.evidenceBasisCompatible) {
+                    Note(stringResource(R.string.comparison_score_basis_changed))
+                } else if (score.delta == null) {
                     Note(stringResource(R.string.comparison_score_no_delta))
                 }
 
@@ -298,6 +300,7 @@ private fun ScoreSection(comparison: ReportComparison) {
                 stringResource(R.string.comparison_coverage_delta, signedUiNumber(it))
             } ?: stringResource(R.string.comparison_coverage_incompatible),
         )
+        Note(stringResource(R.string.report_score_scope_note))
     }
 }
 
@@ -446,6 +449,7 @@ private fun attentionLabel(change: AttentionChange): Int =
     when (change) {
         AttentionChange.APPEARED -> R.string.comparison_attention_appeared
         AttentionChange.RESOLVED -> R.string.comparison_attention_resolved
+        AttentionChange.UNVERIFIED -> R.string.comparison_attention_unverified
         AttentionChange.CHANGED -> R.string.comparison_attention_changed
         AttentionChange.NONE -> error("No label for unchanged attention state")
     }

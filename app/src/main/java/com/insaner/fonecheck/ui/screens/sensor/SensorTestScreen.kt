@@ -31,6 +31,7 @@ import com.insaner.fonecheck.domain.observation.MeasurementKind
 import com.insaner.fonecheck.domain.observation.MeasurementOutcome
 import com.insaner.fonecheck.domain.permission.PermissionKind
 import com.insaner.fonecheck.domain.permission.PermissionState
+import com.insaner.fonecheck.localization.evidenceReasonStringRes
 import com.insaner.fonecheck.localization.observationReasonStringRes
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.DisclosureHeader
@@ -236,6 +237,9 @@ private fun GuidedSensorSection(
             strongDivider = false,
             leading = { StatusLamp(status = test.status.diagnosticStatus()) },
         )
+        if (test.status == GuidedSensorStatus.PASSED) {
+            Note(stringResource(requireNotNull(evidenceReasonStringRes(SensorAccuracyPolicy.reason(test)))))
+        }
         AnimatedVisibility(
             visible = isExpanded,
             enter = expandVertically(),

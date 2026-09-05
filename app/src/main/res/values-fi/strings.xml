@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="report_read_at">Luettu tai vastaanotettu</string>
+    <string name="home_coverage_scope">Kattavuus koskee tallennetun Full Checkin saatavilla olevia, soveltuvia havaintoja, myös tietohavaintoja. Tarkistuksia voi jäädä ulkopuolelle ja laitteistoa testaamatta; katso raportin tiedot.</string>
+    <string name="comparison_score_basis_changed">Pisteytettävät havainnot muuttuivat. Pisteet eivät ole suoraan vertailukelpoisia.</string>
+    <string name="report_scope_full">Laajuus: tähän Full Checkiin tallennetut havainnot.</string>
+    <string name="report_scope_category">Laajuus: vain %1$s.</string>
+    <string name="report_score_scope_note">Pisteet koostuvat kunkin raportin hyväksytyistä, varoittavista ja hylätyistä havainnoista. Kattavuus kertoo valmistuneiden osuuden saatavilla olevista, soveltuvista havainnoista; mukana ovat myös tietohavainnot. Ei saatavilla olevat ja soveltumattomat havainnot rajataan pois. Täysi kattavuus ei todista koko puhelimen kuntoa.</string>
+    <string name="report_observations">Havainnot</string>
+    <string name="report_observations_completed">Valmistuneet</string>
+    <string name="report_observations_unmeasured">Ei mitattu</string>
+    <string name="report_observations_excluded">Pois rajatut</string>
     <string name="navigation_back">Takaisin</string>
     <string name="state_loading_title">Ladataan</string>
     <string name="state_empty_title">Ei vielä sisältöä</string>
@@ -268,6 +278,10 @@
     <string name="sensor_count">Androidin anturimerkinnät</string>
     <string name="sensor_guided_progress">%1$s / %2$s</string>
     <string name="sensor_guided_title">Ohjatut testit</string>
+    <string name="sensor_response_only">Pyydetty vaste havaittiin. Tämä ei varmista kalibrointia tai anturin fyysistä kuntoa.</string>
+    <string name="sensor_response_unreliable">Vaste havaittiin, mutta siihen vaikuttaneissa näytteissä oli Androidin epäluotettaviksi ilmoittamia lukemia. Tämä ei osoita laitevikaa.</string>
+    <string name="sensor_response_limited_accuracy">Vaste havaittiin, mutta ilmoitettu tarkkuus oli mittausjakson aikana rajallinen. Kalibrointia ja fyysistä kuntoa ei varmistettu.</string>
+    <string name="sensor_response_accuracy_unknown">Vaste havaittiin, mutta näytteiden tarkkuutta ei tallennettu tai se oli tuntematon. Läpäisy ei osoita hyvää tarkkuutta.</string>
     <string name="sensor_not_available_description">Tätä anturia ei ole saatavilla tällä laitteella.</string>
     <string name="sensor_skip_test">Ohita testi</string>
     <string name="permission_rationale_activity_recognition">Fyysisen aktiivisuuden lupaa käytetään vain askelanturin testin aikana.</string>
@@ -539,7 +553,7 @@
     <string name="thermal_battery_temperature">Tämänhetkinen lukema</string>
     <string name="thermal_battery_note">Luetaan Androidin akkuilmoituksesta. Tämä ei ole väite CPU:n, GPU:n, rungon tai jäähdytysjärjestelmän lämpötilasta.</string>
     <string name="thermal_observation_title">Vain havainnointi</string>
-    <string name="thermal_observation_note">fonecheck ei tuota keinotekoista lämpökuormaa. Snapshot kuvaa vain näkymän tai Full Checkin aikana havaittua laitteen tilaa.</string>
+    <string name="thermal_observation_note">Snapshot kuvaa vain näkymän tai Full Checkin aikana havaittua laitteen tilaa. Se ei osoita lämpötilanteen syytä.</string>
     <string name="thermal_refresh">Päivitä snapshot</string>
 
     <!-- Storage Test Screen -->
@@ -717,8 +731,6 @@
     <string name="report_reason_android_version_unsupported">Tämä Android-versio ei tue tarkistusta</string>
     <string name="report_coverage">Kattavuus</string>
     <string name="report_coverage_value">%1$s%%</string>
-    <string name="report_checks">Tarkistukset</string>
-    <string name="report_checks_value">%1$s/%2$s</string>
     <string name="report_retest">Testaa uudelleen</string>
     <string name="report_retest_title">Testaa %1$s uudelleen</string>
     <string name="report_retest_description">Uusi tulos tallennetaan erillisenä kategoriakohtaisena raporttina. Alkuperäinen raportti ei muutu.</string>
@@ -859,7 +871,7 @@
     <string name="pdf_captured">Tallennettu</string>
     <string name="pdf_disclaimer">Erot ja mittaukset eivät todista laitteen fyysistä kuntoa.</string>
     <string name="pdf_unit_samples">näytettä</string>
-    <string name="pdf_counts_value">Valmiit: %1$d, ei mitattu: %2$d, ei saatavilla: %3$d, varoitukset: %4$d, ongelmat: %5$d</string>
+    <string name="pdf_counts_value">Havainnot — valmistuneet: %1$d, ei mitattu: %2$d, pois rajatut: %3$d. Varoitukset: %4$d, ongelmat: %5$d.</string>
     <string name="pdf_page">Sivu %1$d / %2$d</string>
     <string name="export_title">Vie raportti</string>
     <string name="export_description">Luo paikallinen kopio tästä muuttumattomasta tallennetusta raportista.</string>
@@ -905,7 +917,8 @@
     <string name="comparison_change_newly_unavailable">Ei enää saatavilla</string>
     <string name="comparison_change_not_run">Ei suoritettu toisessa raportissa</string>
     <string name="comparison_attention_appeared">Varoitus tai ongelma ilmaantui</string>
-    <string name="comparison_attention_resolved">Varoitus tai ongelma poistui</string>
+    <string name="comparison_attention_resolved">Tämä tarkistus ei enää ilmoita aiempaa ongelmaa</string>
+    <string name="comparison_attention_unverified">Aiemman ongelman nykytilaa ei varmistettu.</string>
     <string name="comparison_attention_changed">Varoituksen tai ongelman tila muuttui</string>
     <string name="comparison_no_checks">Kumpaankaan raporttiin ei tallennettu tämän kategorian tarkistuksia.</string>
     <string name="comparison_loading">Raporttien vertailua ladataan…</string>
@@ -1145,7 +1158,7 @@
     <string name="observation_reason_battery_temperature_critical">Akun lämpötila on nyt vähintään 50 °C. Irrota laturi ja anna puhelimen jäähtyä ennen jatkamista.</string>
     <string name="observation_reason_thermal_status_unavailable">Tämä Android-versio tai laite ei näytä lämpötilatilaa fonecheckille.</string>
     <string name="observation_reason_thermal_management_active">Android käyttää parhaillaan lämmönhallintaa. Anna puhelimen levätä.</string>
-    <string name="observation_reason_thermal_severe_without_app_load">Android käyttää voimakasta lämpörajoitusta, vaikka fonecheck ei lisää lämpökuormaa. Anna puhelimen jäähtyä.</string>
+    <string name="observation_reason_thermal_severe_without_app_load">Android käyttää voimakasta lämpörajoitusta. Anna puhelimen jäähtyä.</string>
     <string name="observation_reason_button_test_not_run">Painiketestiä ei suoritettu. Käynnistä se ja paina jokaista pyydettyä painiketta.</string>
     <string name="observation_reason_button_test_in_progress">Painiketesti on vielä käynnissä. Paina jokaista pyydettyä painiketta ennen ajan loppumista.</string>
     <string name="observation_reason_button_test_timeout">Painiketesti päättyi ennen kaikkien pyydettyjen painallusten tallentumista. Suorita testi uudelleen ja paina jokaista painiketta.</string>

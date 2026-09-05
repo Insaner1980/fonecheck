@@ -52,8 +52,11 @@ import com.insaner.fonecheck.ui.screens.connectivity.ConnectivityTestState
 import com.insaner.fonecheck.ui.screens.connectivity.GpsFixStatus
 import com.insaner.fonecheck.ui.screens.display.DisplayTestState
 import com.insaner.fonecheck.ui.screens.performance.BenchmarkPhase
+import com.insaner.fonecheck.ui.screens.sensor.GuidedSensorCode
 import com.insaner.fonecheck.ui.screens.sensor.GuidedSensorStatus
+import com.insaner.fonecheck.ui.screens.sensor.GuidedSensorTestState
 import com.insaner.fonecheck.ui.screens.sensor.InteractiveChallenge
+import com.insaner.fonecheck.ui.screens.sensor.SensorAccuracyPolicy
 import com.insaner.fonecheck.ui.screens.sensor.SensorTestState
 import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkErrorCode
 import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkPhase
@@ -792,55 +795,7 @@ object RunAllSnapshotMapper {
                 },
             )
             sensorState.guidedTests.forEach { test ->
-                add(
-                    when (test.status) {
-                        GuidedSensorStatus.PASSED ->
-                            classifiedEvidence(
-                                categoryId = DiagnosticCategoryId.SENSORS,
-                                id = test.code.stableCode,
-                                classification =
-                                    classifyMeasurement(MeasurementKind.SENSORS, MeasurementOutcome.MEASURED),
-                                source = EvidenceSource.AUTOMATIC_MEASUREMENT,
-                                value = EvidenceValue.IntValue(test.sampleCount),
-                                unit = EvidenceUnitCode("samples"),
-                                capturedAt = capturedAt,
-                            )
-
-                        GuidedSensorStatus.NOT_AVAILABLE ->
-                            unavailable(
-                                categoryId = DiagnosticCategoryId.SENSORS,
-                                id = test.code.stableCode,
-                                capturedAt = capturedAt,
-                            )
-
-                        GuidedSensorStatus.NOT_TESTED ->
-                            notTested(
-                                categoryId = DiagnosticCategoryId.SENSORS,
-                                id = test.code.stableCode,
-                                capturedAt = capturedAt,
-                                reason = EvidenceReasonCode.NOT_RUN,
-                                source = EvidenceSource.AUTOMATIC_MEASUREMENT,
-                            )
-
-                        GuidedSensorStatus.SAMPLING ->
-                            notTested(
-                                categoryId = DiagnosticCategoryId.SENSORS,
-                                id = test.code.stableCode,
-                                capturedAt = capturedAt,
-                                reason = EvidenceReasonCode.CANCELLED,
-                                source = EvidenceSource.AUTOMATIC_MEASUREMENT,
-                            )
-
-                        GuidedSensorStatus.SKIPPED ->
-                            notTested(
-                                categoryId = DiagnosticCategoryId.SENSORS,
-                                id = test.code.stableCode,
-                                capturedAt = capturedAt,
-                                reason = EvidenceReasonCode.SKIPPED,
-                                source = EvidenceSource.AUTOMATIC_MEASUREMENT,
-                            )
-                    },
-                )
+                add(guidedSensorEvidence(test, capturedAt))
             }
             add(
                 if (!hardware.motionSensorAvailable) {
@@ -876,10 +831,74 @@ object RunAllSnapshotMapper {
                     outcome = manual.outcomes[RunAllStage.SENSORS],
                     hardwareAvailable = hardware.motionSensorAvailable,
                     capturedAt = capturedAt,
-                ),
+                ).let { item ->
+                    val motion = sensorState.guidedTests.first { it.code == GuidedSensorCode.ACCELEROMETER }
+                    if (manual.sensorsCompleted) {
+                        item.copy(
+                            confidence = SensorAccuracyPolicy.confidence(motion),
+                            reason = SensorAccuracyPolicy.reason(motion),
+                        )
+                    } else {
+                        item
+                    }
+                },
             )
         }
     }
+
+    private fun guidedSensorEvidence(
+        test: GuidedSensorTestState,
+        capturedAt: Instant,
+    ): DiagnosticEvidence =
+        when (test.status) {
+            GuidedSensorStatus.PASSED ->
+                classifiedEvidence(
+                    categoryId = DiagnosticCategoryId.SENSORS,
+                    id = test.code.stableCode,
+                    classification = classifyMeasurement(MeasurementKind.SENSORS, MeasurementOutcome.MEASURED),
+                    source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                    value = EvidenceValue.IntValue(test.sampleCount),
+                    unit = EvidenceUnitCode("samples"),
+                    capturedAt = capturedAt,
+                ).copy(
+                    confidence = SensorAccuracyPolicy.confidence(test),
+                    reason = SensorAccuracyPolicy.reason(test),
+                )
+
+            GuidedSensorStatus.NOT_AVAILABLE ->
+                unavailable(
+                    categoryId = DiagnosticCategoryId.SENSORS,
+                    id = test.code.stableCode,
+                    capturedAt = capturedAt,
+                )
+
+            GuidedSensorStatus.NOT_TESTED ->
+                notTested(
+                    categoryId = DiagnosticCategoryId.SENSORS,
+                    id = test.code.stableCode,
+                    capturedAt = capturedAt,
+                    reason = EvidenceReasonCode.NOT_RUN,
+                    source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                )
+
+            GuidedSensorStatus.SAMPLING ->
+                notTested(
+                    categoryId = DiagnosticCategoryId.SENSORS,
+                    id = test.code.stableCode,
+                    capturedAt = capturedAt,
+                    reason = EvidenceReasonCode.CANCELLED,
+                    source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                )
+
+            GuidedSensorStatus.SKIPPED ->
+                notTested(
+                    categoryId = DiagnosticCategoryId.SENSORS,
+                    id = test.code.stableCode,
+                    capturedAt = capturedAt,
+                    reason = EvidenceReasonCode.SKIPPED,
+                    source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                )
+        }
 
     private fun automaticSensorEvidence(
         id: String,
@@ -1320,6 +1339,9 @@ object RunAllSnapshotMapper {
         capturedAt: Instant,
     ): List<DiagnosticEvidence> {
         val thermal = snapshots.thermal
+        val statusAt = thermal.capturedAt ?: capturedAt
+        val headroomAt = thermal.headroomReadAt ?: capturedAt
+        val batteryAt = thermal.batteryTemperatureReadAt ?: capturedAt
         val statusEvidence =
             when {
                 !thermal.statusApiSupported ->
@@ -1333,7 +1355,7 @@ object RunAllSnapshotMapper {
                             ),
                         confidence = Confidence.UNAVAILABLE,
                         applicability = Applicability.NOT_APPLICABLE,
-                        capturedAt = capturedAt,
+                        capturedAt = statusAt,
                     )
 
                 thermal.status == ThermalStatusCode.UNAVAILABLE ->
@@ -1343,7 +1365,7 @@ object RunAllSnapshotMapper {
                         classification =
                             DeviceObservationClassifier.classify(DeviceObservation.Thermal(thermal.status)),
                         confidence = Confidence.UNAVAILABLE,
-                        capturedAt = capturedAt,
+                        capturedAt = statusAt,
                     )
 
                 else ->
@@ -1354,12 +1376,12 @@ object RunAllSnapshotMapper {
                             DeviceObservationClassifier.classify(DeviceObservation.Thermal(thermal.status)),
                         confidence = thermal.statusConfidence,
                         value = EvidenceValue.StableTextCodeValue(thermal.status.name.lowercase()),
-                        capturedAt = capturedAt,
+                        capturedAt = statusAt,
                     )
             }
         val severityEvidence =
             if (thermal.severity == ThermalSeverityCode.UNAVAILABLE) {
-                unavailableReading(DiagnosticCategoryId.THERMAL, "severity", capturedAt)
+                unavailableReading(DiagnosticCategoryId.THERMAL, "severity", statusAt)
             } else {
                 evidence(
                     categoryId = DiagnosticCategoryId.THERMAL,
@@ -1367,7 +1389,7 @@ object RunAllSnapshotMapper {
                     confidence = thermal.statusConfidence,
                     source = EvidenceSource.DERIVED,
                     value = EvidenceValue.StableTextCodeValue(thermal.severity.name.lowercase()),
-                    capturedAt = capturedAt,
+                    capturedAt = statusAt,
                 )
             }
         val headroomEvidence =
@@ -1383,11 +1405,11 @@ object RunAllSnapshotMapper {
                             ),
                         confidence = Confidence.UNAVAILABLE,
                         applicability = Applicability.NOT_APPLICABLE,
-                        capturedAt = capturedAt,
+                        capturedAt = headroomAt,
                     )
 
                 thermal.headroom == null ->
-                    unavailableReading(DiagnosticCategoryId.THERMAL, "headroom", capturedAt)
+                    unavailableReading(DiagnosticCategoryId.THERMAL, "headroom", headroomAt)
 
                 else ->
                     evidence(
@@ -1397,7 +1419,7 @@ object RunAllSnapshotMapper {
                         source = EvidenceSource.AUTOMATIC_MEASUREMENT,
                         value = EvidenceValue.DoubleValue(thermal.headroom.toString().toDouble()),
                         unit = EvidenceUnitCode("ratio"),
-                        capturedAt = capturedAt,
+                        capturedAt = headroomAt,
                     )
             }
         val batteryTemperatureEvidence =
@@ -1409,9 +1431,9 @@ object RunAllSnapshotMapper {
                     source = EvidenceSource.AUTOMATIC_MEASUREMENT,
                     value = EvidenceValue.DoubleValue(temperature.toDouble()),
                     unit = EvidenceUnitCode("celsius"),
-                    capturedAt = capturedAt,
+                    capturedAt = batteryAt,
                 )
-            } ?: unavailableReading(DiagnosticCategoryId.THERMAL, "battery_temperature", capturedAt)
+            } ?: unavailableReading(DiagnosticCategoryId.THERMAL, "battery_temperature", batteryAt)
 
         return listOf(statusEvidence, severityEvidence, headroomEvidence, batteryTemperatureEvidence)
     }

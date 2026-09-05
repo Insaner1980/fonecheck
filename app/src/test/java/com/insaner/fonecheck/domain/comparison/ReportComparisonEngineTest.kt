@@ -8,10 +8,12 @@ import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryResult
 import com.insaner.fonecheck.domain.model.DiagnosticCheckId
 import com.insaner.fonecheck.domain.model.DiagnosticEvidence
+import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.ReportKind
+import com.insaner.fonecheck.domain.model.ScoreCalculator
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreVersion
 import com.insaner.fonecheck.testing.testReport
@@ -22,6 +24,124 @@ import org.junit.Test
 import java.time.Instant
 
 class ReportComparisonEngineTest {
+    @Test
+    fun disappearingFailureCannotBecomeANumericImprovement() {
+        val health = evidence(DiagnosticCategoryId.BATTERY, "health", DiagnosticStatus.FAIL)
+        val temperature = evidence(DiagnosticCategoryId.BATTERY, "temperature", DiagnosticStatus.PASS)
+        val information = (1..6).map { evidence(DiagnosticCategoryId.BATTERY, "info_$it", DiagnosticStatus.INFO) }
+
+        fun calculated(
+            id: String,
+            items: List<DiagnosticEvidence>,
+        ): DiagnosticReport {
+            val categories =
+                listOf(category(DiagnosticCategoryId.BATTERY, DiagnosticStatus.INFO, *items.toTypedArray()))
+            val calculation = ScoreCalculator.calculate(categories)
+            return report(
+                id,
+                categories,
+            ).copy(kind = ReportKind.CATEGORY_ONLY, score = calculation.score, coverage = calculation.coverage)
+        }
+        val before = calculated("before", information + temperature + health)
+        assertEquals(50, before.score.value)
+        for (replacement in listOf(null, health.copy(status = DiagnosticStatus.NOT_AVAILABLE))) {
+            val after = calculated("after", information + temperature + listOfNotNull(replacement))
+            assertEquals(100, after.score.value)
+            assertEquals(100, before.coverage.percentage)
+            assertEquals(100, after.coverage.percentage)
+            val comparison = ReportComparisonEngine.compare(before, after)
+            assertNull(comparison.score.deltaOrNull())
+            assertEquals(
+                AttentionChange.UNVERIFIED,
+                comparison.categories
+                    .single()
+                    .evidence
+                    .single {
+                        it.checkId ==
+                            "battery.health"
+                    }.attentionChange,
+            )
+        }
+        val cleared = calculated("after", information + temperature + health.copy(status = DiagnosticStatus.PASS))
+        assertEquals(50, ReportComparisonEngine.compare(before, cleared).score.deltaOrNull())
+        val moreInformation =
+            calculated(
+                "after",
+                information + temperature + health +
+                    evidence(DiagnosticCategoryId.BATTERY, "extra", DiagnosticStatus.INFO),
+            )
+        assertEquals(0, ReportComparisonEngine.compare(before, moreInformation).score.deltaOrNull())
+        val partial =
+            calculated(
+                "partial",
+                information + temperature + health.copy(status = DiagnosticStatus.INFO) +
+                    evidence(DiagnosticCategoryId.BATTERY, "missing_one", DiagnosticStatus.NOT_TESTED) +
+                    evidence(DiagnosticCategoryId.BATTERY, "missing_two", DiagnosticStatus.NOT_TESTED),
+            )
+        assertEquals(100, partial.score.value)
+        assertEquals(80, partial.coverage.percentage)
+        assertEquals(2, partial.coverage.notTestedCount)
+    }
+
+    @Test
+    fun missingOrUnverifiedEvidenceDoesNotResolveAnIssue() {
+        val old = evidence(DiagnosticCategoryId.BATTERY, "health", DiagnosticStatus.FAIL)
+        val replacements =
+            listOf(
+                null,
+                old.copy(status = DiagnosticStatus.NOT_TESTED),
+                old.copy(status = DiagnosticStatus.NOT_AVAILABLE),
+                old.copy(status = DiagnosticStatus.INFO),
+                old.copy(status = DiagnosticStatus.PASS, applicability = Applicability.NOT_APPLICABLE),
+                old.copy(status = DiagnosticStatus.PASS, source = EvidenceSource.USER_CONFIRMATION),
+            )
+        replacements.forEach { replacement ->
+            val changes = compareEvidence(old, replacement)
+            assertEquals(0, changes.count { it.attentionChange == AttentionChange.RESOLVED })
+        }
+    }
+
+    @Test
+    fun comparablePassAndKnownGoodBatteryStatusResolveOnlyTheCheckedIssue() {
+        val old = evidence(DiagnosticCategoryId.BATTERY, "health", DiagnosticStatus.FAIL)
+        assertEquals(
+            AttentionChange.RESOLVED,
+            compareEvidence(old, old.copy(status = DiagnosticStatus.PASS)).single().attentionChange,
+        )
+        assertEquals(
+            AttentionChange.RESOLVED,
+            compareEvidence(
+                old,
+                old.copy(status = DiagnosticStatus.INFO, value = EvidenceValue.StableTextCodeValue("good")),
+            ).single().attentionChange,
+        )
+        assertEquals(
+            AttentionChange.CHANGED,
+            compareEvidence(old, old.copy(status = DiagnosticStatus.WARNING)).single().attentionChange,
+        )
+    }
+
+    private fun compareEvidence(
+        before: DiagnosticEvidence,
+        after: DiagnosticEvidence?,
+    ): List<EvidenceComparison> =
+        ReportComparisonEngine
+            .compare(
+                report("before", listOf(category(before.categoryId, before.status, before))),
+                report(
+                    "after",
+                    listOf(
+                        category(
+                            before.categoryId,
+                            after?.status ?: DiagnosticStatus.NOT_TESTED,
+                            *listOfNotNull(after).toTypedArray(),
+                        ),
+                    ),
+                ),
+            ).categories
+            .single { it.categoryId == before.categoryId }
+            .evidence
+
     @Test
     fun fullCheckReportsCanBeCompared() {
         assertNotNull(
@@ -107,7 +227,7 @@ class ReportComparisonEngineTest {
             device.evidence.single { it.checkId == "device.added" }.attentionChange,
         )
         assertEquals(
-            AttentionChange.RESOLVED,
+            AttentionChange.UNVERIFIED,
             device.evidence.single { it.checkId == "device.removed" }.attentionChange,
         )
     }

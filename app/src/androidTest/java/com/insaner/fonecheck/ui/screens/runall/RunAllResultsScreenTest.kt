@@ -69,11 +69,11 @@ class RunAllResultsScreenTest {
             .performScrollTo()
             .assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.getString(R.string.report_checks))
+            .onNodeWithText(context.getString(R.string.report_observations_completed))
             .performScrollTo()
             .assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.getString(R.string.report_checks_value, "1", "1"))
+            .onNodeWithText(context.getString(R.string.report_observations_excluded))
             .performScrollTo()
             .assertIsDisplayed()
         composeRule

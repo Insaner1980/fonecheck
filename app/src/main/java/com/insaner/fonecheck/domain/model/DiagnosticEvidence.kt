@@ -131,3 +131,18 @@ data class DiagnosticEvidence(
 }
 
 private val STABLE_CODE_PATTERN = Regex("^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
+
+fun DiagnosticEvidence.presentationConfidence(): Confidence =
+    if (categoryId == DiagnosticCategoryId.SENSORS && status == DiagnosticStatus.PASS && reason == null) {
+        Confidence.LOW
+    } else {
+        confidence
+    }
+
+// Presentation only: older reports did not save response accuracy. Do not infer it from PASS.
+fun DiagnosticEvidence.presentationReason(): EvidenceReasonCode? =
+    reason ?: if (categoryId == DiagnosticCategoryId.SENSORS && status == DiagnosticStatus.PASS) {
+        EvidenceReasonCode("sensor_response_accuracy_unknown")
+    } else {
+        null
+    }

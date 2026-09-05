@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="report_read_at">Read or received</string>
+    <string name="home_coverage_scope">Coverage concerns available, applicable observations in the saved Full Check, including information. Excluded checks and untested hardware can remain; see the report details.</string>
+    <string name="comparison_score_basis_changed">The scored observations changed. These scores are not directly comparable.</string>
+    <string name="report_scope_full">Scope: observations saved in this Full Check.</string>
+    <string name="report_scope_category">Scope: %1$s only.</string>
+    <string name="report_score_scope_note">Scores summarize passed, warning and failed observations in each saved report. Coverage counts completed available, applicable observations, including information. Unavailable or inapplicable observations are excluded. Full coverage does not certify the whole phone’s condition.</string>
+    <string name="report_observations">Observations</string>
+    <string name="report_observations_completed">Completed</string>
+    <string name="report_observations_unmeasured">Not measured</string>
+    <string name="report_observations_excluded">Excluded</string>
     <string name="app_name" translatable="false">fonecheck</string>
     <string name="navigation_back">Back</string>
     <string name="state_loading_title">Loading</string>
@@ -272,6 +282,10 @@
     <string name="sensor_count">Android sensor entries</string>
     <string name="sensor_guided_progress">%1$s of %2$s</string>
     <string name="sensor_guided_title">Guided tests</string>
+    <string name="sensor_response_only">The requested response was observed. This does not verify calibration or physical sensor condition.</string>
+    <string name="sensor_response_unreliable">The response was observed, but contributing samples included Android-reported unreliable readings. This does not establish a hardware fault.</string>
+    <string name="sensor_response_limited_accuracy">The response was observed with limited reported accuracy during sampling. Calibration and physical condition were not verified.</string>
+    <string name="sensor_response_accuracy_unknown">The response was observed, but its sampling accuracy was not recorded or was unknown. Do not infer good accuracy from a pass.</string>
     <string name="sensor_not_available_description">This sensor is not available on this device.</string>
     <string name="sensor_skip_test">Skip test</string>
     <string name="permission_rationale_activity_recognition">Physical activity access is used only while you run the step sensor test.</string>
@@ -543,7 +557,7 @@
     <string name="thermal_battery_temperature">Current reading</string>
     <string name="thermal_battery_note">Read from Android’s battery broadcast. This does not claim CPU, GPU, skin, or cooling-system temperature.</string>
     <string name="thermal_observation_title">Observation only</string>
-    <string name="thermal_observation_note">fonecheck does not create artificial thermal load. The snapshot describes only the device state observed while this screen or Full Check is active.</string>
+    <string name="thermal_observation_note">The snapshot describes only the device state observed while this screen or Full Check is active. It does not establish what caused the thermal state.</string>
     <string name="thermal_refresh">Refresh snapshot</string>
 
     <!-- Storage Test Screen -->
@@ -721,8 +735,6 @@
     <string name="report_reason_android_version_unsupported">Unsupported on this Android version</string>
     <string name="report_coverage">Coverage</string>
     <string name="report_coverage_value">%1$s%%</string>
-    <string name="report_checks">Checks</string>
-    <string name="report_checks_value">%1$s/%2$s</string>
     <string name="report_retest">Retest</string>
     <string name="report_retest_title">Retest %1$s</string>
     <string name="report_retest_description">The new result will be saved as a separate category-only report. The original report will not change.</string>
@@ -863,7 +875,7 @@
     <string name="pdf_captured">Captured</string>
     <string name="pdf_disclaimer">Differences and measurements do not prove physical device health.</string>
     <string name="pdf_unit_samples">samples</string>
-    <string name="pdf_counts_value">Completed: %1$d, not measured: %2$d, unavailable: %3$d, warnings: %4$d, failures: %5$d</string>
+    <string name="pdf_counts_value">Observations — completed: %1$d, not measured: %2$d, excluded: %3$d. Warnings: %4$d, failures: %5$d.</string>
     <string name="pdf_page">Page %1$d / %2$d</string>
     <string name="export_title">Export report</string>
     <string name="export_description">Create a local copy of this immutable saved report.</string>
@@ -909,7 +921,8 @@
     <string name="comparison_change_newly_unavailable">Newly unavailable</string>
     <string name="comparison_change_not_run">Not run in second report</string>
     <string name="comparison_attention_appeared">Warning or issue appeared</string>
-    <string name="comparison_attention_resolved">Warning or issue resolved</string>
+    <string name="comparison_attention_resolved">This check no longer reports the previous issue</string>
+    <string name="comparison_attention_unverified">The current state of the previous issue was not verified.</string>
     <string name="comparison_attention_changed">Warning or issue status changed</string>
     <string name="comparison_no_checks">No checks were saved for this category in either report.</string>
     <string name="comparison_loading">Loading report comparison…</string>
@@ -1149,7 +1162,7 @@
     <string name="observation_reason_battery_temperature_critical">The battery is at least 50 °C right now. Disconnect charging and let the phone cool before continuing.</string>
     <string name="observation_reason_thermal_status_unavailable">This Android version or device does not expose the thermal status to fonecheck.</string>
     <string name="observation_reason_thermal_management_active">Android is currently applying thermal management. Let the phone rest.</string>
-    <string name="observation_reason_thermal_severe_without_app_load">Android is applying severe thermal throttling even though fonecheck adds no thermal load. Let the phone cool.</string>
+    <string name="observation_reason_thermal_severe_without_app_load">Android is applying severe thermal throttling. Let the phone cool.</string>
     <string name="observation_reason_button_test_not_run">The button test was not run. Start it and press each requested button.</string>
     <string name="observation_reason_button_test_in_progress">The button test is still running. Press each requested button before the timer ends.</string>
     <string name="observation_reason_button_test_timeout">The button test ended before every requested press was recorded. Run it again and press each button.</string>
