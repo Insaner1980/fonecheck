@@ -6,9 +6,17 @@ import org.junit.Test
 
 class SensorTestStateTest {
     @Test
-    fun listenerRegistrationFailureClearsTheChallengeThatCouldNotStart() {
+    fun listenerRegistrationFailureClearsChallengeAndSamplingState() {
         val state =
             SensorTestState(
+                guidedTests =
+                    listOf(
+                        GuidedSensorTestState(
+                            code = GuidedSensorCode.ACCELEROMETER,
+                            sensorType = SensorType.ACCELEROMETER,
+                            status = GuidedSensorStatus.SAMPLING,
+                        ),
+                    ),
                 activeSensorType = 1,
                 challenge =
                     ChallengeState(
@@ -21,6 +29,7 @@ class SensorTestStateTest {
 
         assertEquals(ChallengeState(), failed.challenge)
         assertNull(failed.activeSensorType)
+        assertEquals(GuidedSensorStatus.NOT_TESTED, failed.guidedTests.single().status)
         assertEquals("listener_registration_failed", failed.error)
     }
 }

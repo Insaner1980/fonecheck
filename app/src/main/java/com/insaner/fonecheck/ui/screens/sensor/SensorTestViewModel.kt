@@ -82,12 +82,22 @@ data class SensorTestState(
     val error: String? = null,
 )
 
-internal fun SensorTestState.withChallengeListenerFailure(): SensorTestState =
-    copy(
+internal fun SensorTestState.withChallengeListenerFailure(): SensorTestState {
+    val failedSensorCode = challenge.sensorCode
+    return copy(
+        guidedTests =
+            guidedTests.map { test ->
+                if (test.code == failedSensorCode && test.status == GuidedSensorStatus.SAMPLING) {
+                    test.copy(status = GuidedSensorStatus.NOT_TESTED)
+                } else {
+                    test
+                }
+            },
         activeSensorType = null,
         challenge = ChallengeState(),
         error = "listener_registration_failed",
     )
+}
 
 @HiltViewModel
 class SensorTestViewModel
