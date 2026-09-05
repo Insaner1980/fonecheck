@@ -500,6 +500,8 @@ private fun LatestFullCheckReadout(
                     attention = attentionSummary,
                 )
             }
+            com.insaner.fonecheck.ui.components
+                .Note(stringResource(R.string.home_coverage_scope))
         }
     }
 }

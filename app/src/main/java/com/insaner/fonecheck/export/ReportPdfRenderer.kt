@@ -127,7 +127,24 @@ class ReportPdfRenderer
                 confidence = context.getString(R.string.pdf_confidence),
                 reason = context.getString(R.string.pdf_reason),
                 captured = context.getString(R.string.pdf_captured),
+                readAt = context.getString(R.string.report_read_at),
                 disclaimer = context.getString(R.string.pdf_disclaimer),
+                scope = { report ->
+                    if (report.kind == com.insaner.fonecheck.domain.model.ReportKind.FULL_CHECK) {
+                        context.getString(R.string.report_scope_full)
+                    } else {
+                        context.getString(
+                            R.string.report_scope_category,
+                            context.getString(
+                                report.categories
+                                    .single()
+                                    .categoryId
+                                    .labelResource(),
+                            ),
+                        )
+                    }
+                },
+                scoreScopeNote = context.getString(R.string.report_score_scope_note),
                 categoryName = { context.getString(it.labelResource()) },
                 checkName = { checkId ->
                     evidenceLabelResource(checkId.value)?.let { resource ->

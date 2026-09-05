@@ -90,13 +90,11 @@ class ReportPdfContentTest {
     }
 
     @Test
-    fun canonicalCategoriesMissingFromSnapshotRemainExplicitlyNotTested() {
+    fun categoriesOutsideCategoryReportAreNotShownAsUnfinished() {
         val blocks = ReportPdfContentBuilder.build(report(), PdfReportLabels.english())
         val categoryHeadings = blocks.filter { it.style == PdfTextStyle.CATEGORY }.map(PdfTextBlock::text)
 
-        assertEquals(14, categoryHeadings.size)
-        assertEquals("Device — not measured", categoryHeadings.first())
-        assertEquals("Biometrics — not measured", categoryHeadings.last())
+        assertEquals(listOf("Battery — info"), categoryHeadings)
     }
 
     private fun report() =

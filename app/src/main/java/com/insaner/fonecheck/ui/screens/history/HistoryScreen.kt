@@ -93,6 +93,7 @@ fun HistoryScreen(
     } else {
         TestScreenContent(modifier = modifier) {
             item { Note(stringResource(R.string.history_description)) }
+            item { Note(stringResource(R.string.report_score_scope_note)) }
             state.error?.let {
                 item { HistoryErrorCard(error = it, onRetry = onRetry) }
             }

@@ -7,6 +7,44 @@ import org.junit.Test
 
 class SensorRuntimePolicyTest {
     @Test
+    fun successfulResponsesRetainAccuracyAcrossTheWholeSampleSequence() {
+        listOf(
+            listOf(SensorAccuracyCode.HIGH, SensorAccuracyCode.HIGH) to SensorAccuracyCode.HIGH,
+            listOf(SensorAccuracyCode.UNRELIABLE, SensorAccuracyCode.UNRELIABLE) to SensorAccuracyCode.UNRELIABLE,
+            listOf(SensorAccuracyCode.UNRELIABLE, SensorAccuracyCode.HIGH) to SensorAccuracyCode.UNRELIABLE,
+        ).forEach { (accuracies, expected) ->
+            val sampler = GuidedSensorSampler(GuidedSensorCode.ACCELEROMETER)
+            var retained = SensorAccuracyCode.UNKNOWN
+            accuracies.forEachIndexed { index, accuracy ->
+                retained = SensorAccuracyPolicy.accumulate(retained, accuracy, index)
+                val result = sampler.accept(floatArrayOf(index * 4f, 0f, 9f))
+                assertEquals(index == 1, result.passed)
+            }
+            assertEquals(expected, retained)
+        }
+    }
+
+    @Test
+    fun scalarSensorAccuracyIsNotTreatedAsCalibratedVectorAccuracy() {
+        val scalar =
+            GuidedSensorTestState(
+                GuidedSensorCode.LIGHT,
+                SensorType.LIGHT,
+                GuidedSensorStatus.PASSED,
+                accuracy = SensorAccuracyCode.UNRELIABLE,
+            )
+        assertEquals(com.insaner.fonecheck.domain.model.Confidence.HIGH, SensorAccuracyPolicy.confidence(scalar))
+        assertEquals("sensor_response_only", SensorAccuracyPolicy.reason(scalar).value)
+        val unknown =
+            scalar.copy(
+                code = GuidedSensorCode.ACCELEROMETER,
+                sensorType = SensorType.ACCELEROMETER,
+                accuracy = SensorAccuracyCode.UNKNOWN,
+            )
+        assertEquals(com.insaner.fonecheck.domain.model.Confidence.LOW, SensorAccuracyPolicy.confidence(unknown))
+    }
+
+    @Test
     fun catalogKeepsEveryGuidedSensorAndMarksMissingHardwareUnavailable() {
         val tests =
             GuidedSensorCatalog

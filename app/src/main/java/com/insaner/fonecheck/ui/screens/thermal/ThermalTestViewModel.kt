@@ -29,6 +29,8 @@ data class ThermalTestState(
     val batteryTemperatureConfidence: Confidence = Confidence.UNAVAILABLE,
     val isMonitoring: Boolean = false,
     val capturedAt: Instant? = null,
+    val headroomReadAt: Instant? = null,
+    val batteryTemperatureReadAt: Instant? = null,
     val error: ThermalErrorCode? = null,
 )
 
@@ -45,6 +47,7 @@ class ThermalTestViewModel
         private var registration: ThermalStatusRegistration? = null
         private var monitoringGeneration = 0L
         private var lastHeadroomAttemptMillis: Long? = null
+        private var lastHeadroomReadAt: Instant? = null
 
         fun startMonitoring() {
             if (registration != null) return
@@ -96,8 +99,10 @@ class ThermalTestViewModel
                 } else {
                     ThermalStatusCode.UNAVAILABLE
                 }
+            val statusReadAt = Instant.ofEpochMilli(clock.currentTimeMillis())
             val headroom = readHeadroomIfDue(nowMillis)
             val batteryTemperature = platform.readBatteryTemperatureCelsius()
+            val batteryReadAt = Instant.ofEpochMilli(clock.currentTimeMillis())
 
             _state.update { current ->
                 current.copy(
@@ -117,7 +122,9 @@ class ThermalTestViewModel
                     batteryTemperatureCelsius = batteryTemperature,
                     batteryTemperatureConfidence =
                         if (batteryTemperature != null) Confidence.HIGH else Confidence.UNAVAILABLE,
-                    capturedAt = Instant.ofEpochMilli(nowMillis),
+                    capturedAt = statusReadAt,
+                    headroomReadAt = lastHeadroomReadAt,
+                    batteryTemperatureReadAt = batteryReadAt,
                     error =
                         when {
                             current.error == ThermalErrorCode.LISTENER_REGISTRATION_FAILED && registration == null ->
@@ -145,7 +152,9 @@ class ThermalTestViewModel
             if (!shouldReadHeadroom) return _state.value.headroom
 
             lastHeadroomAttemptMillis = nowMillis
-            return platform.readHeadroom()
+            return platform.readHeadroom().also {
+                lastHeadroomReadAt = Instant.ofEpochMilli(clock.currentTimeMillis())
+            }
         }
 
         fun stopMonitoring() {

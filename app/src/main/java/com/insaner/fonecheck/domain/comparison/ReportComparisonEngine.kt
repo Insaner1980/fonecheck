@@ -1,10 +1,12 @@
 package com.insaner.fonecheck.domain.comparison
 
+import com.insaner.fonecheck.domain.model.Applicability
 import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticEvidence
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
+import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.ReportAppContext
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.ReportSchemaVersion
@@ -27,6 +29,7 @@ enum class AttentionChange {
     NONE,
     APPEARED,
     RESOLVED,
+    UNVERIFIED,
     CHANGED,
 }
 
@@ -38,6 +41,7 @@ sealed interface ScoreComparison {
         val beforeState: ScoreState,
         val afterState: ScoreState,
         val version: ScoreVersion,
+        val evidenceBasisCompatible: Boolean = true,
     ) : ScoreComparison
 
     data class Incompatible(
@@ -115,15 +119,21 @@ object ReportComparisonEngine {
         }
         before.requireValidComparisonKeys()
         after.requireValidComparisonKeys()
+        val compatibleBasis =
+            before.schemaVersion == after.schemaVersion && before.scoredEvidenceBasis() == after.scoredEvidenceBasis()
         val score =
             if (before.score.version.isCompatibleWith(after.score.version)) {
                 ScoreComparison.Compatible(
                     before = before.score.value,
                     after = after.score.value,
-                    delta = before.score.value?.let { old -> after.score.value?.minus(old) },
+                    delta =
+                        before.score.value
+                            ?.let { old -> after.score.value?.minus(old) }
+                            .takeIf { compatibleBasis },
                     beforeState = before.score.state,
                     afterState = after.score.state,
                     version = before.score.version,
+                    evidenceBasisCompatible = compatibleBasis,
                 )
             } else {
                 ScoreComparison.Incompatible(before.score.version, after.score.version)
@@ -180,7 +190,13 @@ object ReportComparisonEngine {
                             before = old,
                             after = new,
                             change = classifyChange(old, new),
-                            attentionChange = classifyAttention(old?.status, new?.status),
+                            attentionChange =
+                                classifyAttention(
+                                    old,
+                                    new,
+                                    before.schemaVersion == after.schemaVersion &&
+                                        before.score.version == after.score.version,
+                                ),
                         )
                     },
         )
@@ -205,20 +221,48 @@ object ReportComparisonEngine {
         }
 
     private fun classifyAttention(
-        before: DiagnosticStatus?,
-        after: DiagnosticStatus?,
+        before: DiagnosticEvidence?,
+        after: DiagnosticEvidence?,
+        compatibleDefinitions: Boolean,
     ): AttentionChange {
-        val beforeNeedsAttention = before == DiagnosticStatus.WARNING || before == DiagnosticStatus.FAIL
-        val afterNeedsAttention = after == DiagnosticStatus.WARNING || after == DiagnosticStatus.FAIL
+        val beforeNeedsAttention = before?.status == DiagnosticStatus.WARNING || before?.status == DiagnosticStatus.FAIL
+        val afterNeedsAttention = after?.status == DiagnosticStatus.WARNING || after?.status == DiagnosticStatus.FAIL
+        val verifiedResolution =
+            before != null && after != null && compatibleDefinitions &&
+                before.applicability == Applicability.APPLICABLE && after.applicability == Applicability.APPLICABLE &&
+                before.source == after.source && before.unit == after.unit && after.capturedAt >= before.capturedAt &&
+                (after.status == DiagnosticStatus.PASS || after.isKnownClearInformationalObservation())
         return when {
             !beforeNeedsAttention && afterNeedsAttention -> AttentionChange.APPEARED
-            beforeNeedsAttention && !afterNeedsAttention -> AttentionChange.RESOLVED
-            beforeNeedsAttention && afterNeedsAttention && before != after -> AttentionChange.CHANGED
+            beforeNeedsAttention && !afterNeedsAttention ->
+                if (verifiedResolution) AttentionChange.RESOLVED else AttentionChange.UNVERIFIED
+            beforeNeedsAttention && afterNeedsAttention && before.status != after.status -> AttentionChange.CHANGED
             else -> AttentionChange.NONE
         }
     }
 
+    // INFO normally records inventory. Only these values clear the condition checked by this ID.
+    private fun DiagnosticEvidence.isKnownClearInformationalObservation(): Boolean {
+        if (status != DiagnosticStatus.INFO) return false
+        return when (checkId.value) {
+            "battery.health" -> value == EvidenceValue.StableTextCodeValue("good")
+            "device.developer_options", "device.usb_debugging" -> value == EvidenceValue.BooleanValue(false)
+            "device.security" -> value == EvidenceValue.StableTextCodeValue("no_known_artifact_detected")
+            else ->
+                checkId.value.matches(Regex("sim\\.slot_[0-9]+_state")) &&
+                    value == EvidenceValue.StableTextCodeValue("ready")
+        }
+    }
+
     private fun DiagnosticEvidence.withoutTimestamp() = copy(capturedAt = java.time.Instant.EPOCH)
+
+    private fun DiagnosticReport.scoredEvidenceBasis() =
+        categories
+            .flatMap { it.evidence }
+            .filter {
+                it.applicability == Applicability.APPLICABLE &&
+                    it.status in setOf(DiagnosticStatus.PASS, DiagnosticStatus.WARNING, DiagnosticStatus.FAIL)
+            }.associate { it.checkId to (it.source to it.unit) }
 
     private fun DiagnosticReport.comparisonCategoryId(): DiagnosticCategoryId? =
         if (kind == ReportKind.CATEGORY_ONLY) categories.singleOrNull()?.categoryId else null

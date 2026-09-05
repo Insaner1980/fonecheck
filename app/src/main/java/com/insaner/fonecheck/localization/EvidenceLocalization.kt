@@ -130,6 +130,10 @@ fun observationStatusStringRes(classification: ObservationClassification): Int =
 @StringRes
 private fun legacyEvidenceReasonStringRes(reason: EvidenceReasonCode): Int? =
     when (reason) {
+        EvidenceReasonCode("sensor_response_only") -> R.string.sensor_response_only
+        EvidenceReasonCode("sensor_response_unreliable") -> R.string.sensor_response_unreliable
+        EvidenceReasonCode("sensor_response_limited_accuracy") -> R.string.sensor_response_limited_accuracy
+        EvidenceReasonCode("sensor_response_accuracy_unknown") -> R.string.sensor_response_accuracy_unknown
         EvidenceReasonCode.PERMISSION_DENIED -> R.string.run_all_permission_missing
         EvidenceReasonCode.NOT_RUN -> R.string.run_all_summary_not_tested
         EvidenceReasonCode.SKIPPED,

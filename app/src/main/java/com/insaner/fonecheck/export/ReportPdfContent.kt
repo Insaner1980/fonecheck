@@ -4,6 +4,7 @@ import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.domain.model.CoverageSummary
 import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
+import com.insaner.fonecheck.domain.model.DiagnosticCategoryResult
 import com.insaner.fonecheck.domain.model.DiagnosticCheckId
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
@@ -11,7 +12,10 @@ import com.insaner.fonecheck.domain.model.EvidenceReasonCode
 import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.EvidenceUnitCode
 import com.insaner.fonecheck.domain.model.EvidenceValue
+import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.ScoreState
+import com.insaner.fonecheck.domain.model.presentationConfidence
+import com.insaner.fonecheck.domain.model.presentationReason
 import com.insaner.fonecheck.localization.shouldShowEvidenceReason
 import java.time.Duration
 import java.time.Instant
@@ -108,7 +112,10 @@ data class PdfReportLabels(
     val confidence: String,
     val reason: String,
     val captured: String,
+    val readAt: String,
     val disclaimer: String,
+    val scope: (DiagnosticReport) -> String,
+    val scoreScopeNote: String,
     val categoryName: (DiagnosticCategoryId) -> String,
     val checkName: (DiagnosticCheckId) -> String,
     val statusName: (DiagnosticStatus) -> String,
@@ -145,7 +152,19 @@ data class PdfReportLabels(
                 confidence = "Confidence",
                 reason = "Reason",
                 captured = "Captured",
+                readAt = "Read or received",
                 disclaimer = "Differences and measurements do not prove physical device health.",
+                scope = { report ->
+                    if (report.kind == ReportKind.FULL_CHECK) {
+                        "Scope: saved Full Check observations."
+                    } else {
+                        "Scope: ${report.categories.single().categoryId.name.lowercase()} only."
+                    }
+                },
+                scoreScopeNote =
+                    "Scores summarize rated observations. Coverage includes informational observations " +
+                        "and excludes unavailable or inapplicable observations; " +
+                        "it does not certify physical condition.",
                 categoryName = { it.name.lowercase().replaceFirstChar(Char::uppercase) },
                 checkName = { it.value },
                 statusName = {
@@ -179,6 +198,11 @@ object ReportPdfContentBuilder {
         labels: PdfReportLabels,
     ): List<PdfTextBlock> {
         val categories = report.categories.associateBy { it.categoryId }
+        val includedCategories =
+            DiagnosticCatalog.categories.filter {
+                report.kind == ReportKind.FULL_CHECK ||
+                    it in categories
+            }
         val evidence = report.categories.flatMap { it.evidence }
         val duration = Duration.between(report.startedAt, report.completedAt).coerceAtLeast(Duration.ZERO)
         return buildList {
@@ -206,6 +230,8 @@ object ReportPdfContentBuilder {
             )
             add(PdfTextBlock("${labels.completed}: ${labels.completedValue(report.completedAt)}", PdfTextStyle.BODY))
             add(PdfTextBlock("${labels.duration}: ${labels.durationValue(duration)}", PdfTextStyle.BODY))
+            add(PdfTextBlock(labels.scope(report), PdfTextStyle.BODY))
+            add(PdfTextBlock(labels.scoreScopeNote, PdfTextStyle.BODY))
             add(
                 PdfTextBlock(
                     "${labels.score}: ${report.score.value ?: "—"}",
@@ -232,54 +258,66 @@ object ReportPdfContentBuilder {
             )
             add(PdfTextBlock(labels.disclaimer, PdfTextStyle.BODY))
             add(PdfTextBlock(labels.categories, PdfTextStyle.HEADING))
-            DiagnosticCatalog.categories.forEach { categoryId ->
-                val category = categories[categoryId]
-                val status = category?.aggregateStatus ?: DiagnosticStatus.NOT_TESTED
+            includedCategories.forEach { categoryId ->
+                addCategory(categoryId, categories[categoryId], labels)
+            }
+        }
+    }
+
+    private fun MutableList<PdfTextBlock>.addCategory(
+        categoryId: DiagnosticCategoryId,
+        category: DiagnosticCategoryResult?,
+        labels: PdfReportLabels,
+    ) {
+        val status = category?.aggregateStatus ?: DiagnosticStatus.NOT_TESTED
+        add(
+            PdfTextBlock(
+                "${labels.categoryName(categoryId)} — ${labels.statusName(status)}",
+                PdfTextStyle.CATEGORY,
+            ),
+        )
+        category?.evidence.orEmpty().forEach { item ->
+            add(
+                PdfTextBlock(
+                    "${labels.checkName(item.checkId)} — ${labels.statusName(item.status)}",
+                    PdfTextStyle.MONO,
+                ),
+            )
+            item.value?.let {
                 add(
                     PdfTextBlock(
-                        "${labels.categoryName(categoryId)} — ${labels.statusName(status)}",
-                        PdfTextStyle.CATEGORY,
+                        "${valueText(it, labels)}" +
+                            item.unit
+                                ?.let(labels.unitName)
+                                ?.takeIf(String::isNotBlank)
+                                ?.let { unit -> " $unit" }
+                                .orEmpty(),
+                        PdfTextStyle.MONO,
                     ),
                 )
-                category?.evidence.orEmpty().forEach { item ->
-                    add(
-                        PdfTextBlock(
-                            "${labels.checkName(item.checkId)} — ${labels.statusName(item.status)}",
-                            PdfTextStyle.MONO,
-                        ),
-                    )
-                    item.value?.let {
-                        add(
-                            PdfTextBlock(
-                                "${valueText(it, labels)}" +
-                                    item.unit
-                                        ?.let(labels.unitName)
-                                        ?.takeIf(String::isNotBlank)
-                                        ?.let { unit ->
-                                            " $unit"
-                                        }.orEmpty(),
-                                PdfTextStyle.MONO,
-                            ),
-                        )
-                    }
-                    add(PdfTextBlock("${labels.source}: ${labels.sourceName(item.source)}", PdfTextStyle.BODY))
-                    add(
-                        PdfTextBlock(
-                            "${labels.confidence}: ${labels.confidenceName(item.confidence)}",
-                            PdfTextStyle.BODY,
-                        ),
-                    )
-                    item.reason?.takeIf { shouldShowEvidenceReason(item.status, it) }?.let {
-                        add(PdfTextBlock("${labels.reason}: ${labels.reasonName(it)}", PdfTextStyle.BODY))
-                    }
-                    add(
-                        PdfTextBlock(
-                            "${labels.captured}: ${labels.completedValue(item.capturedAt)}",
-                            PdfTextStyle.BODY,
-                        ),
-                    )
-                }
             }
+            add(PdfTextBlock("${labels.source}: ${labels.sourceName(item.source)}", PdfTextStyle.BODY))
+            add(
+                PdfTextBlock(
+                    "${labels.confidence}: ${labels.confidenceName(item.presentationConfidence())}",
+                    PdfTextStyle.BODY,
+                ),
+            )
+            item.presentationReason()?.takeIf { shouldShowEvidenceReason(item.status, it) }?.let {
+                add(PdfTextBlock("${labels.reason}: ${labels.reasonName(it)}", PdfTextStyle.BODY))
+            }
+            val timeLabel =
+                if (item.categoryId == DiagnosticCategoryId.THERMAL) {
+                    labels.readAt
+                } else {
+                    labels.captured
+                }
+            add(
+                PdfTextBlock(
+                    "$timeLabel: ${labels.completedValue(item.capturedAt)}",
+                    PdfTextStyle.BODY,
+                ),
+            )
         }
     }
 

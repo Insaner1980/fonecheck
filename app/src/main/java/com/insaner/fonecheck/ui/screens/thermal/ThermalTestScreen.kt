@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
@@ -31,9 +32,12 @@ import com.insaner.fonecheck.ui.components.ThermalHeadroomGauge
 import com.insaner.fonecheck.ui.components.WindowFigure
 import com.insaner.fonecheck.ui.components.WindowLabel
 import com.insaner.fonecheck.ui.components.confidenceLabel
+import com.insaner.fonecheck.ui.format.formatUiDateTime
+import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.toSemanticTone
+import java.time.Instant
 
 @Composable
 fun ThermalTestScreen(
@@ -119,6 +123,7 @@ private fun ThermalStatusSection(state: ThermalTestState) {
             showDivider = false,
         )
         ObservationReasonNote(classification)
+        ThermalReadTime(state.capturedAt)
         Note(
             stringResource(
                 if (state.statusApiSupported) {
@@ -158,6 +163,7 @@ private fun ThermalHeadroomSection(state: ThermalTestState) {
             Note(stringResource(R.string.thermal_headroom_requires_api30))
         }
         Note(stringResource(R.string.thermal_headroom_note))
+        ThermalReadTime(state.headroomReadAt)
         HairlineRule()
     }
 }
@@ -184,8 +190,18 @@ private fun ThermalBatterySection(state: ThermalTestState) {
         }
         Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
         Note(stringResource(R.string.thermal_battery_note))
+        ThermalReadTime(state.batteryTemperatureReadAt)
         HairlineRule()
     }
+}
+
+@Composable
+private fun ThermalReadTime(time: Instant?) {
+    val locale = uiLanguageLocale(LocalLocale.current.platformLocale)
+    DataRow(
+        label = stringResource(R.string.report_read_at),
+        value = time?.let { formatUiDateTime(it, locale) },
+    )
 }
 
 @Composable

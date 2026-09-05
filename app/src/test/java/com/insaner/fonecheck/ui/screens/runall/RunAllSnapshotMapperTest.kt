@@ -81,6 +81,40 @@ import java.time.Instant
 @Suppress("LargeClass") // Mirrors the canonical mapper's complete category contract in one suite.
 class RunAllSnapshotMapperTest {
     @Test
+    fun thermalSnapshotPreservesIndividualReadingTimes() {
+        val statusAt = Instant.ofEpochMilli(5_000L)
+        val readingAt = Instant.ofEpochMilli(1_000L)
+        val evidence =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots =
+                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                            thermal =
+                                ThermalTestState(
+                                    statusApiSupported = true,
+                                    headroomApiSupported = true,
+                                    status = ThermalStatusCode.SEVERE,
+                                    severity = ThermalSeverityCode.SEVERE,
+                                    headroom = 0.5f,
+                                    batteryTemperatureCelsius = 30f,
+                                    capturedAt = statusAt,
+                                    headroomReadAt = readingAt,
+                                    batteryTemperatureReadAt = readingAt,
+                                ),
+                        ),
+                    manual = ManualCheckResults(),
+                    permissions = RunAllPermissions(),
+                    capturedAt = Instant.ofEpochMilli(9_000L),
+                ).single { it.categoryId == DiagnosticCategoryId.THERMAL }
+                .evidence
+                .associateBy { it.checkId.value }
+        assertEquals(statusAt, evidence.getValue("thermal.status").capturedAt)
+        assertEquals(statusAt, evidence.getValue("thermal.severity").capturedAt)
+        assertEquals(readingAt, evidence.getValue("thermal.headroom").capturedAt)
+        assertEquals(readingAt, evidence.getValue("thermal.battery_temperature").capturedAt)
+    }
+
+    @Test
     fun mapProducesCurrentCatalogOrderedSnapshotsWithoutSensitiveConnectivityValues() {
         val capturedAt = Instant.parse("2026-08-07T12:00:30Z")
         val sensitiveValues =
@@ -514,6 +548,38 @@ class RunAllSnapshotMapperTest {
             assertEquals(DiagnosticStatus.NOT_AVAILABLE, evidence.getValue(id).status)
             assertEquals(EvidenceReasonCode(reason), evidence.getValue(id).reason)
             assertEquals(null, evidence.getValue(id).value)
+        }
+    }
+
+    @Test
+    fun sensorSnapshotPreservesUnreliableResponseWithoutAddingCoverageItems() {
+        val snapshots = diagnosticSnapshotsWithSensitiveConnectivity()
+        val guided =
+            GuidedSensorCatalog.create(setOf(SensorType.ACCELEROMETER)).map {
+                if (it.code == GuidedSensorCode.ACCELEROMETER) {
+                    it.copy(
+                        status = GuidedSensorStatus.PASSED,
+                        sampleCount = 5,
+                        accuracy = com.insaner.fonecheck.ui.screens.sensor.SensorAccuracyCode.UNRELIABLE,
+                    )
+                } else {
+                    it
+                }
+            }
+        val report =
+            RunAllSnapshotMapper
+                .map(
+                    snapshots = snapshots.copy(sensors = SensorTestState(guidedTests = guided, sensorCount = 1)),
+                    manual = ManualCheckResults(sensorsCompleted = true),
+                    permissions = RunAllPermissions(),
+                    capturedAt = Instant.EPOCH,
+                ).single { it.categoryId == DiagnosticCategoryId.SENSORS }
+        assertEquals(11, report.evidence.size)
+        listOf("sensors.accelerometer", "sensors.motion").forEach { id ->
+            val item = report.evidence.single { it.checkId.value == id }
+            assertEquals(DiagnosticStatus.PASS, item.status)
+            assertEquals(Confidence.LOW, item.confidence)
+            assertEquals(EvidenceReasonCode("sensor_response_unreliable"), item.reason)
         }
     }
 

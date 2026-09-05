@@ -10,6 +10,46 @@ import org.junit.Test
 
 class ThermalTestViewModelTest {
     @Test
+    fun statusCallbackDoesNotRefreshOtherReadingTimes() {
+        var now = 1_000L
+        val platform = FakeThermalPlatform()
+        val viewModel = ThermalTestViewModel(platform, EpochMillisClock { now })
+        viewModel.startMonitoring()
+        val initial = viewModel.state.value
+
+        now = 5_000L
+        platform.emit(ThermalStatusCode.SEVERE)
+        assertEquals(
+            now,
+            viewModel.state.value.capturedAt
+                ?.toEpochMilli(),
+        )
+        assertEquals(initial.headroomReadAt, viewModel.state.value.headroomReadAt)
+        assertEquals(initial.batteryTemperatureReadAt, viewModel.state.value.batteryTemperatureReadAt)
+        assertEquals(1_000L, initial.headroomReadAt?.toEpochMilli())
+        assertEquals(1_000L, initial.batteryTemperatureReadAt?.toEpochMilli())
+
+        now = 6_000L
+        viewModel.refresh()
+        assertEquals(initial.headroomReadAt, viewModel.state.value.headroomReadAt)
+        assertEquals(
+            now,
+            viewModel.state.value.batteryTemperatureReadAt
+                ?.toEpochMilli(),
+        )
+        assertEquals(1, platform.headroomReadCount)
+        now = 11_000L
+        viewModel.refresh()
+        assertEquals(
+            now,
+            viewModel.state.value.headroomReadAt
+                ?.toEpochMilli(),
+        )
+        assertEquals(2, platform.headroomReadCount)
+        viewModel.stopMonitoring()
+    }
+
+    @Test
     fun unsupportedApiIsDistinctFromANormalThermalState() {
         val platform = FakeThermalPlatform(statusApiSupported = false, headroomApiSupported = false)
         val viewModel = ThermalTestViewModel(platform, EpochMillisClock { 1_000L })

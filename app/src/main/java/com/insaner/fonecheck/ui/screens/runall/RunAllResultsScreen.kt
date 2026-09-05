@@ -41,6 +41,8 @@ import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.TestResult
 import com.insaner.fonecheck.domain.model.TestStatus
+import com.insaner.fonecheck.domain.model.presentationConfidence
+import com.insaner.fonecheck.domain.model.presentationReason
 import com.insaner.fonecheck.localization.evidenceLabelResource
 import com.insaner.fonecheck.localization.evidenceReasonStringRes
 import com.insaner.fonecheck.localization.shouldShowEvidenceReason
@@ -241,16 +243,34 @@ private fun ResultsSummary(
         )
         Note(stringResource(R.string.run_all_results_description))
         ScoreReadout(report.score)
+        Note(
+            if (report.kind == ReportKind.FULL_CHECK) {
+                stringResource(R.string.report_scope_full)
+            } else {
+                stringResource(
+                    R.string.report_scope_category,
+                    stringResource(
+                        diagnosticDestinations
+                            .first {
+                                it.category == report.categories.single().categoryId
+                            }.labelResId,
+                    ),
+                )
+            },
+        )
+        Note(stringResource(R.string.report_score_scope_note))
         // One segment per category, in the colour of that category: the shape of the run, drawn
         // beside the score it produced and counted in words underneath.
         SegmentedBar(segments = categoryTones)
         Column {
+            SectionHeader(stringResource(R.string.pdf_categories))
             StatusCount(DiagnosticStatus.PASS, counts.pass)
             StatusCount(DiagnosticStatus.INFO, counts.info)
             StatusCount(DiagnosticStatus.WARNING, counts.warning)
             StatusCount(DiagnosticStatus.FAIL, counts.fail)
             StatusCount(DiagnosticStatus.NOT_AVAILABLE, counts.notAvailable)
             StatusCount(DiagnosticStatus.NOT_TESTED, counts.notTested)
+            SectionHeader(stringResource(R.string.report_observations))
             DataRow(
                 label = stringResource(R.string.report_coverage),
                 value =
@@ -260,13 +280,16 @@ private fun ResultsSummary(
                     ),
             )
             DataRow(
-                label = stringResource(R.string.report_checks),
-                value =
-                    stringResource(
-                        R.string.report_checks_value,
-                        uiNumber(report.coverage.completedCount),
-                        uiNumber(report.coverage.applicableCount),
-                    ),
+                label = stringResource(R.string.report_observations_completed),
+                value = uiNumber(report.coverage.completedCount),
+            )
+            DataRow(
+                label = stringResource(R.string.report_observations_unmeasured),
+                value = uiNumber(report.coverage.notTestedCount),
+            )
+            DataRow(
+                label = stringResource(R.string.report_observations_excluded),
+                value = uiNumber(report.coverage.unavailableCount),
             )
         }
     }
@@ -533,6 +556,13 @@ private fun ResultDetail(
         result.reason?.takeIf { showReason }?.let { reason ->
             Note(text = stringResource(R.string.report_evidence_reason, reason))
         }
+        if (result.id.startsWith("thermal.")) {
+            val locale = uiLanguageLocale(LocalLocale.current.platformLocale)
+            LongValueRow(
+                label = stringResource(R.string.report_read_at),
+                value = formatUiDateTime(java.time.Instant.ofEpochMilli(result.timestamp), locale),
+            )
+        }
     }
 }
 
@@ -552,11 +582,11 @@ private fun DiagnosticEvidence.toUiResult(): TestResult =
         name = evidenceLabel(checkId.value),
         status = status.toLegacyStatus(),
         detail = evidenceDetail(this),
-        confidence = confidence,
+        confidence = presentationConfidence(),
         timestamp = capturedAt.toEpochMilli(),
         source = source,
         reason =
-            reason
+            presentationReason()
                 ?.takeIf { shouldShowEvidenceReason(status, it) }
                 ?.let { reasonLabel(it) },
     )
