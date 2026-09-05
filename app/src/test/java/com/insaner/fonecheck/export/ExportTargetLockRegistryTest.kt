@@ -9,8 +9,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
-import java.util.concurrent.ConcurrentHashMap
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ExportTargetLockRegistryTest {

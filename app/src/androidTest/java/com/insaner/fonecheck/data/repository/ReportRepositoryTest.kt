@@ -155,7 +155,7 @@ class ReportRepositoryTest {
                     failureCount, payloadJson
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """.trimIndent(),
-                arrayOf(
+                arrayOf<Any?>(
                     "malformed-metadata",
                     "future_kind",
                     null,

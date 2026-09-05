@@ -11,7 +11,7 @@
 ## Build System
 - Kotlin DSL (`build.gradle.kts`)
 - Version catalog (`gradle/libs.versions.toml`)
-- Kotlin 2.4.10, AGP 9.3.2, Gradle 9.7.0
+- Kotlin 2.4.10, AGP 9.4.0, Gradle 9.7.1
 
 ## Key Dependencies
 - Compose BOM 2026.08.00
