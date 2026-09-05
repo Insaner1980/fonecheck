@@ -223,7 +223,17 @@ class RunAllSnapshotMapperTest {
             assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue(id).status)
             assertEquals(EvidenceReasonCode("measurement_timeout"), evidence.getValue(id).reason)
         }
-        assertConnectivityMeasurementError(evidence)
+        listOf(
+            "connectivity.wifi",
+            "connectivity.bluetooth",
+            "connectivity.nfc",
+            "connectivity.nfc_hce",
+            "connectivity.gps",
+            "connectivity.mobile",
+        ).forEach { id ->
+            assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue(id).status)
+            assertEquals(EvidenceReasonCode("measurement_error"), evidence.getValue(id).reason)
+        }
     }
 
     @Test
@@ -237,7 +247,17 @@ class RunAllSnapshotMapperTest {
                     ),
             )
 
-        assertConnectivityMeasurementError(evidence)
+        listOf(
+            "connectivity.wifi",
+            "connectivity.bluetooth",
+            "connectivity.nfc",
+            "connectivity.nfc_hce",
+            "connectivity.gps",
+            "connectivity.mobile",
+        ).forEach { id ->
+            assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue(id).status)
+            assertEquals(EvidenceReasonCode("measurement_error"), evidence.getValue(id).reason)
+        }
     }
 
     @Test
@@ -1650,20 +1670,6 @@ class RunAllSnapshotMapperTest {
                     camera = true,
                 ),
         )
-
-    private fun assertConnectivityMeasurementError(evidence: Map<String, DiagnosticEvidence>) {
-        listOf(
-            "connectivity.wifi",
-            "connectivity.bluetooth",
-            "connectivity.nfc",
-            "connectivity.nfc_hce",
-            "connectivity.gps",
-            "connectivity.mobile",
-        ).forEach { id ->
-            assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue(id).status)
-            assertEquals(EvidenceReasonCode("measurement_error"), evidence.getValue(id).reason)
-        }
-    }
 
     private companion object {
         const val MEBIBYTE = 1_048_576
