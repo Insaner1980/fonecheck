@@ -81,7 +81,7 @@ composeStabilityAnalyzer {
     }
 }
 
-// Compose Stability Analyzer 0.12.0 does not invalidate AGP's built-in Kotlin tasks when this
+// Compose Stability Analyzer does not invalidate AGP's built-in Kotlin tasks when this
 // compiler-plugin input is introduced, so make the shared contract an explicit task input.
 tasks
     .matching { it.name == "compileDebugKotlin" || it.name == "compileReleaseKotlin" }

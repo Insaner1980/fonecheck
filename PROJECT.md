@@ -51,8 +51,8 @@ fonecheck is a local, single-activity phone diagnostics app. It provides fourtee
 
 | Concern | Current implementation |
 |---|---|
-| Build | Kotlin DSL, version catalog, Gradle wrapper 9.7.0 with SHA-256 |
-| Kotlin / AGP | Kotlin 2.4.10; Android Gradle Plugin 9.3.2; JVM 17 |
+| Build | Kotlin DSL, version catalog, Gradle wrapper 9.7.1 with SHA-256 |
+| Kotlin / AGP | Kotlin 2.4.10; Android Gradle Plugin 9.4.0; JVM 17 |
 | UI | Jetpack Compose, Material 3 plus explicit `material-icons-core`, Compose BOM 2026.08.00 |
 | AndroidX shell/lifecycle | Core KTX 1.19.0; Core SplashScreen 1.2.0; Startup Runtime 1.2.0; Lifecycle Runtime Compose 2.11.0; Activity Compose 1.13.0; AppCompat 1.8.0 |
 | Navigation | Navigation Compose 2.9.8 and type-safe Serializable routes |
@@ -64,15 +64,15 @@ fonecheck is a local, single-activity phone diagnostics app. It provides fourtee
 | Tests | JUnit 4.13.2, kotlinx-coroutines-test 1.11.0, AndroidX Test Runner 1.7.0, AndroidX Test Ext JUnit 1.3.0, Compose UI test through the BOM, Room testing 2.8.4; debug unit-test coverage is enabled for JaCoCo/Sonar import |
 | Security automation | CodeQL 4.37.9, Semgrep 1.171.0, OSV-Scanner 2.4.0, project-local DeepSec 2.3.8, dependency verification metadata/keyring, buildscript dependency locking |
 
-The wrapper pins Gradle 9.7.0 with `distributionSha256Sum`, validates the distribution URL, disables retries, and uses a 10-second network timeout. `gradle.properties` disables Gradle build caching and Kotlin task caching, enables AndroidX, official Kotlin style, and non-transitive R classes, and gives Gradle a 2 GiB heap. These are build-behavior facts, not performance recommendations.
+The wrapper pins Gradle 9.7.1 with `distributionSha256Sum`, validates the distribution URL, disables retries, and uses a 10-second network timeout. `gradle.properties` disables Gradle build caching and Kotlin task caching, enables AndroidX, official Kotlin style, and non-transitive R classes, and gives Gradle a 2 GiB heap. These are build-behavior facts, not performance recommendations.
 
-The root build forces selected buildscript transitives to patched versions: Jackson 2.22.2, protobuf 4.35.1, jose4j 0.9.6, Bouncy Castle 1.85, JDOM 2.0.6.1, and jsoup 1.23.2. The app also forces Apache HttpClient 4.5.14 only in `androidLintTool`, because AGP's `sdklib` otherwise requests vulnerable 4.5.6 for the lint process. The root build enables buildscript dependency locking. `gradle/verification-metadata.xml`, `gradle/verification-keyring.keys`, `buildscript-gradle.lockfile`, and the generated `settings-gradle.lockfile` are supply-chain inputs and must move with intentional dependency/plugin or catalog-resolution updates.
+The root build forces selected buildscript transitives to patched versions: Jackson 2.22.2, protobuf 4.36.1, jose4j 0.9.6, Bouncy Castle 1.85, JDOM 2.0.6.1, and jsoup 1.23.2. The app also forces Apache HttpClient 4.5.14 only in `androidLintTool`, because AGP's `sdklib` otherwise requests vulnerable 4.5.6 for the lint process. The root build enables buildscript dependency locking. `gradle/verification-metadata.xml`, `gradle/verification-keyring.keys`, `buildscript-gradle.lockfile`, and the generated `settings-gradle.lockfile` are supply-chain inputs and must move with intentional dependency/plugin or catalog-resolution updates.
 
 The app intentionally compiles with SDK 37 while targeting SDK 36. Android Lint's `OldTargetApi` check is disabled with an explicit comment that Android 17 targeting requires a separate compatibility pass; this suppression does not prove target-SDK compatibility or authorize leaving the target unchanged indefinitely. Android App Bundle language splitting is disabled so English and Finnish are both available to the in-app language picker without an on-demand download. ktlint color output is disabled for stable machine-readable reports. The AndroidX Hilt dependency is `hilt-lifecycle-viewmodel-compose`, not the older navigation-compose artifact.
 
 ### Compose stability contract
 
-Compose Stability Analyzer 0.12.0 and the Kotlin Compose compiler consume the same checked-in `config/compose-stability.conf`. It currently declares selected framework owners, immutable report/comparison/performance/sensor/storage values, export ready state, and ViewModels stable for Compose purposes. This is a compiler/recomposition contract, not a statement that every mutable field inside those types is intrinsically immutable.
+Compose Stability Analyzer 0.13.0 and the Kotlin Compose compiler consume the same checked-in `config/compose-stability.conf`. It currently declares selected framework owners, immutable report/comparison/performance/sensor/storage values, export ready state, and ViewModels stable for Compose purposes. This is a compiler/recomposition contract, not a statement that every mutable field inside those types is intrinsically immutable.
 
 `app/stability/app-debug.stability` and `app/stability/app-release.stability` are variant baselines. Validation is configured to ignore non-regressive changes, and `compileDebugKotlin`/`compileReleaseKotlin` explicitly declare the shared config as an input because the analyzer plugin does not otherwise invalidate AGP's built-in Kotlin tasks when that file changes. `config/android-check.json` names `:app:stabilityCheck`, but the GitHub `build-test-lint` job does not currently invoke it. Any stability-config or baseline update therefore needs a deliberate local/manual stability run and diff review; a baseline change is not automatically an optimization.
 
