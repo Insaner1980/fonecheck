@@ -720,7 +720,6 @@
     <string name="run_all_needs_attention">Needs attention</string>
     <string name="run_all_completed">Completed</string>
     <string name="run_all_not_completed">Not completed</string>
-    <string name="run_all_open_test">Open individual test</string>
     <string name="run_all_done">Done</string>
     <string name="run_all_saving_report">Saving the completed report on this device…</string>
     <string name="run_all_save_failed">The completed report could not be saved. The measured snapshot is frozen; retrying will not run the checks again.</string>
@@ -746,9 +745,9 @@
     <string name="report_reason_android_version_unsupported">Unsupported on this Android version</string>
     <string name="report_coverage">Coverage</string>
     <string name="report_coverage_value">%1$s%%</string>
-    <string name="report_retest">Retest</string>
+    <string name="report_retest">Retest and save</string>
     <string name="report_retest_title">Retest %1$s</string>
-    <string name="report_retest_description">The new result will be saved as a separate category-only report. The original report will not change.</string>
+    <string name="report_retest_description">This retest checks only the selected category. The original report will not change. After saving succeeds, the new category report appears in History, regardless of its result.</string>
     <string name="report_retest_start">Start retest</string>
     <string name="report_retest_cancel">Cancel</string>
     <string name="report_retest_unavailable">This diagnostic category is not available.</string>

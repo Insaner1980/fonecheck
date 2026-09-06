@@ -94,6 +94,7 @@ fun RunAllResultsScreen(
 ) {
     val presentation = remember(report) { ReportDetailPresenter.present(report) }
     val representedCategoryIds = remember(report) { report.categories.map { it.categoryId }.toSet() }
+    val retestEnabled = mode == ReportResultMode.SAVED_REPORT || saveStatus == ReportSaveStatus.SAVED
     val categories =
         presentation.categories.mapNotNull { category ->
             if (diagnosticDestinations.none { it.category == category.categoryId }) {
@@ -127,7 +128,7 @@ fun RunAllResultsScreen(
             )
         }
 
-        if (saveStatus != ReportSaveStatus.SAVED) {
+        if (mode == ReportResultMode.COMPLETED_RUN && saveStatus != ReportSaveStatus.SAVED) {
             item {
                 ReportSaveSection(saveStatus, onRetrySave)
             }
@@ -165,7 +166,7 @@ fun RunAllResultsScreen(
             expandedCategoryName = expandedCategoryName,
             onExpandedChange = { expandedCategoryName = it },
             onOpenCategory = onOpenCategory,
-            mode = mode,
+            retestEnabled = retestEnabled,
             representedCategoryIds = representedCategoryIds,
         )
         resultGroup(
@@ -174,7 +175,7 @@ fun RunAllResultsScreen(
             expandedCategoryName = expandedCategoryName,
             onExpandedChange = { expandedCategoryName = it },
             onOpenCategory = onOpenCategory,
-            mode = mode,
+            retestEnabled = retestEnabled,
             representedCategoryIds = representedCategoryIds,
         )
         resultGroup(
@@ -183,7 +184,7 @@ fun RunAllResultsScreen(
             expandedCategoryName = expandedCategoryName,
             onExpandedChange = { expandedCategoryName = it },
             onOpenCategory = onOpenCategory,
-            mode = mode,
+            retestEnabled = retestEnabled,
             representedCategoryIds = representedCategoryIds,
         )
 
@@ -206,7 +207,7 @@ fun RunAllResultsScreen(
                         },
                     ),
                 onClick = onDone,
-                enabled = saveStatus == ReportSaveStatus.SAVED,
+                enabled = retestEnabled,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -219,7 +220,7 @@ private fun LazyListScope.resultGroup(
     expandedCategoryName: String?,
     onExpandedChange: (String?) -> Unit,
     onOpenCategory: (Any) -> Unit,
-    mode: ReportResultMode,
+    retestEnabled: Boolean,
     representedCategoryIds: Set<DiagnosticCategoryId>,
 ) {
     if (results.isEmpty()) return
@@ -241,8 +242,8 @@ private fun LazyListScope.resultGroup(
                 onExpandedChange(toggleExpanded(expandedCategoryName, result))
             },
             onOpenCategory = onOpenCategory,
-            mode = mode,
-            canOpenCategory = mode != ReportResultMode.SAVED_REPORT || result.category in representedCategoryIds,
+            retestEnabled = retestEnabled,
+            canOpenCategory = result.category in representedCategoryIds,
         )
     }
 }
@@ -467,22 +468,16 @@ private fun CategoryResult(
     isExpanded: Boolean,
     onToggle: () -> Unit,
     onOpenCategory: (Any) -> Unit,
-    mode: ReportResultMode,
+    retestEnabled: Boolean,
     canOpenCategory: Boolean,
 ) {
     val destination = diagnosticDestinations.first { it.category == result.category }
     val title = stringResource(destination.labelResId)
     val diagnosticStatus = result.status.toDiagnosticStatus()
     val status = statusLabel(diagnosticStatus)
-    val route =
-        if (mode == ReportResultMode.SAVED_REPORT) {
-            CategoryRetest(result.category.stableId)
-        } else {
-            destination.route
-        }
     val openAction =
         if (canOpenCategory) {
-            { onOpenCategory(route) }
+            { if (retestEnabled) onOpenCategory(CategoryRetest(result.category.stableId)) }
         } else {
             null
         }
@@ -507,7 +502,7 @@ private fun CategoryResult(
             ResultDetails(
                 results = result.results,
                 onOpen = openAction,
-                mode = mode,
+                retestEnabled = retestEnabled,
             )
         }
     }
@@ -517,7 +512,7 @@ private fun CategoryResult(
 private fun ResultDetails(
     results: List<TestResult>,
     onOpen: (() -> Unit)?,
-    mode: ReportResultMode,
+    retestEnabled: Boolean,
 ) {
     Column(
         modifier = Modifier.padding(top = FonecheckTheme.spacing.sm),
@@ -539,15 +534,9 @@ private fun ResultDetails(
         }
         onOpen?.let {
             SecondaryButton(
-                label =
-                    stringResource(
-                        if (mode == ReportResultMode.SAVED_REPORT) {
-                            R.string.report_retest
-                        } else {
-                            R.string.run_all_open_test
-                        },
-                    ),
+                label = stringResource(R.string.report_retest),
                 onClick = it,
+                enabled = retestEnabled,
                 modifier = Modifier.fillMaxWidth(),
             )
         }

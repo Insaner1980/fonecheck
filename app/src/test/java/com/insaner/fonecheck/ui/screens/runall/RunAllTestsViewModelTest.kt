@@ -13,6 +13,8 @@ import com.insaner.fonecheck.domain.model.DiagnosticSnapshotVersion
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.ReportAppContext
+import com.insaner.fonecheck.domain.model.ReportAssembler
+import com.insaner.fonecheck.domain.model.ReportAssemblyRequest
 import com.insaner.fonecheck.domain.model.ReportDeviceContext
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.runtime.EpochMillisClock
@@ -21,9 +23,12 @@ import com.insaner.fonecheck.ui.screens.camera.CameraCaptureAttempt
 import com.insaner.fonecheck.ui.screens.camera.CameraCaptureSession
 import com.insaner.fonecheck.ui.screens.camera.CameraTestState
 import com.insaner.fonecheck.ui.screens.camera.CaptureResult
+import com.insaner.fonecheck.ui.screens.home.HomeViewModel
+import com.insaner.fonecheck.ui.screens.home.LatestFullCheckState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -473,6 +478,68 @@ class RunAllTestsViewModelTest {
             assertEquals(listOf(DiagnosticCategoryId.STORAGE), report.categories.map { it.categoryId })
             assertEquals(ReportSaveStatus.SAVED, viewModel.state.value.saveStatus)
             assertEquals(report, (repository.getById("storage-retest") as ReportLoadResult.Available).report)
+        }
+
+    @Test
+    fun consecutiveRetestsAndSaveRetryPreserveOriginalAndEachFrozenIdentity() =
+        runTest {
+            val repository = FakeReportRepository()
+            val original =
+                ReportAssembler.assemble(
+                    ReportAssemblyRequest(
+                        "original",
+                        ReportKind.FULL_CHECK,
+                        Instant.ofEpochMilli(100L),
+                        Instant.ofEpochMilli(200L),
+                        deviceContext(),
+                        appContext(),
+                        completeSnapshots(),
+                    ),
+                )
+            repository.insert(original)
+            val home = HomeViewModel(repository)
+            var now = 300L
+            for (id in listOf("retest-b", "retest-c")) {
+                val viewModel = RunAllTestsViewModel(EpochMillisClock { now }, IdProvider { id }, repository)
+                assertEquals(RunAllTestsState(), viewModel.state.value)
+                viewModel.onCategoryRetestRequested(DiagnosticCategoryId.STORAGE, RunAllHardwareProfile.ALL_AVAILABLE)
+                viewModel.onPermissionsResolved(RunAllPermissions())
+                val token = viewModel.state.value.stageToken
+                assertTrue(viewModel.claimStage(token))
+                viewModel.onAutomaticChecksComplete(token)
+                now += 100L
+                repository.insertFailuresRemaining = 1
+                viewModel.completeReport(
+                    viewModel.state.value.stageToken,
+                    deviceContext(),
+                    appContext(),
+                    completeSnapshots(),
+                )
+                dispatcher.scheduler.runCurrent()
+                val frozen = requireNotNull(viewModel.state.value.report)
+                assertEquals(ReportSaveStatus.FAILED, viewModel.state.value.saveStatus)
+                assertEquals(id, frozen.stableId)
+                assertEquals(ReportKind.CATEGORY_ONLY, frozen.kind)
+                assertEquals(listOf(DiagnosticCategoryId.STORAGE), frozen.categories.map { it.categoryId })
+                val attemptsBeforeRetry = repository.insertAttempts.size
+                viewModel.retryReportSave()
+                viewModel.retryReportSave()
+                dispatcher.scheduler.runCurrent()
+                assertEquals(ReportSaveStatus.SAVED, viewModel.state.value.saveStatus)
+                assertSame(frozen, viewModel.state.value.report)
+                assertEquals(attemptsBeforeRetry + 1, repository.insertAttempts.size)
+                assertSame(frozen, repository.insertAttempts.last())
+                assertEquals(frozen, (repository.getById(id) as ReportLoadResult.Available).report)
+                assertFalse(viewModel.interruptRun(RunAllInterruptionReason.SCREEN_DISPOSED))
+                assertSame(frozen, viewModel.state.value.report)
+                assertEquals(original, (repository.getById(original.stableId) as ReportLoadResult.Available).report)
+                assertEquals(original, (home.latestFullCheck.value as LatestFullCheckState.Available).report)
+                now += 100L
+            }
+            assertEquals(
+                listOf("retest-c", "retest-b", "original"),
+                repository.observeSummaries().first().map { it.stableId },
+            )
         }
 
     private fun completeSnapshots(): List<DiagnosticCategorySnapshot> =

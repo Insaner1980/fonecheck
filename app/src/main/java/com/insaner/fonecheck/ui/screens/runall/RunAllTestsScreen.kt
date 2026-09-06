@@ -983,7 +983,12 @@ fun RunAllTestsScreen(
                     report = report,
                     saveStatus = sessionState.saveStatus,
                     onRetrySave = sessionViewModel::retryReportSave,
-                    onOpenCategory = onOpenCategory,
+                    onOpenCategory = { route ->
+                        val current = sessionViewModel.state.value
+                        if (current.report === report && current.saveStatus == ReportSaveStatus.SAVED) {
+                            onOpenCategory(route)
+                        }
+                    },
                     onDone = onDone,
                     modifier = modifier.fillMaxSize(),
                     mode = ReportResultMode.COMPLETED_RUN,

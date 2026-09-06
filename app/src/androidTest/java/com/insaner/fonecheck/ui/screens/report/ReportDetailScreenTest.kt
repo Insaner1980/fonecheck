@@ -6,6 +6,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -13,6 +15,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.insaner.fonecheck.R
@@ -37,6 +40,7 @@ import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
 import com.insaner.fonecheck.navigation.CategoryRetest
+import com.insaner.fonecheck.ui.screens.runall.scrollToReportText
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -68,21 +72,21 @@ class ReportDetailScreenTest {
 
         // Provenance now sits at the foot of the report, under the results it describes.
         composeRule
-            .onNodeWithText(context.getString(R.string.report_saved_title), ignoreCase = true)
+            .scrollToReportText(context.getString(R.string.report_saved_title), ignoreCase = true)
             .performScrollTo()
             .assertIsDisplayed()
-        composeRule.onNodeWithText("Finnvek Test Device").performScrollTo().assertIsDisplayed()
+        composeRule.scrollToReportText("Finnvek Test Device").performScrollTo().assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.getString(R.string.report_kind_full))
+            .scrollToReportText(context.getString(R.string.report_kind_full))
             .performScrollTo()
             .assertIsDisplayed()
-        composeRule.onNodeWithText(longValue).performScrollTo().assertIsDisplayed()
+        composeRule.scrollToReportText(longValue).performScrollTo().assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.getString(R.string.report_source_android_api))
+            .scrollToReportText(context.getString(R.string.report_source_android_api))
             .performScrollTo()
             .assertIsDisplayed()
         composeRule
-            .onNodeWithText("Future vendor reason", substring = true)
+            .scrollToReportText("Future vendor reason", substring = true)
             .performScrollTo()
             .assertIsDisplayed()
         assertCategoryStatus(DiagnosticCategoryId.DEVICE, R.string.run_all_status_pass)
@@ -92,13 +96,13 @@ class ReportDetailScreenTest {
         assertCategoryStatus(DiagnosticCategoryId.CAMERA, R.string.run_all_status_unavailable)
         assertCategoryStatus(DiagnosticCategoryId.AUDIO, R.string.status_not_measured)
         composeRule
-            .onNodeWithText(context.getString(R.string.report_retest))
+            .scrollToReportText(context.getString(R.string.report_retest))
             .performScrollTo()
             .performClick()
 
         assertEquals(CategoryRetest("performance"), retestRoute)
         composeRule
-            .onNodeWithText(context.getString(R.string.home_cat_biometrics))
+            .scrollToReportText(context.getString(R.string.home_cat_biometrics))
             .performScrollTo()
             .assertIsDisplayed()
     }
@@ -134,15 +138,17 @@ class ReportDetailScreenTest {
             .onNodeWithText(context.getString(R.string.report_score_incomplete), ignoreCase = true)
             .assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.getString(R.string.report_kind_category))
+            .scrollToReportText(context.getString(R.string.report_kind_category))
             .performScrollTo()
             .assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.getString(R.string.report_retest))
+            .scrollToReportText(context.getString(R.string.report_retest))
             .performScrollTo()
             .assertIsDisplayed()
+        // This saved category report contains Storage only; collapse its actual header.
+        composeRule.onNodeWithTag("report_category_device").assertDoesNotExist()
         composeRule
-            .onNodeWithTag("report_category_device", useUnmergedTree = true)
+            .scrollToReportText(context.getString(R.string.home_cat_storage))
             .performScrollTo()
             .performClick()
         composeRule
@@ -240,13 +246,12 @@ class ReportDetailScreenTest {
     ) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         composeRule
-            .onNodeWithTag("report_category_${categoryId.stableId}", useUnmergedTree = true)
-            .performScrollTo()
+            .onNode(hasScrollToIndexAction())
+            .performScrollToNode(hasTestTag("report_category_${categoryId.stableId}"))
         composeRule
             .onAllNodes(
-                hasText(context.getString(statusStringRes)) and
+                hasText(context.getString(statusStringRes)) and hasClickAction() and
                     hasAnyAncestor(hasTestTag("report_category_${categoryId.stableId}")),
-                useUnmergedTree = true,
             ).assertCountEquals(1)
     }
 }

@@ -716,7 +716,6 @@
     <string name="run_all_needs_attention">Vaatii huomiota</string>
     <string name="run_all_completed">Valmiit</string>
     <string name="run_all_not_completed">Ei suoritettu</string>
-    <string name="run_all_open_test">Avaa yksittäinen testi</string>
     <string name="run_all_done">Valmis</string>
     <string name="run_all_saving_report">Valmista raporttia tallennetaan tälle laitteelle…</string>
     <string name="run_all_save_failed">Valmista raporttia ei voitu tallentaa. Mitattu snapshot on lukittu, eikä tallennuksen uusiminen suorita testejä uudelleen.</string>
@@ -742,9 +741,9 @@
     <string name="report_reason_android_version_unsupported">Tämä Android-versio ei tue tarkistusta</string>
     <string name="report_coverage">Kattavuus</string>
     <string name="report_coverage_value">%1$s%%</string>
-    <string name="report_retest">Testaa uudelleen</string>
+    <string name="report_retest">Testaa uudelleen ja tallenna</string>
     <string name="report_retest_title">Testaa %1$s uudelleen</string>
-    <string name="report_retest_description">Uusi tulos tallennetaan erillisenä kategoriakohtaisena raporttina. Alkuperäinen raportti ei muutu.</string>
+    <string name="report_retest_description">Uusintatesti koskee vain valittua kategoriaa. Alkuperäinen raportti ei muutu. Tallennuksen onnistuttua uusi kategoriaraportti näkyy Historiassa tuloksesta riippumatta.</string>
     <string name="report_retest_start">Aloita uusintatesti</string>
     <string name="report_retest_cancel">Peruuta</string>
     <string name="report_retest_unavailable">Tämä diagnostiikkakategoria ei ole käytettävissä.</string>

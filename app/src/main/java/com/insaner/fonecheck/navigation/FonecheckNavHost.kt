@@ -3,6 +3,8 @@ package com.insaner.fonecheck.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.Lifecycle
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -101,10 +103,10 @@ fun FonecheckNavHost(
         composable<BiometricTest> {
             BiometricTestScreen()
         }
-        composable<RunAllTests> {
+        composable<RunAllTests> { backStackEntry ->
             RunAllTestsScreen(
                 onDone = { navController.popBackStack() },
-                onOpenCategory = { route -> navController.navigate(route) },
+                onOpenCategory = { route -> navController.openReportRetest(backStackEntry, route) },
                 onDisplayFullscreenChange = onDisplayFullscreenChange,
                 showTestWarnings = appPreferences.testWarningsEnabled,
             )
@@ -131,10 +133,10 @@ fun FonecheckNavHost(
                 },
             )
         }
-        composable<Report> {
+        composable<Report> { backStackEntry ->
             ReportDetailRoute(
                 onBack = { navController.popBackStack() },
-                onRetest = { route -> navController.navigate(route) },
+                onRetest = { route -> navController.openReportRetest(backStackEntry, route) },
             )
         }
         composable<CategoryRetest> { backStackEntry ->
@@ -148,7 +150,7 @@ fun FonecheckNavHost(
             } else {
                 RunAllTestsScreen(
                     onDone = { navController.popBackStack() },
-                    onOpenCategory = { destination -> navController.navigate(destination) },
+                    onOpenCategory = { destination -> navController.openReportRetest(backStackEntry, destination) },
                     onDisplayFullscreenChange = onDisplayFullscreenChange,
                     targetCategory = category,
                     showTestWarnings = appPreferences.testWarningsEnabled,
@@ -170,6 +172,19 @@ fun FonecheckNavHost(
         composable<ReportExport> {
             ReportExportRoute(onBack = { navController.popBackStack() })
         }
+    }
+}
+
+private fun NavHostController.openReportRetest(
+    source: NavBackStackEntry,
+    route: Any,
+) {
+    // A second click from the outgoing report must not push another run. Do not use
+    // singleTop: a deliberate retest of the same category needs a new ViewModelStore.
+    if (route is CategoryRetest && currentBackStackEntry === source &&
+        source.lifecycle.currentState == Lifecycle.State.RESUMED
+    ) {
+        navigate(route)
     }
 }
 

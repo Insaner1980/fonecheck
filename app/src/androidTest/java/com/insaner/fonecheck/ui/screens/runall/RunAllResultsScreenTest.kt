@@ -2,12 +2,14 @@ package com.insaner.fonecheck.ui.screens.runall
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.insaner.fonecheck.R
@@ -61,27 +63,27 @@ class RunAllResultsScreenTest {
         composeRule.onNodeWithText(context.getString(R.string.run_all_results_title)).assertIsDisplayed()
         composeRule.onNodeWithText("42").assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.getString(R.string.report_coverage))
+            .scrollToReportText(context.getString(R.string.report_coverage))
             .performScrollTo()
             .assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.getString(R.string.report_coverage_value, "100"))
+            .scrollToReportText(context.getString(R.string.report_coverage_value, "100"))
             .performScrollTo()
             .assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.getString(R.string.report_observations_completed))
+            .scrollToReportText(context.getString(R.string.report_observations_completed))
             .performScrollTo()
             .assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.getString(R.string.report_observations_excluded))
+            .scrollToReportText(context.getString(R.string.report_observations_excluded))
             .performScrollTo()
             .assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.getString(R.string.home_cat_battery), ignoreCase = true)
+            .scrollToReportText(context.getString(R.string.home_cat_battery), ignoreCase = true)
             .performScrollTo()
             .assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.getString(R.string.batt_health_dead))
+            .scrollToReportText(context.getString(R.string.batt_health_dead))
             .performScrollTo()
             .assertIsDisplayed()
     }
@@ -139,10 +141,13 @@ class RunAllResultsScreenTest {
         }
 
         composeRule
-            .onNodeWithText(context.getString(R.string.run_all_summary_info))
+            .scrollToReportText(context.getString(R.string.run_all_summary_info))
             .performScrollTo()
             .assertIsDisplayed()
         // The count is a row now: the status word labels it and the figure sits in the value.
+        composeRule
+            .onNode(hasScrollToIndexAction())
+            .performScrollToNode(hasTestTag("report_count_INFO"))
         composeRule
             .onNode(
                 hasText("1") and hasAnyAncestor(hasTestTag("report_count_INFO")),
