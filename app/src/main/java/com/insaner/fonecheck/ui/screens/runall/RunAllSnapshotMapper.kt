@@ -677,13 +677,7 @@ object RunAllSnapshotMapper {
     ): DiagnosticEvidence =
         when {
             !included ->
-                notTested(
-                    DiagnosticCategoryId.CAMERA,
-                    "capture_dimensions",
-                    capturedAt,
-                    EvidenceReasonCode.SKIPPED,
-                    EvidenceSource.USER_CONFIRMATION,
-                )
+                skippedCameraCaptureDimensions(capturedAt)
             !hardwareAvailable || outcome == RunAllStageOutcome.UNAVAILABLE ->
                 unavailable(DiagnosticCategoryId.CAMERA, "capture_dimensions", capturedAt)
             !permissionGranted ->
@@ -694,13 +688,7 @@ object RunAllSnapshotMapper {
                     EvidenceReasonCode.PERMISSION_DENIED,
                 )
             outcome == RunAllStageOutcome.SKIPPED ->
-                notTested(
-                    DiagnosticCategoryId.CAMERA,
-                    "capture_dimensions",
-                    capturedAt,
-                    EvidenceReasonCode.SKIPPED,
-                    EvidenceSource.USER_CONFIRMATION,
-                )
+                skippedCameraCaptureDimensions(capturedAt)
             capture != null ->
                 evidence(
                     categoryId = DiagnosticCategoryId.CAMERA,
@@ -724,6 +712,15 @@ object RunAllSnapshotMapper {
                     source = EvidenceSource.AUTOMATIC_MEASUREMENT,
                 )
         }
+
+    private fun skippedCameraCaptureDimensions(capturedAt: Instant): DiagnosticEvidence =
+        notTested(
+            DiagnosticCategoryId.CAMERA,
+            "capture_dimensions",
+            capturedAt,
+            EvidenceReasonCode.SKIPPED,
+            EvidenceSource.USER_CONFIRMATION,
+        )
 
     private fun cameraCaptureEvidence(
         completed: Boolean,
@@ -1243,19 +1240,17 @@ object RunAllSnapshotMapper {
             } else {
                 capabilityPresence(DiagnosticCategoryId.VIBRATION, "hardware", hasVibrator, capturedAt)
             },
-            if (hardwareReadFailed) {
-                vibrationReadError("amplitude_control", capturedAt)
-            } else if (hasVibrator && VibrationCapabilityRead.AMPLITUDE_CONTROL !in haptic.readErrors) {
-                evidence(
-                    categoryId = DiagnosticCategoryId.VIBRATION,
-                    id = "amplitude_control",
-                    value = EvidenceValue.BooleanValue(haptic.hasAmplitudeControl),
-                    capturedAt = capturedAt,
-                )
-            } else if (!hasVibrator) {
-                unavailable(DiagnosticCategoryId.VIBRATION, "amplitude_control", capturedAt)
-            } else {
-                vibrationReadError("amplitude_control", capturedAt)
+            when {
+                hardwareReadFailed -> vibrationReadError("amplitude_control", capturedAt)
+                hasVibrator && VibrationCapabilityRead.AMPLITUDE_CONTROL !in haptic.readErrors ->
+                    evidence(
+                        categoryId = DiagnosticCategoryId.VIBRATION,
+                        id = "amplitude_control",
+                        value = EvidenceValue.BooleanValue(haptic.hasAmplitudeControl),
+                        capturedAt = capturedAt,
+                    )
+                !hasVibrator -> unavailable(DiagnosticCategoryId.VIBRATION, "amplitude_control", capturedAt)
+                else -> vibrationReadError("amplitude_control", capturedAt)
             },
             vibrationCapabilityEvidence(
                 id = "effects",

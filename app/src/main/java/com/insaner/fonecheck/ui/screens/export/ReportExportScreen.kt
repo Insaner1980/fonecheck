@@ -17,6 +17,7 @@ import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.navigation.diagnosticDestinations
 import com.insaner.fonecheck.ui.components.IndeterminateRule
@@ -144,46 +145,7 @@ private fun ExportReady(
 ) {
     TestScreenContent(modifier = modifier) {
         item { Note(stringResource(R.string.export_description)) }
-        item {
-            Column {
-                SectionHeader(stringResource(R.string.report_saved_title))
-                LongValueRow(
-                    label = stringResource(R.string.report_identifier),
-                    value = state.report.stableId,
-                )
-                Note(
-                    if (state.report.kind == ReportKind.FULL_CHECK) {
-                        stringResource(R.string.report_scope_full)
-                    } else {
-                        stringResource(
-                            R.string.report_scope_category,
-                            stringResource(
-                                diagnosticDestinations
-                                    .first {
-                                        it.category ==
-                                            state.report.categories
-                                                .single()
-                                                .categoryId
-                                    }.labelResId,
-                            ),
-                        )
-                    },
-                )
-                LongValueRow(
-                    label = stringResource(R.string.report_completed_at),
-                    value =
-                        formatUiDateTime(
-                            state.report.completedAt,
-                            uiLanguageLocale(LocalLocale.current.platformLocale),
-                        ),
-                )
-                LongValueRow(
-                    label = stringResource(R.string.pdf_report_format),
-                    value = uiNumber(state.report.schemaVersion.value),
-                )
-                Note(stringResource(R.string.export_local_only))
-            }
-        }
+        item { SavedReportDetails(state.report) }
         state.error?.let {
             item {
                 Column {
@@ -246,5 +208,47 @@ private fun ExportReady(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+}
+
+@Composable
+private fun SavedReportDetails(report: DiagnosticReport) {
+    Column {
+        SectionHeader(stringResource(R.string.report_saved_title))
+        LongValueRow(
+            label = stringResource(R.string.report_identifier),
+            value = report.stableId,
+        )
+        Note(
+            if (report.kind == ReportKind.FULL_CHECK) {
+                stringResource(R.string.report_scope_full)
+            } else {
+                stringResource(
+                    R.string.report_scope_category,
+                    stringResource(
+                        diagnosticDestinations
+                            .first {
+                                it.category ==
+                                    report.categories
+                                        .single()
+                                        .categoryId
+                            }.labelResId,
+                    ),
+                )
+            },
+        )
+        LongValueRow(
+            label = stringResource(R.string.report_completed_at),
+            value =
+                formatUiDateTime(
+                    report.completedAt,
+                    uiLanguageLocale(LocalLocale.current.platformLocale),
+                ),
+        )
+        LongValueRow(
+            label = stringResource(R.string.pdf_report_format),
+            value = uiNumber(report.schemaVersion.value),
+        )
+        Note(stringResource(R.string.export_local_only))
     }
 }

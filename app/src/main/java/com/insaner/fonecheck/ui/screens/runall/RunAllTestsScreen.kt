@@ -556,28 +556,30 @@ fun RunAllTestsScreen(
                     biometricState.capability.strongAvailable ||
                         biometricState.capability.weakAvailable
                 val activity = context as? FragmentActivity
-                if (!available) {
-                    sessionViewModel.markStageUnavailable(token)
-                } else if (activity == null) {
-                    if (biometricViewModel.startAuthentication()) {
-                        biometricViewModel.onPromptLaunchFailure()
+                when {
+                    !available -> sessionViewModel.markStageUnavailable(token)
+                    activity == null -> {
+                        if (biometricViewModel.startAuthentication()) {
+                            biometricViewModel.onPromptLaunchFailure()
+                        }
                     }
-                } else if (biometricViewModel.startAuthentication()) {
-                    runCatching {
-                        showBiometricPrompt(
-                            activity = activity,
-                            onSuccess = {
-                                biometricViewModel.onAuthSuccess()
-                                biometricPrompt = null
-                            },
-                            onFailed = biometricViewModel::onAuthFailed,
-                            onError = { errorCode, message ->
-                                biometricViewModel.onAuthError(errorCode, message)
-                                biometricPrompt = null
-                            },
-                        )
-                    }.onSuccess { biometricPrompt = it }
-                        .onFailure { biometricViewModel.onPromptLaunchFailure() }
+                    biometricViewModel.startAuthentication() -> {
+                        runCatching {
+                            showBiometricPrompt(
+                                activity = activity,
+                                onSuccess = {
+                                    biometricViewModel.onAuthSuccess()
+                                    biometricPrompt = null
+                                },
+                                onFailed = biometricViewModel::onAuthFailed,
+                                onError = { errorCode, message ->
+                                    biometricViewModel.onAuthError(errorCode, message)
+                                    biometricPrompt = null
+                                },
+                            )
+                        }.onSuccess { biometricPrompt = it }
+                            .onFailure { biometricViewModel.onPromptLaunchFailure() }
+                    }
                 }
             }
 
