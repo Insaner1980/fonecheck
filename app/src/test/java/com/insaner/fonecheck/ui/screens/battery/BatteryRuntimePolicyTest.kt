@@ -20,9 +20,30 @@ class BatteryRuntimePolicyTest {
     @Test
     fun temperatureNormalizerRejectsMissingAndImplausibleValues() {
         assertNull(BatteryTemperatureNormalizer.normalize(null))
+        assertNull(BatteryTemperatureNormalizer.normalize(Int.MIN_VALUE))
         assertNull(BatteryTemperatureNormalizer.normalize(-501))
         assertNull(BatteryTemperatureNormalizer.normalize(1_001))
+        assertNull(BatteryTemperatureNormalizer.normalize(Int.MAX_VALUE))
         assertEquals(32.5f, BatteryTemperatureNormalizer.normalize(325))
+    }
+
+    @Test
+    fun temperatureNormalizerPreservesInclusiveBoundsAndTenths() {
+        mapOf(
+            -500 to -50.0f,
+            -1 to -0.1f,
+            0 to 0.0f,
+            1 to 0.1f,
+            253 to 25.3f,
+            1_000 to 100.0f,
+        ).forEach { (rawTenthsCelsius, expectedCelsius) ->
+            assertEquals(
+                "Raw temperature: $rawTenthsCelsius",
+                expectedCelsius,
+                requireNotNull(BatteryTemperatureNormalizer.normalize(rawTenthsCelsius)),
+                0.0f,
+            )
+        }
     }
 
     @Test

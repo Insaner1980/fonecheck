@@ -1,6 +1,7 @@
 package com.insaner.fonecheck.ui.screens.thermal
 
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
+import com.insaner.fonecheck.ui.screens.battery.BatteryTemperatureNormalizer
 
 enum class ThermalSeverityCode {
     NORMAL,
@@ -51,13 +52,8 @@ object ThermalRuntimePolicy {
             sdkInt >= ANDROID_11_API_LEVEL && it.isFinite() && it >= 0f
         }
 
-    fun batteryTemperature(rawTenthsCelsius: Int?): Float? =
-        rawTenthsCelsius
-            ?.takeIf { it in MIN_BATTERY_TEMPERATURE_TENTHS..MAX_BATTERY_TEMPERATURE_TENTHS }
-            ?.div(10f)
+    fun batteryTemperature(rawTenthsCelsius: Int?): Float? = BatteryTemperatureNormalizer.normalize(rawTenthsCelsius)
 
     private const val ANDROID_10_API_LEVEL = 29
     private const val ANDROID_11_API_LEVEL = 30
-    private const val MIN_BATTERY_TEMPERATURE_TENTHS = -500
-    private const val MAX_BATTERY_TEMPERATURE_TENTHS = 1_000
 }
