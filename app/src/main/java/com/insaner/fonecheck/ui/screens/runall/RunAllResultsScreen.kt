@@ -66,6 +66,7 @@ import com.insaner.fonecheck.ui.components.WindowLabel
 import com.insaner.fonecheck.ui.components.WindowReading
 import com.insaner.fonecheck.ui.components.statusLabel
 import com.insaner.fonecheck.ui.format.formatUiDateTime
+import com.insaner.fonecheck.ui.format.reportScopeLabel
 import com.insaner.fonecheck.ui.format.uiFileSize
 import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import com.insaner.fonecheck.ui.format.uiNumber
@@ -270,21 +271,7 @@ private fun ResultsSummary(
         )
         Note(stringResource(R.string.run_all_results_description))
         ScoreReadout(report.score)
-        Note(
-            if (report.kind == ReportKind.FULL_CHECK) {
-                stringResource(R.string.report_scope_full)
-            } else {
-                stringResource(
-                    R.string.report_scope_category,
-                    stringResource(
-                        diagnosticDestinations
-                            .first {
-                                it.category == report.categories.single().categoryId
-                            }.labelResId,
-                    ),
-                )
-            },
-        )
+        Note(reportScopeLabel(report))
         Note(stringResource(R.string.report_score_scope_note))
         Note(stringResource(R.string.report_time_semantics))
         // One segment per category, in the colour of that category: the shape of the run, drawn

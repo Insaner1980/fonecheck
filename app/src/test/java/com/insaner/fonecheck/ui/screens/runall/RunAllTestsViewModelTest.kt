@@ -9,6 +9,7 @@ import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticCategorySnapshot
 import com.insaner.fonecheck.domain.model.DiagnosticCheckId
 import com.insaner.fonecheck.domain.model.DiagnosticEvidence
+import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticSnapshotVersion
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceSource
@@ -395,15 +396,7 @@ class RunAllTestsViewModelTest {
                 )
             enterResults(viewModel)
 
-            viewModel.completeReport(
-                viewModel.state.value.stageToken,
-                deviceContext(),
-                appContext(),
-                completeSnapshots(),
-            )
-            dispatcher.scheduler.runCurrent()
-            val frozen = requireNotNull(viewModel.state.value.report)
-            assertEquals(ReportSaveStatus.FAILED, viewModel.state.value.saveStatus)
+            val frozen = completeReportAndAssertSaveFailed(viewModel)
 
             viewModel.retryReportSave()
             dispatcher.scheduler.runCurrent()
@@ -509,15 +502,7 @@ class RunAllTestsViewModelTest {
                 viewModel.onAutomaticChecksComplete(token)
                 now += 100L
                 repository.insertFailuresRemaining = 1
-                viewModel.completeReport(
-                    viewModel.state.value.stageToken,
-                    deviceContext(),
-                    appContext(),
-                    completeSnapshots(),
-                )
-                dispatcher.scheduler.runCurrent()
-                val frozen = requireNotNull(viewModel.state.value.report)
-                assertEquals(ReportSaveStatus.FAILED, viewModel.state.value.saveStatus)
+                val frozen = completeReportAndAssertSaveFailed(viewModel)
                 assertEquals(id, frozen.stableId)
                 assertEquals(ReportKind.CATEGORY_ONLY, frozen.kind)
                 assertEquals(listOf(DiagnosticCategoryId.STORAGE), frozen.categories.map { it.categoryId })
@@ -541,6 +526,19 @@ class RunAllTestsViewModelTest {
                 repository.observeSummaries().first().map { it.stableId },
             )
         }
+
+    private fun completeReportAndAssertSaveFailed(viewModel: RunAllTestsViewModel): DiagnosticReport {
+        viewModel.completeReport(
+            viewModel.state.value.stageToken,
+            deviceContext(),
+            appContext(),
+            completeSnapshots(),
+        )
+        dispatcher.scheduler.runCurrent()
+        val frozen = requireNotNull(viewModel.state.value.report)
+        assertEquals(ReportSaveStatus.FAILED, viewModel.state.value.saveStatus)
+        return frozen
+    }
 
     private fun completeSnapshots(): List<DiagnosticCategorySnapshot> =
         DiagnosticCatalog.categories.map { categoryId ->

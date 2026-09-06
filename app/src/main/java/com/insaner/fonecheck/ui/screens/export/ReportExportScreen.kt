@@ -18,8 +18,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.DiagnosticReport
-import com.insaner.fonecheck.domain.model.ReportKind
-import com.insaner.fonecheck.navigation.diagnosticDestinations
 import com.insaner.fonecheck.ui.components.IndeterminateRule
 import com.insaner.fonecheck.ui.components.LongValueRow
 import com.insaner.fonecheck.ui.components.Note
@@ -31,6 +29,7 @@ import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.StatusText
 import com.insaner.fonecheck.ui.components.TestScreenContent
 import com.insaner.fonecheck.ui.format.formatUiDateTime
+import com.insaner.fonecheck.ui.format.reportScopeLabel
 import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.startExternalActivity
@@ -219,24 +218,7 @@ private fun SavedReportDetails(report: DiagnosticReport) {
             label = stringResource(R.string.report_identifier),
             value = report.stableId,
         )
-        Note(
-            if (report.kind == ReportKind.FULL_CHECK) {
-                stringResource(R.string.report_scope_full)
-            } else {
-                stringResource(
-                    R.string.report_scope_category,
-                    stringResource(
-                        diagnosticDestinations
-                            .first {
-                                it.category ==
-                                    report.categories
-                                        .single()
-                                        .categoryId
-                            }.labelResId,
-                    ),
-                )
-            },
-        )
+        Note(reportScopeLabel(report))
         LongValueRow(
             label = stringResource(R.string.report_completed_at),
             value =
