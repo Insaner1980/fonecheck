@@ -95,9 +95,10 @@ class HistoricalReportCompatibilityTest {
     @Test
     fun `current full and category reports still insert load and present`() =
         runTest {
-            val currentFull = syntheticReport(DiagnosticCatalog.categories).let {
-                it.copy(score = it.score.copy(version = ScoreVersion.CURRENT))
-            }
+            val currentFull =
+                syntheticReport(DiagnosticCatalog.categories).let {
+                    it.copy(score = it.score.copy(version = ScoreVersion.CURRENT))
+                }
             for (report in listOf(currentFull, batteryReport("category", "Test"))) {
                 val dao = StoredRowDao()
                 val repository = RoomReportRepository(dao)
@@ -140,15 +141,16 @@ class HistoricalReportCompatibilityTest {
         runTest {
             val base = syntheticReport(listOf(DiagnosticCategoryId.BATTERY, DiagnosticCategoryId.CAMERA))
             val battery = base.categories.first()
-            val invalid = listOf(
-                base.copy(categories = emptyList()),
-                base.copy(categories = listOf(battery, battery)),
-                base.copy(categories = listOf(battery.copy(evidence = emptyList()))),
-                base.copy(categories = listOf(battery.copy(evidence = battery.evidence + battery.evidence))),
-                base.copy(categories = listOf(battery.copy(evidence = base.categories.last().evidence))),
-                base.copy(kind = ReportKind.CATEGORY_ONLY),
-                base.copy(schemaVersion = ReportSchemaVersion(2)),
-            )
+            val invalid =
+                listOf(
+                    base.copy(categories = emptyList()),
+                    base.copy(categories = listOf(battery, battery)),
+                    base.copy(categories = listOf(battery.copy(evidence = emptyList()))),
+                    base.copy(categories = listOf(battery.copy(evidence = battery.evidence + battery.evidence))),
+                    base.copy(categories = listOf(battery.copy(evidence = base.categories.last().evidence))),
+                    base.copy(kind = ReportKind.CATEGORY_ONLY),
+                    base.copy(schemaVersion = ReportSchemaVersion(2)),
+                )
             for (report in invalid) {
                 assertCorrupt(storedRow(base).copy(payloadJson = ReportPayloadCodec.encode(report)))
             }
@@ -224,7 +226,11 @@ class HistoricalReportCompatibilityTest {
     // Synthetic compatibility snapshots, not records attributed to a released app version.
     private fun syntheticReport(ids: List<DiagnosticCategoryId>): DiagnosticReport {
         val base = batteryReport("synthetic-history", "Test")
-        val template = base.categories.single().evidence.single()
+        val template =
+            base.categories
+                .single()
+                .evidence
+                .single()
         return base.copy(
             kind = ReportKind.FULL_CHECK,
             categories =
@@ -247,25 +253,26 @@ class HistoricalReportCompatibilityTest {
         )
     }
 
-    private fun storedRow(report: DiagnosticReport) = ReportEntity(
-        id = report.stableId,
-        reportKindCode = report.kind.stableCode(),
-        categoryId = null,
-        startedAtEpochMillis = report.startedAt.toEpochMilli(),
-        completedAtEpochMillis = report.completedAt.toEpochMilli(),
-        reportSchemaVersion = report.schemaVersion.value,
-        scoreVersion = report.score.version.value,
-        scoreValue = report.score.value,
-        scoreStateCode = report.score.state.stableCode(),
-        coveragePercentage = report.coverage.percentage,
-        applicableCount = report.coverage.applicableCount,
-        completedCount = report.coverage.completedCount,
-        notTestedCount = report.coverage.notTestedCount,
-        unavailableCount = report.coverage.unavailableCount,
-        warningCount = 0,
-        failureCount = 0,
-        payloadJson = ReportPayloadCodec.encode(report),
-    )
+    private fun storedRow(report: DiagnosticReport) =
+        ReportEntity(
+            id = report.stableId,
+            reportKindCode = report.kind.stableCode(),
+            categoryId = null,
+            startedAtEpochMillis = report.startedAt.toEpochMilli(),
+            completedAtEpochMillis = report.completedAt.toEpochMilli(),
+            reportSchemaVersion = report.schemaVersion.value,
+            scoreVersion = report.score.version.value,
+            scoreValue = report.score.value,
+            scoreStateCode = report.score.state.stableCode(),
+            coveragePercentage = report.coverage.percentage,
+            applicableCount = report.coverage.applicableCount,
+            completedCount = report.coverage.completedCount,
+            notTestedCount = report.coverage.notTestedCount,
+            unavailableCount = report.coverage.unavailableCount,
+            warningCount = 0,
+            failureCount = 0,
+            payloadJson = ReportPayloadCodec.encode(report),
+        )
 
     private class StoredRowDao : ReportDao {
         val rows = mutableMapOf<String, ReportEntity>()

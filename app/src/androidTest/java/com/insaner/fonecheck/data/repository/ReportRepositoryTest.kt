@@ -86,20 +86,22 @@ class ReportRepositoryTest {
         val base = report("synthetic-history", Instant.parse("2026-08-07T12:34:56.123456789Z"))
         val categories = categoryIds.map { id -> base.categories.single { it.categoryId == id } }
         val evidenceCount = categories.sumOf { it.evidence.size }
-        val historical = base.copy(
-            categories = categories,
-            score = base.score.copy(version = ScoreVersion(1)),
-            coverage = base.coverage.copy(applicableCount = evidenceCount, completedCount = evidenceCount),
-        )
-        val row = storedEntity(
-            id = historical.stableId,
-            completedAt = historical.completedAt.toEpochMilli(),
-            payloadJson = ReportPayloadCodec.encode(historical),
-        ).copy(
-            startedAtEpochMillis = historical.startedAt.toEpochMilli(),
-            applicableCount = evidenceCount,
-            completedCount = evidenceCount,
-        )
+        val historical =
+            base.copy(
+                categories = categories,
+                score = base.score.copy(version = ScoreVersion(1)),
+                coverage = base.coverage.copy(applicableCount = evidenceCount, completedCount = evidenceCount),
+            )
+        val row =
+            storedEntity(
+                id = historical.stableId,
+                completedAt = historical.completedAt.toEpochMilli(),
+                payloadJson = ReportPayloadCodec.encode(historical),
+            ).copy(
+                startedAtEpochMillis = historical.startedAt.toEpochMilli(),
+                applicableCount = evidenceCount,
+                completedCount = evidenceCount,
+            )
         val isolatedDatabase = Room.inMemoryDatabaseBuilder(context, FonecheckDatabase::class.java).build()
         try {
             val dao = isolatedDatabase.reportDao()
@@ -114,8 +116,10 @@ class ReportRepositoryTest {
             val labels = PdfReportLabels.english()
             assertEquals(
                 categoryIds.map { "${labels.categoryName(it)} — pass" },
-                ReportPdfContentBuilder.build(saved, labels)
-                    .filter { it.style == PdfTextStyle.CATEGORY }.map { it.text },
+                ReportPdfContentBuilder
+                    .build(saved, labels)
+                    .filter { it.style == PdfTextStyle.CATEGORY }
+                    .map { it.text },
             )
             assertEquals(historical, ReportPayloadCodec.decode(ReportPayloadCodec.encode(saved)))
             assertEquals(row, dao.getById(historical.stableId))

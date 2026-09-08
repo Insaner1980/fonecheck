@@ -275,6 +275,8 @@ class JourneyConfigurationChangeTest {
                                     },
                                     Dispatchers.IO,
                                 )
+                            // CPD-OFF
+                            // Both journey tests intentionally use the same deterministic performance fixture.
                             PerformanceInfoViewModel::class.java ->
                                 PerformanceInfoViewModel(
                                     PerformanceInfoProvider {
@@ -308,6 +310,7 @@ class JourneyConfigurationChangeTest {
                                     },
                                     Dispatchers.IO,
                                 )
+                            // CPD-ON
                             SimTelephonyViewModel::class.java ->
                                 SimTelephonyViewModel(
                                     SimTelephonyProvider {
@@ -360,13 +363,36 @@ class JourneyConfigurationChangeTest {
         }
 
         @Composable
-        private fun RunContent(entry: NavBackStackEntry) {
+        @Suppress("ViewModelForwarding", "ktlint:compose:vm-forwarding-check")
+        private fun RunContent(
+            entry: NavBackStackEntry,
+            session: RunAllTestsViewModel =
+                viewModel(
+                    viewModelStoreOwner = entry,
+                    factory = factory,
+                ),
+            storageModel: StorageTestViewModel =
+                viewModel(
+                    viewModelStoreOwner = entry,
+                    factory = factory,
+                ),
+            device: DeviceInfoViewModel =
+                viewModel(
+                    viewModelStoreOwner = entry,
+                    factory = factory,
+                ),
+            performance: PerformanceInfoViewModel =
+                viewModel(
+                    viewModelStoreOwner = entry,
+                    factory = factory,
+                ),
+            sim: SimTelephonyViewModel =
+                viewModel(
+                    viewModelStoreOwner = entry,
+                    factory = factory,
+                ),
+        ) {
             // Exactly the production destination ownership: the NavBackStackEntry, not the Activity or test.
-            val session: RunAllTestsViewModel = viewModel(viewModelStoreOwner = entry, factory = factory)
-            val storageModel: StorageTestViewModel = viewModel(viewModelStoreOwner = entry, factory = factory)
-            val device: DeviceInfoViewModel = viewModel(viewModelStoreOwner = entry, factory = factory)
-            val performance: PerformanceInfoViewModel = viewModel(viewModelStoreOwner = entry, factory = factory)
-            val sim: SimTelephonyViewModel = viewModel(viewModelStoreOwner = entry, factory = factory)
             RunAllTestsScreen(
                 {},
                 {},
@@ -387,10 +413,12 @@ class JourneyConfigurationChangeTest {
 
         fun startThroughUi() {
             if (category == null) {
-                click(R.string.run_all_preflight_speaker_option)
-                click(R.string.run_all_preflight_microphone_option)
-                click(R.string.run_all_preflight_camera_option)
-                click(R.string.run_all_preflight_start)
+                listOf(
+                    R.string.run_all_preflight_speaker_option,
+                    R.string.run_all_preflight_microphone_option,
+                    R.string.run_all_preflight_camera_option,
+                    R.string.run_all_preflight_start,
+                ).forEach(::click)
                 compose.waitForIdle()
                 assertEquals(RunAllStage.PERMISSIONS, run.state.value.stage)
                 click(R.string.run_all_permissions_continue)
@@ -473,8 +501,10 @@ class JourneyConfigurationChangeTest {
                     Bundle().apply {
                         putString(
                             "stream",
-                            "configuration journey rotation=$rotate orientation=$oldOrientation->${activity.resources.configuration.orientation} " +
-                                "recreated=true retainedEntry=$entryId retainedViewModels=true reason=${run.state.value.lastInterruption}\n",
+                            "configuration journey rotation=$rotate " +
+                                "orientation=$oldOrientation->${activity.resources.configuration.orientation} " +
+                                "recreated=true retainedEntry=$entryId retainedViewModels=true " +
+                                "reason=${run.state.value.lastInterruption}\n",
                         )
                     },
                 )

@@ -62,10 +62,11 @@ class RunAllStorageCheckTest {
             var benchmarks = 0
             val storage =
                 storageViewModel(
-                    runner = StorageBenchmarkRunner {
-                        benchmarks++
-                        error("Deselected benchmark must not run")
-                    },
+                    runner =
+                        StorageBenchmarkRunner {
+                            benchmarks++
+                            error("Deselected benchmark must not run")
+                        },
                 )
             val check = async { runAutomaticStorageCheck(storage, includeBenchmark = false) }
             advanceUntilIdle()
@@ -91,11 +92,16 @@ class RunAllStorageCheckTest {
         runTest(dispatcher.scheduler) {
             val storage =
                 storageViewModel(
-                    runner = StorageBenchmarkRunner {
-                        testStorageBenchmarkResult(
-                            0.0, 0.0, 0L, storageInfo().capturedAt, StorageBenchmarkErrorCode.INSUFFICIENT_SPACE,
-                        )
-                    },
+                    runner =
+                        StorageBenchmarkRunner {
+                            testStorageBenchmarkResult(
+                                0.0,
+                                0.0,
+                                0L,
+                                storageInfo().capturedAt,
+                                StorageBenchmarkErrorCode.INSUFFICIENT_SPACE,
+                            )
+                        },
                 )
             val check = async { runAutomaticStorageCheck(storage, includeBenchmark = true) }
             advanceUntilIdle()
@@ -110,13 +116,14 @@ class RunAllStorageCheckTest {
             var cancelled = false
             val storage =
                 storageViewModel(
-                    runner = StorageBenchmarkRunner {
-                        try {
-                            awaitCancellation()
-                        } finally {
-                            cancelled = true
-                        }
-                    },
+                    runner =
+                        StorageBenchmarkRunner {
+                            try {
+                                awaitCancellation()
+                            } finally {
+                                cancelled = true
+                            }
+                        },
                 )
             val check = async { runAutomaticStorageCheck(storage, includeBenchmark = true) }
             runCurrent()
@@ -147,108 +154,116 @@ class RunAllStorageCheckTest {
     private fun verifyRestart(
         retest: Boolean,
         initialFailure: Boolean = false,
-    ) =
-        runTest(dispatcher.scheduler) {
-            val executor = Executors.newSingleThreadExecutor()
-            val ioDispatcher = executor.asCoroutineDispatcher()
-            val initialStarted = CountDownLatch(1)
-            val releaseInitial = CountDownLatch(1)
-            val activeStarted = CountDownLatch(1)
-            val releaseActive = CountDownLatch(1)
-            val captures = AtomicInteger()
-            val benchmarks = AtomicInteger()
-            val expected = storageInfo()
-            val storage =
-                StorageTestViewModel(
-                    StorageInfoProvider {
-                        when (captures.incrementAndGet()) {
-                            1 -> {
-                                initialStarted.countDown()
-                                check(releaseInitial.await(5, TimeUnit.SECONDS))
-                                if (initialFailure) error("Obsolete capture failed")
-                                expected.copy(availableBytes = 0)
-                            }
-                            2 -> {
-                                activeStarted.countDown()
-                                check(releaseActive.await(5, TimeUnit.SECONDS))
-                                expected
-                            }
-                            else -> expected
+    ) = runTest(dispatcher.scheduler) {
+        val executor = Executors.newSingleThreadExecutor()
+        val ioDispatcher = executor.asCoroutineDispatcher()
+        val initialStarted = CountDownLatch(1)
+        val releaseInitial = CountDownLatch(1)
+        val activeStarted = CountDownLatch(1)
+        val releaseActive = CountDownLatch(1)
+        val captures = AtomicInteger()
+        val benchmarks = AtomicInteger()
+        val expected = storageInfo()
+        val storage =
+            StorageTestViewModel(
+                StorageInfoProvider {
+                    when (captures.incrementAndGet()) {
+                        1 -> {
+                            initialStarted.countDown()
+                            check(releaseInitial.await(5, TimeUnit.SECONDS))
+                            if (initialFailure) error("Obsolete capture failed")
+                            expected.copy(availableBytes = 0)
                         }
-                    },
-                    StorageBenchmarkRunner {
-                        benchmarks.incrementAndGet()
-                        testStorageBenchmarkResult(100.0, 200.0, expected.availableBytes, expected.capturedAt)
-                    },
-                    ioDispatcher,
-                )
-            val owner = storageOwner(storage)
-            val session = RunAllTestsViewModel(EpochMillisClock { 0L }, IdProvider { "test" }, FakeReportRepository())
-            try {
-                runCurrent()
-                assertTrue(initialStarted.await(5, TimeUnit.SECONDS))
-                assertEquals(RunAllRunStatus.NOT_STARTED, session.state.value.runStatus)
-                owner.stopAll()
-                assertNull(storage.state.value.info)
-                assertTrue(storage.state.value.isInfoLoading)
+                        2 -> {
+                            activeStarted.countDown()
+                            check(releaseActive.await(5, TimeUnit.SECONDS))
+                            expected
+                        }
+                        else -> expected
+                    }
+                },
+                StorageBenchmarkRunner {
+                    benchmarks.incrementAndGet()
+                    testStorageBenchmarkResult(100.0, 200.0, expected.availableBytes, expected.capturedAt)
+                },
+                ioDispatcher,
+            )
+        val owner = storageOwner(storage)
+        val session = RunAllTestsViewModel(EpochMillisClock { 0L }, IdProvider { "test" }, FakeReportRepository())
+        try {
+            runCurrent()
+            assertTrue(initialStarted.await(5, TimeUnit.SECONDS))
+            assertEquals(RunAllRunStatus.NOT_STARTED, session.state.value.runStatus)
+            owner.stopAll()
+            assertNull(storage.state.value.info)
+            assertTrue(storage.state.value.isInfoLoading)
 
-                if (retest) {
-                    session.onCategoryRetestRequested(DiagnosticCategoryId.STORAGE, RunAllHardwareProfile())
-                } else {
-                    session.onPreflightAccepted(RunAllSelections(includeStorageBenchmark = true), RunAllHardwareProfile())
-                }
-                owner.markRunStarted()
-                session.onPermissionsResolved(RunAllPermissions())
-                val token = session.state.value.stageToken
-                assertEquals(RunAllStage.AUTOMATIC, session.state.value.stage)
-                assertTrue(session.claimStage(token))
-                val check = async { runAutomaticStorageCheck(storage, session.state.value.selections.includeStorageBenchmark) }
-                runCurrent()
-                releaseInitial.countDown()
-                assertTrue(
-                    "The active run must start a fresh storage-information read",
-                    activeStarted.await(5, TimeUnit.SECONDS),
+            if (retest) {
+                session.onCategoryRetestRequested(DiagnosticCategoryId.STORAGE, RunAllHardwareProfile())
+            } else {
+                session.onPreflightAccepted(
+                    RunAllSelections(includeStorageBenchmark = true),
+                    RunAllHardwareProfile(),
                 )
-                runCurrent()
-                assertFalse(session.claimStage(token))
-                assertEquals(0, benchmarks.get())
-                assertTrue("An obsolete capture must not complete the active read", storage.state.value.isInfoLoading)
-                assertNull(storage.state.value.infoError)
-                releaseActive.countDown()
-                executor.submit {}.get(5, TimeUnit.SECONDS)
-                runCurrent()
-                executor.submit {}.get(5, TimeUnit.SECONDS)
-                runCurrent()
-                assertEquals(expected, storage.state.value.info)
-                assertEquals(1, benchmarks.get())
-                assertEquals(StorageBenchmarkPhase.COMPLETED, storage.state.value.benchmarkPhase)
-                assertTrue(check.isCompleted)
-                assertNull(check.await())
-                session.onAutomaticChecksComplete(token)
-                assertFalse(session.claimStage(token))
-            } finally {
-                releaseInitial.countDown()
-                releaseActive.countDown()
-                owner.stopAll()
-                session.interruptRun(RunAllInterruptionReason.USER_CANCEL)
-                executor.submit {}.get(5, TimeUnit.SECONDS)
-                runCurrent()
-                ioDispatcher.close()
-                assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS))
             }
+            owner.markRunStarted()
+            session.onPermissionsResolved(RunAllPermissions())
+            val token = session.state.value.stageToken
+            assertEquals(RunAllStage.AUTOMATIC, session.state.value.stage)
+            assertTrue(session.claimStage(token))
+            val check =
+                async {
+                    runAutomaticStorageCheck(
+                        storage,
+                        session.state.value.selections.includeStorageBenchmark,
+                    )
+                }
+            runCurrent()
+            releaseInitial.countDown()
+            assertTrue(
+                "The active run must start a fresh storage-information read",
+                activeStarted.await(5, TimeUnit.SECONDS),
+            )
+            runCurrent()
+            assertFalse(session.claimStage(token))
+            assertEquals(0, benchmarks.get())
+            assertTrue("An obsolete capture must not complete the active read", storage.state.value.isInfoLoading)
+            assertNull(storage.state.value.infoError)
+            releaseActive.countDown()
+            executor.submit {}.get(5, TimeUnit.SECONDS)
+            runCurrent()
+            executor.submit {}.get(5, TimeUnit.SECONDS)
+            runCurrent()
+            assertEquals(expected, storage.state.value.info)
+            assertEquals(1, benchmarks.get())
+            assertEquals(StorageBenchmarkPhase.COMPLETED, storage.state.value.benchmarkPhase)
+            assertTrue(check.isCompleted)
+            assertNull(check.await())
+            session.onAutomaticChecksComplete(token)
+            assertFalse(session.claimStage(token))
+        } finally {
+            releaseInitial.countDown()
+            releaseActive.countDown()
+            owner.stopAll()
+            session.interruptRun(RunAllInterruptionReason.USER_CANCEL)
+            executor.submit {}.get(5, TimeUnit.SECONDS)
+            runCurrent()
+            ioDispatcher.close()
+            assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS))
         }
+    }
 
     private fun storageOwner(storage: StorageTestViewModel) =
         RunAllResourceOwner(
             stopDeviceInfo = {},
             stopPerformance = {},
-            stopSimInfo = {},
             stopMicrophone = {},
             stopGps = {},
             stopStorage = {
                 storage.cancelInfoCapture()
                 storage.cancelBenchmark()
             },
+            stopSimInfo = {},
             stopDisplay = {},
             stopAudio = {},
             stopCamera = {},
@@ -272,8 +287,9 @@ class RunAllStorageCheckTest {
 
     private fun storageViewModel(
         provider: StorageInfoProvider = StorageInfoProvider { storageInfo() },
-        runner: StorageBenchmarkRunner = StorageBenchmarkRunner {
-            testStorageBenchmarkResult(100.0, 200.0, storageInfo().availableBytes, storageInfo().capturedAt)
-        },
+        runner: StorageBenchmarkRunner =
+            StorageBenchmarkRunner {
+                testStorageBenchmarkResult(100.0, 200.0, storageInfo().availableBytes, storageInfo().capturedAt)
+            },
     ) = StorageTestViewModel(provider, runner, dispatcher)
 }
