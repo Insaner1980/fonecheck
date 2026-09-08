@@ -262,13 +262,7 @@ class RunAllAutomaticChecksTest {
             var stopped = false
             val f =
                 Fixture(
-                    StorageBenchmarkRunner {
-                        try {
-                            awaitCancellation()
-                        } finally {
-                            stopped = true
-                        }
-                    },
+                    cancellableStorageRunner { stopped = true },
                 )
             f.enter(DiagnosticCategoryId.STORAGE)
             val execution = async { f.execute() }
@@ -290,13 +284,7 @@ class RunAllAutomaticChecksTest {
             var stopped = false
             val f =
                 Fixture(
-                    StorageBenchmarkRunner {
-                        try {
-                            awaitCancellation()
-                        } finally {
-                            stopped = true
-                        }
-                    },
+                    cancellableStorageRunner { stopped = true },
                 )
             f.enter(DiagnosticCategoryId.STORAGE)
             val execution = async { f.execute() }
@@ -306,15 +294,7 @@ class RunAllAutomaticChecksTest {
             execution.await()
             assertTrue(stopped)
             assertEquals(RunAllStageOutcome.TIMED_OUT, f.run.state.value.automaticIssues[DiagnosticCategoryId.STORAGE])
-            assertEquals(RunAllStage.RESULTS, f.run.state.value.stage)
-            assertNull(f.storage.state.value.benchmarkResult)
-            val reading =
-                f.snapshots().single { it.categoryId == DiagnosticCategoryId.STORAGE }.evidence.single {
-                    it.checkId.value ==
-                        "storage.sequential_write"
-                }
-            assertEquals(DiagnosticStatus.NOT_TESTED, reading.status)
-            assertEquals(EvidenceReasonCode("measurement_timeout"), reading.reason)
+            assertStorageTimeoutEvidence(f)
         }
 
     @Test
@@ -334,15 +314,7 @@ class RunAllAutomaticChecksTest {
             deadlineDispatcher.scheduler.runCurrent()
             assertTrue(execution.isCancelled)
             assertEquals(RunAllStageOutcome.TIMED_OUT, f.run.state.value.stageOutcomes[RunAllStage.AUTOMATIC])
-            assertEquals(RunAllStage.RESULTS, f.run.state.value.stage)
-            assertNull(f.storage.state.value.benchmarkResult)
-            val reading =
-                f.snapshots().single { it.categoryId == DiagnosticCategoryId.STORAGE }.evidence.single {
-                    it.checkId.value ==
-                        "storage.sequential_write"
-                }
-            assertEquals(DiagnosticStatus.NOT_TESTED, reading.status)
-            assertEquals(EvidenceReasonCode("measurement_timeout"), reading.reason)
+            assertStorageTimeoutEvidence(f)
         }
 
     @Test
@@ -416,6 +388,26 @@ class RunAllAutomaticChecksTest {
             assertTrue(fresh.isCancelled)
             f.owner.stopAll()
         }
+
+    private fun cancellableStorageRunner(onStopped: () -> Unit) =
+        StorageBenchmarkRunner {
+            try {
+                awaitCancellation()
+            } finally {
+                onStopped()
+            }
+        }
+
+    private fun assertStorageTimeoutEvidence(fixture: Fixture) {
+        assertEquals(RunAllStage.RESULTS, fixture.run.state.value.stage)
+        assertNull(fixture.storage.state.value.benchmarkResult)
+        val reading =
+            fixture.snapshots().single { it.categoryId == DiagnosticCategoryId.STORAGE }.evidence.single {
+                it.checkId.value == "storage.sequential_write"
+            }
+        assertEquals(DiagnosticStatus.NOT_TESTED, reading.status)
+        assertEquals(EvidenceReasonCode("measurement_timeout"), reading.reason)
+    }
 
     private inner class Fixture(
         runner: StorageBenchmarkRunner = StorageBenchmarkRunner { benchmark() },

@@ -53,83 +53,15 @@ internal suspend fun runAutomaticChecks(
             execution.cancel()
         }
     try {
-        // Start the independent prerequisite reads together before waiting in the existing order.
-        if (entry.targetCategory == null ||
-            entry.targetCategory == DiagnosticCategoryId.DEVICE
-        ) {
-            deviceViewModel.refresh()
-        }
-        if (entry.targetCategory == null ||
-            entry.targetCategory == DiagnosticCategoryId.PERFORMANCE
-        ) {
-            performanceViewModel.refreshInfo()
-        }
-        if (entry.targetCategory == null || entry.targetCategory == DiagnosticCategoryId.SIM) simViewModel.refresh()
+        runAutomaticInfoChecks(
+            token = token,
+            entry = entry,
+            sessionViewModel = sessionViewModel,
+            deviceViewModel = deviceViewModel,
+            performanceViewModel = performanceViewModel,
+            simViewModel = simViewModel,
+        )
         val retestCategory = entry.targetCategory
-        if (retestCategory == null || retestCategory == DiagnosticCategoryId.DEVICE) {
-            val result =
-                withTimeoutOrNull(DEVICE_INFO_TIMEOUT_MS) {
-                    deviceViewModel.state.first { !it.isLoading }
-                }
-            when {
-                result == null -> {
-                    deviceViewModel.cancelCapture()
-                    sessionViewModel.reportAutomaticIssue(
-                        token,
-                        DiagnosticCategoryId.DEVICE,
-                        RunAllStageOutcome.TIMED_OUT,
-                    )
-                }
-                result.error != null ->
-                    sessionViewModel.reportAutomaticIssue(
-                        token,
-                        DiagnosticCategoryId.DEVICE,
-                        RunAllStageOutcome.ERROR,
-                    )
-            }
-        }
-        if (retestCategory == null || retestCategory == DiagnosticCategoryId.SIM) {
-            val result =
-                withTimeoutOrNull(DEVICE_INFO_TIMEOUT_MS) {
-                    simViewModel.state.first { !it.isLoading }
-                }
-            when {
-                result == null -> {
-                    simViewModel.cancelCapture()
-                    sessionViewModel.reportAutomaticIssue(
-                        token,
-                        DiagnosticCategoryId.SIM,
-                        RunAllStageOutcome.TIMED_OUT,
-                    )
-                }
-                result.error != null ->
-                    sessionViewModel.reportAutomaticIssue(
-                        token,
-                        DiagnosticCategoryId.SIM,
-                        RunAllStageOutcome.ERROR,
-                    )
-            }
-        }
-        if (retestCategory == null || retestCategory == DiagnosticCategoryId.PERFORMANCE) {
-            val result =
-                withTimeoutOrNull(PERFORMANCE_TIMEOUT_MS) {
-                    performanceViewModel.state.first { !it.isInfoLoading }
-                    performanceViewModel.startBenchmark()
-                    performanceViewModel.state.first { it.benchmarkPhase != BenchmarkPhase.RUNNING }
-                }
-            val issue =
-                when {
-                    result == null || result.benchmarkError == "benchmark_timeout" ->
-                        RunAllStageOutcome.TIMED_OUT
-                    result.infoError != null || result.benchmarkError != null -> RunAllStageOutcome.ERROR
-                    else -> null
-                }
-            if (result == null) {
-                performanceViewModel.cancelInfoCapture()
-                performanceViewModel.cancelBenchmark()
-            }
-            issue?.let { sessionViewModel.reportAutomaticIssue(token, DiagnosticCategoryId.PERFORMANCE, it) }
-        }
         if (retestCategory == null || retestCategory == DiagnosticCategoryId.STORAGE) {
             val issue =
                 runAutomaticStorageCheck(storageViewModel, entry.selections.includeStorageBenchmark)
@@ -194,3 +126,90 @@ internal suspend fun runAutomaticChecks(
     coroutineContext.ensureActive()
     sessionViewModel.onAutomaticChecksComplete(token)
 }
+
+private suspend fun runAutomaticInfoChecks(
+    token: Long,
+    entry: RunAllTestsState,
+    sessionViewModel: RunAllTestsViewModel,
+    deviceViewModel: DeviceInfoViewModel,
+    performanceViewModel: PerformanceInfoViewModel,
+    simViewModel: SimTelephonyViewModel,
+) {
+    // Start the independent prerequisite reads together before waiting in the existing order.
+    if (entry.targetCategory.includes(DiagnosticCategoryId.DEVICE)) {
+        deviceViewModel.refresh()
+    }
+    if (entry.targetCategory.includes(DiagnosticCategoryId.PERFORMANCE)) {
+        performanceViewModel.refreshInfo()
+    }
+    if (entry.targetCategory.includes(DiagnosticCategoryId.SIM)) simViewModel.refresh()
+    val retestCategory = entry.targetCategory
+    if (retestCategory.includes(DiagnosticCategoryId.DEVICE)) {
+        val result =
+            withTimeoutOrNull(DEVICE_INFO_TIMEOUT_MS) {
+                deviceViewModel.state.first { !it.isLoading }
+            }
+        when {
+            result == null -> {
+                deviceViewModel.cancelCapture()
+                sessionViewModel.reportAutomaticIssue(
+                    token,
+                    DiagnosticCategoryId.DEVICE,
+                    RunAllStageOutcome.TIMED_OUT,
+                )
+            }
+            result.error != null ->
+                sessionViewModel.reportAutomaticIssue(
+                    token,
+                    DiagnosticCategoryId.DEVICE,
+                    RunAllStageOutcome.ERROR,
+                )
+        }
+    }
+    if (retestCategory.includes(DiagnosticCategoryId.SIM)) {
+        val result =
+            withTimeoutOrNull(DEVICE_INFO_TIMEOUT_MS) {
+                simViewModel.state.first { !it.isLoading }
+            }
+        when {
+            result == null -> {
+                simViewModel.cancelCapture()
+                sessionViewModel.reportAutomaticIssue(
+                    token,
+                    DiagnosticCategoryId.SIM,
+                    RunAllStageOutcome.TIMED_OUT,
+                )
+            }
+            result.error != null ->
+                sessionViewModel.reportAutomaticIssue(
+                    token,
+                    DiagnosticCategoryId.SIM,
+                    RunAllStageOutcome.ERROR,
+                )
+        }
+    }
+    if (retestCategory.includes(DiagnosticCategoryId.PERFORMANCE)) {
+        val result =
+            withTimeoutOrNull(PERFORMANCE_TIMEOUT_MS) {
+                performanceViewModel.state.first { !it.isInfoLoading }
+                performanceViewModel.startBenchmark()
+                performanceViewModel.state.first { it.benchmarkPhase != BenchmarkPhase.RUNNING }
+            }
+        val issue =
+            when {
+                result == null -> {
+                    performanceViewModel.cancelInfoCapture()
+                    performanceViewModel.cancelBenchmark()
+                    RunAllStageOutcome.TIMED_OUT
+                }
+                result.benchmarkError == "benchmark_timeout" ->
+                    RunAllStageOutcome.TIMED_OUT
+                result.infoError != null || result.benchmarkError != null -> RunAllStageOutcome.ERROR
+                else -> null
+            }
+        issue?.let { sessionViewModel.reportAutomaticIssue(token, DiagnosticCategoryId.PERFORMANCE, it) }
+    }
+}
+
+private fun DiagnosticCategoryId?.includes(category: DiagnosticCategoryId): Boolean =
+    this == null || this == category
