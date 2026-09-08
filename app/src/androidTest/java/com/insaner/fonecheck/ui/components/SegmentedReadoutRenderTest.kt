@@ -112,17 +112,21 @@ class SegmentedReadoutRenderTest(
         composeRule.runOnIdle { value.value = value.value.replace('7', '8') }
         composeRule.waitForIdle()
         assertEquals("Live updates must preserve position", offset, range.value(), 1f)
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val output = File(context.getExternalFilesDir(null), "readout-overflow").apply { mkdirs() }
-        val bitmap =
-            composeRule
-                .onNodeWithTag("overflow-review")
-                .captureToImage()
-                .asAndroidBitmap()
-        File(output, "$widthDp-$fontScale-$dark-$language.png").outputStream().use {
-            assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it))
+        if (InstrumentationRegistry.getArguments().getString("readoutReview") == "true") {
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            context.getExternalFilesDir(null)?.let { externalFilesDir ->
+                val output = File(externalFilesDir, "readout-overflow").apply { mkdirs() }
+                val bitmap =
+                    composeRule
+                        .onNodeWithTag("overflow-review")
+                        .captureToImage()
+                        .asAndroidBitmap()
+                File(output, "$widthDp-$fontScale-$dark-$language.png").outputStream().use {
+                    assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it))
+                }
+                bitmap.recycle()
+            }
         }
-        bitmap.recycle()
         composeRule.runOnIdle {
             value.value = if (language == "fi") "1,25" else "1.25"
             compound.value = true
