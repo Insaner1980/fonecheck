@@ -7,6 +7,13 @@ import org.junit.Test
 import java.time.Instant
 
 class ReportAssemblerTest {
+    @Test(expected = IllegalArgumentException::class)
+    fun `new full report cannot be assembled from a historical subset`() {
+        ReportAssembler.assemble(
+            request(snapshots = listOf(snapshot(DiagnosticCategoryId.BATTERY, DiagnosticStatus.PASS))),
+        )
+    }
+
     @Test
     fun `full report is catalog ordered and deterministically serializable`() {
         val request =

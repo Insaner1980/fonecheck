@@ -12,12 +12,12 @@ import javax.xml.parsers.DocumentBuilderFactory
 
 class ResourceParityTest {
     @Test
-    fun `English and Finnish translatable resources have matching keys`() {
+    fun `all shipped languages have matching translatable resource keys`() {
         val resourceRoot = locateResourceRoot()
         val english = resourceKeys(File(resourceRoot, "values/strings.xml"))
-        val finnish = resourceKeys(File(resourceRoot, "values-fi/strings.xml"))
-
-        assertEquals(english, finnish)
+        listOf("values-fi", "values-es").forEach { directory ->
+            assertEquals(directory, english, resourceKeys(File(resourceRoot, "$directory/strings.xml")))
+        }
     }
 
     @Test
@@ -27,7 +27,11 @@ class ResourceParityTest {
         val font =
             Font.createFont(Font.TRUETYPE_FONT, File(resourceRoot, "font/jetbrains_mono_medium.ttf")).deriveFont(12f)
 
-        listOf("values" to Locale.ENGLISH, "values-fi" to Locale.forLanguageTag("fi")).forEach { (directory, locale) ->
+        listOf(
+            "values" to Locale.ENGLISH,
+            "values-fi" to Locale.forLanguageTag("fi"),
+            "values-es" to Locale.forLanguageTag("es"),
+        ).forEach { (directory, locale) ->
             val file = File(resourceRoot, "$directory/strings.xml")
             val keys = resourceKeys(file).filter { it.startsWith("string:home_cat_") }
             assertEquals("$directory must cover every category", diagnosticDestinations.size, keys.size)
@@ -51,6 +55,90 @@ class ResourceParityTest {
         assertEquals("Active modems", stringValue(english, "label_active_modem_count"))
         assertEquals("Aktiiviset modeemit", stringValue(finnish, "label_active_modem_count"))
     }
+
+    @Test
+    fun `translations preserve formatting markup and plural contracts`() {
+        val root = locateResourceRoot()
+        val source = textResources(File(root, "values"))
+        listOf("values-fi", "values-es").forEach { directory ->
+            val translated = textResources(File(root, directory))
+            assertEquals(directory, source.keys, translated.keys)
+            translated.forEach { (key, resource) ->
+                val original = source.getValue(key)
+                assertEquals(key, original.tagName, resource.tagName)
+                val originalItems = childElements(original)
+                val items = childElements(resource)
+                if (resource.tagName == "plurals") {
+                    val quantities = items.map { it.getAttribute("quantity") }
+                    assertEquals(key, quantities.size, quantities.toSet().size)
+                    val required =
+                        if (directory == "values-es") setOf("one", "many", "other") else setOf("one", "other")
+                    assertEquals(key, required, quantities.toSet())
+                }
+                if (resource.tagName == "string-array") assertEquals(key, originalItems.size, items.size)
+                val pairs =
+                    when (resource.tagName) {
+                        "plurals" ->
+                            items.map { item ->
+                                val quantity = item.getAttribute("quantity")
+                                val reference =
+                                    originalItems.firstOrNull { it.getAttribute("quantity") == quantity }
+                                        ?: originalItems.single { it.getAttribute("quantity") == "other" }
+                                reference to item
+                            }
+                        "string-array" -> originalItems.zip(items)
+                        else -> listOf(original to resource)
+                    }
+                pairs.forEach { (reference, item) ->
+                    assertTrue("$directory:$key is empty", item.textContent.isNotBlank())
+                    assertEquals("$directory:$key placeholders", placeholders(reference), placeholders(item))
+                    assertEquals("$directory:$key markup", markup(reference), markup(item))
+                    assertEquals("$directory:$key line breaks", lineBreaks(reference), lineBreaks(item))
+                    if (directory == "values-es") {
+                        assertTrue(key, item.textContent.none { it in "\u2013\u2014\u00b7\u2022\u2219\u22c5\u2027" })
+                    }
+                }
+            }
+        }
+    }
+
+    private fun textResources(directory: File): Map<String, Element> =
+        buildMap {
+            directory.listFiles().orEmpty().filter { it.extension == "xml" }.forEach { file ->
+                val root =
+                    DocumentBuilderFactory
+                        .newInstance()
+                        .newDocumentBuilder()
+                        .parse(file)
+                        .documentElement
+                childElements(root)
+                    .filter {
+                        it.tagName in setOf("string", "plurals", "string-array") &&
+                            it.getAttribute("translatable") != "false"
+                    }.forEach { element ->
+                        val key = element.getAttribute("name")
+                        assertTrue("Duplicate resource: $directory:$key", put(key, element) == null)
+                    }
+            }
+        }
+
+    private fun childElements(element: Element): List<Element> =
+        (0 until element.childNodes.length).mapNotNull { element.childNodes.item(it) as? Element }
+
+    private fun placeholders(element: Element): List<String> =
+        Regex("%(?:[0-9]+\\$)?[-#+ 0,(]*[0-9]*(?:\\.[0-9]+)?(?:[tT][a-zA-Z]|[bBhHsScCdoxXeEfgGaA%n])")
+            .findAll(element.textContent)
+            .map { it.value }
+            .sorted()
+            .toList()
+
+    private fun lineBreaks(element: Element): Int = Regex("\\\\n").findAll(element.textContent).count()
+
+    private fun markup(element: Element): List<String> =
+        childElements(element).flatMap { child ->
+            val attributes = (0 until child.attributes.length).map { child.attributes.item(it).toString() }.sorted()
+            listOf("${child.tagName}:$attributes") + markup(child)
+        }
 
     private fun locateResourceRoot(): File {
         val workingDirectory = File(requireNotNull(System.getProperty("user.dir")))

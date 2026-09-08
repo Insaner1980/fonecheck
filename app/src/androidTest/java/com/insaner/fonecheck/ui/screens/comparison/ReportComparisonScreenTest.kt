@@ -2,12 +2,15 @@ package com.insaner.fonecheck.ui.screens.comparison
 
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasScrollToIndexAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.insaner.fonecheck.R
@@ -42,7 +45,7 @@ class ReportComparisonScreenTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun compatibleComparisonShowsDeltasCanonicalCategoriesAndDistinctChanges() {
+    fun changedEvidenceKeepsStoredCategoryScopeAndExplainsUnavailableDelta() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val before =
             report(
@@ -79,13 +82,20 @@ class ReportComparisonScreenTest {
             }
         }
 
-        // The change is the figure in the score window; the window label uppercases what it draws.
+        // The score window keeps the existing rule: changed scored evidence has no numeric delta.
         composeRule
             .onNodeWithText(context.getString(R.string.comparison_score_change), ignoreCase = true)
             .assertIsDisplayed()
-        composeRule.onNodeWithText("+6").assertIsDisplayed()
-        composeRule.onAllNodesWithTag("comparison_category", useUnmergedTree = true).assertCountEquals(14)
-        composeRule.onNodeWithTag("comparison_category_device").performScrollTo().performClick()
+        composeRule.onNodeWithText("+6").assertDoesNotExist()
+        composeRule
+            .onNodeWithText(context.getString(R.string.comparison_score_basis_changed))
+            .performScrollTo()
+            .assertIsDisplayed()
+        composeRule
+            .onNode(hasScrollToIndexAction())
+            .performScrollToNode(hasTestTag("comparison_category_device"))
+        composeRule.onNodeWithTag("comparison_category_device").performClick()
+        composeRule.onAllNodesWithTag("comparison_category", useUnmergedTree = true).assertCountEquals(1)
         composeRule
             .onNodeWithText(context.getString(R.string.comparison_change_newly_unavailable))
             .assertIsDisplayed()

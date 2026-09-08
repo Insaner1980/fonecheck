@@ -4,9 +4,44 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.Instant
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Locale
+import java.util.TimeZone
 
 class UiDateTimeFormatTest {
+    @Test
+    fun spanishDatesIgnoreRegionAndKeepTechnicalTimestampsStable() {
+        val instant = Instant.parse("2026-08-11T10:18:00Z")
+        val zone = ZoneId.of("Europe/Helsinki")
+        val spanish = Locale.forLanguageTag("es")
+        val originalLocale = Locale.getDefault()
+        val originalDisplayLocale = Locale.getDefault(Locale.Category.DISPLAY)
+        val originalFormatLocale = Locale.getDefault(Locale.Category.FORMAT)
+        val originalTimeZone = TimeZone.getDefault()
+        try {
+            Locale.setDefault(Locale.US)
+            TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
+            // Localized punctuation belongs to the runtime; language, style and zone are our contract.
+            val expected =
+                DateTimeFormatter
+                    .ofLocalizedDateTime(FormatStyle.MEDIUM)
+                    .withLocale(spanish)
+                    .format(instant.atZone(zone))
+            listOf("es", "es-ES", "es-MX", "es-US").forEach { tag ->
+                val locale = Locale.forLanguageTag(tag)
+                assertEquals(expected, formatUiDateTime(instant, locale, zone))
+                assertEquals("$expected UTC+03:00", formatPdfDateTime(instant, locale, zone))
+                assertEquals("2026-08-11 13:18", formatTechnicalUiDateTime(instant, locale, zone))
+            }
+        } finally {
+            Locale.setDefault(originalLocale)
+            Locale.setDefault(Locale.Category.DISPLAY, originalDisplayLocale)
+            Locale.setDefault(Locale.Category.FORMAT, originalFormatLocale)
+            TimeZone.setDefault(originalTimeZone)
+        }
+    }
+
     @Test
     fun pdfDatesUseEachInstantsOffsetAcrossDaylightSavingTime() {
         val zone = ZoneId.of("Europe/Helsinki")

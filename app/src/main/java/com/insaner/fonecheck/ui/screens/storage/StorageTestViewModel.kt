@@ -8,6 +8,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,7 +49,7 @@ class StorageTestViewModel
 
         private var infoJob: Job? = null
         private var benchmarkJob: Job? = null
-        private var skipRequested = false
+        private var benchmarkGeneration = 0L
 
         init {
             refreshInfo()
@@ -65,6 +66,7 @@ class StorageTestViewModel
                         } catch (error: CancellationException) {
                             throw error
                         } catch (_: Exception) {
+                            coroutineContext.ensureActive()
                             _state.value = _state.value.copy(isInfoLoading = false, infoError = INFO_CAPTURE_FAILED)
                             return@launch
                         }
@@ -81,7 +83,7 @@ class StorageTestViewModel
         @Suppress("kotlin:S3776", "kotlin:S6311")
         fun startBenchmark() {
             if (_state.value.benchmarkPhase == StorageBenchmarkPhase.RUNNING) return
-            skipRequested = false
+            val generation = ++benchmarkGeneration
             _state.value =
                 _state.value.copy(
                     benchmarkPhase = StorageBenchmarkPhase.RUNNING,
@@ -103,6 +105,7 @@ class StorageTestViewModel
                             )
                         refreshInfo()
                     } catch (_: TimeoutCancellationException) {
+                        if (generation != benchmarkGeneration) return@launch
                         if (_state.value.benchmarkPhase == StorageBenchmarkPhase.RUNNING) {
                             _state.value =
                                 _state.value.copy(
@@ -111,18 +114,15 @@ class StorageTestViewModel
                                 )
                         }
                     } catch (_: CancellationException) {
+                        if (generation != benchmarkGeneration) return@launch
                         if (_state.value.benchmarkPhase == StorageBenchmarkPhase.RUNNING) {
                             _state.value =
                                 _state.value.copy(
-                                    benchmarkPhase =
-                                        if (skipRequested) {
-                                            StorageBenchmarkPhase.SKIPPED
-                                        } else {
-                                            StorageBenchmarkPhase.CANCELLED
-                                        },
+                                    benchmarkPhase = StorageBenchmarkPhase.CANCELLED,
                                 )
                         }
                     } catch (_: Exception) {
+                        if (generation != benchmarkGeneration) return@launch
                         _state.value =
                             _state.value.copy(
                                 benchmarkPhase = StorageBenchmarkPhase.ERROR,
@@ -134,13 +134,15 @@ class StorageTestViewModel
 
         fun cancelBenchmark() {
             if (_state.value.benchmarkPhase != StorageBenchmarkPhase.RUNNING) return
-            skipRequested = false
+            benchmarkGeneration++
+            _state.value = _state.value.copy(benchmarkPhase = StorageBenchmarkPhase.CANCELLED)
             benchmarkJob?.cancel()
         }
 
         fun skipBenchmark() {
             if (_state.value.benchmarkPhase == StorageBenchmarkPhase.RUNNING) {
-                skipRequested = true
+                benchmarkGeneration++
+                _state.value = _state.value.copy(benchmarkPhase = StorageBenchmarkPhase.SKIPPED)
                 benchmarkJob?.cancel()
             } else {
                 _state.value =

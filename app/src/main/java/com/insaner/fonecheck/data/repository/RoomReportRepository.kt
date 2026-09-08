@@ -18,6 +18,11 @@ class RoomReportRepository(
     private val reportDao: ReportDao,
 ) : ReportRepository {
     override suspend fun insert(report: DiagnosticReport) {
+        if (report.kind == ReportKind.FULL_CHECK) {
+            require(report.categories.map { it.categoryId } == DiagnosticCatalog.categories) {
+                "A full report must contain every catalog category in catalog order."
+            }
+        }
         val payloadJson = ReportPayloadCodec.encode(report)
         reportDao.insert(report.toEntity(payloadJson))
     }
@@ -44,7 +49,7 @@ class RoomReportRepository(
 private fun DiagnosticReport.toEntity(payloadJson: String): ReportEntity {
     require(stableId.isNotBlank()) { "Report ID must not be blank." }
     require(startedAt <= completedAt) { "Report start must not be after completion." }
-    require(schemaVersion == ReportSchemaVersion.CURRENT) { "Only the current report schema can be inserted." }
+    require(schemaVersion == ReportSchemaVersion.CURRENT) { "Unsupported report schema." }
     require(categories.map { it.categoryId }.distinct().size == categories.size) {
         "A report must not contain duplicate categories."
     }
@@ -67,9 +72,8 @@ private fun DiagnosticReport.toEntity(payloadJson: String): ReportEntity {
     val categoryId =
         when (kind) {
             ReportKind.FULL_CHECK -> {
-                require(categories.map { it.categoryId } == DiagnosticCatalog.categories) {
-                    "A full report must contain every catalog category in catalog order."
-                }
+                // Stored scope and order belong to the snapshot, not the current catalog.
+                require(categories.isNotEmpty()) { "A full report must contain categories." }
                 null
             }
             ReportKind.CATEGORY_ONLY -> {

@@ -26,6 +26,10 @@ import com.insaner.fonecheck.domain.model.ReportSchemaVersion
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
+import com.insaner.fonecheck.export.PdfReportLabels
+import com.insaner.fonecheck.export.PdfTextStyle
+import com.insaner.fonecheck.export.ReportPdfContentBuilder
+import com.insaner.fonecheck.ui.screens.report.ReportDetailPresenter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -62,6 +66,62 @@ class ReportRepositoryTest {
         }
         if (::context.isInitialized) {
             context.deleteDatabase(databaseName)
+        }
+    }
+
+    @Test
+    fun syntheticHistoricalSubsetLoadsWithoutRewritingRoomRow() =
+        runBlocking {
+            assertHistoricalRead(listOf(DiagnosticCategoryId.CAMERA, DiagnosticCategoryId.BATTERY))
+        }
+
+    @Test
+    fun syntheticHistoricalOrderLoadsWithoutRewritingRoomRow() =
+        runBlocking {
+            assertHistoricalRead(DiagnosticCatalog.categories.reversed())
+        }
+
+    private suspend fun assertHistoricalRead(categoryIds: List<DiagnosticCategoryId>) {
+        // Synthetic supported snapshots, not fixtures attributed to an older release.
+        val base = report("synthetic-history", Instant.parse("2026-08-07T12:34:56.123456789Z"))
+        val categories = categoryIds.map { id -> base.categories.single { it.categoryId == id } }
+        val evidenceCount = categories.sumOf { it.evidence.size }
+        val historical = base.copy(
+            categories = categories,
+            score = base.score.copy(version = ScoreVersion(1)),
+            coverage = base.coverage.copy(applicableCount = evidenceCount, completedCount = evidenceCount),
+        )
+        val row = storedEntity(
+            id = historical.stableId,
+            completedAt = historical.completedAt.toEpochMilli(),
+            payloadJson = ReportPayloadCodec.encode(historical),
+        ).copy(
+            startedAtEpochMillis = historical.startedAt.toEpochMilli(),
+            applicableCount = evidenceCount,
+            completedCount = evidenceCount,
+        )
+        val isolatedDatabase = Room.inMemoryDatabaseBuilder(context, FonecheckDatabase::class.java).build()
+        try {
+            val dao = isolatedDatabase.reportDao()
+            // Insert the historical row directly, bypassing current new-report requirements.
+            dao.insert(row)
+            val summariesBefore = dao.observeSummaries().first()
+            val historicalRepository = RoomReportRepository(dao)
+            val loaded = historicalRepository.getById(historical.stableId)
+            assertEquals(ReportLoadResult.Available(historical), loaded)
+            val saved = (loaded as ReportLoadResult.Available).report
+            assertEquals(categories, ReportDetailPresenter.present(saved).categories)
+            val labels = PdfReportLabels.english()
+            assertEquals(
+                categoryIds.map { "${labels.categoryName(it)} — pass" },
+                ReportPdfContentBuilder.build(saved, labels)
+                    .filter { it.style == PdfTextStyle.CATEGORY }.map { it.text },
+            )
+            assertEquals(historical, ReportPayloadCodec.decode(ReportPayloadCodec.encode(saved)))
+            assertEquals(row, dao.getById(historical.stableId))
+            assertEquals(summariesBefore, dao.observeSummaries().first())
+        } finally {
+            isolatedDatabase.close()
         }
     }
 

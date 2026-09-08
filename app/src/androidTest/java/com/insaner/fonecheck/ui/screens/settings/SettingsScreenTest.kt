@@ -83,7 +83,7 @@ class SettingsScreenTest {
         composeRule
             .onNodeWithTag("settings_language_system")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, true))
-        listOf(AppLanguage.FINNISH, AppLanguage.ENGLISH, AppLanguage.SYSTEM).forEach { choice ->
+        listOf(AppLanguage.SPANISH, AppLanguage.FINNISH, AppLanguage.ENGLISH, AppLanguage.SYSTEM).forEach { choice ->
             composeRule
                 .onNodeWithTag("settings_language_${choice.name.lowercase()}")
                 .performScrollTo()

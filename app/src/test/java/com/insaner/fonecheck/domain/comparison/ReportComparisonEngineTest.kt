@@ -3,7 +3,6 @@ package com.insaner.fonecheck.domain.comparison
 import com.insaner.fonecheck.domain.model.Applicability
 import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.domain.model.CoverageSummary
-import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryResult
 import com.insaner.fonecheck.domain.model.DiagnosticCheckId
@@ -236,7 +235,7 @@ class ReportComparisonEngineTest {
         val device = comparison.categories.single { it.categoryId == DiagnosticCategoryId.DEVICE }
         val changes = device.evidence.associate { it.checkId to it.change }
 
-        assertEquals(DiagnosticCatalog.categories, comparison.categories.map { it.categoryId })
+        assertEquals(listOf(DiagnosticCategoryId.DEVICE), comparison.categories.map { it.categoryId })
         assertEquals(EvidenceChange.ADDED, changes["device.added"])
         assertEquals(EvidenceChange.STATUS_CHANGED, changes["device.identity"])
         assertEquals(EvidenceChange.REMOVED, changes["device.removed"])

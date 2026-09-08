@@ -3,7 +3,6 @@ package com.insaner.fonecheck.ui
 import android.animation.ValueAnimator
 import android.os.Build
 import android.os.Bundle
-import android.os.SystemClock
 import android.view.KeyEvent
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -86,16 +85,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splashStartedAt = SystemClock.uptimeMillis()
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
         val shouldAnimateSplash = shouldAnimateSplash()
-        splashScreen.setKeepOnScreenCondition {
-            shouldAnimateSplash &&
-                SystemClock.uptimeMillis() - splashStartedAt < SPLASH_MIN_DURATION_MS
-        }
-
         splashScreen.setOnExitAnimationListener { splashScreenView ->
             if (!shouldAnimateSplash) {
                 splashScreenView.remove()
@@ -283,7 +276,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private companion object {
-        const val SPLASH_MIN_DURATION_MS = 1_000L
         const val SPLASH_EXIT_DURATION_MS = 180L
         const val SPLASH_EXIT_SCALE = 0.92f
     }

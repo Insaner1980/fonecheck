@@ -1,5 +1,7 @@
 package com.insaner.fonecheck.ui.screens.runall
 
+import kotlinx.coroutines.Job
+
 class RunAllResourceOwner(
     private val stopDeviceInfo: () -> Unit,
     private val stopPerformance: () -> Unit,
@@ -17,6 +19,30 @@ class RunAllResourceOwner(
     private val stopThermal: () -> Unit,
 ) {
     private var allStopped = false
+    private var automaticExecution: Job? = null
+
+    internal fun beginAutomatic(execution: Job) {
+        stopAutomatic()
+        allStopped = false
+        automaticExecution = execution
+    }
+
+    internal fun endAutomatic(execution: Job) {
+        // An obsolete coroutine's finally must never release a newer execution's resources.
+        if (automaticExecution !== execution) return
+        automaticExecution = null
+        stopAutomaticResources()
+    }
+
+    private fun stopAutomatic() {
+        val execution = automaticExecution ?: return
+        automaticExecution = null
+        execution.cancel()
+        stopAutomaticResources()
+    }
+
+    private fun stopAutomaticResources() =
+        stopEach(stopDeviceInfo, stopPerformance, stopSimInfo, stopMicrophone, stopGps, stopStorage)
 
     fun markRunStarted() {
         allStopped = false
@@ -24,15 +50,9 @@ class RunAllResourceOwner(
 
     fun stopStage(stage: RunAllStage) {
         when (stage) {
-            RunAllStage.AUTOMATIC ->
-                stopEach(
-                    stopDeviceInfo,
-                    stopPerformance,
-                    stopSimInfo,
-                    stopMicrophone,
-                    stopGps,
-                    stopStorage,
-                )
+            RunAllStage.AUTOMATIC -> {
+                if (automaticExecution != null) stopAutomatic() else stopAutomaticResources()
+            }
 
             RunAllStage.DISPLAY -> stopEach(stopDisplay)
             RunAllStage.AUDIO -> stopEach(stopAudio)
@@ -51,6 +71,8 @@ class RunAllResourceOwner(
     fun stopAll() {
         if (allStopped) return
         allStopped = true
+        automaticExecution?.cancel()
+        automaticExecution = null
         stopEach(
             stopDeviceInfo,
             stopPerformance,

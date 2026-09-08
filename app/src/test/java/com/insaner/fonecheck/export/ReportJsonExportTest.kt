@@ -12,8 +12,27 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
+import java.util.Locale
 
 class ReportJsonExportTest {
+    @Test
+    fun reportPayloadAndScoreAreIndependentOfDisplayLanguage() {
+        val originalLocale = Locale.getDefault()
+        val report = report()
+        val expected = ReportPayloadCodec.encode(report)
+        try {
+            listOf("en", "fi", "es", "es-MX").forEach { tag ->
+                Locale.setDefault(Locale.forLanguageTag(tag))
+                assertEquals(expected, ReportPayloadCodec.encode(report))
+                assertEquals(report, ReportPayloadCodec.decode(expected))
+                assertEquals(report.score, ReportPayloadCodec.decode(expected).score)
+                assertEquals(report.coverage, ReportPayloadCodec.decode(expected).coverage)
+            }
+        } finally {
+            Locale.setDefault(originalLocale)
+        }
+    }
+
     @Test
     fun versionOneExportIsDeterministicAndRoundTripsTypedEvidence() {
         val report = report()

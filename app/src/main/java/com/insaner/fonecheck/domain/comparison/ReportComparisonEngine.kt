@@ -1,7 +1,6 @@
 package com.insaner.fonecheck.domain.comparison
 
 import com.insaner.fonecheck.domain.model.Applicability
-import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticEvidence
 import com.insaner.fonecheck.domain.model.DiagnosticReport
@@ -162,7 +161,11 @@ object ReportComparisonEngine {
                             null
                         },
                 ),
-            categories = comparisonCategories(before).map { compareCategory(it, before, after) },
+            categories =
+                (before.categories + after.categories)
+                    .map { it.categoryId }
+                    .distinct()
+                    .map { compareCategory(it, before, after) },
         )
     }
 
@@ -268,12 +271,6 @@ object ReportComparisonEngine {
 
     private fun DiagnosticReport.comparisonCategoryId(): DiagnosticCategoryId? =
         if (kind == ReportKind.CATEGORY_ONLY) categories.singleOrNull()?.categoryId else null
-
-    private fun comparisonCategories(report: DiagnosticReport): List<DiagnosticCategoryId> =
-        when (report.kind) {
-            ReportKind.FULL_CHECK -> DiagnosticCatalog.categories
-            ReportKind.CATEGORY_ONLY -> listOf(requireNotNull(report.comparisonCategoryId()))
-        }
 
     private fun DiagnosticReport.requireValidComparisonKeys() {
         require(categories.map { it.categoryId }.distinct().size == categories.size) {
