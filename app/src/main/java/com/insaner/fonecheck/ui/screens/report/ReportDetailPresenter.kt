@@ -1,10 +1,8 @@
 package com.insaner.fonecheck.ui.screens.report
 
-import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryResult
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
-import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.localization.stableCodeDisplayText
 import java.time.Duration
 
@@ -25,18 +23,7 @@ data class ReportDetailPresentation(
 
 object ReportDetailPresenter {
     fun present(report: DiagnosticReport): ReportDetailPresentation {
-        val reportedCategories = report.categories.associateBy(DiagnosticCategoryResult::categoryId)
-        val categories =
-            DiagnosticCatalog.categories
-                .filter { report.kind == ReportKind.FULL_CHECK || it in reportedCategories }
-                .map { categoryId ->
-                    reportedCategories[categoryId]
-                        ?: DiagnosticCategoryResult(
-                            categoryId = categoryId,
-                            aggregateStatus = DiagnosticStatus.NOT_TESTED,
-                            evidence = emptyList(),
-                        )
-                }
+        val categories = report.categories
         return ReportDetailPresentation(
             categories = categories,
             counts =

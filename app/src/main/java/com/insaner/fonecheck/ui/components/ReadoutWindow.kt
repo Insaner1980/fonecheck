@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -16,10 +17,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
@@ -73,6 +76,9 @@ fun WindowLabel(
 /**
  * The reading itself: the largest thing in the window.
  *
+ * A leading numeric value is drawn by [SegmentedNumber]. A following unit keeps the existing
+ * window-unit typography, while non-numeric states such as `n/a` keep the normal readout type.
+ *
  * [style] defaults to the `readout` role. A screen raises it only when the window is the whole
  * point of the screen, as Home does for the passed-category count.
  *
@@ -85,14 +91,38 @@ fun WindowFigure(
     modifier: Modifier = Modifier,
     style: TextStyle = FonecheckType.readout,
     alert: Boolean = false,
+    geometry: SegmentGeometry = SegmentGeometry(),
+    showOverflowHint: Boolean = true,
 ) {
-    Text(
-        text = value,
-        style = style,
-        color = if (alert) FonecheckTheme.colors.windowAlert else FonecheckTheme.colors.windowText,
-        modifier = modifier,
-        maxLines = 1,
-    )
+    val color = if (alert) FonecheckTheme.colors.windowAlert else FonecheckTheme.colors.windowText
+    val parts = segmentedFigureParts(value)
+    if (parts == null) {
+        Text(
+            text = value,
+            style = style,
+            color = color,
+            modifier = modifier,
+            maxLines = 1,
+        )
+    } else if (parts.suffix != null) {
+        WindowReading(
+            value,
+            unit = null,
+            modifier = modifier,
+            style = style,
+            alert = alert,
+            geometry = geometry,
+        )
+    } else {
+        SegmentedNumber(
+            value = parts.number,
+            modifier = modifier,
+            style = style,
+            color = color,
+            geometry = geometry,
+            showOverflowHint = showOverflowHint,
+        )
+    }
 }
 
 /**
@@ -107,21 +137,23 @@ fun WindowUnit(
 ) {
     Text(
         text = text,
-        style = FonecheckTheme.type.readoutUnit,
-        color = FonecheckTheme.colors.windowDim,
+        style = windowUnitStyle(),
+        color = FonecheckTheme.colors.windowText.copy(alpha = 0.85f),
         modifier = modifier,
-        maxLines = 1,
     )
 }
+
+@Composable
+private fun windowUnitStyle(): TextStyle =
+    FonecheckTheme.type.readoutUnit.copy(fontSize = FonecheckTheme.type.readoutUnit.fontSize * 1.1f)
 
 /**
  * A [WindowFigure] and the [WindowUnit] that qualifies it: `82` and `/ 100`, `-9,81` and `m/s²`,
  * `08` and `of 14`.
  *
  * Side by side the unit is lifted off the bottom edge so it reads against the figure rather than
- * below it. Above the shared font-scale threshold the pair stacks instead: at 200% a readout and
- * its unit no longer fit across one window, and [WindowFigure] keeps its reading on one line — a
- * figure that runs past the frame is clipped, not shortened.
+ * below it. The pair stacks above the shared font-scale threshold or when its measured natural
+ * width exceeds the available space. A figure that still overflows scrolls without shrinking.
  *
  * [unit] is null where there is nothing to qualify. A reading the app could not take has no
  * denominator, and `n/a / 100` would state one anyway.
@@ -134,21 +166,58 @@ fun WindowReading(
     style: TextStyle = FonecheckType.readout,
     stacked: Boolean = stackedRowLayout(),
     alert: Boolean = false,
+    geometry: SegmentGeometry = SegmentGeometry(),
 ) {
-    if (stacked) {
-        Column(modifier = modifier) {
-            WindowFigure(value = value, style = style, alert = alert)
-            unit?.let { WindowUnit(text = it) }
+    val parts = segmentedFigureParts(value)
+    val figure = parts?.number ?: value
+    val companion =
+        when {
+            parts?.suffix == null -> unit
+            unit == null -> parts.suffix
+            else -> "${parts.suffix} $unit"
         }
-    } else {
-        Row(modifier = modifier, verticalAlignment = Alignment.Bottom) {
-            WindowFigure(value = value, style = style, alert = alert)
-            unit?.let {
-                Spacer(modifier = Modifier.width(FonecheckTheme.spacing.sm))
-                WindowUnit(
-                    text = it,
-                    modifier = Modifier.padding(bottom = FonecheckTheme.spacing.sm),
+    val density = LocalDensity.current
+    val textMeasurer = rememberTextMeasurer()
+    val unitStyle = windowUnitStyle()
+    val figureWidth =
+        if (parts != null) {
+            with(density) { (style.figureHeight().toDp() * segmentedWidth(figure, geometry)).roundToPx() }
+        } else {
+            textMeasurer.measure(figure, style = style, softWrap = false).size.width
+        }
+    val unitWidth = companion?.let { textMeasurer.measure(it, style = unitStyle, softWrap = false).size.width } ?: 0
+    val gap = with(density) { FonecheckTheme.spacing.sm.roundToPx() }
+
+    BoxWithConstraints(modifier = modifier.semantics(mergeDescendants = true) { }) {
+        val figureOverflows = parts != null && figureWidth > constraints.maxWidth
+        if (stacked || (companion != null && figureWidth.toLong() + gap + unitWidth > constraints.maxWidth)) {
+            Column {
+                WindowFigure(
+                    value = figure,
+                    style = style,
+                    alert = alert,
+                    geometry = geometry,
+                    showOverflowHint = false,
                 )
+                companion?.let { WindowUnit(text = it) }
+                if (figureOverflows) ReadoutScrollHint()
+            }
+        } else {
+            Row(verticalAlignment = Alignment.Bottom) {
+                WindowFigure(
+                    value = figure,
+                    style = style,
+                    alert = alert,
+                    geometry = geometry,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                companion?.let {
+                    Spacer(modifier = Modifier.width(FonecheckTheme.spacing.sm))
+                    WindowUnit(
+                        text = it,
+                        modifier = Modifier.padding(bottom = FonecheckTheme.spacing.sm),
+                    )
+                }
             }
         }
     }

@@ -9,6 +9,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.export.ReportPdfRenderer
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
@@ -77,6 +78,29 @@ class MainActivityLanguageTest {
             AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(languageTag))
         }
         composeRule.waitForIdle()
+    }
+
+    @Test
+    fun spanishRegionsUpdateExistingPdfRendererAndSurviveRecreation() {
+        selectLanguage("en")
+        assertLanguage("en", "Language")
+        val renderer = ReportPdfRenderer(composeRule.activity.applicationContext)
+        assertEquals("fonecheck diagnostic report", renderer.labels().title)
+        listOf("es", "es-ES", "es-MX").forEach { tag ->
+            selectLanguage(tag)
+            assertLanguage(tag, "Idioma")
+            assertEquals("Informe de diagnóstico de fonecheck", renderer.labels().title)
+            assertEquals("-12,5", renderer.labels().numberValue(-12.5))
+        }
+        composeRule.activityRule.scenario.recreate()
+        composeRule.waitForIdle()
+        assertLanguage("es-MX", "Idioma")
+        selectLanguage("fi")
+        assertLanguage("fi", "Kieli")
+        assertEquals("12,5", renderer.labels().numberValue(12.5))
+        selectLanguage("en")
+        assertLanguage("en", "Language")
+        assertEquals("fonecheck diagnostic report", renderer.labels().title)
     }
 
     private fun assertLanguage(

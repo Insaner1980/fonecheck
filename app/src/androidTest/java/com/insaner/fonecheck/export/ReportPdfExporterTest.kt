@@ -70,6 +70,33 @@ class ReportPdfExporterTest {
     }
 
     @Test
+    fun spanishPdfKeepsAccentsAndLongExplanationsAcrossPages() {
+        val base = InstrumentationRegistry.getInstrumentation().targetContext
+        val configuration = Configuration(base.resources.configuration).apply { setLocale(Locale.forLanguageTag("es")) }
+        val context = base.createConfigurationContext(configuration)
+        val renderer = ReportPdfRenderer(context)
+        val labels = renderer.labels(context)
+        val original = report()
+        val payload =
+            com.insaner.fonecheck.data.repository.ReportPayloadCodec
+                .encode(original)
+        val blocks = ReportPdfContentBuilder.build(original, labels)
+        val text = PdfLayoutEngine.paginate(blocks).flatten().joinToString(" ") { it.text }
+        assertTrue(text.contains("Informe de diagnóstico de fonecheck"))
+        assertTrue(text.contains("Puntuación"))
+        assertTrue(text.contains(labels.timeSemantics))
+        assertTrue(text.contains(labels.scoreScopeNote))
+        val output = ByteArrayOutputStream()
+        assertTrue(renderer.render(original, output).pageCount > 1)
+        assertTrue(output.toByteArray().decodeToString(0, 4).startsWith("%PDF"))
+        assertEquals(
+            payload,
+            com.insaner.fonecheck.data.repository.ReportPayloadCodec
+                .encode(original),
+        )
+    }
+
+    @Test
     fun exporterUsesOnlyNonExportedGrantingFileProviderAndCleansOldExports() =
         runBlocking {
             val context = InstrumentationRegistry.getInstrumentation().targetContext

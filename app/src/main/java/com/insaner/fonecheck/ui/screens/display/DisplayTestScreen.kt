@@ -66,8 +66,8 @@ import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.TestScreenContent
 import com.insaner.fonecheck.ui.components.WindowBar
-import com.insaner.fonecheck.ui.components.WindowFigure
 import com.insaner.fonecheck.ui.components.WindowLabel
+import com.insaner.fonecheck.ui.components.WindowReading
 import com.insaner.fonecheck.ui.components.shouldShowObservationReason
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
@@ -286,13 +286,9 @@ private fun BrightnessReadout(info: DisplayInfoState) {
         ReadoutWindow {
             WindowLabel(text = stringResource(R.string.display_brightness))
             Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
-            WindowFigure(
-                value =
-                    stringResource(
-                        R.string.display_value_ratio,
-                        uiNumber(brightness),
-                        uiNumber(DisplayTestViewModel.MAX_BRIGHTNESS),
-                    ),
+            WindowReading(
+                value = uiNumber(brightness),
+                unit = "/ ${uiNumber(DisplayTestViewModel.MAX_BRIGHTNESS)}",
             )
             Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
             WindowBar(percentage = percent)

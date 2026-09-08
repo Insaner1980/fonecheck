@@ -1,7 +1,6 @@
 package com.insaner.fonecheck.ui.screens.report
 
 import com.insaner.fonecheck.domain.model.CoverageSummary
-import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryResult
 import com.insaner.fonecheck.domain.model.DiagnosticReport
@@ -19,7 +18,7 @@ import java.time.Instant
 
 class ReportDetailPresenterTest {
     @Test
-    fun missingCanonicalCategoriesAreRenderedAsNotTestedWithoutChangingNotAvailable() {
+    fun missingCurrentCategoriesAreNotAddedToSavedScope() {
         val presentation =
             ReportDetailPresenter.present(
                 report(
@@ -31,18 +30,17 @@ class ReportDetailPresenterTest {
                 ),
             )
 
-        assertEquals(DiagnosticCatalog.categories, presentation.categories.map { it.categoryId })
+        assertEquals(
+            listOf(DiagnosticCategoryId.DEVICE, DiagnosticCategoryId.CAMERA),
+            presentation.categories.map { it.categoryId },
+        )
         assertEquals(DiagnosticStatus.PASS, presentation.categories[0].aggregateStatus)
         assertEquals(
             DiagnosticStatus.NOT_AVAILABLE,
             presentation.categories.single { it.categoryId == DiagnosticCategoryId.CAMERA }.aggregateStatus,
         )
-        assertEquals(
-            DiagnosticStatus.NOT_TESTED,
-            presentation.categories.single { it.categoryId == DiagnosticCategoryId.AUDIO }.aggregateStatus,
-        )
         assertEquals(1, presentation.counts.notAvailable)
-        assertEquals(12, presentation.counts.notTested)
+        assertEquals(0, presentation.counts.notTested)
     }
 
     @Test

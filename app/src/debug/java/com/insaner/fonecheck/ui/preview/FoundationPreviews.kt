@@ -52,7 +52,7 @@ import com.insaner.fonecheck.ui.theme.SemanticTone
 // build. The values here are invented; screens draw their own measurements.
 
 private const val SPECIMEN_WIDTH_DP = 380
-private const val SPECIMEN_HEIGHT_DP = 3100
+private const val SPECIMEN_HEIGHT_DP = 3280
 
 private val SummarySegments =
     listOf(
@@ -148,6 +148,18 @@ private fun SpecimenWindow() {
             Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
             WindowRow(label = "X", value = "9.81 m/s²")
             WindowRow(label = "Accuracy", value = "High")
+        }
+        Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
+        ReadoutWindow {
+            WindowLabel(text = "Segmented formats")
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+            WindowFigure(value = "2.07 GB")
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+            WindowFigure(value = "1,39 Gt")
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+            WindowReading(value = "85", unit = "/ 255")
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
+            WindowReading(value = "17", unit = "/ 25")
         }
     }
 }

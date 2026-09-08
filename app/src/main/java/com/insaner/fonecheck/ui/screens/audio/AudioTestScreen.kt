@@ -40,8 +40,8 @@ import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.StatusText
 import com.insaner.fonecheck.ui.components.TestScreenContent
 import com.insaner.fonecheck.ui.components.WindowBar
-import com.insaner.fonecheck.ui.components.WindowFigure
 import com.insaner.fonecheck.ui.components.WindowLabel
+import com.insaner.fonecheck.ui.components.WindowReading
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
@@ -453,7 +453,7 @@ private fun VolumeLevelReadout(
         ReadoutWindow {
             WindowLabel(text = stringResource(R.string.audio_volume_level))
             Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
-            WindowFigure(value = "${uiNumber(level)} / ${uiNumber(max)}")
+            WindowReading(value = uiNumber(level), unit = "/ ${uiNumber(max)}")
             Spacer(modifier = Modifier.height(FonecheckTheme.spacing.md))
             WindowBar(percentage = (level * PERCENT / max).coerceIn(0, PERCENT))
         }

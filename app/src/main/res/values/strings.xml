@@ -777,6 +777,7 @@
     <string name="settings_language_system">System</string>
     <string name="settings_language_english">English</string>
     <string name="settings_language_finnish">Suomi</string>
+    <string name="settings_language_spanish">Español</string>
     <string name="settings_test_warnings">Show test warnings</string>
     <string name="settings_test_warnings_description">Keep safety and limitation notices visible before interactive diagnostics.</string>
     <string name="settings_permissions">Permissions</string>
@@ -1208,4 +1209,5 @@
     <string name="accessibility_expanded">Expanded</string>
     <string name="accessibility_collapsed">Collapsed</string>
     <string name="display_touch_accessible_action">Record an accessible touch sample</string>
+    <string name="readout_scroll_hint">Scroll horizontally to read the full value.</string>
 </resources>

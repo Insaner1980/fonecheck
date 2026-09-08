@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
@@ -151,9 +152,16 @@ private fun ThermalHeadroomSection(state: ThermalTestState) {
         ReadoutWindow {
             WindowLabel(text = stringResource(R.string.thermal_headroom_current))
             ThermalHeadroomGauge(headroom = headroom)
+            Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))
             // The dial is hidden from screen readers; this figure is the reading they get.
             WindowFigure(
                 value = reading ?: unavailable,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                style =
+                    FonecheckTheme.type.readout.copy(
+                        fontSize = FonecheckTheme.type.readout.fontSize * HEADROOM_FIGURE_SCALE,
+                        lineHeight = FonecheckTheme.type.readout.lineHeight * HEADROOM_FIGURE_SCALE,
+                    ),
                 // Over the threshold the arc has already turned; the figure follows it.
                 alert = headroom != null && headroom > HEADROOM_THRESHOLD,
             )
@@ -170,6 +178,7 @@ private fun ThermalHeadroomSection(state: ThermalTestState) {
 
 /** A headroom of 1.0 is the device's severe-throttling threshold. */
 private const val HEADROOM_THRESHOLD = 1f
+private const val HEADROOM_FIGURE_SCALE = 0.75f
 
 @Composable
 private fun ThermalBatterySection(state: ThermalTestState) {

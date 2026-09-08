@@ -773,6 +773,7 @@
     <string name="settings_language_system">Järjestelmä</string>
     <string name="settings_language_english">English</string>
     <string name="settings_language_finnish">Suomi</string>
+    <string name="settings_language_spanish">Español</string>
     <string name="settings_test_warnings">Näytä testivaroitukset</string>
     <string name="settings_test_warnings_description">Pidä turvallisuus- ja rajoitusilmoitukset näkyvissä ennen vuorovaikutteisia diagnostiikkoja.</string>
     <string name="settings_permissions">Luvat</string>
@@ -1204,4 +1205,5 @@
     <string name="accessibility_expanded">Laajennettu</string>
     <string name="accessibility_collapsed">Tiivistetty</string>
     <string name="display_touch_accessible_action">Tallenna saavutettava kosketusnäyte</string>
+    <string name="readout_scroll_hint">Vieritä vaakasuunnassa nähdäksesi koko arvon.</string>
 </resources>

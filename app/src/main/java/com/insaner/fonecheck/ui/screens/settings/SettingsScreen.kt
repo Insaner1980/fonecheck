@@ -284,6 +284,7 @@ private fun AppearanceSection(
                                 AppLanguage.SYSTEM -> R.string.settings_language_system
                                 AppLanguage.ENGLISH -> R.string.settings_language_english
                                 AppLanguage.FINNISH -> R.string.settings_language_finnish
+                                AppLanguage.SPANISH -> R.string.settings_language_spanish
                             },
                         ),
                     isSelected = selectedLanguage == language,

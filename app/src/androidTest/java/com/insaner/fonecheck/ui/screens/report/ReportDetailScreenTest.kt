@@ -102,9 +102,8 @@ class ReportDetailScreenTest {
 
         assertEquals(CategoryRetest("performance"), retestRoute)
         composeRule
-            .scrollToReportText(context.getString(R.string.home_cat_biometrics))
-            .performScrollTo()
-            .assertIsDisplayed()
+            .onNodeWithText(context.getString(R.string.home_cat_biometrics))
+            .assertDoesNotExist()
     }
 
     @Test

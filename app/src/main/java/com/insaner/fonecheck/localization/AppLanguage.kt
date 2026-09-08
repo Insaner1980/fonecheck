@@ -8,6 +8,7 @@ enum class AppLanguage(
     SYSTEM(""),
     ENGLISH("en"),
     FINNISH("fi"),
+    SPANISH("es"),
     ;
 
     companion object {

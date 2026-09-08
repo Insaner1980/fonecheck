@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
+import androidx.core.content.ContextCompat
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
@@ -36,9 +37,10 @@ class ReportPdfRenderer
             report: DiagnosticReport,
             output: OutputStream,
         ): PdfRenderResult {
+            val localizedContext = ContextCompat.getContextForLanguage(context)
             val pages =
                 PdfLayoutEngine.paginate(
-                    ReportPdfContentBuilder.build(report, labels()),
+                    ReportPdfContentBuilder.build(report, labels(localizedContext)),
                     contentHeight = CONTENT_HEIGHT,
                 )
             val document = PdfDocument()
@@ -49,7 +51,7 @@ class ReportPdfRenderer
                         document.startPage(
                             PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create(),
                         )
-                    drawPage(page, lines, pageNumber, pages.size)
+                    drawPage(page, lines, pageNumber, pages.size, localizedContext)
                     document.finishPage(page)
                 }
                 document.writeTo(output)
@@ -64,6 +66,7 @@ class ReportPdfRenderer
             lines: List<PdfTextLine>,
             pageNumber: Int,
             pageCount: Int,
+            localizedContext: Context,
         ) {
             val canvas = page.canvas
             canvas.drawColor(Color.WHITE)
@@ -76,7 +79,7 @@ class ReportPdfRenderer
             }
             val footerPaint = paint(PdfTextStyle.BODY).apply { color = Color.DKGRAY }
             canvas.drawText(
-                context.getString(R.string.pdf_page, pageNumber, pageCount),
+                localizedContext.getString(R.string.pdf_page, pageNumber, pageCount),
                 MARGIN,
                 FOOTER_BASELINE,
                 footerPaint,
@@ -106,7 +109,7 @@ class ReportPdfRenderer
                     }
             }
 
-        internal fun labels(): PdfReportLabels {
+        internal fun labels(context: Context = ContextCompat.getContextForLanguage(this.context)): PdfReportLabels {
             val locale = context.resources.configuration.locales[0]
             return PdfReportLabels(
                 title = context.getString(R.string.pdf_title),

@@ -2,7 +2,6 @@ package com.insaner.fonecheck.export
 
 import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.domain.model.CoverageSummary
-import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryResult
 import com.insaner.fonecheck.domain.model.DiagnosticEvidence
@@ -200,12 +199,6 @@ object ReportPdfContentBuilder {
         report: DiagnosticReport,
         labels: PdfReportLabels,
     ): List<PdfTextBlock> {
-        val categories = report.categories.associateBy { it.categoryId }
-        val includedCategories =
-            DiagnosticCatalog.categories.filter {
-                report.kind == ReportKind.FULL_CHECK ||
-                    it in categories
-            }
         val evidence = report.categories.flatMap { it.evidence }
         val duration = Duration.between(report.startedAt, report.completedAt).coerceAtLeast(Duration.ZERO)
         return buildList {
@@ -262,25 +255,23 @@ object ReportPdfContentBuilder {
             )
             add(PdfTextBlock(labels.disclaimer, PdfTextStyle.BODY))
             add(PdfTextBlock(labels.categories, PdfTextStyle.HEADING))
-            includedCategories.forEach { categoryId ->
-                addCategory(categoryId, categories[categoryId], labels)
+            report.categories.forEach { category ->
+                addCategory(category, labels)
             }
         }
     }
 
     private fun MutableList<PdfTextBlock>.addCategory(
-        categoryId: DiagnosticCategoryId,
-        category: DiagnosticCategoryResult?,
+        category: DiagnosticCategoryResult,
         labels: PdfReportLabels,
     ) {
-        val status = category?.aggregateStatus ?: DiagnosticStatus.NOT_TESTED
         add(
             PdfTextBlock(
-                "${labels.categoryName(categoryId)} — ${labels.statusName(status)}",
+                "${labels.categoryName(category.categoryId)} — ${labels.statusName(category.aggregateStatus)}",
                 PdfTextStyle.CATEGORY,
             ),
         )
-        category?.evidence.orEmpty().forEach { item ->
+        category.evidence.forEach { item ->
             add(
                 PdfTextBlock(
                     "${labels.checkName(item)} — ${labels.statusName(item.status)}",
