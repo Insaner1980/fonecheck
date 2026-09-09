@@ -1,9 +1,15 @@
 package com.insaner.fonecheck.ui.screens.deviceinfo
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.FontScale
+import androidx.compose.ui.test.ForcedSize
+import androidx.compose.ui.test.Locales
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -13,6 +19,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.then
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.intl.LocaleList
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.insaner.fonecheck.R
@@ -20,6 +31,7 @@ import com.insaner.fonecheck.domain.model.DeviceInfo
 import com.insaner.fonecheck.ui.TopBarAction
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -33,6 +45,44 @@ import java.time.ZoneOffset
 class DeviceInfoContentTest {
     @get:Rule
     val composeRule = createComposeRule()
+
+    @Test
+    fun danishDeveloperOptionsLabelWrapsOnlyBetweenWordsAtLargeFontScale() {
+        var enabled by mutableStateOf(true)
+        composeRule.setContent {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride
+                    .Locales(LocaleList("da"))
+                    .then(DeviceConfigurationOverride.FontScale(2f))
+                    .then(DeviceConfigurationOverride.ForcedSize(DpSize(320.dp, 800.dp))),
+            ) {
+                FonecheckTheme {
+                    DeviceInfoContent(
+                        state =
+                            DeviceInfoState(
+                                info = deviceInfo(rootArtifactDetected = false).copy(developerOptionsEnabled = enabled),
+                            ),
+                        modifier = Modifier.padding(horizontal = 6.dp),
+                    )
+                }
+            }
+        }
+
+        listOf(true, false).forEach { isEnabled ->
+            composeRule.runOnIdle { enabled = isEnabled }
+            val label = composeRule.onNodeWithText("Indstillinger for udviklere", useUnmergedTree = true)
+            label.performScrollTo().assertIsDisplayed()
+            val layouts = mutableListOf<TextLayoutResult>()
+            label.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+            val layout = layouts.single()
+            assertFalse(layout.hasVisualOverflow)
+            val text = layout.layoutInput.text.text
+            for (line in 1 until layout.lineCount) {
+                val start = layout.getLineStart(line)
+                assertTrue("Label wraps inside a word: $text", text[start - 1].isWhitespace() || text[start].isWhitespace())
+            }
+        }
+    }
 
     @Test
     fun deviceSnapshotUsesSectionsRestrictedSerialAndBoundedRootWarning() {

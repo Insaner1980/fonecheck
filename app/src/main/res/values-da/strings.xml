@@ -63,7 +63,7 @@
     <string name="device_refresh">Opdatér enhedsoplysninger</string>
     <string name="device_capture_error_description">fonecheck kunne ikke opdatere enhedsoplysningerne. Den seneste vellykkede aflæsning vises stadig.</string>
     <string name="device_loading">Læser enhedsoplysninger…</string>
-    <string name="label_developer_options">Udviklerindstillinger</string>
+    <string name="label_developer_options">Indstillinger for udviklere</string>
     <string name="device_developer_options_note">Udviklerindstillinger er normale på en telefon, der bruges til udvikling. Det er en god idé at slå dem fra, før du sælger eller giver telefonen videre.</string>
     <string name="label_usb_debugging">USB-fejlretning</string>
     <string name="device_usb_debugging_note">USB-fejlretning er normalt på en telefon, der bruges til udvikling. Det er en god idé at slå det fra, før du sælger eller giver telefonen videre.</string>
