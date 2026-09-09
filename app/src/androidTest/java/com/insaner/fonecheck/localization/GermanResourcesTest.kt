@@ -117,12 +117,12 @@ class GermanResourcesTest {
                 "de-DE,pt-BR,en" to "Gesamtcheck",
                 "de-AT,en" to "Gesamtcheck",
                 "de-CH,fi" to "Gesamtcheck",
-                "it-IT,de,en" to "Gesamtcheck",
+                "ja-JP,de,en" to "Gesamtcheck",
                 "es,de" to "Comprobación completa",
                 "pt-BR,de" to "Verificação completa",
                 "fi,de" to "Full Check",
                 "en,de" to "Full Check",
-                "it-IT,en" to "Full Check",
+                "ja-JP,en" to "Full Check",
             ),
         )
     }

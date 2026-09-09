@@ -79,7 +79,10 @@ class DeviceInfoContentTest {
             val text = layout.layoutInput.text.text
             for (line in 1 until layout.lineCount) {
                 val start = layout.getLineStart(line)
-                assertTrue("Label wraps inside a word: $text", text[start - 1].isWhitespace() || text[start].isWhitespace())
+                assertTrue(
+                    "Label wraps inside a word: $text",
+                    text[start - 1].isWhitespace() || text[start].isWhitespace(),
+                )
             }
         }
     }

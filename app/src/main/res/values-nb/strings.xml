@@ -1150,4 +1150,5 @@
     <string name="settings_language_swedish">Svenska</string>
     <string name="settings_language_norwegian_bokmal">Norsk bokmål</string>
     <string name="settings_language_danish">Dansk</string>
+    <string name="settings_language_italian">Italiano</string>
 </resources>

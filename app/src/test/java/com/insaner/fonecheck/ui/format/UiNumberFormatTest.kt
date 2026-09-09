@@ -6,8 +6,16 @@ import java.util.Locale
 
 class UiNumberFormatTest {
     @Test
+    fun `Italian UI uses generic Italian regardless of region and device formatting default`() {
+        assertRegionalCommaDecimalFormatting(
+            expectedLanguageTag = "it",
+            localeTags = listOf("it", "it-IT", "it-CH"),
+        )
+    }
+
+    @Test
     fun `Danish UI uses generic Danish regardless of region and device formatting default`() {
-        assertNordicCommaDecimalFormatting(
+        assertRegionalCommaDecimalFormatting(
             expectedLanguageTag = "da",
             localeTags = listOf("da", "da-DK"),
         )
@@ -15,7 +23,7 @@ class UiNumberFormatTest {
 
     @Test
     fun `Bokmal UI keeps Norwegian numbers independent of region and device default`() {
-        assertNordicCommaDecimalFormatting(
+        assertRegionalCommaDecimalFormatting(
             expectedLanguageTag = "nb",
             localeTags = listOf("nb", "nb-NO"),
         )
@@ -23,13 +31,13 @@ class UiNumberFormatTest {
 
     @Test
     fun `Swedish UI uses generic Swedish regardless of region and device formatting default`() {
-        assertNordicCommaDecimalFormatting(
+        assertRegionalCommaDecimalFormatting(
             expectedLanguageTag = "sv",
             localeTags = listOf("sv", "sv-SE", "sv-FI"),
         )
     }
 
-    private fun assertNordicCommaDecimalFormatting(
+    private fun assertRegionalCommaDecimalFormatting(
         expectedLanguageTag: String,
         localeTags: List<String>,
     ) {

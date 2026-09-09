@@ -138,14 +138,14 @@ class IndonesianResourcesTest {
             mapOf(
                 "id-ID,en" to "Pemeriksaan lengkap",
                 "in-ID,en" to "Pemeriksaan lengkap",
-                "it-IT,id,en" to "Pemeriksaan lengkap",
+                "ja-JP,id,en" to "Pemeriksaan lengkap",
                 "en,id" to "Full Check",
                 "fi,id" to "Full Check",
                 "es,id" to "Comprobación completa",
                 "pt-BR,id" to "Verificação completa",
                 "de,id" to "Gesamtcheck",
                 "fr,id" to "Vérification complète",
-                "it-IT,en" to "Full Check",
+                "ja-JP,en" to "Full Check",
             ),
         )
     }

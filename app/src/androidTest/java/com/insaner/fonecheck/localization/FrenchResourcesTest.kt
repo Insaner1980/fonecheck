@@ -140,13 +140,13 @@ class FrenchResourcesTest {
                 "fr-BE,de" to "Vérification complète",
                 "fr-CH,fi" to "Vérification complète",
                 "fr-CA,pt-BR" to "Vérification complète",
-                "it-IT,fr,en" to "Vérification complète",
+                "ja-JP,fr,en" to "Vérification complète",
                 "es,fr" to "Comprobación completa",
                 "pt-BR,fr" to "Verificação completa",
                 "de,fr" to "Gesamtcheck",
                 "fi,fr" to "Full Check",
                 "en,fr" to "Full Check",
-                "it-IT,en" to "Full Check",
+                "ja-JP,en" to "Full Check",
             ),
         )
     }

@@ -96,5 +96,13 @@ class LanguageSelectionScreenTest {
         composeRule
             .onNodeWithTag("settings_language_norwegian_bokmal")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, false))
+        composeRule.onNodeWithTag("settings_language_italian").performClick()
+        composeRule.runOnIdle { assertEquals(AppLanguage.ITALIAN, selectedLanguage) }
+        composeRule
+            .onNodeWithTag("settings_language_italian")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, true))
+        composeRule
+            .onNodeWithTag("settings_language_danish")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, false))
     }
 }

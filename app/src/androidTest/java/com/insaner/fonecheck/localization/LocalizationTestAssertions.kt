@@ -6,9 +6,11 @@ import android.icu.text.PluralRules
 import android.os.LocaleList
 import android.text.format.Formatter
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.observation.ObservationReason
 import com.insaner.fonecheck.export.PdfReportLabels
 import com.insaner.fonecheck.ui.format.formatUiNumber
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import java.text.NumberFormat
 import java.util.Locale
@@ -84,4 +86,42 @@ internal fun assertFileSizeAndPercentFormatting(
     }
     val percent = NumberFormat.getPercentInstance(locale).apply { maximumFractionDigits = 1 }
     assertEquals("12,5", percent.format(0.125).removeSuffix("%").trim())
+}
+
+internal fun assertRetestCategoryTitles(
+    context: Context,
+    expectedPrefix: String,
+) {
+    listOf(R.string.home_cat_battery, R.string.home_cat_camera, R.string.home_cat_sensors).forEach { id ->
+        val category = context.getString(id)
+        assertEquals("$expectedPrefix$category", context.getString(R.string.report_retest_title, category))
+    }
+}
+
+internal fun assertObservationReasonsTranslated(
+    english: Context,
+    translated: Context,
+) {
+    ObservationReason.entries.forEach { reason ->
+        val id = observationReasonStringRes(reason)
+        assertNotEquals(reason.name, english.getString(id), translated.getString(id))
+    }
+}
+
+internal fun assertPluralResourceValues(
+    context: Context,
+    expectations: Map<Int, String>,
+    count: Int,
+    number: String,
+) {
+    expectations.forEach { (id, expected) ->
+        val argument =
+            when (id) {
+                R.plurals.home_latest_days_ago,
+                R.plurals.home_latest_evidence_attention_summary,
+                -> count
+                else -> number
+            }
+        assertEquals(expected, context.resources.getQuantityString(id, count, argument))
+    }
 }
