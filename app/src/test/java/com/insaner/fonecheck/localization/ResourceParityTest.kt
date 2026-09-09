@@ -23,7 +23,15 @@ class ResourceParityTest {
         val exceptions = childElements(source.documentElement).filter { it.getAttribute("translatable") == "false" }
         assertEquals(listOf("app_name"), exceptions.map { it.getAttribute("name") })
         assertEquals("fonecheck", exceptions.single().textContent)
-        listOf("values-fi", "values-es", "values-pt-rBR", "values-de", "values-fr", "values-in").forEach { directory ->
+        listOf(
+            "values-fi",
+            "values-es",
+            "values-pt-rBR",
+            "values-de",
+            "values-fr",
+            "values-in",
+            "values-sv",
+        ).forEach { directory ->
             File(root, directory).listFiles().orEmpty().filter { it.extension == "xml" }.forEach { file ->
                 val translated = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
                 assertTrue(
@@ -52,13 +60,26 @@ class ResourceParityTest {
                 it.isDirectory && Regex("values-(?:in|id|b\\+id|b\\+in)(?:$|[-+]).*").matches(it.name)
             }
         assertEquals(listOf("values-in"), indonesianDirectories.map { it.name })
+        val swedishDirectories =
+            root.listFiles().orEmpty().filter {
+                it.isDirectory && (it.name.startsWith("values-sv") || it.name.startsWith("values-b+sv"))
+            }
+        assertEquals(listOf("values-sv"), swedishDirectories.map { it.name })
     }
 
     @Test
     fun `all shipped languages have matching translatable resource keys`() {
         val resourceRoot = locateResourceRoot()
         val english = resourceKeys(File(resourceRoot, "values/strings.xml"))
-        listOf("values-fi", "values-es", "values-pt-rBR", "values-de", "values-fr", "values-in").forEach { directory ->
+        listOf(
+            "values-fi",
+            "values-es",
+            "values-pt-rBR",
+            "values-de",
+            "values-fr",
+            "values-in",
+            "values-sv",
+        ).forEach { directory ->
             assertEquals(directory, english, resourceKeys(File(resourceRoot, "$directory/strings.xml")))
         }
     }
@@ -78,6 +99,7 @@ class ResourceParityTest {
             "values-de" to Locale.GERMAN,
             "values-fr" to Locale.FRENCH,
             "values-in" to Locale.forLanguageTag("id"),
+            "values-sv" to Locale.forLanguageTag("sv"),
         ).forEach { (directory, locale) ->
             val file = File(resourceRoot, "$directory/strings.xml")
             val keys = resourceKeys(file).filter { it.startsWith("string:home_cat_") }
@@ -107,7 +129,15 @@ class ResourceParityTest {
     fun `translations preserve formatting markup and plural contracts`() {
         val root = locateResourceRoot()
         val source = textResources(File(root, "values"))
-        listOf("values-fi", "values-es", "values-pt-rBR", "values-de", "values-fr", "values-in").forEach { directory ->
+        listOf(
+            "values-fi",
+            "values-es",
+            "values-pt-rBR",
+            "values-de",
+            "values-fr",
+            "values-in",
+            "values-sv",
+        ).forEach { directory ->
             val translated = textResources(File(root, directory))
             assertEquals(directory, source.keys, translated.keys)
             translated.forEach { (key, resource) ->
@@ -147,7 +177,7 @@ class ResourceParityTest {
                     assertEquals("$directory:$key placeholders", placeholders(reference), placeholders(item))
                     assertEquals("$directory:$key markup", markup(reference), markup(item))
                     assertEquals("$directory:$key line breaks", lineBreaks(reference), lineBreaks(item))
-                    if (directory in setOf("values-es", "values-pt-rBR", "values-de", "values-fr", "values-in")) {
+                    if (directory != "values-fi") {
                         assertTrue(key, item.textContent.none { it in "\u2013\u2014\u00b7\u2022\u2219\u22c5\u2027" })
                     }
                 }
@@ -157,15 +187,12 @@ class ResourceParityTest {
 
     @Test
     fun `German text and uppercase German letters have glyphs in shipped text fonts`() {
-        val root = locateResourceRoot()
-        val strings = textResources(File(root, "values-de")).values.map { it.textContent }
-        shippedTextFonts(root).forEach { (name, font) ->
-            assertEquals("$name uppercase German letters", -1, font.canDisplayUpTo("äöüß".uppercase(Locale.GERMAN)))
-            strings.forEach { value ->
-                val text = value.replace("\\n", " ").filterNot(Char::isISOControl)
-                assertEquals("$name: $text", -1, font.canDisplayUpTo(text))
-            }
-        }
+        assertLocalizedTextGlyphs(
+            directory = "values-de",
+            sampleName = "uppercase German letters",
+            sample = "äöüß",
+            locale = Locale.GERMAN,
+        )
     }
 
     @Test
@@ -185,6 +212,33 @@ class ResourceParityTest {
                     "Use a nonbreaking space before French punctuation",
                     !Regex(" [;:?!]").containsMatchIn(text),
                 )
+            }
+        }
+    }
+
+    @Test
+    fun `Swedish text and uppercase letters have glyphs in shipped fonts`() {
+        assertLocalizedTextGlyphs(
+            directory = "values-sv",
+            sampleName = "Swedish letters",
+            sample = "åäö",
+            locale = Locale.forLanguageTag("sv"),
+        )
+    }
+
+    private fun assertLocalizedTextGlyphs(
+        directory: String,
+        sampleName: String,
+        sample: String,
+        locale: Locale,
+    ) {
+        val root = locateResourceRoot()
+        val strings = textResources(File(root, directory)).values.map { it.textContent }
+        shippedTextFonts(root).forEach { (name, font) ->
+            assertEquals("$name $sampleName", -1, font.canDisplayUpTo(sample.uppercase(locale)))
+            strings.forEach { value ->
+                val text = value.replace("\\n", " ").filterNot(Char::isISOControl)
+                assertEquals("$name: $text", -1, font.canDisplayUpTo(text))
             }
         }
     }

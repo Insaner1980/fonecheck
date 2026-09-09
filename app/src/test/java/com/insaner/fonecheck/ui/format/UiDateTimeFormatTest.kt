@@ -11,6 +11,27 @@ import java.util.TimeZone
 
 class UiDateTimeFormatTest {
     @Test
+    fun swedishDatesUseGenericLanguageWhileKeepingTheTimeZoneAndTechnicalFormat() {
+        val instant = Instant.parse("2026-08-11T10:18:00Z")
+        listOf("Europe/Stockholm", "Europe/Helsinki").forEach { zoneName ->
+            val zone = ZoneId.of(zoneName)
+            val expected =
+                DateTimeFormatter
+                    .ofLocalizedDateTime(FormatStyle.MEDIUM)
+                    .withLocale(Locale.forLanguageTag("sv"))
+                    .format(instant.atZone(zone))
+            val offset = if (zoneName == "Europe/Stockholm") "+02:00" else "+03:00"
+            val hour = if (zoneName == "Europe/Stockholm") "12" else "13"
+            listOf("sv", "sv-SE", "sv-FI").forEach { tag ->
+                val locale = Locale.forLanguageTag(tag)
+                assertEquals(expected, formatUiDateTime(instant, locale, zone))
+                assertEquals("$expected UTC$offset", formatPdfDateTime(instant, locale, zone))
+                assertEquals("2026-08-11 $hour:18", formatTechnicalUiDateTime(instant, locale, zone))
+            }
+        }
+    }
+
+    @Test
     fun indonesianDatesUseGenericLanguageAndPreserveTechnicalTimestamps() {
         val instant = Instant.parse("2026-08-11T10:18:00Z")
         val zone = ZoneId.of("Asia/Jakarta")

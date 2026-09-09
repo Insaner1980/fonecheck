@@ -35,6 +35,9 @@ class ReportJsonExportTest {
                 "fr-CA",
                 "id",
                 "id-ID",
+                "sv",
+                "sv-SE",
+                "sv-FI",
             ).forEach { tag ->
                 Locale.setDefault(Locale.forLanguageTag(tag))
                 assertEquals(expected, ReportPayloadCodec.encode(report))

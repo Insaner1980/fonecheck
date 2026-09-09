@@ -6,6 +6,34 @@ import java.util.Locale
 
 class UiNumberFormatTest {
     @Test
+    fun `Swedish UI uses generic Swedish regardless of region and device formatting default`() {
+        val original = Locale.getDefault(Locale.Category.FORMAT)
+        try {
+            Locale.setDefault(Locale.Category.FORMAT, Locale.US)
+            val symbols = java.text.DecimalFormatSymbols(Locale.forLanguageTag("sv"))
+            listOf("sv", "sv-SE", "sv-FI").forEach { tag ->
+                val locale = Locale.forLanguageTag(tag)
+                assertEquals("sv", uiLanguageLocale(locale).toLanguageTag())
+                listOf(0, 1, 2, 1234).forEach { count ->
+                    assertEquals(count.toString(), formatUiNumber(count, locale))
+                }
+                assertEquals("0,59", formatUiNumber(0.59, locale, 2, 2))
+                assertEquals("${symbols.minusSign}31,2", formatUiNumber(-31.2, locale, 1, 1))
+                assertEquals(
+                    "${symbols.minusSign}1${symbols.groupingSeparator}234,5",
+                    formatUiNumber(-1234.5, locale, 1, 1, grouping = true),
+                )
+                assertEquals(
+                    "1,25${symbols.exponentSeparator.replace('E', 'e')}${symbols.minusSign}4",
+                    formatUiScientificNumber(0.000125, locale, 2),
+                )
+            }
+        } finally {
+            Locale.setDefault(Locale.Category.FORMAT, original)
+        }
+    }
+
+    @Test
     fun `Indonesian UI ignores region and device formatting default`() {
         val original = Locale.getDefault(Locale.Category.FORMAT)
         try {

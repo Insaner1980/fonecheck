@@ -125,6 +125,15 @@ class ReportPdfExporterTest {
         )
     }
 
+    @Test
+    fun swedishPdfPreservesLettersLongEvidenceAndSavedPayload() {
+        assertLocalizedPdf(
+            locale = Locale.forLanguageTag("sv"),
+            sample = "Återstående marginal är en uppskattning. Överhettning och skärmens skick är olika observationer.",
+            expectedText = listOf("fonecheck diagnostikrapport", "Andel genomförda kontroller"),
+        )
+    }
+
     private fun assertLocalizedPdf(
         locale: Locale,
         sample: String,
