@@ -70,6 +70,18 @@ class ReportPdfExporterTest {
     }
 
     @Test
+    fun italianPdfPreservesAccentsApostrophesLongEvidenceAndSavedPayload() {
+        listOf("it", "it-IT", "it-CH").forEach { tag ->
+            assertLocalizedPdf(
+                locale = Locale.forLanguageTag(tag),
+                sample =
+                    "L’affidabilità è limitata: la temperatura può variare, ma non dimostra l’usura del dispositivo",
+                expectedText = listOf("Rapporto diagnostico fonecheck", "Completezza dei controlli", "Affidabilità"),
+            )
+        }
+    }
+
+    @Test
     fun danishPdfPreservesLettersLongEvidenceAndSavedPayload() {
         listOf("da", "da-DK").forEach { tag ->
             assertLocalizedPdf(

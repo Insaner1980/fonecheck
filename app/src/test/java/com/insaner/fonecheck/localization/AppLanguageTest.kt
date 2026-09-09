@@ -6,6 +6,14 @@ import java.util.Locale
 
 class AppLanguageTest {
     @Test
+    fun italianRegionsUseOneGenericLanguageChoice() {
+        assertEquals("it", AppLanguage.ITALIAN.languageTag)
+        listOf("it", "it-IT", "it-CH").forEach { tag ->
+            assertEquals(AppLanguage.ITALIAN, AppLanguage.fromLocale(Locale.forLanguageTag(tag)))
+        }
+    }
+
+    @Test
     fun danishAndDenmarkUseOneGenericLanguageChoice() {
         assertEquals("da", AppLanguage.DANISH.languageTag)
         listOf("da", "da-DK").forEach { tag ->
@@ -73,6 +81,6 @@ class AppLanguageTest {
         assertEquals(AppLanguage.ENGLISH, AppLanguage.fromLocale(Locale.ENGLISH))
         assertEquals(AppLanguage.FINNISH, AppLanguage.fromLocale(Locale.forLanguageTag("fi")))
         assertEquals(AppLanguage.SYSTEM, AppLanguage.fromLocale(null))
-        assertEquals(AppLanguage.SYSTEM, AppLanguage.fromLocale(Locale.ITALIAN))
+        assertEquals(AppLanguage.SYSTEM, AppLanguage.fromLocale(Locale.JAPANESE))
     }
 }

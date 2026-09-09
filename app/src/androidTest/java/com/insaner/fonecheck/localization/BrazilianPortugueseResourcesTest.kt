@@ -104,7 +104,7 @@ class BrazilianPortugueseResourcesTest {
             mapOf(
                 "pt" to "Verificação completa",
                 "pt-PT" to "Verificação completa",
-                "it-IT,pt-BR,en" to "Verificação completa",
+                "ja-JP,pt-BR,en" to "Verificação completa",
                 "es,pt-BR" to "Comprobación completa",
                 "en,pt-BR" to "Full Check",
             ),

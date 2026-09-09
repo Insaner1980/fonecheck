@@ -160,7 +160,7 @@ class SwedishResourcesTest {
             mapOf(
                 "sv-SE,en" to "Fullständig kontroll",
                 "sv-FI,en" to "Fullständig kontroll",
-                "it-IT,sv,en" to "Fullständig kontroll",
+                "ja-JP,sv,en" to "Fullständig kontroll",
                 "en,sv" to "Full Check",
                 "fi,sv" to "Full Check",
                 "es,sv" to "Comprobación completa",
@@ -168,7 +168,7 @@ class SwedishResourcesTest {
                 "de,sv" to "Gesamtcheck",
                 "fr,sv" to "Vérification complète",
                 "id,sv" to "Pemeriksaan lengkap",
-                "it-IT,en" to "Full Check",
+                "ja-JP,en" to "Full Check",
             ),
         )
     }

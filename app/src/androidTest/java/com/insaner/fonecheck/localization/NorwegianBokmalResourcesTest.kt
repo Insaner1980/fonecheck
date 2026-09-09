@@ -172,7 +172,7 @@ class NorwegianBokmalResourcesTest {
                 "nn-NO" to "Full Check",
                 "no-NO,nb,en" to "Fullstendig sjekk",
                 "nn-NO,fi,en" to "Full Check",
-                "it-IT,nb,en" to "Fullstendig sjekk",
+                "ja-JP,nb,en" to "Fullstendig sjekk",
                 "en,nb" to "Full Check",
                 "fi,nb" to "Full Check",
                 "es,nb" to "Comprobación completa",
@@ -181,7 +181,7 @@ class NorwegianBokmalResourcesTest {
                 "fr,nb" to "Vérification complète",
                 "id,nb" to "Pemeriksaan lengkap",
                 "sv,nb" to "Fullständig kontroll",
-                "it-IT,en" to "Full Check",
+                "ja-JP,en" to "Full Check",
             ),
         )
     }

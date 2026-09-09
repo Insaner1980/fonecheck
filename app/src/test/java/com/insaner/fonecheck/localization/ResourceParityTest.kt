@@ -11,6 +11,20 @@ import java.util.Locale
 import javax.xml.parsers.DocumentBuilderFactory
 
 class ResourceParityTest {
+    private val translatedDirectories =
+        listOf(
+            "values-fi",
+            "values-es",
+            "values-pt-rBR",
+            "values-de",
+            "values-fr",
+            "values-in",
+            "values-sv",
+            "values-nb",
+            "values-da",
+            "values-it",
+        )
+
     @Test
     fun `registered locales match the existing picker and only app name is nontranslatable`() {
         val root = locateResourceRoot()
@@ -23,17 +37,7 @@ class ResourceParityTest {
         val exceptions = childElements(source.documentElement).filter { it.getAttribute("translatable") == "false" }
         assertEquals(listOf("app_name"), exceptions.map { it.getAttribute("name") })
         assertEquals("fonecheck", exceptions.single().textContent)
-        listOf(
-            "values-fi",
-            "values-es",
-            "values-pt-rBR",
-            "values-de",
-            "values-fr",
-            "values-in",
-            "values-sv",
-            "values-nb",
-            "values-da",
-        ).forEach { directory ->
+        translatedDirectories.forEach { directory ->
             File(root, directory).listFiles().orEmpty().filter { it.extension == "xml" }.forEach { file ->
                 val translated = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
                 assertTrue(
@@ -77,23 +81,18 @@ class ResourceParityTest {
                 it.isDirectory && (it.name.startsWith("values-da") || it.name.startsWith("values-b+da"))
             }
         assertEquals(listOf("values-da"), danishDirectories.map { it.name })
+        val italianDirectories =
+            root.listFiles().orEmpty().filter {
+                it.isDirectory && (it.name.startsWith("values-it") || it.name.startsWith("values-b+it"))
+            }
+        assertEquals(listOf("values-it"), italianDirectories.map { it.name })
     }
 
     @Test
     fun `all shipped languages have matching translatable resource keys`() {
         val resourceRoot = locateResourceRoot()
         val english = resourceKeys(File(resourceRoot, "values/strings.xml"))
-        listOf(
-            "values-fi",
-            "values-es",
-            "values-pt-rBR",
-            "values-de",
-            "values-fr",
-            "values-in",
-            "values-sv",
-            "values-nb",
-            "values-da",
-        ).forEach { directory ->
+        translatedDirectories.forEach { directory ->
             assertEquals(directory, english, resourceKeys(File(resourceRoot, "$directory/strings.xml")))
         }
     }
@@ -116,6 +115,7 @@ class ResourceParityTest {
             "values-sv" to Locale.forLanguageTag("sv"),
             "values-nb" to Locale.forLanguageTag("nb"),
             "values-da" to Locale.forLanguageTag("da"),
+            "values-it" to Locale.ITALIAN,
         ).forEach { (directory, locale) ->
             val file = File(resourceRoot, "$directory/strings.xml")
             val keys = resourceKeys(file).filter { it.startsWith("string:home_cat_") }
@@ -145,17 +145,7 @@ class ResourceParityTest {
     fun `translations preserve formatting markup and plural contracts`() {
         val root = locateResourceRoot()
         val source = textResources(File(root, "values"))
-        listOf(
-            "values-fi",
-            "values-es",
-            "values-pt-rBR",
-            "values-de",
-            "values-fr",
-            "values-in",
-            "values-sv",
-            "values-nb",
-            "values-da",
-        ).forEach { directory ->
+        translatedDirectories.forEach { directory ->
             val translated = textResources(File(root, directory))
             assertEquals(directory, source.keys, translated.keys)
             translated.forEach { (key, resource) ->
@@ -169,7 +159,7 @@ class ResourceParityTest {
                     val required =
                         if (directory == "values-in") {
                             setOf("other")
-                        } else if (directory in setOf("values-es", "values-pt-rBR", "values-fr")) {
+                        } else if (directory in setOf("values-es", "values-pt-rBR", "values-fr", "values-it")) {
                             setOf("one", "many", "other")
                         } else {
                             setOf("one", "other")
@@ -261,6 +251,16 @@ class ResourceParityTest {
             sampleName = "Danish letters",
             sample = "æøå",
             locale = Locale.forLanguageTag("da"),
+        )
+    }
+
+    @Test
+    fun `Italian accents apostrophes and uppercase letters have glyphs in shipped fonts`() {
+        assertLocalizedTextGlyphs(
+            directory = "values-it",
+            sampleName = "Italian accents and apostrophes",
+            sample = "àèéìòù’'",
+            locale = Locale.ITALIAN,
         )
     }
 

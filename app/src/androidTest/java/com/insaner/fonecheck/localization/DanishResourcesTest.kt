@@ -11,7 +11,6 @@ import com.insaner.fonecheck.domain.observation.ObservationReason
 import com.insaner.fonecheck.export.ReportPdfRenderer
 import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.Locale
@@ -45,10 +44,7 @@ class DanishResourcesTest {
                 R.string.readout_scroll_hint to "Rul vandret for at læse hele værdien.",
                 R.string.thermal_headroom_title to "Termisk råderum",
             ).forEach { (id, expected) -> assertEquals(tag, expected, context.getString(id)) }
-            listOf(R.string.home_cat_battery, R.string.home_cat_camera, R.string.home_cat_sensors).forEach { id ->
-                val category = context.getString(id)
-                assertEquals("Test igen: $category", context.getString(R.string.report_retest_title, category))
-            }
+            assertRetestCategoryTitles(context, "Test igen: ")
             val labels = ReportPdfRenderer(context).labels(context)
             val statuses =
                 mapOf(
@@ -87,10 +83,7 @@ class DanishResourcesTest {
             }
             assertEquals("Oplader", labels.stableTextName("charging"))
             assertEquals("Aflader", labels.stableTextName("discharging"))
-            ObservationReason.entries.forEach { reason ->
-                val id = observationReasonStringRes(reason)
-                assertNotEquals(reason.name, english.getString(id), context.getString(id))
-            }
+            assertObservationReasonsTranslated(english, context)
             assertEquals(
                 "Denne test blev annulleret, før der forelå et resultat.",
                 context.getString(observationReasonStringRes(ObservationReason.TEST_CANCELLED)),
@@ -120,16 +113,7 @@ class DanishResourcesTest {
                             "$count ${if (singular) "observation" else "observationer"} kræver opmærksomhed",
                         R.plurals.conn_gps_more_sats to "+ $number mere",
                     )
-                expectations.forEach { (id, expected) ->
-                    val argument =
-                        when (id) {
-                            R.plurals.home_latest_days_ago,
-                            R.plurals.home_latest_evidence_attention_summary,
-                            -> count
-                            else -> number
-                        }
-                    assertEquals(expected, context.resources.getQuantityString(id, count, argument))
-                }
+                assertPluralResourceValues(context, expectations, count, number)
             }
             assertFileSizeAndPercentFormatting(context, locale)
         }
@@ -142,7 +126,7 @@ class DanishResourcesTest {
             mapOf(
                 "da" to "Fuld kontrol",
                 "da-DK,en" to "Fuld kontrol",
-                "it-IT,da,en" to "Fuld kontrol",
+                "ja-JP,da,en" to "Fuld kontrol",
                 "en,da" to "Full Check",
                 "fi,da" to "Full Check",
                 "es,da" to "Comprobación completa",
@@ -152,7 +136,7 @@ class DanishResourcesTest {
                 "id,da" to "Pemeriksaan lengkap",
                 "sv,da" to "Fullständig kontroll",
                 "nb,da" to "Fullstendig sjekk",
-                "it-IT,en" to "Full Check",
+                "ja-JP,en" to "Full Check",
             ),
         )
     }

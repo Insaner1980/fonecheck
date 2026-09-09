@@ -11,17 +11,30 @@ import java.util.TimeZone
 
 class UiDateTimeFormatTest {
     @Test
+    fun italianDatesKeepTheLocalTimeZoneAndTechnicalFormat() {
+        assertSeasonalDateFormatting("it", "Europe/Rome", listOf("it", "it-IT", "it-CH"))
+    }
+
+    @Test
     fun danishDatesKeepTheLocalTimeZoneAndTechnicalFormat() {
-        val zone = ZoneId.of("Europe/Copenhagen")
+        assertSeasonalDateFormatting("da", "Europe/Copenhagen", listOf("da", "da-DK"))
+    }
+
+    private fun assertSeasonalDateFormatting(
+        languageTag: String,
+        zoneName: String,
+        localeTags: List<String>,
+    ) {
+        val zone = ZoneId.of(zoneName)
         listOf("2026-08-11T10:18:00Z", "2026-01-11T10:18:00Z").forEach { timestamp ->
             val instant = Instant.parse(timestamp)
             val zoned = instant.atZone(zone)
             val expected =
                 DateTimeFormatter
                     .ofLocalizedDateTime(FormatStyle.MEDIUM)
-                    .withLocale(Locale.forLanguageTag("da"))
+                    .withLocale(Locale.forLanguageTag(languageTag))
                     .format(zoned)
-            listOf("da", "da-DK").forEach { tag ->
+            localeTags.forEach { tag ->
                 val locale = Locale.forLanguageTag(tag)
                 assertEquals(expected, formatUiDateTime(instant, locale, zone))
                 assertEquals("$expected UTC${zoned.offset}", formatPdfDateTime(instant, locale, zone))
