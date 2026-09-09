@@ -231,6 +231,7 @@ class MainActivityLanguageTest {
         assertLanguage("nb-NO", "Språk")
         assertEquals("Diagnostikkrapport fra fonecheck", renderer.labels().title)
         selectLanguage("sv")
+        assertLanguage("sv", "Språk")
         assertEquals("fonecheck diagnostikrapport", renderer.labels().title)
         assertFinnishAndEnglishPdfLabels(renderer)
         assertSystemLanguageRestored()
