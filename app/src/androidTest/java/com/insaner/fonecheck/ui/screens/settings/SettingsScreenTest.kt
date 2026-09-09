@@ -1,8 +1,5 @@
 package com.insaner.fonecheck.ui.screens.settings
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
@@ -35,8 +32,9 @@ class SettingsScreenTest {
     fun settingsExposeThemeLanguageWarningsPermissionsLinksAndOnboarding() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         var theme: AppThemeMode? = null
-        var language by mutableStateOf(AppLanguage.SYSTEM)
+        val language = AppLanguage.SYSTEM
         var warnings: Boolean? = null
+        var openedLanguage = false
         var openedSettings = false
         var openedPrivacy = false
         var openedSupport = false
@@ -55,7 +53,7 @@ class SettingsScreenTest {
                     appVersion = "1.0.0 (1)",
                     onThemeMode = { theme = it },
                     selectedLanguage = language,
-                    onLanguage = { language = it },
+                    onOpenLanguage = { openedLanguage = true },
                     onTestWarnings = { warnings = it },
                     onOpenAppSettings = { openedSettings = true },
                     onDeleteAll = {},
@@ -69,7 +67,7 @@ class SettingsScreenTest {
 
         composeRule
             .onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.SelectableGroup))
-            .assertCountEquals(2)
+            .assertCountEquals(1)
         composeRule
             .onNodeWithTag("settings_theme_system")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, true))
@@ -80,21 +78,7 @@ class SettingsScreenTest {
             .onNodeWithTag("settings_theme_dark")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, false))
         composeRule.onNodeWithTag("settings_theme_dark").performClick()
-        composeRule
-            .onNodeWithTag("settings_language_system")
-            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, true))
-        listOf(AppLanguage.SPANISH, AppLanguage.FINNISH, AppLanguage.ENGLISH, AppLanguage.SYSTEM).forEach { choice ->
-            composeRule
-                .onNodeWithTag("settings_language_${choice.name.lowercase()}")
-                .performScrollTo()
-                .performClick()
-            composeRule.runOnIdle { assertEquals(choice, language) }
-            AppLanguage.entries.forEach { option ->
-                composeRule
-                    .onNodeWithTag("settings_language_${option.name.lowercase()}")
-                    .assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, option == choice))
-            }
-        }
+        composeRule.onNodeWithTag("settings_language").performClick()
         composeRule.onNodeWithTag("settings_test_warnings").performScrollTo().performClick()
         assertEquals(AppThemeMode.DARK, theme)
         assertEquals(false, warnings)
@@ -107,7 +91,9 @@ class SettingsScreenTest {
         composeRule.onNodeWithTag("settings_support").performScrollTo().performClick()
         composeRule.onNodeWithTag("settings_licenses").performScrollTo().performClick()
         composeRule.onNodeWithTag("settings_onboarding").performScrollTo().performClick()
-        assertTrue(openedSettings && openedPrivacy && openedSupport && openedLicenses && openedOnboarding)
+        assertTrue(
+            openedLanguage && openedSettings && openedPrivacy && openedSupport && openedLicenses && openedOnboarding,
+        )
     }
 
     @Test
@@ -120,7 +106,7 @@ class SettingsScreenTest {
                     appVersion = "1.0.0 (1)",
                     onThemeMode = {},
                     selectedLanguage = AppLanguage.SYSTEM,
-                    onLanguage = {},
+                    onOpenLanguage = {},
                     onTestWarnings = {},
                     onOpenAppSettings = {},
                     onDeleteAll = { deleted = true },

@@ -28,5 +28,8 @@ class LicensesScreenTest {
             .onNodeWithContentDescription(context.getString(R.string.licenses_notices_heading))
             .assertIsDisplayed()
         composeRule.onNodeWithText("Apache License", substring = true).assertExists()
+        composeRule
+            .onNodeWithText(context.getString(R.string.licenses_component_inventory), substring = true)
+            .assertExists()
     }
 }

@@ -16,6 +16,7 @@ import com.insaner.fonecheck.ui.theme.FonecheckTheme
 @Composable
 fun LicensesScreen(modifier: Modifier = Modifier) {
     val resources = LocalResources.current
+    val inventory = stringResource(R.string.licenses_component_inventory)
     val notices =
         remember(resources) {
             val input = resources.openRawResource(R.raw.third_party_notices)
@@ -27,7 +28,7 @@ fun LicensesScreen(modifier: Modifier = Modifier) {
         item {
             SelectionContainer {
                 Text(
-                    text = notices,
+                    text = "$inventory\n\n$notices",
                     style = FonecheckTheme.type.note,
                     color = FonecheckTheme.colors.textSecondary,
                 )

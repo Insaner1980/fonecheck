@@ -728,6 +728,7 @@
     <string name="settings_language_english">English</string>
     <string name="settings_language_finnish">Suomi</string>
     <string name="settings_language_spanish">Español</string>
+    <string name="settings_language_portuguese_brazil">Português (Brasil)</string>
     <string name="settings_test_warnings">Mostrar advertencias de las pruebas</string>
     <string name="settings_test_warnings_description">Mantén visibles los avisos de seguridad y limitaciones antes de los diagnósticos interactivos.</string>
     <string name="settings_permissions">Permisos</string>
@@ -1147,4 +1148,7 @@
     <string name="accessibility_collapsed">Contraído</string>
     <string name="display_touch_accessible_action">Registrar una muestra táctil accesible</string>
     <string name="readout_scroll_hint">Desplázate horizontalmente para leer el valor completo.</string>
+    <string name="licenses_component_inventory">Avisos de terceros de fonecheck\n\n\nEl entorno de ejecución de la versión de distribución incluye las siguientes familias de componentes de código abierto:\n\n- Bibliotecas AndroidX y Jetpack, como Core, Activity, Lifecycle,\n  Jetpack Compose, Material, Navigation, Room, CameraX, Biometric,\n  DataStore, AppCompat, Profile Installer, Saved State y SQLite.\n- La biblioteca estándar de Kotlin, kotlinx.coroutines y kotlinx.serialization.\n- Dagger y Hilt.\n- Okio.\n- Compose Stability Runtime.\n- Anotaciones de Google AutoValue, ListenableFuture, JSpecify, javax.inject\n  y anotaciones JSR-305.\n- Jetpack Compose Material Icons.\n\nEstos componentes se distribuyen bajo la licencia Apache, versión 2.0.\nLos avisos específicos de los componentes incluidos en las dependencias empaquetadas también\nse conservan en el paquete de distribución, en META-INF.</string>
+    <string name="settings_language_german">Deutsch</string>
+    <string name="settings_language_french">Français</string>
 </resources>

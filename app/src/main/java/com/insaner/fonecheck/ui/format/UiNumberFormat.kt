@@ -13,8 +13,9 @@ import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
 import java.util.Locale
 
-/** Uses the UI language without borrowing regional number conventions from the device locale. */
-fun uiLanguageLocale(locale: Locale): Locale = Locale.forLanguageTag(locale.language)
+/** Uses the shipped UI language, including Brazil for Portuguese, rather than device regional preferences. */
+fun uiLanguageLocale(locale: Locale): Locale =
+    Locale.forLanguageTag(if (locale.language == "pt") "pt-BR" else locale.language)
 
 fun formatUiNumber(
     value: Number,

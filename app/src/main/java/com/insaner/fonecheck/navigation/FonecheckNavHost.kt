@@ -32,6 +32,7 @@ import com.insaner.fonecheck.ui.screens.performance.PerformanceInfoScreen
 import com.insaner.fonecheck.ui.screens.report.ReportDetailRoute
 import com.insaner.fonecheck.ui.screens.runall.RunAllTestsScreen
 import com.insaner.fonecheck.ui.screens.sensor.SensorTestScreen
+import com.insaner.fonecheck.ui.screens.settings.LanguageSelectionRoute
 import com.insaner.fonecheck.ui.screens.settings.LicensesScreen
 import com.insaner.fonecheck.ui.screens.settings.SettingsRoute
 import com.insaner.fonecheck.ui.screens.simtelephony.SimTelephonyScreen
@@ -113,10 +114,12 @@ fun FonecheckNavHost(
         }
         composable<Settings> {
             SettingsRoute(
+                onOpenLanguage = { navController.navigate(LanguageSettings) },
                 onOpenLicenses = { navController.navigate(Licenses) },
                 onOpenOnboarding = { navController.navigate(Onboarding(reopened = true)) },
             )
         }
+        composable<LanguageSettings> { LanguageSelectionRoute() }
         composable<Licenses> { LicensesScreen() }
         composable<Onboarding> { backStackEntry ->
             val route = backStackEntry.toRoute<Onboarding>()

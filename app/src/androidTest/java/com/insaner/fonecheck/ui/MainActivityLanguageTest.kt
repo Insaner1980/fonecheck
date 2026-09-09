@@ -18,6 +18,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
 class MainActivityLanguageTest {
@@ -48,9 +49,30 @@ class MainActivityLanguageTest {
         assertLanguage("en", "Language")
         assertSame(initialActivity, composeRule.activity)
 
+        selectLanguage("es")
+        assertLanguage("es", "Idioma")
+        assertSame(initialActivity, composeRule.activity)
+
+        selectLanguage("pt-BR")
+        assertLanguage("pt-BR", "Idioma")
+        assertEquals("Verificação completa", composeRule.activity.getString(R.string.full_check_title))
+        assertSame(initialActivity, composeRule.activity)
+
+        selectLanguage("de")
+        assertLanguage("de", "Sprache")
+        assertEquals("Gesamtcheck", composeRule.activity.getString(R.string.full_check_title))
+        assertSame(initialActivity, composeRule.activity)
+
         selectLanguage("fi")
         assertLanguage("fi", "Kieli")
         assertSame(initialActivity, composeRule.activity)
+
+        selectLanguage("fr")
+        assertLanguage("fr", "Langue")
+        assertEquals("Vérification complète", composeRule.activity.getString(R.string.full_check_title))
+        assertSame(initialActivity, composeRule.activity)
+
+        selectLanguage("fi")
 
         composeRule.activityRule.scenario.recreate()
         composeRule.waitForIdle()
@@ -95,6 +117,64 @@ class MainActivityLanguageTest {
         composeRule.activityRule.scenario.recreate()
         composeRule.waitForIdle()
         assertLanguage("es-MX", "Idioma")
+        assertFinnishAndEnglishPdfLabels(renderer)
+    }
+
+    @Test
+    fun brazilianSelectionRefreshesExistingPdfRendererAndSurvivesRecreation() {
+        selectLanguage("en")
+        val renderer = ReportPdfRenderer(composeRule.activity.applicationContext)
+        assertEquals("fonecheck diagnostic report", renderer.labels().title)
+        selectLanguage("pt-BR")
+        assertLanguage("pt-BR", "Idioma")
+        assertEquals("Relatório de diagnóstico do fonecheck", renderer.labels().title)
+        assertEquals("-1.234,5", renderer.labels().numberValue(-1234.5))
+        composeRule.activityRule.scenario.recreate()
+        composeRule.waitForIdle()
+        assertLanguage("pt-BR", "Idioma")
+        assertEquals("Relatório de diagnóstico do fonecheck", renderer.labels().title)
+        selectLanguage("es")
+        assertLanguage("es", "Idioma")
+        assertEquals("Informe de diagnóstico de fonecheck", renderer.labels().title)
+        assertFinnishAndEnglishPdfLabels(renderer)
+        assertEquals("12.5", renderer.labels().numberValue(12.5))
+    }
+
+    @Test
+    fun germanSelectionRefreshesExistingPdfRendererAndSurvivesRecreation() {
+        selectLanguage("en")
+        val renderer = ReportPdfRenderer(composeRule.activity.applicationContext)
+        assertEquals("fonecheck diagnostic report", renderer.labels().title)
+        selectLanguage("de")
+        assertLanguage("de", "Sprache")
+        assertEquals("fonecheck-Diagnosebericht", renderer.labels().title)
+        assertEquals("-1.234,5", renderer.labels().numberValue(-1234.5))
+        composeRule.activityRule.scenario.recreate()
+        composeRule.waitForIdle()
+        assertLanguage("de", "Sprache")
+        assertEquals("fonecheck-Diagnosebericht", renderer.labels().title)
+        assertFinnishAndEnglishPdfLabels(renderer)
+    }
+
+    @Test
+    fun frenchRegionsRefreshExistingPdfRendererAndSurviveRecreation() {
+        selectLanguage("en")
+        val renderer = ReportPdfRenderer(composeRule.activity.applicationContext)
+        assertEquals("fonecheck diagnostic report", renderer.labels().title)
+        listOf("fr", "fr-FR", "fr-CA").forEach { tag ->
+            selectLanguage(tag)
+            assertLanguage(tag, "Langue")
+            assertEquals("Rapport de diagnostic fonecheck", renderer.labels().title)
+            assertEquals("-12,5", renderer.labels().numberValue(-12.5))
+        }
+        composeRule.activityRule.scenario.recreate()
+        composeRule.waitForIdle()
+        assertLanguage("fr-CA", "Langue")
+        assertEquals("Rapport de diagnostic fonecheck", renderer.labels().title)
+        assertFinnishAndEnglishPdfLabels(renderer)
+    }
+
+    private fun assertFinnishAndEnglishPdfLabels(renderer: ReportPdfRenderer) {
         selectLanguage("fi")
         assertLanguage("fi", "Kieli")
         assertEquals("12,5", renderer.labels().numberValue(12.5))
@@ -110,6 +190,8 @@ class MainActivityLanguageTest {
         composeRule.waitUntil(timeoutMillis = 5_000) {
             val activity = composeRule.activity
             activity.getString(R.string.settings_language) == expectedLabel &&
+                activity.resources.configuration.locales[0]
+                    .language == Locale.forLanguageTag(languageTag).language &&
                 ContextCompat.getString(activity.applicationContext, R.string.settings_language) == expectedLabel
         }
         composeRule.activityRule.scenario.onActivity { activity ->
