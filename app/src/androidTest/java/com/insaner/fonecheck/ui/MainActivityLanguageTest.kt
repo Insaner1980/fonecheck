@@ -214,6 +214,28 @@ class MainActivityLanguageTest {
         assertSystemLanguageRestored()
     }
 
+    @Test
+    fun bokmalSelectionRefreshesExistingPdfRendererAndSurvivesRecreation() {
+        selectLanguage("en")
+        val renderer = ReportPdfRenderer(composeRule.activity.applicationContext)
+        assertEquals("fonecheck diagnostic report", renderer.labels().title)
+        listOf("nb", "nb-NO").forEach { tag ->
+            selectLanguage(tag)
+            assertLanguage(tag, "Språk")
+            assertEquals("Fullstendig sjekk", composeRule.activity.getString(R.string.full_check_title))
+            assertEquals("Diagnostikkrapport fra fonecheck", renderer.labels().title)
+            assertEquals("12,5", renderer.labels().numberValue(12.5))
+        }
+        composeRule.activityRule.scenario.recreate()
+        composeRule.waitForIdle()
+        assertLanguage("nb-NO", "Språk")
+        assertEquals("Diagnostikkrapport fra fonecheck", renderer.labels().title)
+        selectLanguage("sv")
+        assertEquals("fonecheck diagnostikrapport", renderer.labels().title)
+        assertFinnishAndEnglishPdfLabels(renderer)
+        assertSystemLanguageRestored()
+    }
+
     private fun assertSystemLanguageRestored() {
         selectLanguage("")
         composeRule.activityRule.scenario.onActivity { activity ->

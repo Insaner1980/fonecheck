@@ -1148,4 +1148,5 @@
     <string name="settings_language_french">Français</string>
     <string name="settings_language_indonesian">Bahasa Indonesia</string>
     <string name="settings_language_swedish">Svenska</string>
+    <string name="settings_language_norwegian_bokmal">Norsk bokmål</string>
 </resources>

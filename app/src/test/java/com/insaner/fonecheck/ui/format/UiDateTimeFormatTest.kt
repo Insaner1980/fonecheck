@@ -11,6 +11,29 @@ import java.util.TimeZone
 
 class UiDateTimeFormatTest {
     @Test
+    fun bokmalDatesKeepNorwegianFormattingTimeZoneAndTechnicalTimestamps() {
+        val zone = ZoneId.of("Europe/Oslo")
+        listOf(
+            "2026-08-11T10:18:00Z" to "+02:00",
+            "2026-01-11T10:18:00Z" to "+01:00",
+        ).forEach { (timestamp, offset) ->
+            val instant = Instant.parse(timestamp)
+            val expected =
+                DateTimeFormatter
+                    .ofLocalizedDateTime(FormatStyle.MEDIUM)
+                    .withLocale(Locale.forLanguageTag("nb"))
+                    .format(instant.atZone(zone))
+            val technical = if (offset == "+02:00") "2026-08-11 12:18" else "2026-01-11 11:18"
+            listOf("nb", "nb-NO").forEach { tag ->
+                val locale = Locale.forLanguageTag(tag)
+                assertEquals(expected, formatUiDateTime(instant, locale, zone))
+                assertEquals("$expected UTC$offset", formatPdfDateTime(instant, locale, zone))
+                assertEquals(technical, formatTechnicalUiDateTime(instant, locale, zone))
+            }
+        }
+    }
+
+    @Test
     fun swedishDatesUseGenericLanguageWhileKeepingTheTimeZoneAndTechnicalFormat() {
         val instant = Instant.parse("2026-08-11T10:18:00Z")
         listOf("Europe/Stockholm", "Europe/Helsinki").forEach { zoneName ->

@@ -1154,4 +1154,5 @@
         <item quantity="one">%1$s kategori</item>
         <item quantity="other">%1$s kategorier</item>
     </plurals>
+    <string name="settings_language_norwegian_bokmal">Norsk bokmål</string>
 </resources>
