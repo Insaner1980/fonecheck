@@ -116,7 +116,7 @@ class HomeContentTest {
                     },
             )
         val contexts =
-            listOf(Locale.ENGLISH, Locale.forLanguageTag("fi")).map { locale ->
+            listOf(Locale.ENGLISH, Locale.forLanguageTag("fi"), Locale.forLanguageTag("sv")).map { locale ->
                 val configuration = Configuration(baseContext.resources.configuration)
                 configuration.setLocale(locale)
                 baseContext.createConfigurationContext(configuration)
@@ -154,6 +154,7 @@ class HomeContentTest {
                 Triple(412, 1.15f, 2),
                 Triple(412, 2f, 1),
                 Triple(320, 1.15f, 1),
+                Triple(320, 2f, 1),
             ).forEach { (width, scale, columns) ->
                 composeRule.runOnIdle {
                     context = localizedContext
