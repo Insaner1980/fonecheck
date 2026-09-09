@@ -6,14 +6,32 @@ import java.util.Locale
 
 class UiNumberFormatTest {
     @Test
+    fun `Bokmal UI keeps Norwegian numbers independent of region and device default`() {
+        assertNordicCommaDecimalFormatting(
+            expectedLanguageTag = "nb",
+            localeTags = listOf("nb", "nb-NO"),
+        )
+    }
+
+    @Test
     fun `Swedish UI uses generic Swedish regardless of region and device formatting default`() {
+        assertNordicCommaDecimalFormatting(
+            expectedLanguageTag = "sv",
+            localeTags = listOf("sv", "sv-SE", "sv-FI"),
+        )
+    }
+
+    private fun assertNordicCommaDecimalFormatting(
+        expectedLanguageTag: String,
+        localeTags: List<String>,
+    ) {
         val original = Locale.getDefault(Locale.Category.FORMAT)
         try {
             Locale.setDefault(Locale.Category.FORMAT, Locale.US)
-            val symbols = java.text.DecimalFormatSymbols(Locale.forLanguageTag("sv"))
-            listOf("sv", "sv-SE", "sv-FI").forEach { tag ->
+            val symbols = java.text.DecimalFormatSymbols(Locale.forLanguageTag(expectedLanguageTag))
+            localeTags.forEach { tag ->
                 val locale = Locale.forLanguageTag(tag)
-                assertEquals("sv", uiLanguageLocale(locale).toLanguageTag())
+                assertEquals(expectedLanguageTag, uiLanguageLocale(locale).toLanguageTag())
                 listOf(0, 1, 2, 1234).forEach { count ->
                     assertEquals(count.toString(), formatUiNumber(count, locale))
                 }

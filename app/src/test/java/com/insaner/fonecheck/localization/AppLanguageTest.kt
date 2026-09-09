@@ -6,6 +6,17 @@ import java.util.Locale
 
 class AppLanguageTest {
     @Test
+    fun bokmalUsesItsModernTagWithoutClaimingGenericNorwegianOrNynorsk() {
+        assertEquals("nb", AppLanguage.NORWEGIAN_BOKMAL.languageTag)
+        listOf("nb", "nb-NO").forEach { tag ->
+            assertEquals(AppLanguage.NORWEGIAN_BOKMAL, AppLanguage.fromLocale(Locale.forLanguageTag(tag)))
+        }
+        listOf("no", "no-NO", "nn", "nn-NO").forEach { tag ->
+            assertEquals(AppLanguage.SYSTEM, AppLanguage.fromLocale(Locale.forLanguageTag(tag)))
+        }
+    }
+
+    @Test
     fun swedishRegionsUseOneGenericLanguageChoice() {
         assertEquals("sv", AppLanguage.SWEDISH.languageTag)
         listOf("sv", "sv-SE", "sv-FI").forEach { tag ->

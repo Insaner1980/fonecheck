@@ -134,6 +134,22 @@ class ReportPdfExporterTest {
         )
     }
 
+    @Test
+    fun bokmalPdfPreservesLettersLongEvidenceAndSavedPayload() {
+        assertLocalizedPdf(
+            locale = Locale.forLanguageTag("nb-NO"),
+            sample =
+                "Målingen viser en termisk margin. " +
+                    "Skjermens særegenheter og høy temperatur er ulike observasjoner.",
+            expectedText =
+                listOf(
+                    "Diagnostikkrapport fra fonecheck",
+                    "Fullføringsgrad",
+                    "Pålitelighet",
+                ),
+        )
+    }
+
     private fun assertLocalizedPdf(
         locale: Locale,
         sample: String,
