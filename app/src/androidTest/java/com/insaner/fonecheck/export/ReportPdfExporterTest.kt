@@ -116,6 +116,15 @@ class ReportPdfExporterTest {
         )
     }
 
+    @Test
+    fun indonesianPdfPreservesLongEvidenceAndSavedPayload() {
+        assertLocalizedPdf(
+            locale = Locale.forLanguageTag("id"),
+            sample = "Respons sensor teramati, tetapi kalibrasi dan kondisi fisik belum diverifikasi",
+            expectedText = listOf("Laporan diagnostik fonecheck", "Cakupan pemeriksaan"),
+        )
+    }
+
     private fun assertLocalizedPdf(
         locale: Locale,
         sample: String,

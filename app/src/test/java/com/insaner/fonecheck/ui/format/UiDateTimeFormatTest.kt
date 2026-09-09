@@ -11,6 +11,23 @@ import java.util.TimeZone
 
 class UiDateTimeFormatTest {
     @Test
+    fun indonesianDatesUseGenericLanguageAndPreserveTechnicalTimestamps() {
+        val instant = Instant.parse("2026-08-11T10:18:00Z")
+        val zone = ZoneId.of("Asia/Jakarta")
+        val expected =
+            DateTimeFormatter
+                .ofLocalizedDateTime(FormatStyle.MEDIUM)
+                .withLocale(Locale.forLanguageTag("id"))
+                .format(instant.atZone(zone))
+        listOf("id", "id-ID", "id-SG", "in-ID").forEach { tag ->
+            val locale = Locale.forLanguageTag(tag)
+            assertEquals(expected, formatUiDateTime(instant, locale, zone))
+            assertEquals("$expected UTC+07:00", formatPdfDateTime(instant, locale, zone))
+            assertEquals("2026-08-11 17:18", formatTechnicalUiDateTime(instant, locale, zone))
+        }
+    }
+
+    @Test
     fun frenchDatesUseGenericLanguageAndPreserveTechnicalTimestamps() {
         val instant = Instant.parse("2026-08-11T10:18:00Z")
         val zone = ZoneId.of("Europe/Paris")
@@ -19,12 +36,12 @@ class UiDateTimeFormatTest {
                 .ofLocalizedDateTime(FormatStyle.MEDIUM)
                 .withLocale(Locale.FRENCH)
                 .format(instant.atZone(zone))
-        listOf("fr", "fr-FR", "fr-BE", "fr-CH", "fr-CA").forEach { tag ->
-            val locale = Locale.forLanguageTag(tag)
-            assertEquals(expected, formatUiDateTime(instant, locale, zone))
-            assertEquals("$expected UTC+02:00", formatPdfDateTime(instant, locale, zone))
-            assertEquals("2026-08-11 12:18", formatTechnicalUiDateTime(instant, locale, zone))
-        }
+        assertCentralEuropeanDateFormats(
+            listOf("fr", "fr-FR", "fr-BE", "fr-CH", "fr-CA"),
+            instant,
+            zone,
+            expected,
+        )
     }
 
     @Test
@@ -36,7 +53,21 @@ class UiDateTimeFormatTest {
                 .ofLocalizedDateTime(FormatStyle.MEDIUM)
                 .withLocale(Locale.GERMAN)
                 .format(instant.atZone(zone))
-        listOf("de", "de-DE", "de-AT", "de-CH").forEach { tag ->
+        assertCentralEuropeanDateFormats(
+            listOf("de", "de-DE", "de-AT", "de-CH"),
+            instant,
+            zone,
+            expected,
+        )
+    }
+
+    private fun assertCentralEuropeanDateFormats(
+        tags: List<String>,
+        instant: Instant,
+        zone: ZoneId,
+        expected: String,
+    ) {
+        tags.forEach { tag ->
             val locale = Locale.forLanguageTag(tag)
             assertEquals(expected, formatUiDateTime(instant, locale, zone))
             assertEquals("$expected UTC+02:00", formatPdfDateTime(instant, locale, zone))

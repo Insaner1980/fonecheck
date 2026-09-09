@@ -6,6 +6,14 @@ import java.util.Locale
 
 class AppLanguageTest {
     @Test
+    fun indonesianModernAndLegacyRegionalLocalesUseOneLanguageChoice() {
+        assertEquals("id", AppLanguage.INDONESIAN.languageTag)
+        listOf("id", "id-ID", "id-SG", "in", "in-ID").forEach { tag ->
+            assertEquals(AppLanguage.INDONESIAN, AppLanguage.fromLocale(Locale.forLanguageTag(tag)))
+        }
+    }
+
+    @Test
     fun frenchRegionsUseOneGenericLanguageChoice() {
         assertEquals("fr", AppLanguage.FRENCH.languageTag)
         listOf("fr", "fr-FR", "fr-BE", "fr-CH", "fr-CA").forEach { tag ->

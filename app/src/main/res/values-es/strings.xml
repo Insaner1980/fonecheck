@@ -1151,4 +1151,5 @@
     <string name="licenses_component_inventory">Avisos de terceros de fonecheck\n\n\nEl entorno de ejecución de la versión de distribución incluye las siguientes familias de componentes de código abierto:\n\n- Bibliotecas AndroidX y Jetpack, como Core, Activity, Lifecycle,\n  Jetpack Compose, Material, Navigation, Room, CameraX, Biometric,\n  DataStore, AppCompat, Profile Installer, Saved State y SQLite.\n- La biblioteca estándar de Kotlin, kotlinx.coroutines y kotlinx.serialization.\n- Dagger y Hilt.\n- Okio.\n- Compose Stability Runtime.\n- Anotaciones de Google AutoValue, ListenableFuture, JSpecify, javax.inject\n  y anotaciones JSR-305.\n- Jetpack Compose Material Icons.\n\nEstos componentes se distribuyen bajo la licencia Apache, versión 2.0.\nLos avisos específicos de los componentes incluidos en las dependencias empaquetadas también\nse conservan en el paquete de distribución, en META-INF.</string>
     <string name="settings_language_german">Deutsch</string>
     <string name="settings_language_french">Français</string>
+    <string name="settings_language_indonesian">Bahasa Indonesia</string>
 </resources>

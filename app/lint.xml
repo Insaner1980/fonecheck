@@ -8,6 +8,12 @@
     <issue id="AndroidGradlePluginVersion" severity="ignore" />
     <issue id="GradleDependency" severity="ignore" />
 
+    <!-- LocaleConfigDetector compares legacy resource code in with BCP-47 id without normalization.
+         Indonesian is registered as id in locales_config.xml; keep this exception message-specific. -->
+    <issue id="UnusedTranslation">
+        <ignore regexp="^The language `?in \(Indonesian\)`? is present in this project, but not declared in the `?localeConfig`? resource$" />
+    </issue>
+
     <!-- Adaptive launcher -kuvake kuuluu API 26 -muotoiseen resurssihakemistoon. -->
     <issue id="ObsoleteSdkInt">
         <ignore path="src/main/res/mipmap-anydpi-v26" />

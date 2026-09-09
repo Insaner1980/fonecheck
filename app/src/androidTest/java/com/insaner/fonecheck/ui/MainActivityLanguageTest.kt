@@ -174,6 +174,39 @@ class MainActivityLanguageTest {
         assertFinnishAndEnglishPdfLabels(renderer)
     }
 
+    @Test
+    fun indonesianSelectionRefreshesExistingPdfRendererAndSurvivesRecreation() {
+        selectLanguage("en")
+        val renderer = ReportPdfRenderer(composeRule.activity.applicationContext)
+        assertEquals("fonecheck diagnostic report", renderer.labels().title)
+        listOf("id", "id-ID").forEach { tag ->
+            selectLanguage(tag)
+            assertLanguage(tag, "Bahasa")
+            assertEquals("Pemeriksaan lengkap", composeRule.activity.getString(R.string.full_check_title))
+            assertEquals("Laporan diagnostik fonecheck", renderer.labels().title)
+            assertEquals("-1.234,5", renderer.labels().numberValue(-1234.5))
+        }
+        composeRule.activityRule.scenario.recreate()
+        composeRule.waitForIdle()
+        assertLanguage("id-ID", "Bahasa")
+        assertEquals("Laporan diagnostik fonecheck", renderer.labels().title)
+        assertFinnishAndEnglishPdfLabels(renderer)
+        selectLanguage("")
+        composeRule.activityRule.scenario.onActivity { activity ->
+            assertTrue(AppCompatDelegate.getApplicationLocales().isEmpty)
+            val configuration =
+                Configuration(activity.resources.configuration).apply {
+                    setLocales(
+                        LocaleList.forLanguageTags(LocaleManagerCompat.getSystemLocales(activity).toLanguageTags()),
+                    )
+                }
+            assertEquals(
+                activity.createConfigurationContext(configuration).getString(R.string.settings_language),
+                activity.getString(R.string.settings_language),
+            )
+        }
+    }
+
     private fun assertFinnishAndEnglishPdfLabels(renderer: ReportPdfRenderer) {
         selectLanguage("fi")
         assertLanguage("fi", "Kieli")

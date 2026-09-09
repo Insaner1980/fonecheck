@@ -13,5 +13,8 @@ class CameraLocaleFormattingTest {
         listOf("de", "de-DE", "de-AT", "de-CH", "fr", "fr-FR", "fr-BE", "fr-CH", "fr-CA").forEach { tag ->
             assertEquals("12,0 MP", formatCameraMegapixels(12_000_000, Locale.forLanguageTag(tag)))
         }
+        listOf("id", "id-ID", "in-ID").forEach { tag ->
+            assertEquals("12,0 MP", formatCameraMegapixels(12_000_000, Locale.forLanguageTag(tag)))
+        }
     }
 }

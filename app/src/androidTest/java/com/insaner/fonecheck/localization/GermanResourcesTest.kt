@@ -2,7 +2,6 @@ package com.insaner.fonecheck.localization
 
 import android.content.res.Configuration
 import android.icu.text.PluralRules
-import android.text.format.Formatter
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.insaner.fonecheck.R
@@ -16,7 +15,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.text.NumberFormat
 import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
@@ -114,11 +112,7 @@ class GermanResourcesTest {
                 context.resources.getQuantityString(R.plurals.home_latest_evidence_attention_summary, count, count),
             )
         }
-        listOf(1_500_000L to "1,5", 0L to "0").forEach { (bytes, expected) ->
-            assertTrue(Formatter.formatFileSize(context, bytes).contains(expected))
-        }
-        val percent = NumberFormat.getPercentInstance(locale).apply { maximumFractionDigits = 1 }
-        assertEquals("12,5", percent.format(0.125).removeSuffix("%").trim())
+        assertFileSizeAndPercentFormatting(context, locale)
     }
 
     @Test
