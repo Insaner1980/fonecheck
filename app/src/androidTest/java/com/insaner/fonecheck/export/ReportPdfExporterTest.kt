@@ -70,6 +70,17 @@ class ReportPdfExporterTest {
     }
 
     @Test
+    fun danishPdfPreservesLettersLongEvidenceAndSavedPayload() {
+        listOf("da", "da-DK").forEach { tag ->
+            assertLocalizedPdf(
+                locale = Locale.forLanguageTag(tag),
+                sample = "Målingen viser ændret spænding og øget varme, men bekræfter ikke fysisk slitage",
+                expectedText = listOf("Testrapport fra fonecheck", "Gennemførelsesgrad"),
+            )
+        }
+    }
+
+    @Test
     fun spanishPdfKeepsAccentsAndLongExplanationsAcrossPages() {
         val base = InstrumentationRegistry.getInstrumentation().targetContext
         val configuration = Configuration(base.resources.configuration).apply { setLocale(Locale.forLanguageTag("es")) }

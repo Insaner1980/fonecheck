@@ -237,6 +237,26 @@ class MainActivityLanguageTest {
         assertSystemLanguageRestored()
     }
 
+    @Test
+    fun danishSwitchingRefreshesAnExistingPdfRendererAndSurvivesRecreation() {
+        selectLanguage("nb")
+        val renderer = ReportPdfRenderer(composeRule.activity.applicationContext)
+        assertEquals("Diagnostikkrapport fra fonecheck", renderer.labels().title)
+        listOf("da", "da-DK").forEach { tag ->
+            selectLanguage(tag)
+            assertLanguage(tag, "Sprog")
+            assertEquals("Fuld kontrol", composeRule.activity.getString(R.string.full_check_title))
+            assertEquals("Testrapport fra fonecheck", renderer.labels().title)
+            assertEquals("-1.234,5", renderer.labels().numberValue(-1234.5))
+            composeRule.activityRule.scenario.recreate()
+            composeRule.waitForIdle()
+            assertLanguage(tag, "Sprog")
+            assertEquals("Testrapport fra fonecheck", renderer.labels().title)
+        }
+        assertFinnishAndEnglishPdfLabels(renderer)
+        assertSystemLanguageRestored()
+    }
+
     private fun assertSystemLanguageRestored() {
         selectLanguage("")
         composeRule.activityRule.scenario.onActivity { activity ->

@@ -6,6 +6,14 @@ import java.util.Locale
 
 class UiNumberFormatTest {
     @Test
+    fun `Danish UI uses generic Danish regardless of region and device formatting default`() {
+        assertNordicCommaDecimalFormatting(
+            expectedLanguageTag = "da",
+            localeTags = listOf("da", "da-DK"),
+        )
+    }
+
+    @Test
     fun `Bokmal UI keeps Norwegian numbers independent of region and device default`() {
         assertNordicCommaDecimalFormatting(
             expectedLanguageTag = "nb",

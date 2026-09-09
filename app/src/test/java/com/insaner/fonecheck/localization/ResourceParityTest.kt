@@ -32,6 +32,7 @@ class ResourceParityTest {
             "values-in",
             "values-sv",
             "values-nb",
+            "values-da",
         ).forEach { directory ->
             File(root, directory).listFiles().orEmpty().filter { it.extension == "xml" }.forEach { file ->
                 val translated = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
@@ -71,6 +72,11 @@ class ResourceParityTest {
                 it.isDirectory && Regex("values-(?:b\\+)?(?:nb|no|nn)(?:$|[-+]).*").matches(it.name)
             }
         assertEquals(listOf("values-nb"), norwegianDirectories.map { it.name })
+        val danishDirectories =
+            root.listFiles().orEmpty().filter {
+                it.isDirectory && (it.name.startsWith("values-da") || it.name.startsWith("values-b+da"))
+            }
+        assertEquals(listOf("values-da"), danishDirectories.map { it.name })
     }
 
     @Test
@@ -86,6 +92,7 @@ class ResourceParityTest {
             "values-in",
             "values-sv",
             "values-nb",
+            "values-da",
         ).forEach { directory ->
             assertEquals(directory, english, resourceKeys(File(resourceRoot, "$directory/strings.xml")))
         }
@@ -108,6 +115,7 @@ class ResourceParityTest {
             "values-in" to Locale.forLanguageTag("id"),
             "values-sv" to Locale.forLanguageTag("sv"),
             "values-nb" to Locale.forLanguageTag("nb"),
+            "values-da" to Locale.forLanguageTag("da"),
         ).forEach { (directory, locale) ->
             val file = File(resourceRoot, "$directory/strings.xml")
             val keys = resourceKeys(file).filter { it.startsWith("string:home_cat_") }
@@ -146,6 +154,7 @@ class ResourceParityTest {
             "values-in",
             "values-sv",
             "values-nb",
+            "values-da",
         ).forEach { directory ->
             val translated = textResources(File(root, directory))
             assertEquals(directory, source.keys, translated.keys)
@@ -242,6 +251,16 @@ class ResourceParityTest {
             sampleName = "Norwegian letters",
             sample = "æøå",
             locale = Locale.forLanguageTag("nb"),
+        )
+    }
+
+    @Test
+    fun `Danish text and uppercase letters have glyphs in shipped fonts`() {
+        assertLocalizedTextGlyphs(
+            directory = "values-da",
+            sampleName = "Danish letters",
+            sample = "æøå",
+            locale = Locale.forLanguageTag("da"),
         )
     }
 

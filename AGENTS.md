@@ -351,3 +351,10 @@ for text; `attention` is its text-safe form.
   explicit per-run external-AI provider, data-scope, cost, and retention approval.
 
 ## Imported Claude Cowork project instructions
+
+## Push verification after squash merges
+
+- Before every push, fetch origin and check both upstream divergence and mergeability with the current `origin/main` using `git merge-tree --write-tree HEAD origin/main`. Checking only the upstream branch is insufficient.
+- If the merge check reports conflicts, resolve them and repeat the check before pushing. Do not report the branch ready while conflicts remain.
+- When continuing a branch after a GitHub squash merge, reconcile its history with `origin/main`. An `ours` strategy merge is appropriate only after verifying that `origin/main` has exactly the same tree as a known ancestor of the working branch; otherwise inspect and preserve both sides' changes.
+- Prefer a fresh branch from the updated main for the next task after a squash merge. Do not switch branches during unfinished work or rewrite published history without authorization.

@@ -1,7 +1,6 @@
 package com.insaner.fonecheck.localization
 
 import android.content.res.Configuration
-import android.icu.text.PluralRules
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.insaner.fonecheck.R
@@ -9,7 +8,6 @@ import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
 import com.insaner.fonecheck.domain.observation.ObservationReason
 import com.insaner.fonecheck.export.ReportPdfRenderer
-import com.insaner.fonecheck.ui.format.formatUiNumber
 import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -85,12 +83,7 @@ class GermanResourcesTest {
         val locale = uiLanguageLocale(Locale.forLanguageTag("de-CH"))
         assertEquals("de", locale.toLanguageTag())
         val context = localizedContext(base, locale)
-        val rules = PluralRules.forLocale(locale)
-        // Every current plural call site uses integer quantities, with a separate Int or formatted String argument.
-        listOf(0, 1, 2, 1234, 1_000_000).forEach { count ->
-            val singular = count == 1
-            assertEquals(if (singular) "one" else "other", rules.select(count.toDouble()))
-            val number = formatUiNumber(count, locale)
+        assertIntegerOneOtherQuantities(locale) { count, singular, number ->
             assertEquals(
                 "$number ${if (singular) "Messwert" else "Messwerte"}",
                 context.resources.getQuantityString(R.plurals.sensor_samples, count, number),

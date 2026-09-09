@@ -11,6 +11,29 @@ import java.util.TimeZone
 
 class UiDateTimeFormatTest {
     @Test
+    fun danishDatesKeepTheLocalTimeZoneAndTechnicalFormat() {
+        val zone = ZoneId.of("Europe/Copenhagen")
+        listOf("2026-08-11T10:18:00Z", "2026-01-11T10:18:00Z").forEach { timestamp ->
+            val instant = Instant.parse(timestamp)
+            val zoned = instant.atZone(zone)
+            val expected =
+                DateTimeFormatter
+                    .ofLocalizedDateTime(FormatStyle.MEDIUM)
+                    .withLocale(Locale.forLanguageTag("da"))
+                    .format(zoned)
+            listOf("da", "da-DK").forEach { tag ->
+                val locale = Locale.forLanguageTag(tag)
+                assertEquals(expected, formatUiDateTime(instant, locale, zone))
+                assertEquals("$expected UTC${zoned.offset}", formatPdfDateTime(instant, locale, zone))
+                assertEquals(
+                    if (zoned.monthValue == 8) "2026-08-11 12:18" else "2026-01-11 11:18",
+                    formatTechnicalUiDateTime(instant, locale, zone),
+                )
+            }
+        }
+    }
+
+    @Test
     fun bokmalDatesKeepNorwegianFormattingTimeZoneAndTechnicalTimestamps() {
         val zone = ZoneId.of("Europe/Oslo")
         listOf(
