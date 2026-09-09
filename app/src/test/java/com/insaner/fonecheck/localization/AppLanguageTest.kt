@@ -6,6 +6,14 @@ import java.util.Locale
 
 class AppLanguageTest {
     @Test
+    fun danishAndDenmarkUseOneGenericLanguageChoice() {
+        assertEquals("da", AppLanguage.DANISH.languageTag)
+        listOf("da", "da-DK").forEach { tag ->
+            assertEquals(AppLanguage.DANISH, AppLanguage.fromLocale(Locale.forLanguageTag(tag)))
+        }
+    }
+
+    @Test
     fun bokmalUsesItsModernTagWithoutClaimingGenericNorwegianOrNynorsk() {
         assertEquals("nb", AppLanguage.NORWEGIAN_BOKMAL.languageTag)
         listOf("nb", "nb-NO").forEach { tag ->
