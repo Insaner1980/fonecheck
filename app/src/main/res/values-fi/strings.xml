@@ -774,6 +774,7 @@
     <string name="settings_language_english">English</string>
     <string name="settings_language_finnish">Suomi</string>
     <string name="settings_language_spanish">Español</string>
+    <string name="settings_language_portuguese_brazil">Português (Brasil)</string>
     <string name="settings_test_warnings">Näytä testivaroitukset</string>
     <string name="settings_test_warnings_description">Pidä turvallisuus- ja rajoitusilmoitukset näkyvissä ennen vuorovaikutteisia diagnostiikkoja.</string>
     <string name="settings_permissions">Luvat</string>
@@ -1206,4 +1207,7 @@
     <string name="accessibility_collapsed">Tiivistetty</string>
     <string name="display_touch_accessible_action">Tallenna saavutettava kosketusnäyte</string>
     <string name="readout_scroll_hint">Vieritä vaakasuunnassa nähdäksesi koko arvon.</string>
+    <string name="licenses_component_inventory">fonecheckin kolmansien osapuolten ilmoitukset\n\n\nJulkaisuversion suoritusympäristö sisältää seuraavat avoimen lähdekoodin komponenttiperheet:\n\n- AndroidX- ja Jetpack-kirjastot, kuten Core, Activity, Lifecycle,\n  Jetpack Compose, Material, Navigation, Room, CameraX, Biometric,\n  DataStore, AppCompat, Profile Installer, Saved State ja SQLite.\n- Kotlinin standardikirjasto, kotlinx.coroutines ja kotlinx.serialization.\n- Dagger ja Hilt.\n- Okio.\n- Compose Stability Runtime.\n- Google AutoValue -annotaatiot, ListenableFuture, JSpecify, javax.inject\n  ja JSR-305-annotaatiot.\n- Google Material Symbols.\n\nNäitä komponentteja jaetaan Apache-lisenssin version 2.0 ehdoilla.\nPakattujen riippuvuuksien komponenttikohtaiset ilmoitukset säilyvät myös\njulkaisupaketin META-INF-hakemistossa.</string>
+    <string name="settings_language_german">Deutsch</string>
+    <string name="settings_language_french">Français</string>
 </resources>

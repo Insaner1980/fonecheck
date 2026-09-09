@@ -778,6 +778,7 @@
     <string name="settings_language_english">English</string>
     <string name="settings_language_finnish">Suomi</string>
     <string name="settings_language_spanish">Español</string>
+    <string name="settings_language_portuguese_brazil">Português (Brasil)</string>
     <string name="settings_test_warnings">Show test warnings</string>
     <string name="settings_test_warnings_description">Keep safety and limitation notices visible before interactive diagnostics.</string>
     <string name="settings_permissions">Permissions</string>
@@ -1210,4 +1211,7 @@
     <string name="accessibility_collapsed">Collapsed</string>
     <string name="display_touch_accessible_action">Record an accessible touch sample</string>
     <string name="readout_scroll_hint">Scroll horizontally to read the full value.</string>
+    <string name="licenses_component_inventory">fonecheck third-party notices\n========================================\n\nThe release runtime includes the following open-source component families:\n\n- AndroidX and Jetpack libraries, including Core, Activity, Lifecycle,\n  Jetpack Compose, Material, Navigation, Room, CameraX, Biometric,\n  DataStore, AppCompat, Profile Installer, Saved State and SQLite.\n- Kotlin standard library, kotlinx.coroutines and kotlinx.serialization.\n- Dagger and Hilt.\n- Okio.\n- Compose Stability Runtime.\n- Google AutoValue annotations, ListenableFuture, JSpecify, javax.inject\n  and JSR-305 annotations.\n- Google Material Symbols.\n\nThese components are distributed under the Apache License, Version 2.0.\nComponent-specific notices that remain in the packaged dependencies are also\nretained in the release artifact under META-INF.</string>
+    <string name="settings_language_german">Deutsch</string>
+    <string name="settings_language_french">Français</string>
 </resources>

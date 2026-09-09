@@ -12,10 +12,48 @@ import javax.xml.parsers.DocumentBuilderFactory
 
 class ResourceParityTest {
     @Test
+    fun `registered locales match the existing picker and only app name is nontranslatable`() {
+        val root = locateResourceRoot()
+        val document =
+            DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(File(root, "xml/locales_config.xml"))
+        val registered = childElements(document.documentElement).map { it.getAttribute("android:name") }
+        assertEquals(AppLanguage.entries.filter { it != AppLanguage.SYSTEM }.map { it.languageTag }, registered)
+        val source =
+            DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(File(root, "values/strings.xml"))
+        val exceptions = childElements(source.documentElement).filter { it.getAttribute("translatable") == "false" }
+        assertEquals(listOf("app_name"), exceptions.map { it.getAttribute("name") })
+        assertEquals("fonecheck", exceptions.single().textContent)
+        listOf("values-fi", "values-es", "values-pt-rBR", "values-de", "values-fr").forEach { directory ->
+            File(root, directory).listFiles().orEmpty().filter { it.extension == "xml" }.forEach { file ->
+                val translated = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
+                assertTrue(
+                    directory,
+                    childElements(translated.documentElement).none { it.getAttribute("translatable") == "false" },
+                )
+            }
+        }
+        val portugueseDirectories =
+            root.listFiles().orEmpty().filter {
+                it.isDirectory && (it.name.startsWith("values-pt") || it.name.startsWith("values-b+pt"))
+            }
+        assertEquals(listOf("values-pt-rBR"), portugueseDirectories.map { it.name })
+        val germanDirectories =
+            root.listFiles().orEmpty().filter {
+                it.isDirectory && (it.name.startsWith("values-de") || it.name.startsWith("values-b+de"))
+            }
+        assertEquals(listOf("values-de"), germanDirectories.map { it.name })
+        val frenchDirectories =
+            root.listFiles().orEmpty().filter {
+                it.isDirectory && (it.name.startsWith("values-fr") || it.name.startsWith("values-b+fr"))
+            }
+        assertEquals(listOf("values-fr"), frenchDirectories.map { it.name })
+    }
+
+    @Test
     fun `all shipped languages have matching translatable resource keys`() {
         val resourceRoot = locateResourceRoot()
         val english = resourceKeys(File(resourceRoot, "values/strings.xml"))
-        listOf("values-fi", "values-es").forEach { directory ->
+        listOf("values-fi", "values-es", "values-pt-rBR", "values-de", "values-fr").forEach { directory ->
             assertEquals(directory, english, resourceKeys(File(resourceRoot, "$directory/strings.xml")))
         }
     }
@@ -31,6 +69,9 @@ class ResourceParityTest {
             "values" to Locale.ENGLISH,
             "values-fi" to Locale.forLanguageTag("fi"),
             "values-es" to Locale.forLanguageTag("es"),
+            "values-pt-rBR" to Locale.forLanguageTag("pt-BR"),
+            "values-de" to Locale.GERMAN,
+            "values-fr" to Locale.FRENCH,
         ).forEach { (directory, locale) ->
             val file = File(resourceRoot, "$directory/strings.xml")
             val keys = resourceKeys(file).filter { it.startsWith("string:home_cat_") }
@@ -60,7 +101,7 @@ class ResourceParityTest {
     fun `translations preserve formatting markup and plural contracts`() {
         val root = locateResourceRoot()
         val source = textResources(File(root, "values"))
-        listOf("values-fi", "values-es").forEach { directory ->
+        listOf("values-fi", "values-es", "values-pt-rBR", "values-de", "values-fr").forEach { directory ->
             val translated = textResources(File(root, directory))
             assertEquals(directory, source.keys, translated.keys)
             translated.forEach { (key, resource) ->
@@ -72,7 +113,11 @@ class ResourceParityTest {
                     val quantities = items.map { it.getAttribute("quantity") }
                     assertEquals(key, quantities.size, quantities.toSet().size)
                     val required =
-                        if (directory == "values-es") setOf("one", "many", "other") else setOf("one", "other")
+                        if (directory in setOf("values-es", "values-pt-rBR", "values-fr")) {
+                            setOf("one", "many", "other")
+                        } else {
+                            setOf("one", "other")
+                        }
                     assertEquals(key, required, quantities.toSet())
                 }
                 if (resource.tagName == "string-array") assertEquals(key, originalItems.size, items.size)
@@ -94,12 +139,50 @@ class ResourceParityTest {
                     assertEquals("$directory:$key placeholders", placeholders(reference), placeholders(item))
                     assertEquals("$directory:$key markup", markup(reference), markup(item))
                     assertEquals("$directory:$key line breaks", lineBreaks(reference), lineBreaks(item))
-                    if (directory == "values-es") {
+                    if (directory in setOf("values-es", "values-pt-rBR", "values-de", "values-fr")) {
                         assertTrue(key, item.textContent.none { it in "\u2013\u2014\u00b7\u2022\u2219\u22c5\u2027" })
                     }
                 }
             }
         }
+    }
+
+    @Test
+    fun `German text and uppercase German letters have glyphs in shipped text fonts`() {
+        val root = locateResourceRoot()
+        val strings = textResources(File(root, "values-de")).values.map { it.textContent }
+        listOf("dm_sans_regular", "dm_sans_medium", "jetbrains_mono_regular", "jetbrains_mono_medium")
+            .forEach { name ->
+                val font = Font.createFont(Font.TRUETYPE_FONT, File(root, "font/$name.ttf"))
+                assertEquals("$name uppercase German letters", -1, font.canDisplayUpTo("äöüß".uppercase(Locale.GERMAN)))
+                strings.forEach { value ->
+                    val text = value.replace("\\n", " ").filterNot(Char::isISOControl)
+                    assertEquals("$name: $text", -1, font.canDisplayUpTo(text))
+                }
+            }
+    }
+
+    @Test
+    fun `French text punctuation and uppercase accents have glyphs in shipped fonts`() {
+        val root = locateResourceRoot()
+        val strings = textResources(File(root, "values-fr")).values.map { it.textContent }
+        listOf("dm_sans_regular", "dm_sans_medium", "jetbrains_mono_regular", "jetbrains_mono_medium")
+            .forEach { name ->
+                val font = Font.createFont(Font.TRUETYPE_FONT, File(root, "font/$name.ttf"))
+                assertEquals(
+                    "$name French accents",
+                    -1,
+                    font.canDisplayUpTo("éèêàâçœùûîïëÿ’\u00a0".uppercase(Locale.FRENCH)),
+                )
+                strings.forEach { value ->
+                    val text = value.replace("\\n", " ").replace("\\u00a0", "\u00a0").filterNot(Char::isISOControl)
+                    assertEquals("$name: $text", -1, font.canDisplayUpTo(text))
+                    assertTrue(
+                        "Use a nonbreaking space before French punctuation",
+                        !Regex(" [;:?!]").containsMatchIn(text),
+                    )
+                }
+            }
     }
 
     private fun textResources(directory: File): Map<String, Element> =

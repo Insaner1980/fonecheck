@@ -9,5 +9,9 @@ class CameraLocaleFormattingTest {
     fun `megapixels use the requested locale decimal separator`() {
         assertEquals("12.0 MP", formatCameraMegapixels(12_000_000, Locale.US))
         assertEquals("12,0 MP", formatCameraMegapixels(12_000_000, Locale.forLanguageTag("fi-FI")))
+        assertEquals("12,0 MP", formatCameraMegapixels(12_000_000, Locale.forLanguageTag("pt-BR")))
+        listOf("de", "de-DE", "de-AT", "de-CH", "fr", "fr-FR", "fr-BE", "fr-CH", "fr-CA").forEach { tag ->
+            assertEquals("12,0 MP", formatCameraMegapixels(12_000_000, Locale.forLanguageTag(tag)))
+        }
     }
 }

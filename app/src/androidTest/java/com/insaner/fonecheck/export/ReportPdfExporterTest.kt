@@ -86,6 +86,67 @@ class ReportPdfExporterTest {
         assertTrue(text.contains("Puntuación"))
         assertTrue(text.contains(labels.timeSemantics))
         assertTrue(text.contains(labels.scoreScopeNote))
+        assertPdfRendersAndPayloadIsStable(renderer, original, payload)
+    }
+
+    @Test
+    fun brazilianPdfPreservesAccentsLongTextAndSavedPayload() {
+        assertLocalizedPdf(
+            locale = Locale.forLanguageTag("pt-BR"),
+            sample = "Observação técnica de tensão, conexão e condição da câmera",
+            expectedText = listOf("Relatório de diagnóstico do fonecheck", "Pontuação"),
+        )
+    }
+
+    @Test
+    fun germanPdfPreservesUmlautsSharpSLongTextAndSavedPayload() {
+        assertLocalizedPdf(
+            locale = Locale.GERMAN,
+            sample = "Änderung der Größe, Überhitzung und äußerer Verschleiß",
+            expectedText = listOf("fonecheck-Diagnosebericht", "Prüfumfang"),
+        )
+    }
+
+    @Test
+    fun frenchPdfPreservesAccentsApostrophesLongTextAndSavedPayload() {
+        assertLocalizedPdf(
+            locale = Locale.FRENCH,
+            sample = "État de l’appareil\u00a0: température élevée, cœur et écran à vérifier",
+            expectedText = listOf("Rapport de diagnostic fonecheck", "Étendue des vérifications"),
+        )
+    }
+
+    private fun assertLocalizedPdf(
+        locale: Locale,
+        sample: String,
+        expectedText: List<String>,
+    ) {
+        val base = InstrumentationRegistry.getInstrumentation().targetContext
+        val configuration = Configuration(base.resources.configuration).apply { setLocale(locale) }
+        val context = base.createConfigurationContext(configuration)
+        val renderer = ReportPdfRenderer(context)
+        val labels = renderer.labels(context)
+        val original = report(sample)
+        val payload =
+            com.insaner.fonecheck.data.repository.ReportPayloadCodec
+                .encode(original)
+        val blocks = ReportPdfContentBuilder.build(original, labels)
+        val pages = PdfLayoutEngine.paginate(blocks)
+        val text = pages.flatten().joinToString(" ") { it.text }
+        assertEquals(blocks.joinToString(" ") { it.text.trim() }, text)
+        expectedText.forEach { expected -> assertTrue(text.contains(expected)) }
+        assertTrue(text.contains(sample))
+        assertTrue(text.contains(labels.timeSemantics))
+        assertTrue(text.contains(labels.scoreScopeNote))
+        assertTrue(pages.size > 1)
+        assertPdfRendersAndPayloadIsStable(renderer, original, payload)
+    }
+
+    private fun assertPdfRendersAndPayloadIsStable(
+        renderer: ReportPdfRenderer,
+        original: DiagnosticReport,
+        payload: String,
+    ) {
         val output = ByteArrayOutputStream()
         assertTrue(renderer.render(original, output).pageCount > 1)
         assertTrue(output.toByteArray().decodeToString(0, 4).startsWith("%PDF"))
@@ -200,7 +261,7 @@ class ReportPdfExporterTest {
             )
         }
 
-    private fun report(): DiagnosticReport {
+    private fun report(sampleText: String = "Long localized evidence value"): DiagnosticReport {
         val evidence =
             (1..70).map { index ->
                 DiagnosticEvidence(
@@ -210,7 +271,7 @@ class ReportPdfExporterTest {
                     confidence = Confidence.HIGH,
                     source = EvidenceSource.ANDROID_API,
                     applicability = Applicability.APPLICABLE,
-                    value = EvidenceValue.RawTextValue("Long localized evidence value $index ".repeat(5)),
+                    value = EvidenceValue.RawTextValue("$sampleText $index ".repeat(5)),
                     capturedAt = Instant.parse("2026-08-08T10:00:30Z"),
                 )
             }

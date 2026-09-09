@@ -41,6 +41,7 @@ class NavigationChromeTest {
                 destinationFor<BiometricTest>() to R.string.home_cat_biometrics,
                 destinationFor<RunAllTests>() to R.string.full_check_title,
                 destinationFor<Settings>() to R.string.settings_title,
+                destinationFor<LanguageSettings>() to R.string.settings_language,
                 destinationFor<Licenses>() to R.string.licenses_title,
                 destinationFor<Onboarding>() to R.string.onboarding_title,
                 destinationFor<History>() to R.string.history_title,

@@ -54,6 +54,9 @@ object RunAllTests
 object Settings
 
 @Serializable
+object LanguageSettings
+
+@Serializable
 object Licenses
 
 @Serializable

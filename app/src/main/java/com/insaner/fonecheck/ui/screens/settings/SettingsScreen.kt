@@ -36,7 +36,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.net.toUri
-import androidx.core.os.LocaleListCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -47,6 +46,7 @@ import com.insaner.fonecheck.localization.AppLanguage
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.LongValueRow
+import com.insaner.fonecheck.ui.components.NavigationRow
 import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.PanelToggle
 import com.insaner.fonecheck.ui.components.PrimaryButton
@@ -61,6 +61,7 @@ import com.insaner.fonecheck.ui.theme.SemanticTone
 
 @Composable
 fun SettingsRoute(
+    onOpenLanguage: () -> Unit,
     onOpenLicenses: () -> Unit,
     onOpenOnboarding: () -> Unit,
     modifier: Modifier = Modifier,
@@ -95,10 +96,7 @@ fun SettingsRoute(
         appVersion = appVersion,
         onThemeMode = viewModel::setThemeMode,
         selectedLanguage = selectedLanguage,
-        onLanguage = { language ->
-            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language.languageTag))
-            selectedLanguage = language
-        },
+        onOpenLanguage = onOpenLanguage,
         onTestWarnings = viewModel::setTestWarningsEnabled,
         onOpenAppSettings = {
             val intent =
@@ -135,7 +133,7 @@ fun SettingsScreen(
     appVersion: String,
     onThemeMode: (AppThemeMode) -> Unit,
     selectedLanguage: AppLanguage,
-    onLanguage: (AppLanguage) -> Unit,
+    onOpenLanguage: () -> Unit,
     onTestWarnings: (Boolean) -> Unit,
     onOpenAppSettings: () -> Unit,
     onDeleteAll: () -> Unit,
@@ -166,7 +164,7 @@ fun SettingsScreen(
                 }
             }
         }
-        item { AppearanceSection(state, onThemeMode, selectedLanguage, onLanguage, onTestWarnings) }
+        item { AppearanceSection(state, onThemeMode, selectedLanguage, onOpenLanguage, onTestWarnings) }
         item { PermissionSection(state.permissions, onOpenAppSettings) }
         item {
             ReportsSection(
@@ -240,7 +238,7 @@ private fun AppearanceSection(
     state: SettingsState,
     onThemeMode: (AppThemeMode) -> Unit,
     selectedLanguage: AppLanguage,
-    onLanguage: (AppLanguage) -> Unit,
+    onOpenLanguage: () -> Unit,
     onTestWarnings: (Boolean) -> Unit,
 ) {
     Column {
@@ -267,32 +265,12 @@ private fun AppearanceSection(
                 )
             }
         }
-        Note(
-            text = stringResource(R.string.settings_language),
-            modifier = Modifier.padding(top = FonecheckTheme.spacing.md),
+        NavigationRow(
+            label = stringResource(R.string.settings_language),
+            value = stringResource(selectedLanguage.labelResId),
+            onClick = onOpenLanguage,
+            modifier = Modifier.padding(top = FonecheckTheme.spacing.md).testTag("settings_language"),
         )
-        FlowRow(
-            modifier = Modifier.fillMaxWidth().selectableGroup(),
-            horizontalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
-            verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
-        ) {
-            AppLanguage.entries.forEach { language ->
-                SettingsChoice(
-                    label =
-                        stringResource(
-                            when (language) {
-                                AppLanguage.SYSTEM -> R.string.settings_language_system
-                                AppLanguage.ENGLISH -> R.string.settings_language_english
-                                AppLanguage.FINNISH -> R.string.settings_language_finnish
-                                AppLanguage.SPANISH -> R.string.settings_language_spanish
-                            },
-                        ),
-                    isSelected = selectedLanguage == language,
-                    testTag = "settings_language_${language.name.lowercase()}",
-                    onClick = { onLanguage(language) },
-                )
-            }
-        }
         SettingToggleRow(
             checked = state.preferences.testWarningsEnabled,
             onCheckedChange = onTestWarnings,

@@ -50,9 +50,7 @@ class SpanishResourcesTest {
             assertEquals("Fallo", labels.statusName(DiagnosticStatus.FAIL))
             assertEquals("No se pudo completar la comprobación", labels.reasonName(EvidenceReasonCode.ERROR))
             assertEquals("La comprobación no se completó", labels.reasonName(EvidenceReasonCode.NOT_RUN))
-            assertEquals("Página 1 / 2", context.getString(R.string.pdf_page, 1, 2))
-            assertEquals("-12,5", labels.numberValue(-12.5))
-            assertEquals("12,5%", context.getString(R.string.report_coverage_value, labels.numberValue(12.5)))
+            assertPdfDecimalFormatting(context, labels, "Página 1 / 2")
         }
     }
 
