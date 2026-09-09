@@ -2045,10 +2045,11 @@ private fun com.insaner.fonecheck.ui.screens.settings.SettingsLink(label: kotlin
     - onClick: STABLE (function type)
 
 @Composable
-public fun com.insaner.fonecheck.ui.screens.settings.SettingsRoute(onOpenLicenses: kotlin.Function0<kotlin.Unit>, onOpenOnboarding: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, viewModel: com.insaner.fonecheck.ui.screens.settings.SettingsViewModel): kotlin.Unit
+public fun com.insaner.fonecheck.ui.screens.settings.SettingsRoute(onOpenLanguage: kotlin.Function0<kotlin.Unit>, onOpenLicenses: kotlin.Function0<kotlin.Unit>, onOpenOnboarding: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, viewModel: com.insaner.fonecheck.ui.screens.settings.SettingsViewModel): kotlin.Unit
   skippable: false
   restartable: true
   params:
+    - onOpenLanguage: STABLE (function type)
     - onOpenLicenses: STABLE (function type)
     - onOpenOnboarding: STABLE (function type)
     - modifier: STABLE (marked @Stable or @Immutable)
