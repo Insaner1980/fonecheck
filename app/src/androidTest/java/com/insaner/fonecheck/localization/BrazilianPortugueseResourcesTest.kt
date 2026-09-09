@@ -1,7 +1,6 @@
 package com.insaner.fonecheck.localization
 
 import android.content.res.Configuration
-import android.icu.text.PluralRules
 import android.text.format.Formatter
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -65,12 +64,7 @@ class BrazilianPortugueseResourcesTest {
         val locale = uiLanguageLocale(Locale.forLanguageTag("pt-BR"))
         val context = localizedContext(base, locale)
         // API 26+ CLDR uses one for 0 and 1 in pt-BR. Newer ICU versions also select many for millions.
-        val rules = PluralRules.forLocale(locale)
-        listOf(0, 1, 2, 1234, 1_000_000).forEach { count ->
-            val quantity = rules.select(count.toDouble())
-            if (count <= 1) assertEquals("one", quantity)
-            if (count in listOf(2, 1234)) assertEquals("other", quantity)
-            if (count == 1_000_000) assertTrue(quantity in setOf("many", "other"))
+        assertZeroOneAndMillionQuantities(locale) { count, quantity ->
             val singular = count <= 1
             val connector = if (quantity == "many") "de " else ""
             val number = formatUiNumber(count, locale)

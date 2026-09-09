@@ -21,7 +21,21 @@ class ReportJsonExportTest {
         val report = report()
         val expected = ReportPayloadCodec.encode(report)
         try {
-            listOf("en", "fi", "es", "es-MX", "pt-BR", "de", "de-AT", "de-CH", "fr", "fr-FR", "fr-CA").forEach { tag ->
+            listOf(
+                "en",
+                "fi",
+                "es",
+                "es-MX",
+                "pt-BR",
+                "de",
+                "de-AT",
+                "de-CH",
+                "fr",
+                "fr-FR",
+                "fr-CA",
+                "id",
+                "id-ID",
+            ).forEach { tag ->
                 Locale.setDefault(Locale.forLanguageTag(tag))
                 assertEquals(expected, ReportPayloadCodec.encode(report))
                 assertEquals(report, ReportPayloadCodec.decode(expected))

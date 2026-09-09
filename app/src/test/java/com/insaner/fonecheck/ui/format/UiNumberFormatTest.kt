@@ -6,6 +6,21 @@ import java.util.Locale
 
 class UiNumberFormatTest {
     @Test
+    fun `Indonesian UI ignores region and device formatting default`() {
+        val original = Locale.getDefault(Locale.Category.FORMAT)
+        try {
+            Locale.setDefault(Locale.Category.FORMAT, Locale.US)
+            listOf("id", "id-ID", "id-SG", "in-ID").forEach { tag ->
+                val locale = Locale.forLanguageTag(tag)
+                assertCommaDecimalFormatting(locale, "id")
+                assertEquals("-1.234,5", formatUiNumber(-1234.5, locale, 1, 1, grouping = true))
+            }
+        } finally {
+            Locale.setDefault(Locale.Category.FORMAT, original)
+        }
+    }
+
+    @Test
     fun `French UI ignores region and device formatting default`() {
         val original = Locale.getDefault(Locale.Category.FORMAT)
         try {

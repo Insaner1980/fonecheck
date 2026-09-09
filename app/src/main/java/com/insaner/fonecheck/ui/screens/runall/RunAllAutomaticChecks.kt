@@ -211,5 +211,4 @@ private suspend fun runAutomaticInfoChecks(
     }
 }
 
-private fun DiagnosticCategoryId?.includes(category: DiagnosticCategoryId): Boolean =
-    this == null || this == category
+private fun DiagnosticCategoryId?.includes(category: DiagnosticCategoryId): Boolean = this == null || this == category

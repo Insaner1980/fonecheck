@@ -1,7 +1,5 @@
 package com.insaner.fonecheck.localization
 
-import android.icu.text.PluralRules
-import android.text.format.Formatter
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.insaner.fonecheck.R
@@ -15,7 +13,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.text.NumberFormat
 import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
@@ -91,7 +88,9 @@ class FrenchResourcesTest {
                 )
             }
             assertTrue(
-                context.getString(R.string.licenses_component_inventory).contains("Mentions relatives aux composants tiers"),
+                context
+                    .getString(R.string.licenses_component_inventory)
+                    .contains("Mentions relatives aux composants tiers"),
             )
         }
     }
@@ -102,13 +101,7 @@ class FrenchResourcesTest {
         val locale = uiLanguageLocale(Locale.forLanguageTag("fr-CA"))
         assertEquals("fr", locale.toLanguageTag())
         val context = localizedContext(base, locale)
-        val rules = PluralRules.forLocale(locale)
-        // Current call sites pass integers. Older ICU can select other instead of many for exact millions.
-        listOf(0, 1, 2, 1234, 1_000_000).forEach { count ->
-            val quantity = rules.select(count.toDouble())
-            if (count <= 1) assertEquals("one", quantity)
-            if (count in listOf(2, 1234)) assertEquals("other", quantity)
-            if (count == 1_000_000) assertTrue(quantity in setOf("many", "other"))
+        assertZeroOneAndMillionQuantities(locale) { count, quantity ->
             val singular = count <= 1
             val number = formatUiNumber(count, locale)
             val elidedConnector = if (quantity == "many") "d’" else ""
@@ -134,11 +127,7 @@ class FrenchResourcesTest {
                 context.resources.getQuantityString(R.plurals.home_latest_evidence_attention_summary, count, count),
             )
         }
-        listOf(1_500_000L to "1,5", 0L to "0").forEach { (bytes, expected) ->
-            assertTrue(Formatter.formatFileSize(context, bytes).contains(expected))
-        }
-        val percent = NumberFormat.getPercentInstance(locale).apply { maximumFractionDigits = 1 }
-        assertEquals("12,5", percent.format(0.125).removeSuffix("%").trim())
+        assertFileSizeAndPercentFormatting(context, locale)
     }
 
     @Test
