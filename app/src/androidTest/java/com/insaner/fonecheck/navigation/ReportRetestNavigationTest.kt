@@ -98,8 +98,12 @@ class ReportRetestNavigationTest {
             originalSession.claimStage(originalSession.state.value.stageToken)
             originalSession.onAutomaticChecksComplete(originalSession.state.value.stageToken)
             while (originalSession.state.value.stage != RunAllStage.RESULTS) {
-                originalSession.claimStage(originalSession.state.value.stageToken)
-                originalSession.skipStage(originalSession.state.value.stageToken)
+                if (originalSession.state.value.awaitingContinue) {
+                    originalSession.continueAfterStage(originalSession.state.value.stageToken)
+                } else {
+                    originalSession.claimStage(originalSession.state.value.stageToken)
+                    originalSession.skipStage(originalSession.state.value.stageToken)
+                }
             }
             val fixture = retestFixture("source", ReportKind.FULL_CHECK)
             originalSession.completeReport(

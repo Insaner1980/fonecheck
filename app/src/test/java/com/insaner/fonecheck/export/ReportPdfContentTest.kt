@@ -1,6 +1,7 @@
 package com.insaner.fonecheck.export
 
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
+import com.insaner.fonecheck.domain.model.EvidenceUnitCode
 import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.testing.batteryReport
 import org.junit.Assert.assertEquals
@@ -8,6 +9,32 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ReportPdfContentTest {
+    @Test
+    fun sampleEvidenceUsesTheLocalizedQuantityWithoutAppendingAnotherUnit() {
+        val original = report()
+        val labels = PdfReportLabels.english().copy(sampleCountValue = { count -> "próbki: $count" })
+        listOf(1, 2, 5, 12, 22, 25).forEach { count ->
+            val changed =
+                original.copy(
+                    categories =
+                        original.categories.map { category ->
+                            category.copy(
+                                evidence =
+                                    category.evidence.map { evidence ->
+                                        evidence.copy(
+                                            value = EvidenceValue.IntValue(count),
+                                            unit = EvidenceUnitCode("samples"),
+                                        )
+                                    },
+                            )
+                        },
+                )
+            val blocks = ReportPdfContentBuilder.build(changed, labels)
+            assertTrue(blocks.any { it.text == "próbki: $count" })
+            assertTrue(blocks.none { it.text.contains("samples") })
+        }
+    }
+
     @Test
     fun contentContainsRequiredVersionedReportEvidenceAndDisclaimer() {
         val blocks = ReportPdfContentBuilder.build(report(), PdfReportLabels.english())

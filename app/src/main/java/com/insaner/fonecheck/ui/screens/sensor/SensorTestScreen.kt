@@ -311,8 +311,13 @@ private fun LiveValuesSection(
     sampleCount: Int?,
 ) {
     val labels = code.valueLabels()
-    val unit = code.unit()
     val values = data.values.take(labels.size)
+    val unit =
+        if (code == GuidedSensorCode.STEP && values.size == 1) {
+            pluralStringResource(R.plurals.sensor_step_unit, values.first().toInt())
+        } else {
+            code.unit()
+        }
     ReadoutWindow {
         WindowLabel(text = stringResource(R.string.sensor_live_values))
         Spacer(modifier = Modifier.height(FonecheckTheme.spacing.sm))

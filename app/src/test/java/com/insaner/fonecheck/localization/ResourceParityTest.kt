@@ -23,6 +23,8 @@ class ResourceParityTest {
             "values-nb",
             "values-da",
             "values-it",
+            "values-pl",
+            "values-tr",
         )
 
     @Test
@@ -86,6 +88,16 @@ class ResourceParityTest {
                 it.isDirectory && (it.name.startsWith("values-it") || it.name.startsWith("values-b+it"))
             }
         assertEquals(listOf("values-it"), italianDirectories.map { it.name })
+        val polishDirectories =
+            root.listFiles().orEmpty().filter {
+                it.isDirectory && (it.name.startsWith("values-pl") || it.name.startsWith("values-b+pl"))
+            }
+        assertEquals(listOf("values-pl"), polishDirectories.map { it.name })
+        val turkishDirectories =
+            root.listFiles().orEmpty().filter {
+                it.isDirectory && (it.name.startsWith("values-tr") || it.name.startsWith("values-b+tr"))
+            }
+        assertEquals(listOf("values-tr"), turkishDirectories.map { it.name })
     }
 
     @Test
@@ -116,6 +128,8 @@ class ResourceParityTest {
             "values-nb" to Locale.forLanguageTag("nb"),
             "values-da" to Locale.forLanguageTag("da"),
             "values-it" to Locale.ITALIAN,
+            "values-pl" to Locale.forLanguageTag("pl"),
+            "values-tr" to Locale.forLanguageTag("tr"),
         ).forEach { (directory, locale) ->
             val file = File(resourceRoot, "$directory/strings.xml")
             val keys = resourceKeys(file).filter { it.startsWith("string:home_cat_") }
@@ -159,6 +173,8 @@ class ResourceParityTest {
                     val required =
                         if (directory == "values-in") {
                             setOf("other")
+                        } else if (directory == "values-pl") {
+                            setOf("one", "few", "many", "other")
                         } else if (directory in setOf("values-es", "values-pt-rBR", "values-fr", "values-it")) {
                             setOf("one", "many", "other")
                         } else {
@@ -261,6 +277,26 @@ class ResourceParityTest {
             sampleName = "Italian accents and apostrophes",
             sample = "àèéìòù’'",
             locale = Locale.ITALIAN,
+        )
+    }
+
+    @Test
+    fun `Polish text and uppercase letters have glyphs in shipped fonts`() {
+        assertLocalizedTextGlyphs(
+            directory = "values-pl",
+            sampleName = "Polish letters",
+            sample = "ąćęłńóśźż",
+            locale = Locale.forLanguageTag("pl"),
+        )
+    }
+
+    @Test
+    fun `Turkish text and dotted and dotless I have glyphs in shipped fonts`() {
+        assertLocalizedTextGlyphs(
+            directory = "values-tr",
+            sampleName = "Turkish letters",
+            sample = "çğıİöşü",
+            locale = Locale.forLanguageTag("tr"),
         )
     }
 

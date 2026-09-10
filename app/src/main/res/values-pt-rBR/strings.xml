@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="camera_last_image_dimensions">Dimensões da última imagem de teste</string>
     <string name="camera_last_image_pixel_count">Número de pixels da última imagem de teste</string>
     <string name="report_time_semantics">Os horários das observações podem registrar o recebimento de um evento, uma resposta do usuário ou a geração do relatório. Relatórios antigos podem usar o horário de geração. Esses horários não indicam o momento da exposição da câmera.</string>
@@ -1064,6 +1064,7 @@
     <string name="button_reset">Redefinir</string>
     <string name="button_status_progress">%1$s de %2$s detectados</string>
     <string name="button_status_complete">Concluído</string>
+    <string name="run_all_buttons_continue">Continuar</string>
     <string name="button_status_timed_out">Tempo esgotado</string>
     <string name="button_status_skipped">Pulado</string>
     <string name="button_timeout_hint">Isso não indica uma falha. Tente novamente ou pule este teste.</string>
@@ -1197,4 +1198,12 @@
     <string name="settings_language_norwegian_bokmal">Norsk bokmål</string>
     <string name="settings_language_danish">Dansk</string>
     <string name="settings_language_italian">Italiano</string>
+    <string name="settings_language_polish">Polski</string>
+    <!-- Unit only: LiveValuesSection renders the numeric count separately in WindowReading. -->
+    <plurals name="sensor_step_unit" tools:ignore="ImpliedQuantity">
+        <item quantity="one">passos</item>
+        <item quantity="many">passos</item>
+        <item quantity="other">passos</item>
+    </plurals>
+    <string name="settings_language_turkish">Türkçe</string>
 </resources>

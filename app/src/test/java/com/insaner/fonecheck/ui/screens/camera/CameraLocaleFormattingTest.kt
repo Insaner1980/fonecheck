@@ -27,6 +27,8 @@ class CameraLocaleFormattingTest {
             "it",
             "it-IT",
             "it-CH",
+            "pl",
+            "pl-PL",
         ).forEach { tag ->
             assertEquals("12,0 MP", formatCameraMegapixels(12_000_000, Locale.forLanguageTag(tag)))
         }

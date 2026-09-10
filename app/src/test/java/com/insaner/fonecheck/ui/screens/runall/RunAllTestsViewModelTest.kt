@@ -58,6 +58,80 @@ class RunAllTestsViewModelTest {
     }
 
     @Test
+    fun completedStageWaitsWithoutRestartingOrAcceptingLateEvents() {
+        val viewModel = runAllViewModel()
+        enterFirstInteractiveStage(viewModel)
+        val token = viewModel.state.value.stageToken
+        assertTrue(viewModel.claimStage(token))
+        viewModel.continueAfterStage(token)
+        assertEquals(RunAllStage.DISPLAY, viewModel.state.value.stage)
+        viewModel.recordDisplay(token, true)
+        val reviewToken = viewModel.state.value.stageToken
+
+        assertTrue(viewModel.state.value.awaitingContinue)
+        assertFalse(viewModel.claimStage(reviewToken))
+        assertFalse(viewModel.retryStage(reviewToken))
+        viewModel.recordDisplay(token, false)
+        dispatcher.scheduler.advanceTimeBy(RunAllTestsViewModel.DISPLAY_TIMEOUT_MS * 2)
+        assertEquals(RunAllStage.DISPLAY, viewModel.state.value.stage)
+        assertEquals(true, viewModel.state.value.manualChecks.display)
+        viewModel.continueAfterStage(token)
+        assertTrue(viewModel.state.value.awaitingContinue)
+
+        viewModel.continueAfterStage(reviewToken)
+        viewModel.continueAfterStage(reviewToken)
+        assertEquals(RunAllStage.BUTTONS, viewModel.state.value.stage)
+        assertFalse(viewModel.state.value.awaitingContinue)
+        viewModel.interruptRun(RunAllInterruptionReason.USER_CANCEL)
+    }
+
+    @Test
+    fun everyAutomaticCategoryRequiresItsOwnContinue() {
+        val viewModel = runAllViewModel()
+        viewModel.onPreflightAccepted(RunAllSelections(), RunAllHardwareProfile.ALL_AVAILABLE)
+        viewModel.onPermissionsResolved(RunAllPermissions())
+        val token = viewModel.state.value.stageToken
+        assertTrue(viewModel.claimStage(token))
+        viewModel.reportAutomaticIssue(token, DiagnosticCategoryId.STORAGE, RunAllStageOutcome.ERROR)
+        viewModel.onAutomaticChecksComplete(token)
+        val categories =
+            viewModel.state.value.plan.categories
+                .filter { it.stage == RunAllStage.AUTOMATIC }
+
+        categories.forEach { category ->
+            assertTrue(viewModel.state.value.awaitingContinue)
+            assertEquals(category, viewModel.state.value.reviewCategory)
+            val reviewToken = viewModel.state.value.stageToken
+            dispatcher.scheduler.advanceTimeBy(RunAllTestsViewModel.AUTOMATIC_TIMEOUT_MS * 2)
+            assertEquals(category, viewModel.state.value.reviewCategory)
+            viewModel.continueAfterStage(reviewToken)
+            val next = viewModel.state.value
+            viewModel.continueAfterStage(reviewToken)
+            assertEquals(next, viewModel.state.value)
+        }
+        assertEquals(RunAllStage.DISPLAY, viewModel.state.value.stage)
+        assertEquals(RunAllStageOutcome.ERROR, viewModel.state.value.automaticIssues[DiagnosticCategoryId.STORAGE])
+        viewModel.interruptRun(RunAllInterruptionReason.USER_CANCEL)
+    }
+
+    @Test
+    fun finalStageRequiresContinueBeforeResultsAndInterruptionRejectsIt() {
+        val viewModel = runAllViewModel()
+        viewModel.onCategoryRetestRequested(DiagnosticCategoryId.BIOMETRICS, RunAllHardwareProfile.ALL_AVAILABLE)
+        viewModel.onPermissionsResolved(RunAllPermissions())
+        val token = viewModel.state.value.stageToken
+        assertTrue(viewModel.claimStage(token))
+        viewModel.recordBiometricOutcome(token, RunAllStageOutcome.PASSED)
+        val reviewToken = viewModel.state.value.stageToken
+        assertEquals(RunAllStage.BIOMETRICS, viewModel.state.value.stage)
+        assertTrue(viewModel.state.value.awaitingContinue)
+        assertEquals(null, viewModel.state.value.report)
+        viewModel.interruptRun(RunAllInterruptionReason.BACKGROUND)
+        viewModel.continueAfterStage(reviewToken)
+        assertEquals(RunAllStage.PREFLIGHT, viewModel.state.value.stage)
+    }
+
+    @Test
     fun userResponseIsTimestampedWhenAcceptedAndClearedOnInterruption() {
         var now = 100L
         val viewModel = RunAllTestsViewModel(EpochMillisClock { now }, IdProvider { "test" }, FakeReportRepository())
@@ -66,8 +140,10 @@ class RunAllTestsViewModelTest {
         viewModel.claimStage(token)
         now = 200L
         viewModel.recordDisplay(token, true)
+        acknowledgeCompletedStages(viewModel)
         now = 9000L
         viewModel.recordDisplay(token, false)
+        acknowledgeCompletedStages(viewModel)
         assertEquals(Instant.ofEpochMilli(200L), viewModel.state.value.manualChecks.completedAt[RunAllStage.DISPLAY])
         viewModel.interruptRun(RunAllInterruptionReason.BACKGROUND)
         assertTrue(
@@ -126,12 +202,14 @@ class RunAllTestsViewModelTest {
         val displayToken = viewModel.state.value.stageToken
         assertTrue(viewModel.claimStage(displayToken))
         viewModel.recordDisplay(displayToken, true)
+        acknowledgeCompletedStages(viewModel)
         assertEquals(RunAllStage.BUTTONS, viewModel.state.value.stage)
         assertEquals(RunAllProgress(position = 2, total = 2), viewModel.state.value.progress)
 
         val buttonsToken = viewModel.state.value.stageToken
         assertTrue(viewModel.claimStage(buttonsToken))
         viewModel.skipStage(buttonsToken)
+        acknowledgeCompletedStages(viewModel)
         assertEquals(RunAllStage.RESULTS, viewModel.state.value.stage)
     }
 
@@ -143,8 +221,10 @@ class RunAllTestsViewModelTest {
         assertTrue(viewModel.claimStage(displayToken))
 
         viewModel.recordDisplay(displayToken, true)
+        acknowledgeCompletedStages(viewModel)
         val nextStage = viewModel.state.value.stage
         viewModel.recordDisplay(displayToken, false)
+        acknowledgeCompletedStages(viewModel)
 
         assertEquals(RunAllStage.BUTTONS, nextStage)
         assertEquals(nextStage, viewModel.state.value.stage)
@@ -176,6 +256,7 @@ class RunAllTestsViewModelTest {
             RunAllStageOutcome.TIMED_OUT,
         )
         viewModel.onAutomaticChecksComplete(automaticToken)
+        acknowledgeCompletedStages(viewModel)
         viewModel.reportAutomaticIssue(
             automaticToken,
             DiagnosticCategoryId.STORAGE,
@@ -196,6 +277,7 @@ class RunAllTestsViewModelTest {
         assertTrue(viewModel.claimStage(token))
 
         viewModel.recordDisplay(token, true)
+        acknowledgeCompletedStages(viewModel)
         dispatcher.scheduler.advanceTimeBy(RunAllTestsViewModel.DISPLAY_TIMEOUT_MS + 1)
 
         assertEquals(RunAllStage.BUTTONS, viewModel.state.value.stage)
@@ -211,6 +293,7 @@ class RunAllTestsViewModelTest {
 
         dispatcher.scheduler.advanceTimeBy(RunAllTestsViewModel.DISPLAY_TIMEOUT_MS + 1)
         viewModel.recordDisplay(token, true)
+        acknowledgeCompletedStages(viewModel)
 
         assertEquals(RunAllStage.BUTTONS, viewModel.state.value.stage)
         assertEquals(RunAllStageOutcome.TIMED_OUT, viewModel.state.value.stageOutcomes[RunAllStage.DISPLAY])
@@ -264,6 +347,7 @@ class RunAllTestsViewModelTest {
             }
         }
 
+        acknowledgeCompletedStages(viewModel)
         assertEquals(RunAllStage.SENSORS, viewModel.state.value.stage)
         assertTrue(viewModel.state.value.manualChecks.cameraCompleted)
         assertEquals(RunAllStageOutcome.PASSED, viewModel.state.value.stageOutcomes[RunAllStage.CAMERA])
@@ -322,6 +406,7 @@ class RunAllTestsViewModelTest {
         assertEquals(RunAllStage.CAMERA, viewModel.state.value.stage)
         assertEquals(RunAllStageOutcome.TIMED_OUT, viewModel.state.value.stageIssue)
         viewModel.skipStage(retryToken)
+        acknowledgeCompletedStages(viewModel)
         assertEquals(RunAllStage.SENSORS, viewModel.state.value.stage)
         assertEquals(RunAllStageOutcome.SKIPPED, viewModel.state.value.stageOutcomes[RunAllStage.CAMERA])
     }
@@ -456,6 +541,7 @@ class RunAllTestsViewModelTest {
             val automaticToken = viewModel.state.value.stageToken
             assertTrue(viewModel.claimStage(automaticToken))
             viewModel.onAutomaticChecksComplete(automaticToken)
+            acknowledgeCompletedStages(viewModel)
             assertEquals(RunAllStage.RESULTS, viewModel.state.value.stage)
 
             viewModel.completeReport(
@@ -500,6 +586,7 @@ class RunAllTestsViewModelTest {
                 val token = viewModel.state.value.stageToken
                 assertTrue(viewModel.claimStage(token))
                 viewModel.onAutomaticChecksComplete(token)
+                acknowledgeCompletedStages(viewModel)
                 now += 100L
                 repository.insertFailuresRemaining = 1
                 val frozen = completeReportAndAssertSaveFailed(viewModel)
@@ -580,6 +667,17 @@ class RunAllTestsViewModelTest {
             reportRepository = FakeReportRepository(),
         )
 
+    private fun acknowledgeCompletedStages(viewModel: RunAllTestsViewModel) {
+        repeat(
+            viewModel.state.value.plan.categories.size
+                .coerceAtLeast(1),
+        ) {
+            if (!viewModel.state.value.awaitingContinue) return
+            viewModel.continueAfterStage(viewModel.state.value.stageToken)
+        }
+        assertFalse(viewModel.state.value.awaitingContinue)
+    }
+
     private fun enterFirstInteractiveStage(viewModel: RunAllTestsViewModel) {
         viewModel.onPreflightAccepted(
             selections = RunAllSelections(includeSpeaker = false, includeCamera = false),
@@ -589,6 +687,7 @@ class RunAllTestsViewModelTest {
         val automaticToken = viewModel.state.value.stageToken
         assertTrue(viewModel.claimStage(automaticToken))
         viewModel.onAutomaticChecksComplete(automaticToken)
+        acknowledgeCompletedStages(viewModel)
         assertEquals(RunAllStage.DISPLAY, viewModel.state.value.stage)
     }
 
@@ -597,9 +696,11 @@ class RunAllTestsViewModelTest {
         val displayToken = viewModel.state.value.stageToken
         assertTrue(viewModel.claimStage(displayToken))
         viewModel.skipStage(displayToken)
+        acknowledgeCompletedStages(viewModel)
         val buttonsToken = viewModel.state.value.stageToken
         assertTrue(viewModel.claimStage(buttonsToken))
         viewModel.skipStage(buttonsToken)
+        acknowledgeCompletedStages(viewModel)
         assertEquals(RunAllStage.RESULTS, viewModel.state.value.stage)
     }
 
@@ -620,12 +721,15 @@ class RunAllTestsViewModelTest {
         val automaticToken = viewModel.state.value.stageToken
         assertTrue(viewModel.claimStage(automaticToken))
         viewModel.onAutomaticChecksComplete(automaticToken)
+        acknowledgeCompletedStages(viewModel)
         val displayToken = viewModel.state.value.stageToken
         assertTrue(viewModel.claimStage(displayToken))
         viewModel.skipStage(displayToken)
+        acknowledgeCompletedStages(viewModel)
         val audioToken = viewModel.state.value.stageToken
         assertTrue(viewModel.claimStage(audioToken))
         viewModel.skipStage(audioToken)
+        acknowledgeCompletedStages(viewModel)
         assertEquals(RunAllStage.CAMERA, viewModel.state.value.stage)
     }
 
@@ -636,6 +740,7 @@ class RunAllTestsViewModelTest {
 
         assertTrue(viewModel.interruptRun(reason))
         viewModel.recordDisplay(interruptedToken, true)
+        acknowledgeCompletedStages(viewModel)
 
         assertEquals(RunAllStage.PREFLIGHT, viewModel.state.value.stage)
         assertEquals(RunAllRunStatus.NOT_STARTED, viewModel.state.value.runStatus)

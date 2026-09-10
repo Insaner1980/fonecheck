@@ -11,4 +11,6 @@
     <locale android:name="nb" />
     <locale android:name="da" />
     <locale android:name="it" />
+    <locale android:name="pl" />
+    <locale android:name="tr" />
 </locale-config>

@@ -285,6 +285,59 @@ private fun InterruptedRunNote(reason: RunAllInterruptionReason?) {
 }
 
 @Composable
+fun StageCompletionScreen(
+    title: String,
+    outcome: RunAllStageOutcome,
+    permissionLimited: Boolean,
+    onContinue: () -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val outcomeLabel =
+        when (outcome) {
+            RunAllStageOutcome.COMPLETED -> R.string.run_all_completed
+            RunAllStageOutcome.PASSED -> R.string.run_all_status_pass
+            RunAllStageOutcome.FAILED -> R.string.run_all_status_fail
+            RunAllStageOutcome.SKIPPED -> R.string.button_status_skipped
+            RunAllStageOutcome.UNAVAILABLE -> R.string.run_all_status_unavailable
+            RunAllStageOutcome.TIMED_OUT -> R.string.button_status_timed_out
+            RunAllStageOutcome.ERROR -> R.string.report_reason_error
+        }
+    ScrollableStepContent(modifier) {
+        Text(
+            text = title,
+            style = FonecheckTheme.type.screenTitle,
+            color = FonecheckTheme.colors.textPrimary,
+            modifier = Modifier.semantics { heading() },
+        )
+        StatusText(
+            text = stringResource(outcomeLabel),
+            tone =
+                when (outcome) {
+                    RunAllStageOutcome.PASSED -> SemanticTone.PASS
+                    RunAllStageOutcome.FAILED -> SemanticTone.FAIL
+                    RunAllStageOutcome.ERROR, RunAllStageOutcome.TIMED_OUT -> SemanticTone.ATTENTION
+                    else -> SemanticTone.NEUTRAL
+                },
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        )
+        if (permissionLimited) {
+            Note(stringResource(R.string.run_all_permission_missing))
+        }
+        PrimaryButton(
+            label = stringResource(R.string.run_all_buttons_continue),
+            onClick = onContinue,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        SecondaryButton(
+            label = stringResource(R.string.run_all_cancel),
+            onClick = onCancel,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
 fun AutomaticCheckScreen(
     title: String,
     description: String,
@@ -556,6 +609,7 @@ fun VibrationCheckStep(
 fun ButtonCheckStep(
     state: ButtonTestState,
     progress: RunAllProgress,
+    onContinue: () -> Unit,
     onRetry: () -> Unit,
     onSkip: () -> Unit,
     onCancel: () -> Unit,
@@ -585,11 +639,19 @@ fun ButtonCheckStep(
             )
             Note(text = stringResource(R.string.button_timeout_hint))
         }
-        RetryAndSkipButtons(
-            showRetry = state.phase != ButtonTestPhase.RUNNING,
-            onRetry = onRetry,
-            onSkip = onSkip,
-        )
+        if (state.phase == ButtonTestPhase.COMPLETED) {
+            PrimaryButton(
+                label = stringResource(R.string.run_all_buttons_continue),
+                onClick = onContinue,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        } else {
+            RetryAndSkipButtons(
+                showRetry = state.phase != ButtonTestPhase.RUNNING,
+                onRetry = onRetry,
+                onSkip = onSkip,
+            )
+        }
     }
 }
 

@@ -1030,6 +1030,7 @@
     <string name="button_reset">Restablecer</string>
     <string name="button_status_progress">%1$s de %2$s detectados</string>
     <string name="button_status_complete">Completa</string>
+    <string name="run_all_buttons_continue">Continuar</string>
     <string name="button_status_timed_out">Tiempo agotado</string>
     <string name="button_status_skipped">Omitida</string>
     <string name="button_timeout_hint">No se deduce ningún fallo. Vuelve a intentarlo u omite esta prueba.</string>
@@ -1156,4 +1157,11 @@
     <string name="settings_language_norwegian_bokmal">Norsk bokmål</string>
     <string name="settings_language_danish">Dansk</string>
     <string name="settings_language_italian">Italiano</string>
+    <string name="settings_language_polish">Polski</string>
+    <plurals name="sensor_step_unit">
+        <item quantity="one">pasos</item>
+        <item quantity="many">pasos</item>
+        <item quantity="other">pasos</item>
+    </plurals>
+    <string name="settings_language_turkish">Türkçe</string>
 </resources>

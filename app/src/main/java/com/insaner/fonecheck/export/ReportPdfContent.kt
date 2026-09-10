@@ -132,6 +132,7 @@ data class PdfReportLabels(
     val countsValue: (CoverageSummary, Int, Int) -> String,
     val completedValue: (Instant) -> String,
     val durationValue: (Duration) -> String,
+    val sampleCountValue: (Int) -> String = { "$it samples" },
 ) {
     companion object {
         fun english() =
@@ -281,12 +282,16 @@ object ReportPdfContentBuilder {
             item.value?.let {
                 add(
                     PdfTextBlock(
-                        "${valueText(it, labels)}" +
-                            item.unit
-                                ?.let(labels.unitName)
-                                ?.takeIf(String::isNotBlank)
-                                ?.let { unit -> " $unit" }
-                                .orEmpty(),
+                        if (item.unit?.value == "samples" && it is EvidenceValue.IntValue) {
+                            labels.sampleCountValue(it.value)
+                        } else {
+                            "${valueText(it, labels)}" +
+                                item.unit
+                                    ?.let(labels.unitName)
+                                    ?.takeIf(String::isNotBlank)
+                                    ?.let { unit -> " $unit" }
+                                    .orEmpty()
+                        },
                         PdfTextStyle.MONO,
                     ),
                 )

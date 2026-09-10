@@ -1081,6 +1081,7 @@
     <string name="button_reset">Reset</string>
     <string name="button_status_progress">%1$s dari %2$s terdeteksi</string>
     <string name="button_status_complete">Selesai</string>
+    <string name="run_all_buttons_continue">Lanjutkan</string>
     <string name="button_status_timed_out">Waktu habis</string>
     <string name="button_status_skipped">Dilewati</string>
     <string name="button_timeout_hint">Ini tidak dianggap sebagai kegagalan. Coba lagi atau lewati pengujian ini.</string>
@@ -1214,4 +1215,9 @@
     <string name="settings_language_norwegian_bokmal">Norsk bokmål</string>
     <string name="settings_language_danish">Dansk</string>
     <string name="settings_language_italian">Italiano</string>
+    <string name="settings_language_polish">Polski</string>
+    <plurals name="sensor_step_unit">
+        <item quantity="other">langkah</item>
+    </plurals>
+    <string name="settings_language_turkish">Türkçe</string>
 </resources>

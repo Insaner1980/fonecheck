@@ -6,6 +6,22 @@ import java.util.Locale
 
 class UiNumberFormatTest {
     @Test
+    fun `Turkish UI uses generic Turkish regardless of region and device formatting default`() {
+        assertRegionalCommaDecimalFormatting(
+            expectedLanguageTag = "tr",
+            localeTags = listOf("tr", "tr-TR"),
+        )
+    }
+
+    @Test
+    fun `Polish UI uses generic Polish regardless of region and device formatting default`() {
+        assertRegionalCommaDecimalFormatting(
+            expectedLanguageTag = "pl",
+            localeTags = listOf("pl", "pl-PL"),
+        )
+    }
+
+    @Test
     fun `Italian UI uses generic Italian regardless of region and device formatting default`() {
         assertRegionalCommaDecimalFormatting(
             expectedLanguageTag = "it",

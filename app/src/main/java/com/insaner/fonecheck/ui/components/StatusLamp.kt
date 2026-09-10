@@ -68,7 +68,13 @@ fun StatusLamp(
             DiagnosticStatus.INFO -> colors.lampInfoInk
             else -> colors.lampUnlitInk
         }
-    val statusMarkSize = lampSize * (2f / 3f)
+    val statusMarkSize =
+        when (status) {
+            DiagnosticStatus.NOT_AVAILABLE,
+            DiagnosticStatus.NOT_TESTED,
+            -> (lampSize - LampBorderWidth * 2) * 0.72f
+            else -> lampSize * (2f / 3f)
+        }
     val warningTriangleReferenceWidthPx =
         with(LocalDensity.current) {
             lampSize.roundToPx() - ceil(LampBorderWidth.toPx()).toInt() * 2
@@ -181,23 +187,32 @@ fun StatusIcon(
                 }
 
                 DiagnosticStatus.NOT_AVAILABLE -> {
+                    val unavailableStrokeWidth = size.minDimension * 0.18f
                     drawCircle(
                         color = tint,
-                        radius = (size.minDimension - strokeWidth) / 2f,
-                        style = Stroke(width = strokeWidth),
+                        radius = (size.minDimension - unavailableStrokeWidth) / 2f,
+                        style = Stroke(width = unavailableStrokeWidth),
                     )
                     drawLine(
                         color = tint,
                         start = Offset(size.width * 0.24f, size.height * 0.76f),
                         end = Offset(size.width * 0.76f, size.height * 0.24f),
-                        strokeWidth = strokeWidth,
+                        strokeWidth = unavailableStrokeWidth,
                         cap = StrokeCap.Square,
                     )
                 }
 
-                DiagnosticStatus.NOT_TESTED,
-                null,
-                -> {
+                DiagnosticStatus.NOT_TESTED -> {
+                    drawLine(
+                        color = tint,
+                        start = Offset(size.width * 0.15f, size.height / 2f),
+                        end = Offset(size.width * 0.85f, size.height / 2f),
+                        strokeWidth = size.minDimension * 0.18f,
+                        cap = StrokeCap.Butt,
+                    )
+                }
+
+                null -> {
                     drawCircle(
                         color = tint,
                         radius = (size.minDimension - strokeWidth) / 2f,

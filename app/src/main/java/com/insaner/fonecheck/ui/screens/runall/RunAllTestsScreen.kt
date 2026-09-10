@@ -276,7 +276,7 @@ fun RunAllTestsScreen(
         }
     }
 
-    val isDisplayFullscreen = sessionState.stage == RunAllStage.DISPLAY
+    val isDisplayFullscreen = sessionState.stage == RunAllStage.DISPLAY && !sessionState.awaitingContinue
     DisposableEffect(isDisplayFullscreen) {
         currentOnDisplayFullscreenChange(isDisplayFullscreen)
         onDispose { currentOnDisplayFullscreenChange(false) }
@@ -295,6 +295,7 @@ fun RunAllTestsScreen(
     }
 
     LaunchedEffect(sessionState.stageToken) {
+        if (sessionState.awaitingContinue) return@LaunchedEffect
         val stage = sessionState.stage
         val token = sessionState.stageToken
         val requiresClaim =
@@ -441,7 +442,9 @@ fun RunAllTestsScreen(
         cameraState.lastCapture,
         cameraState.error,
     ) {
-        if (sessionState.stage != RunAllStage.CAMERA || !sessionState.permissions.camera) {
+        if (sessionState.awaitingContinue || sessionState.stage != RunAllStage.CAMERA ||
+            !sessionState.permissions.camera
+        ) {
             return@LaunchedEffect
         }
         if (cameraState.previewStageToken != sessionState.stageToken || sessionState.stageIssue != null) {
@@ -475,7 +478,9 @@ fun RunAllTestsScreen(
     }
 
     LaunchedEffect(sessionState.stageToken, buttonState.phase) {
-        if (sessionState.stage == RunAllStage.BUTTONS && buttonState.phase == ButtonTestPhase.COMPLETED) {
+        if (sessionState.stage == RunAllStage.BUTTONS && !sessionState.awaitingContinue &&
+            buttonState.phase == ButtonTestPhase.COMPLETED
+        ) {
             sessionViewModel.recordButtons(sessionState.stageToken, true)
         }
     }
@@ -512,6 +517,29 @@ fun RunAllTestsScreen(
         resourceOwner.stopAll()
         sessionViewModel.interruptRun(RunAllInterruptionReason.USER_CANCEL)
         onDone()
+    }
+
+    val showButtonResult =
+        sessionState.stage == RunAllStage.BUTTONS &&
+            sessionState.stageOutcomes[RunAllStage.BUTTONS] == RunAllStageOutcome.PASSED
+    if (sessionState.awaitingContinue && !showButtonResult) {
+        val category = sessionState.reviewCategory
+        StageCompletionScreen(
+            title =
+                stringResource(
+                    category?.let { reviewed ->
+                        diagnosticDestinations.first { it.category == reviewed.categoryId }.labelResId
+                    } ?: R.string.run_all_automatic_title,
+                ),
+            outcome =
+                category?.let { sessionState.automaticIssues[it.categoryId] }
+                    ?: sessionState.stageOutcomes.getValue(sessionState.stage),
+            permissionLimited = category?.disposition == RunAllCategoryDisposition.PERMISSION_LIMITED,
+            onContinue = { sessionViewModel.continueAfterStage(sessionState.stageToken) },
+            onCancel = cancelRunAndExit,
+            modifier = modifier,
+        )
+        return
     }
 
     when (sessionState.stage) {
@@ -727,6 +755,9 @@ fun RunAllTestsScreen(
             ButtonCheckStep(
                 state = buttonState,
                 progress = requireNotNull(sessionState.progress),
+                onContinue = {
+                    sessionViewModel.continueAfterStage(sessionState.stageToken)
+                },
                 onRetry = buttonViewModel::retry,
                 onSkip = {
                     buttonViewModel.skip()

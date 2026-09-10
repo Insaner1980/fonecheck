@@ -20,6 +20,8 @@ enum class AppLanguage(
     NORWEGIAN_BOKMAL("nb", R.string.settings_language_norwegian_bokmal),
     DANISH("da", R.string.settings_language_danish),
     ITALIAN("it", R.string.settings_language_italian),
+    POLISH("pl", R.string.settings_language_polish),
+    TURKISH("tr", R.string.settings_language_turkish),
     ;
 
     companion object {

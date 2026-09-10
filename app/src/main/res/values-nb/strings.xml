@@ -1025,6 +1025,7 @@
     <string name="button_reset">Nullstill</string>
     <string name="button_status_progress">%1$s av %2$s oppdaget</string>
     <string name="button_status_complete">Fullført</string>
+    <string name="run_all_buttons_continue">Fortsett</string>
     <string name="button_status_timed_out">Tidsavbrudd</string>
     <string name="button_status_skipped">Hoppet over</string>
     <string name="button_timeout_hint">Dette tolkes ikke som en feil. Prøv igjen eller hopp over denne testen.</string>
@@ -1151,4 +1152,10 @@
     <string name="settings_language_norwegian_bokmal">Norsk bokmål</string>
     <string name="settings_language_danish">Dansk</string>
     <string name="settings_language_italian">Italiano</string>
+    <string name="settings_language_polish">Polski</string>
+    <plurals name="sensor_step_unit">
+        <item quantity="one">skritt</item>
+        <item quantity="other">skritt</item>
+    </plurals>
+    <string name="settings_language_turkish">Türkçe</string>
 </resources>

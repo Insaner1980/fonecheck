@@ -181,6 +181,13 @@ class ReportPdfRenderer
                     )
                 },
                 unitName = { unit -> localizedUnitName(context, unit) },
+                sampleCountValue = { count ->
+                    context.resources.getQuantityString(
+                        R.plurals.sensor_samples,
+                        count,
+                        formatUiNumber(count, locale, grouping = true),
+                    )
+                },
                 countsValue = { coverage, warnings, failures ->
                     context.getString(
                         R.string.pdf_counts_value,
