@@ -1154,7 +1154,7 @@
     <string name="settings_language_italian">Italiano</string>
     <string name="settings_language_polish">Polski</string>
     <plurals name="sensor_step_unit">
-        <item quantity="one">Schritte</item>
+        <item quantity="one">Schritt</item>
         <item quantity="other">Schritte</item>
     </plurals>
     <string name="settings_language_turkish">Türkçe</string>

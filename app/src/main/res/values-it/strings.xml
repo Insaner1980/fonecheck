@@ -1159,7 +1159,7 @@
     <string name="settings_language_italian">Italiano</string>
     <string name="settings_language_polish">Polski</string>
     <plurals name="sensor_step_unit">
-        <item quantity="one">passi</item>
+        <item quantity="one">passo</item>
         <item quantity="many">passi</item>
         <item quantity="other">passi</item>
     </plurals>

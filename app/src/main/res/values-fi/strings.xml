@@ -1218,7 +1218,7 @@
     <string name="settings_language_italian">Italiano</string>
     <string name="settings_language_polish">Polski</string>
     <plurals name="sensor_step_unit">
-        <item quantity="one">askelta</item>
+        <item quantity="one">askel</item>
         <item quantity="other">askelta</item>
     </plurals>
     <string name="settings_language_turkish">Türkçe</string>

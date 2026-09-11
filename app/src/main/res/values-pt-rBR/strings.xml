@@ -1201,7 +1201,7 @@
     <string name="settings_language_polish">Polski</string>
     <!-- Unit only: LiveValuesSection renders the numeric count separately in WindowReading. -->
     <plurals name="sensor_step_unit" tools:ignore="ImpliedQuantity">
-        <item quantity="one">passos</item>
+        <item quantity="one">passo</item>
         <item quantity="many">passos</item>
         <item quantity="other">passos</item>
     </plurals>
