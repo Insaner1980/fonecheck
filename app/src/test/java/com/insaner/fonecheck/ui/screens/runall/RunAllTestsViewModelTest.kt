@@ -24,6 +24,7 @@ import com.insaner.fonecheck.ui.screens.camera.CameraCaptureAttempt
 import com.insaner.fonecheck.ui.screens.camera.CameraCaptureSession
 import com.insaner.fonecheck.ui.screens.camera.CameraTestState
 import com.insaner.fonecheck.ui.screens.camera.CaptureResult
+import com.insaner.fonecheck.ui.screens.display.DisplayPattern
 import com.insaner.fonecheck.ui.screens.home.HomeViewModel
 import com.insaner.fonecheck.ui.screens.home.LatestFullCheckState
 import kotlinx.coroutines.Dispatchers
@@ -72,7 +73,7 @@ class RunAllTestsViewModelTest {
         assertFalse(viewModel.claimStage(reviewToken))
         assertFalse(viewModel.retryStage(reviewToken))
         viewModel.recordDisplay(token, false)
-        dispatcher.scheduler.advanceTimeBy(RunAllTestsViewModel.DISPLAY_TIMEOUT_MS * 2)
+        dispatcher.scheduler.advanceTimeBy(60_000L)
         assertEquals(RunAllStage.DISPLAY, viewModel.state.value.stage)
         assertEquals(true, viewModel.state.value.manualChecks.display)
         viewModel.continueAfterStage(token)
@@ -272,32 +273,87 @@ class RunAllTestsViewModelTest {
     @Test
     fun successWinsAgainstLateTimeout() {
         val viewModel = runAllViewModel()
-        enterFirstInteractiveStage(viewModel)
+        viewModel.onPreflightAccepted(RunAllSelections(), RunAllHardwareProfile())
+        viewModel.onPermissionsResolved(RunAllPermissions())
         val token = viewModel.state.value.stageToken
         assertTrue(viewModel.claimStage(token))
 
-        viewModel.recordDisplay(token, true)
+        viewModel.onAutomaticChecksComplete(token)
         acknowledgeCompletedStages(viewModel)
-        dispatcher.scheduler.advanceTimeBy(RunAllTestsViewModel.DISPLAY_TIMEOUT_MS + 1)
+        dispatcher.scheduler.advanceTimeBy(RunAllTestsViewModel.AUTOMATIC_TIMEOUT_MS + 1)
 
-        assertEquals(RunAllStage.BUTTONS, viewModel.state.value.stage)
-        assertEquals(RunAllStageOutcome.PASSED, viewModel.state.value.stageOutcomes[RunAllStage.DISPLAY])
+        assertEquals(RunAllStage.DISPLAY, viewModel.state.value.stage)
+        assertEquals(RunAllStageOutcome.COMPLETED, viewModel.state.value.stageOutcomes[RunAllStage.AUTOMATIC])
+        viewModel.interruptRun(RunAllInterruptionReason.USER_CANCEL)
     }
 
     @Test
     fun timeoutWinsAgainstLateSuccess() {
         val viewModel = runAllViewModel()
+        viewModel.onPreflightAccepted(RunAllSelections(), RunAllHardwareProfile())
+        viewModel.onPermissionsResolved(RunAllPermissions())
+        val token = viewModel.state.value.stageToken
+        assertTrue(viewModel.claimStage(token))
+
+        dispatcher.scheduler.advanceTimeBy(RunAllTestsViewModel.AUTOMATIC_TIMEOUT_MS + 1)
+        viewModel.onAutomaticChecksComplete(token)
+        acknowledgeCompletedStages(viewModel)
+
+        assertEquals(RunAllStage.DISPLAY, viewModel.state.value.stage)
+        assertEquals(RunAllStageOutcome.TIMED_OUT, viewModel.state.value.stageOutcomes[RunAllStage.AUTOMATIC])
+        viewModel.interruptRun(RunAllInterruptionReason.USER_CANCEL)
+    }
+
+    @Test
+    fun displayWaitsForUserOnEveryPatternAndAcceptsResultAfterLongInspection() {
+        val viewModel = runAllViewModel()
         enterFirstInteractiveStage(viewModel)
         val token = viewModel.state.value.stageToken
         assertTrue(viewModel.claimStage(token))
 
-        dispatcher.scheduler.advanceTimeBy(RunAllTestsViewModel.DISPLAY_TIMEOUT_MS + 1)
+        DisplayPattern.entries.indices.forEach { index ->
+            val beforeWaiting = viewModel.state.value
+            dispatcher.scheduler.advanceTimeBy(120_000L)
+            dispatcher.scheduler.runCurrent()
+            assertEquals(beforeWaiting, viewModel.state.value)
+            assertEquals(index, viewModel.state.value.displayColorIndex)
+            viewModel.nextDisplayColor(token, DisplayPattern.entries.lastIndex)
+        }
         viewModel.recordDisplay(token, true)
+        assertEquals(true, viewModel.state.value.manualChecks.display)
+        assertEquals(RunAllStageOutcome.PASSED, viewModel.state.value.stageOutcomes[RunAllStage.DISPLAY])
+        assertTrue(viewModel.state.value.awaitingContinue)
+        assertEquals(RunAllStage.DISPLAY, viewModel.state.value.stage)
         acknowledgeCompletedStages(viewModel)
-
         assertEquals(RunAllStage.BUTTONS, viewModel.state.value.stage)
-        assertEquals(RunAllStageOutcome.TIMED_OUT, viewModel.state.value.stageOutcomes[RunAllStage.DISPLAY])
-        assertEquals(null, viewModel.state.value.manualChecks.display)
+        viewModel.interruptRun(RunAllInterruptionReason.USER_CANCEL)
+    }
+
+    @Test
+    fun displayCanStillBeSkippedOrCancelledAfterLongInspection() {
+        listOf(false, true).forEach { cancel ->
+            val viewModel = runAllViewModel()
+            enterFirstInteractiveStage(viewModel)
+            val token = viewModel.state.value.stageToken
+            assertTrue(viewModel.claimStage(token))
+            dispatcher.scheduler.advanceTimeBy(120_000L)
+            dispatcher.scheduler.runCurrent()
+
+            if (cancel) {
+                assertTrue(viewModel.interruptRun(RunAllInterruptionReason.USER_CANCEL))
+                assertEquals(RunAllStage.PREFLIGHT, viewModel.state.value.stage)
+                assertEquals(RunAllRunStatus.NOT_STARTED, viewModel.state.value.runStatus)
+            } else {
+                viewModel.skipStage(token)
+                assertEquals(RunAllStageOutcome.SKIPPED, viewModel.state.value.stageOutcomes[RunAllStage.DISPLAY])
+                assertTrue(viewModel.state.value.awaitingContinue)
+                acknowledgeCompletedStages(viewModel)
+                assertEquals(RunAllStage.BUTTONS, viewModel.state.value.stage)
+                viewModel.interruptRun(RunAllInterruptionReason.USER_CANCEL)
+            }
+            viewModel.recordDisplay(token, true)
+            assertEquals(null, viewModel.state.value.manualChecks.display)
+        }
     }
 
     @Test

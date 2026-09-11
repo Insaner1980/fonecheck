@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.ImageInfo
 import androidx.camera.core.ImageProxy
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelStore
@@ -116,6 +117,16 @@ class JourneyEvidenceTest {
                     val old = requireNotNull(session.begin("synthetic-rear", oldToken))
                     val oldCallback = session.callback(old)
                     var closed = 0
+                    val imageInfo =
+                        Proxy.newProxyInstance(
+                            ImageInfo::class.java.classLoader,
+                            arrayOf(ImageInfo::class.java),
+                        ) { _, method, _ ->
+                            when (method.name) {
+                                "getRotationDegrees" -> 0
+                                else -> error("Unexpected image info access: ${method.name}")
+                            }
+                        } as ImageInfo
                     val image =
                         Proxy.newProxyInstance(
                             ImageProxy::class.java.classLoader,
@@ -124,6 +135,7 @@ class JourneyEvidenceTest {
                             when (method.name) {
                                 "getWidth" -> 1920
                                 "getHeight" -> 1080
+                                "getImageInfo" -> imageInfo
                                 "close" -> {
                                     closed++
                                     null

@@ -10,6 +10,7 @@ import com.insaner.fonecheck.domain.model.DiagnosticSnapshotVersion
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
 import com.insaner.fonecheck.domain.model.EvidenceSource
+import com.insaner.fonecheck.domain.model.EvidenceUnitCode
 import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.NetworkGenerationCode
 import com.insaner.fonecheck.domain.model.PerformanceBenchmarkResult
@@ -1375,6 +1376,10 @@ class RunAllSnapshotMapperTest {
             assertEquals(DiagnosticStatus.INFO, evidence.getValue(id).status)
             assertEquals(EvidenceSource.ANDROID_API, evidence.getValue(id).source)
         }
+        assertEquals(EvidenceValue.IntValue(8), evidence.getValue("performance.cpu").value)
+        assertEquals(EvidenceValue.LongValue(8L * 1_073_741_824), evidence.getValue("performance.ram").value)
+        assertEquals(EvidenceUnitCode("bytes"), evidence.getValue("performance.ram").unit)
+        assertEquals(EvidenceValue.RawTextValue("gpu"), evidence.getValue("performance.gpu").value)
     }
 
     @Test

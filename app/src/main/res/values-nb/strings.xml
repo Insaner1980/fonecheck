@@ -1158,4 +1158,12 @@
         <item quantity="other">skritt</item>
     </plurals>
     <string name="settings_language_turkish">Türkçe</string>
+    <string name="run_all_display_hide_controls">Skjul kontroller</string>
+    <string name="run_all_display_show_controls">Vis kontroller</string>
+    <string name="run_all_display_restore_hint">Trykk på skjermen for å vise kontrollene igjen.</string>
+    <string name="perf_cpu_core_count">Antall CPU-kjerner</string>
+    <string name="perf_ram_total_memory">Total RAM</string>
+    <string name="perf_gpu_renderer_name">GPU-renderer</string>
+    <string name="perf_ram_reading_available">RAM-informasjon lest</string>
+    <string name="perf_gpu_reading_available">GPU-informasjon lest</string>
 </resources>

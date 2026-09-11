@@ -688,6 +688,32 @@ private fun com.insaner.fonecheck.ui.screens.buttons.buttonStatusLabel(state: co
     - state: STABLE (class with no mutable properties)
 
 @Composable
+private fun com.insaner.fonecheck.ui.screens.camera.ActiveCameraPreview(state: com.insaner.fonecheck.ui.screens.camera.CameraTestState, previewView: androidx.camera.view.PreviewView, onCapture: kotlin.Function0<kotlin.Unit>, onStop: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - state: RUNTIME (requires runtime check)
+    - previewView: STABLE (stability configuration file type)
+    - onCapture: STABLE (function type)
+    - onStop: STABLE (function type)
+
+@Composable
+private fun com.insaner.fonecheck.ui.screens.camera.CameraCaptureSummary(state: com.insaner.fonecheck.ui.screens.camera.CameraTestState, result: com.insaner.fonecheck.ui.screens.camera.CaptureResult, onConfirm: kotlin.Function1<kotlin.Boolean, kotlin.Unit>): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - state: RUNTIME (requires runtime check)
+    - result: STABLE (class with no mutable properties)
+    - onConfirm: STABLE (function type)
+
+@Composable
+internal fun com.insaner.fonecheck.ui.screens.camera.CameraCapturedPreview(state: com.insaner.fonecheck.ui.screens.camera.CameraTestState): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - state: RUNTIME (requires runtime check)
+
+@Composable
 private fun com.insaner.fonecheck.ui.screens.camera.CameraPreviewSection(state: com.insaner.fonecheck.ui.screens.camera.CameraTestState, viewModel: com.insaner.fonecheck.ui.screens.camera.CameraTestViewModel, hasPermission: kotlin.Boolean): kotlin.Unit
   skippable: false
   restartable: true
@@ -1713,12 +1739,19 @@ private fun com.insaner.fonecheck.ui.screens.runall.ResultSectionTitle(title: ko
     - count: STABLE (primitive type)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.runall.ResultsSummary(report: com.insaner.fonecheck.domain.model.DiagnosticReport, presentation: com.insaner.fonecheck.ui.screens.report.ReportDetailPresentation, categoryTones: kotlin.collections.List<com.insaner.fonecheck.ui.theme.SemanticTone>): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.runall.ResultsDetails(report: com.insaner.fonecheck.domain.model.DiagnosticReport, presentation: com.insaner.fonecheck.ui.screens.report.ReportDetailPresentation): kotlin.Unit
   skippable: false
   restartable: true
   params:
     - report: STABLE (stability configuration file type)
     - presentation: RUNTIME (requires runtime check)
+
+@Composable
+private fun com.insaner.fonecheck.ui.screens.runall.ResultsSummary(report: com.insaner.fonecheck.domain.model.DiagnosticReport, categoryTones: kotlin.collections.List<com.insaner.fonecheck.ui.theme.SemanticTone>): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - report: STABLE (stability configuration file type)
     - categoryTones: RUNTIME (requires runtime check)
 
 @Composable
@@ -1777,6 +1810,26 @@ public fun com.insaner.fonecheck.ui.screens.runall.SensorCheckStep(state: com.in
     - state: RUNTIME (requires runtime check)
     - progress: STABLE (class with no mutable properties)
     - onSkip: STABLE (function type)
+    - onCancel: STABLE (function type)
+    - modifier: STABLE (marked @Stable or @Immutable)
+
+@Composable
+internal fun com.insaner.fonecheck.ui.screens.runall.StageCompletionEvidence(evidence: kotlin.collections.List<com.insaner.fonecheck.domain.model.DiagnosticEvidence>): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - evidence: RUNTIME (requires runtime check)
+
+@Composable
+public fun com.insaner.fonecheck.ui.screens.runall.StageCompletionScreen(title: kotlin.String, outcome: com.insaner.fonecheck.ui.screens.runall.RunAllStageOutcome, permissionLimited: kotlin.Boolean, evidence: kotlin.collections.List<com.insaner.fonecheck.domain.model.DiagnosticEvidence>, onContinue: kotlin.Function0<kotlin.Unit>, onCancel: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - title: STABLE (String is immutable)
+    - outcome: STABLE (class with no mutable properties)
+    - permissionLimited: STABLE (primitive type)
+    - evidence: RUNTIME (requires runtime check)
+    - onContinue: STABLE (function type)
     - onCancel: STABLE (function type)
     - modifier: STABLE (marked @Stable or @Immutable)
 

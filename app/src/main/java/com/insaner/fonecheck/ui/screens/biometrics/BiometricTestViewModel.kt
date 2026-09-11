@@ -41,7 +41,7 @@ data class BiometricTestState(
     val authErrorMessage: String? = null,
     val promptActive: Boolean = false,
     val failedAttempts: Int = 0,
-    val expandedSection: BiometricSection? = null,
+    val expandedSection: BiometricSection? = BiometricSection.AUTH_TEST,
 )
 
 @HiltViewModel

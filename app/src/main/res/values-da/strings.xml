@@ -1199,4 +1199,12 @@
         <item quantity="other">skridt</item>
     </plurals>
     <string name="settings_language_turkish">Türkçe</string>
+    <string name="run_all_display_hide_controls">Skjul kontroller</string>
+    <string name="run_all_display_show_controls">Vis kontroller</string>
+    <string name="run_all_display_restore_hint">Tryk på skærmen for at vise kontrollerne igen.</string>
+    <string name="perf_cpu_core_count">Antal CPU-kerner</string>
+    <string name="perf_ram_total_memory">Samlet RAM</string>
+    <string name="perf_gpu_renderer_name">GPU-renderer</string>
+    <string name="perf_ram_reading_available">RAM-oplysninger læst</string>
+    <string name="perf_gpu_reading_available">GPU-oplysninger læst</string>
 </resources>

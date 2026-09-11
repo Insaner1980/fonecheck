@@ -1,5 +1,6 @@
 package com.insaner.fonecheck.ui.screens.camera
 
+import androidx.compose.ui.graphics.ImageBitmap
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -35,6 +36,7 @@ internal class CameraCaptureSession(
                 it.copy(
                     isCapturing = true,
                     lastCapture = null,
+                    capturePreview = null,
                     error = null,
                     captureCompletedAt = null,
                     confirmations =
@@ -53,6 +55,7 @@ internal class CameraCaptureSession(
         attempt: CameraCaptureAttempt,
         width: Int,
         height: Int,
+        preview: ImageBitmap? = null,
     ): Boolean =
         gate.complete(attempt.id) {
             timeout?.cancel()
@@ -61,6 +64,7 @@ internal class CameraCaptureSession(
                 it.copy(
                     isCapturing = false,
                     lastCapture = result,
+                    capturePreview = preview,
                     error = null,
                     captureCompletedAt = result.timestamp,
                 )
@@ -78,6 +82,7 @@ internal class CameraCaptureSession(
                 it.copy(
                     isCapturing = false,
                     lastCapture = null,
+                    capturePreview = null,
                     error = message,
                     captureCompletedAt = completedAt,
                 )
@@ -89,7 +94,7 @@ internal class CameraCaptureSession(
             gate.cancelAll()
             timeout?.cancel()
             timeout = null
-            state.update { it.copy(isCapturing = false) }
+            state.update { it.copy(isCapturing = false, capturePreview = null) }
         }
 
     fun confirm(passed: Boolean) =

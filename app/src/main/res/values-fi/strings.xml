@@ -1222,4 +1222,12 @@
         <item quantity="other">askelta</item>
     </plurals>
     <string name="settings_language_turkish">Türkçe</string>
+    <string name="run_all_display_hide_controls">Piilota ohjaimet</string>
+    <string name="run_all_display_show_controls">Näytä ohjaimet</string>
+    <string name="run_all_display_restore_hint">Saat ohjaimet takaisin napauttamalla näyttöä.</string>
+    <string name="perf_cpu_core_count">Suorittimen ytimet</string>
+    <string name="perf_ram_total_memory">RAM-muistia yhteensä</string>
+    <string name="perf_gpu_renderer_name">GPU-renderöijä</string>
+    <string name="perf_ram_reading_available">RAM-tiedot luettu</string>
+    <string name="perf_gpu_reading_available">GPU-tiedot luettu</string>
 </resources>

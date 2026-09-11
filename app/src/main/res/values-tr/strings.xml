@@ -1158,4 +1158,12 @@
         <item quantity="other">adım</item>
     </plurals>
     <string name="settings_language_turkish">Türkçe</string>
+    <string name="run_all_display_hide_controls">Kontrolleri gizle</string>
+    <string name="run_all_display_show_controls">Kontrolleri göster</string>
+    <string name="run_all_display_restore_hint">Kontrolleri tekrar göstermek için ekrana dokunun.</string>
+    <string name="perf_cpu_core_count">CPU çekirdek sayısı</string>
+    <string name="perf_ram_total_memory">Toplam RAM</string>
+    <string name="perf_gpu_renderer_name">GPU oluşturucusu</string>
+    <string name="perf_ram_reading_available">RAM bilgileri okundu</string>
+    <string name="perf_gpu_reading_available">GPU bilgileri okundu</string>
 </resources>

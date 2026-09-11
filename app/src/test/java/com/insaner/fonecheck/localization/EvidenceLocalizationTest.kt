@@ -1,8 +1,15 @@
 package com.insaner.fonecheck.localization
 
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.model.Applicability
+import com.insaner.fonecheck.domain.model.Confidence
+import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
+import com.insaner.fonecheck.domain.model.DiagnosticCheckId
+import com.insaner.fonecheck.domain.model.DiagnosticEvidence
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
+import com.insaner.fonecheck.domain.model.EvidenceSource
+import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.SimSlotStateCode
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import com.insaner.fonecheck.domain.observation.ObservationClassification
@@ -14,8 +21,51 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Instant
 
 class EvidenceLocalizationTest {
+    @Test
+    fun performanceLabelsDistinguishMeasuredValuesFromLegacyReadingFlags() {
+        fun observation(
+            id: String,
+            value: EvidenceValue?,
+        ) = DiagnosticEvidence(
+            categoryId = DiagnosticCategoryId.PERFORMANCE,
+            checkId = DiagnosticCheckId(DiagnosticCategoryId.PERFORMANCE, "performance.$id"),
+            status = DiagnosticStatus.INFO,
+            confidence = Confidence.HIGH,
+            source = EvidenceSource.ANDROID_API,
+            applicability = Applicability.APPLICABLE,
+            value = value,
+            capturedAt = Instant.EPOCH,
+        )
+
+        assertEquals(
+            R.string.perf_cpu_core_count,
+            evidenceLabelResource(observation("cpu", EvidenceValue.IntValue(8)))?.stringResId,
+        )
+        assertEquals(
+            R.string.perf_ram_total_memory,
+            evidenceLabelResource(observation("ram", EvidenceValue.LongValue(8192)))?.stringResId,
+        )
+        assertEquals(
+            R.string.perf_gpu_renderer_name,
+            evidenceLabelResource(observation("gpu", EvidenceValue.RawTextValue("GPU")))?.stringResId,
+        )
+        listOf(true, false).forEach { value ->
+            assertEquals(
+                R.string.perf_ram_reading_available,
+                evidenceLabelResource(observation("ram", EvidenceValue.BooleanValue(value)))?.stringResId,
+            )
+            assertEquals(
+                R.string.perf_gpu_reading_available,
+                evidenceLabelResource(observation("gpu", EvidenceValue.BooleanValue(value)))?.stringResId,
+            )
+        }
+        assertEquals(R.string.perf_ram_total_memory, evidenceLabelResource(observation("ram", null))?.stringResId)
+        assertEquals(R.string.perf_gpu_renderer_name, evidenceLabelResource(observation("gpu", null))?.stringResId)
+    }
+
     @Test
     fun `every observation reason maps to a localized resource`() {
         ObservationReason.entries.forEach { reason ->

@@ -61,6 +61,7 @@ import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.SegmentedBar
 import com.insaner.fonecheck.ui.components.StatusLamp
+import com.insaner.fonecheck.ui.components.StatusText
 import com.insaner.fonecheck.ui.components.TestScreenContent
 import com.insaner.fonecheck.ui.components.WindowLabel
 import com.insaner.fonecheck.ui.components.WindowReading
@@ -80,6 +81,72 @@ import com.insaner.fonecheck.ui.theme.toSemanticTone
 enum class ReportResultMode {
     COMPLETED_RUN,
     SAVED_REPORT,
+}
+
+@Composable
+internal fun StageCompletionEvidence(evidence: List<DiagnosticEvidence>) {
+    if (evidence.isEmpty()) return
+    val ordered =
+        remember(evidence) {
+            evidence.sortedBy {
+                when (it.status) {
+                    DiagnosticStatus.FAIL -> 0
+                    DiagnosticStatus.WARNING -> 1
+                    else -> 2
+                }
+            }
+        }
+    var expanded by rememberSaveable(evidence) { mutableStateOf(false) }
+    Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm)) {
+        StageCompletionEvidenceHeader(
+            count = ordered.size,
+            expanded = expanded,
+            onToggle = { expanded = !expanded },
+        )
+        (if (expanded) ordered else ordered.take(3)).forEach { observation ->
+            StageCompletionEvidenceRow(observation)
+        }
+    }
+}
+
+@Composable
+private fun StageCompletionEvidenceHeader(
+    count: Int,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+) {
+    if (count > 3) {
+        DisclosureHeader(
+            label = stringResource(R.string.report_observations),
+            summary = uiNumber(count),
+            expanded = expanded,
+            onClick = onToggle,
+        )
+    } else {
+        SectionHeader(stringResource(R.string.report_observations))
+    }
+}
+
+@Composable
+private fun StageCompletionEvidenceRow(observation: DiagnosticEvidence) {
+    val detail = evidenceDetail(observation)
+    Column {
+        LongValueRow(
+            label = evidenceLabel(observation),
+            value = detail ?: statusLabel(observation.status),
+            tone = if (detail == null) observation.status.toSemanticTone() else SemanticTone.NEUTRAL,
+            confidence = observation.presentationConfidence(),
+        )
+        if (detail != null &&
+            (observation.status == DiagnosticStatus.WARNING || observation.status == DiagnosticStatus.FAIL)
+        ) {
+            StatusText(statusLabel(observation.status), tone = observation.status.toSemanticTone())
+        }
+        observation
+            .presentationReason()
+            ?.takeIf { shouldShowEvidenceReason(observation.status, it) }
+            ?.let { Note(reasonLabel(it)) }
+    }
 }
 
 @Composable
@@ -124,7 +191,6 @@ fun RunAllResultsScreen(
         item {
             ResultsSummary(
                 report = report,
-                presentation = presentation,
                 categoryTones = categories.map { it.status.semanticTone() },
             )
         }
@@ -188,6 +254,10 @@ fun RunAllResultsScreen(
             retestEnabled = retestEnabled,
             representedCategoryIds = representedCategoryIds,
         )
+
+        item {
+            ResultsDetails(report, presentation)
+        }
 
         // Provenance last. A saved report used to open with seven rows of device and version
         // detail before it said how the phone had done.
@@ -257,11 +327,8 @@ private fun toggleExpanded(
 @Composable
 private fun ResultsSummary(
     report: DiagnosticReport,
-    presentation: ReportDetailPresentation,
     categoryTones: List<SemanticTone>,
 ) {
-    val counts = presentation.counts
-
     Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm)) {
         Text(
             text = stringResource(R.string.run_all_results_title),
@@ -269,14 +336,23 @@ private fun ResultsSummary(
             color = FonecheckTheme.colors.textPrimary,
             modifier = Modifier.semantics { heading() },
         )
-        Note(stringResource(R.string.run_all_results_description))
         ScoreReadout(report.score)
         Note(reportScopeLabel(report))
-        Note(stringResource(R.string.report_score_scope_note))
-        Note(stringResource(R.string.report_time_semantics))
         // One segment per category, in the colour of that category: the shape of the run, drawn
         // beside the score it produced and counted in words underneath.
         SegmentedBar(segments = categoryTones)
+    }
+}
+
+@Composable
+private fun ResultsDetails(
+    report: DiagnosticReport,
+    presentation: ReportDetailPresentation,
+) {
+    val counts = presentation.counts
+    Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm)) {
+        Note(stringResource(R.string.report_score_scope_note))
+        Note(stringResource(R.string.report_time_semantics))
         Column {
             SectionHeader(stringResource(R.string.pdf_categories))
             StatusCount(DiagnosticStatus.PASS, counts.pass)

@@ -1170,4 +1170,12 @@
     </plurals>
     <string name="settings_language_polish">Polski</string>
     <string name="settings_language_turkish">Türkçe</string>
+    <string name="run_all_display_hide_controls">Ukryj przyciski</string>
+    <string name="run_all_display_show_controls">Pokaż przyciski</string>
+    <string name="run_all_display_restore_hint">Dotknij ekranu, aby ponownie pokazać przyciski.</string>
+    <string name="perf_cpu_core_count">Liczba rdzeni CPU</string>
+    <string name="perf_ram_total_memory">Łączna pamięć RAM</string>
+    <string name="perf_gpu_renderer_name">Renderer GPU</string>
+    <string name="perf_ram_reading_available">Odczytano dane RAM</string>
+    <string name="perf_gpu_reading_available">Odczytano dane GPU</string>
 </resources>

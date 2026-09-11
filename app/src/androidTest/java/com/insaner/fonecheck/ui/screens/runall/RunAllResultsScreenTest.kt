@@ -62,6 +62,7 @@ class RunAllResultsScreenTest {
 
         composeRule.onNodeWithText(context.getString(R.string.run_all_results_title)).assertIsDisplayed()
         composeRule.onNodeWithText("42").assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.home_cat_battery), ignoreCase = true).assertIsDisplayed()
         composeRule
             .scrollToReportText(context.getString(R.string.report_coverage))
             .performScrollTo()
