@@ -1,6 +1,8 @@
 package com.insaner.fonecheck.ui.screens.camera
 
 import android.graphics.Bitmap
+import androidx.camera.core.ImageInfo
+import androidx.camera.core.ImageProxy
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -15,9 +17,58 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.ByteArrayOutputStream
+import java.lang.reflect.Proxy
 
 @RunWith(AndroidJUnit4::class)
 class CameraCapturePreviewTest {
+    @Test
+    fun captureCallbackStoresFullResolutionDimensionsInDisplayOrientation() =
+        runBlocking {
+            val state = MutableStateFlow(CameraTestState())
+            val session = CameraCaptureSession(state, EpochMillisClock { 10L }, this)
+            val cases =
+                listOf(
+                    0 to (3200 to 2400),
+                    90 to (2400 to 3200),
+                    180 to (3200 to 2400),
+                    270 to (2400 to 3200),
+                )
+            for ((rotation, dimensions) in cases) {
+                val info =
+                    Proxy.newProxyInstance(
+                        ImageInfo::class.java.classLoader,
+                        arrayOf(ImageInfo::class.java),
+                    ) { _, method, _ ->
+                        when (method.name) {
+                            "getRotationDegrees" -> rotation
+                            else -> error("Unexpected image info access: ${method.name}")
+                        }
+                    } as ImageInfo
+                var closed = false
+                val image =
+                    Proxy.newProxyInstance(
+                        ImageProxy::class.java.classLoader,
+                        arrayOf(ImageProxy::class.java),
+                    ) { _, method, _ ->
+                        when (method.name) {
+                            "getWidth" -> 3200
+                            "getHeight" -> 2400
+                            "getImageInfo" -> info
+                            "close" -> {
+                                closed = true
+                                null
+                            }
+                            else -> error("Unexpected image access: ${method.name}")
+                        }
+                    } as ImageProxy
+                val attempt = requireNotNull(session.begin("rear", 1L))
+                session.callback(attempt).onCaptureSuccess(image)
+                assertEquals(dimensions.first, state.value.lastCapture?.width)
+                assertEquals(dimensions.second, state.value.lastCapture?.height)
+                assertTrue(closed)
+            }
+        }
+
     @Test
     fun largeCaptureIsDownsampledAndRotatedWithoutChangingItsAspectRatio() {
         val bitmap = Bitmap.createBitmap(3200, 2400, Bitmap.Config.ARGB_8888)

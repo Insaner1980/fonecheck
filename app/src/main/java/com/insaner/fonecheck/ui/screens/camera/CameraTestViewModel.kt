@@ -479,16 +479,23 @@ internal fun CameraCaptureSession.callback(attempt: CameraCaptureAttempt): Image
     object : ImageCapture.OnImageCapturedCallback() {
         override fun onCaptureSuccess(image: ImageProxy) {
             try {
+                val rotation = image.imageInfo.rotationDegrees
                 val preview =
                     if (attempt.stageToken == null) {
                         val buffer = image.planes[0].buffer.duplicate()
                         val bytes = ByteArray(buffer.remaining())
                         buffer.get(bytes)
-                        decodeCapturePreview(bytes, image.imageInfo.rotationDegrees)
+                        decodeCapturePreview(bytes, rotation)
                     } else {
                         null
                     }
-                succeed(attempt, image.width, image.height, preview)
+                val swapDimensions = rotation == 90 || rotation == 270
+                succeed(
+                    attempt,
+                    if (swapDimensions) image.height else image.width,
+                    if (swapDimensions) image.width else image.height,
+                    preview,
+                )
             } catch (_: Exception) {
                 fail(attempt, "camera_capture_error")
             } finally {

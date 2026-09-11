@@ -36,6 +36,23 @@ class CameraPresentationTest {
     val composeRule = createComposeRule()
 
     @Test
+    fun stoppedCaptureStillOffersBothConfirmationAnswers() {
+        val context = localizedContext(Locale.ENGLISH)
+        val answers = mutableListOf<Boolean>()
+        val result = CaptureResult(width = 640, height = 480, timestamp = 0L)
+        render(context) {
+            CameraCaptureSummary(
+                state = CameraTestState(lastCapture = result, capturePreview = null, isPreviewActive = false),
+                result = result,
+                onConfirm = { answers.add(it) },
+            )
+        }
+        composeRule.onNodeWithText(context.getString(R.string.camera_confirm_problem)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.camera_confirm_pass)).performClick()
+        assertEquals(listOf(false, true), answers)
+    }
+
+    @Test
     fun capturedPhotoIsVisibleWithAnAccessibleLabel() {
         val context = localizedContext(Locale.ENGLISH)
         val preview = Bitmap.createBitmap(160, 120, Bitmap.Config.ARGB_8888).asImageBitmap()

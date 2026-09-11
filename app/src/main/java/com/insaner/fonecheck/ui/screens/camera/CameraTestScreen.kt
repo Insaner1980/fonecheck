@@ -268,20 +268,18 @@ private fun ActiveCameraPreview(
 }
 
 @Composable
-private fun CameraCaptureSummary(
+internal fun CameraCaptureSummary(
     state: CameraTestState,
     result: CaptureResult,
     onConfirm: (Boolean) -> Unit,
 ) {
     CameraCaptureResult(result)
-    if (state.capturePreview != null) {
-        Note(stringResource(R.string.camera_confirm_question))
-        ManualResultButtons(
-            problemLabel = stringResource(R.string.camera_confirm_problem),
-            passLabel = stringResource(R.string.camera_confirm_pass),
-            onResult = onConfirm,
-        )
-    }
+    Note(stringResource(R.string.camera_confirm_question))
+    ManualResultButtons(
+        problemLabel = stringResource(R.string.camera_confirm_problem),
+        passLabel = stringResource(R.string.camera_confirm_pass),
+        onResult = onConfirm,
+    )
     state.selectedCameraId?.let { selectedCameraId ->
         state.confirmations[selectedCameraId]?.let { confirmed ->
             val classification = classifyCameraConfirmation(confirmed)
