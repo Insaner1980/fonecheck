@@ -129,7 +129,7 @@ fun DisclosureHeader(
                             contentDescription = label
                         },
                 )
-                if (stacked) {
+                if (stacked && summary.isNotEmpty()) {
                     Text(
                         text = summary,
                         style = FonecheckTheme.type.rowValue,
@@ -138,7 +138,7 @@ fun DisclosureHeader(
                 }
             }
             Spacer(modifier = Modifier.width(FonecheckTheme.spacing.sm))
-            if (!stacked) {
+            if (!stacked && summary.isNotEmpty()) {
                 Text(
                     text = summary,
                     style = FonecheckTheme.type.rowValue,
