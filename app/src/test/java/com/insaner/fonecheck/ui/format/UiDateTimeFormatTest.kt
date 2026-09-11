@@ -11,6 +11,30 @@ import java.util.TimeZone
 
 class UiDateTimeFormatTest {
     @Test
+    fun turkishDatesKeepIstanbulTimeAndTechnicalFormat() {
+        val zone = ZoneId.of("Europe/Istanbul")
+        listOf("2026-08-11T10:18:00Z", "2026-01-11T10:18:00Z").forEach { timestamp ->
+            val instant = Instant.parse(timestamp)
+            val expected =
+                DateTimeFormatter
+                    .ofLocalizedDateTime(FormatStyle.MEDIUM)
+                    .withLocale(Locale.forLanguageTag("tr"))
+                    .format(instant.atZone(zone))
+            listOf("tr", "tr-TR").forEach { tag ->
+                val locale = Locale.forLanguageTag(tag)
+                assertEquals(expected, formatUiDateTime(instant, locale, zone))
+                assertEquals("$expected UTC+03:00", formatPdfDateTime(instant, locale, zone))
+                assertEquals("${timestamp.take(10)} 13:18", formatTechnicalUiDateTime(instant, locale, zone))
+            }
+        }
+    }
+
+    @Test
+    fun polishDatesKeepTheLocalTimeZoneAndTechnicalFormat() {
+        assertSeasonalDateFormatting("pl", "Europe/Warsaw", listOf("pl", "pl-PL"))
+    }
+
+    @Test
     fun italianDatesKeepTheLocalTimeZoneAndTechnicalFormat() {
         assertSeasonalDateFormatting("it", "Europe/Rome", listOf("it", "it-IT", "it-CH"))
     }

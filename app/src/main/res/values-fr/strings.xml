@@ -1030,6 +1030,7 @@
     <string name="button_reset">Réinitialiser</string>
     <string name="button_status_progress">Boutons détectés\u00a0: %1$s sur %2$s</string>
     <string name="button_status_complete">Terminé</string>
+    <string name="run_all_buttons_continue">Continuer</string>
     <string name="button_status_timed_out">Délai dépassé</string>
     <string name="button_status_skipped">Ignoré</string>
     <string name="button_timeout_hint">Aucun échec n’est déduit. Réessayez ou ignorez ce test.</string>
@@ -1156,4 +1157,12 @@
     <string name="settings_language_norwegian_bokmal">Norsk bokmål</string>
     <string name="settings_language_danish">Dansk</string>
     <string name="settings_language_italian">Italiano</string>
+    <string name="settings_language_polish">Polski</string>
+    <!-- Unit only: LiveValuesSection renders the numeric count separately in WindowReading. -->
+    <plurals name="sensor_step_unit" ns0:ignore="ImpliedQuantity">
+        <item quantity="one">pas</item>
+        <item quantity="other">pas</item>
+        <item quantity="many">pas</item>
+    </plurals>
+    <string name="settings_language_turkish">Türkçe</string>
 </resources>

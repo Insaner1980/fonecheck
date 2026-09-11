@@ -1015,6 +1015,7 @@
     <string name="button_reset">Nollställ</string>
     <string name="button_status_progress">%1$s av %2$s upptäckta</string>
     <string name="button_status_complete">Slutfört</string>
+    <string name="run_all_buttons_continue">Fortsätt</string>
     <string name="button_status_timed_out">Tidsgränsen nådd</string>
     <string name="button_status_skipped">Överhoppat</string>
     <string name="button_timeout_hint">Detta tolkas inte som ett fel. Försök igen eller hoppa över testet.</string>
@@ -1157,4 +1158,10 @@
     <string name="settings_language_norwegian_bokmal">Norsk bokmål</string>
     <string name="settings_language_danish">Dansk</string>
     <string name="settings_language_italian">Italiano</string>
+    <string name="settings_language_polish">Polski</string>
+    <plurals name="sensor_step_unit">
+        <item quantity="one">steg</item>
+        <item quantity="other">steg</item>
+    </plurals>
+    <string name="settings_language_turkish">Türkçe</string>
 </resources>

@@ -116,7 +116,7 @@ class HomeContentTest {
                     },
             )
         val contexts =
-            listOf("en", "fi", "sv", "nb", "da", "it").map { tag ->
+            listOf("en", "fi", "sv", "nb", "da", "it", "pl", "tr", "tr-TR").map { tag ->
                 val locale = Locale.forLanguageTag(tag)
                 val configuration = Configuration(baseContext.resources.configuration)
                 configuration.setLocale(locale)

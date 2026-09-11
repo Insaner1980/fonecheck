@@ -106,7 +106,15 @@ data class RunAllTestsState(
     val report: DiagnosticReport? = null,
     val saveStatus: ReportSaveStatus = ReportSaveStatus.IDLE,
     val targetCategory: DiagnosticCategoryId? = null,
+    val awaitingContinue: Boolean = false,
+    val reviewCategoryIndex: Int = 0,
 ) {
+    val reviewCategories: List<RunAllCategoryPlan>
+        get() = plan.categories.filter { it.stage == stage }
+
+    val reviewCategory: RunAllCategoryPlan?
+        get() = reviewCategories.getOrNull(reviewCategoryIndex)
+
     val progress: RunAllProgress?
         get() =
             if (stage in plan.interactiveStages) {
@@ -220,6 +228,7 @@ class RunAllTestsViewModel
 
         fun claimStage(token: Long): Boolean {
             val current = _state.value
+            if (current.awaitingContinue) return false
             val claimableStage =
                 when (current.stage) {
                     RunAllStage.PREFLIGHT,
@@ -228,7 +237,9 @@ class RunAllTestsViewModel
                     -> false
                     else -> true
                 }
-            if (!isCurrentStage(token) || !claimableStage || claimedStageToken == token) return false
+            if (!isCurrentStage(token) || !claimableStage || claimedStageToken == token) {
+                return false
+            }
             claimedStageToken = token
             scheduleTimeout(token, current.stage)
             return true
@@ -379,7 +390,11 @@ class RunAllTestsViewModel
 
         fun retryStage(token: Long): Boolean {
             val current = _state.value
-            if (!isCurrentStage(token) || current.stage !in current.plan.interactiveStages) return false
+            if (!isCurrentStage(token) || current.awaitingContinue ||
+                current.stage !in current.plan.interactiveStages
+            ) {
+                return false
+            }
             val retryState =
                 if (current.stage == RunAllStage.DISPLAY) {
                     current.copy(displayColorIndex = 0, stageIssue = null)
@@ -476,13 +491,30 @@ class RunAllTestsViewModel
                     expectedStage,
                     result,
                 )
-            val currentIndex = current.plan.stages.indexOf(expectedStage)
+            _state.value =
+                current.copy(
+                    manualChecks = updatedManual,
+                    awaitingContinue = true,
+                    reviewCategoryIndex = 0,
+                    stageToken = newToken(),
+                )
+        }
+
+        fun continueAfterStage(token: Long) {
+            val current = _state.value
+            if (!isCurrentStage(token) || !current.awaitingContinue) return
+            if (current.reviewCategoryIndex + 1 < current.reviewCategories.size) {
+                _state.value =
+                    current.copy(
+                        reviewCategoryIndex = current.reviewCategoryIndex + 1,
+                        stageToken = newToken(),
+                    )
+                return
+            }
+            val currentIndex = current.plan.stages.indexOf(current.stage)
             if (currentIndex < 0) return
             val nextStage = current.plan.stages.getOrNull(currentIndex + 1) ?: RunAllStage.RESULTS
-            enterStage(
-                nextStage,
-                current.copy(manualChecks = updatedManual),
-            )
+            enterStage(nextStage)
         }
 
         private fun updateManualResult(
@@ -534,6 +566,8 @@ class RunAllTestsViewModel
                     stage = stage,
                     stageToken = newToken(),
                     stageIssue = null,
+                    awaitingContinue = false,
+                    reviewCategoryIndex = 0,
                 )
         }
 

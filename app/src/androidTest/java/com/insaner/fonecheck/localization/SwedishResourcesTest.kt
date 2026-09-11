@@ -1,6 +1,5 @@
 package com.insaner.fonecheck.localization
 
-import android.icu.text.PluralRules
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.insaner.fonecheck.R
@@ -108,13 +107,9 @@ class SwedishResourcesTest {
         val locale = uiLanguageLocale(Locale.forLanguageTag("sv-FI"))
         assertEquals("sv", locale.toLanguageTag())
         val context = localizedContext(base, locale)
-        val rules = PluralRules.forLocale(locale)
-        assertEquals(setOf("one", "other"), rules.keywords)
-        listOf(0, 1, 2, 1234, 1_000_000).forEach { count ->
-            assertEquals(if (count == 1) "one" else "other", rules.select(count.toDouble()))
-            val number = formatUiNumber(count, locale)
+        assertIntegerOneOtherQuantities(locale) { count, singular, number ->
             val expected =
-                if (count == 1) {
+                if (singular) {
                     listOf(
                         "$number mätvärde",
                         "För $count dag sedan",

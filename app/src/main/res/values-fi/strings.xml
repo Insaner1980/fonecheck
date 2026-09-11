@@ -1082,6 +1082,7 @@
     <string name="button_reset">Nollaa</string>
     <string name="button_status_progress">%1$s / %2$s havaittu</string>
     <string name="button_status_complete">Valmis</string>
+    <string name="run_all_buttons_continue">Jatka</string>
     <string name="button_status_timed_out">Aika päättyi</string>
     <string name="button_status_skipped">Ohitettu</string>
     <string name="button_timeout_hint">Tästä ei päätellä vikaa. Yritä uudelleen tai ohita testi.</string>
@@ -1215,4 +1216,10 @@
     <string name="settings_language_norwegian_bokmal">Norsk bokmål</string>
     <string name="settings_language_danish">Dansk</string>
     <string name="settings_language_italian">Italiano</string>
+    <string name="settings_language_polish">Polski</string>
+    <plurals name="sensor_step_unit">
+        <item quantity="one">askel</item>
+        <item quantity="other">askelta</item>
+    </plurals>
+    <string name="settings_language_turkish">Türkçe</string>
 </resources>

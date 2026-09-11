@@ -277,6 +277,46 @@ class MainActivityLanguageTest {
         assertSystemLanguageRestored()
     }
 
+    @Test
+    fun polishSwitchingRefreshesAnExistingPdfRendererAndSurvivesRecreation() {
+        selectLanguage("it")
+        val renderer = ReportPdfRenderer(composeRule.activity.applicationContext)
+        assertEquals("Rapporto diagnostico fonecheck", renderer.labels().title)
+        listOf("pl", "pl-PL").forEach { tag ->
+            selectLanguage(tag)
+            assertLanguage(tag, "Język")
+            assertEquals("Pełna diagnostyka", composeRule.activity.getString(R.string.full_check_title))
+            assertEquals("Raport diagnostyczny fonecheck", renderer.labels().title)
+            assertEquals("-12,5", renderer.labels().numberValue(-12.5))
+            composeRule.activityRule.scenario.recreate()
+            composeRule.waitForIdle()
+            assertLanguage(tag, "Język")
+            assertEquals("Raport diagnostyczny fonecheck", renderer.labels().title)
+        }
+        assertFinnishAndEnglishPdfLabels(renderer)
+        assertSystemLanguageRestored()
+    }
+
+    @Test
+    fun turkishSwitchingRefreshesAnExistingPdfRendererAndSurvivesRecreation() {
+        selectLanguage("pl")
+        val renderer = ReportPdfRenderer(composeRule.activity.applicationContext)
+        assertEquals("Raport diagnostyczny fonecheck", renderer.labels().title)
+        listOf("tr", "tr-TR").forEach { tag ->
+            selectLanguage(tag)
+            assertLanguage(tag, "Dil")
+            assertEquals("Tam kontrol", composeRule.activity.getString(R.string.full_check_title))
+            assertEquals("fonecheck tanılama raporu", renderer.labels().title)
+            assertEquals("-12,5", renderer.labels().numberValue(-12.5))
+            composeRule.activityRule.scenario.recreate()
+            composeRule.waitForIdle()
+            assertLanguage(tag, "Dil")
+            assertEquals("fonecheck tanılama raporu", renderer.labels().title)
+        }
+        assertFinnishAndEnglishPdfLabels(renderer)
+        assertSystemLanguageRestored()
+    }
+
     private fun assertSystemLanguageRestored() {
         selectLanguage("")
         composeRule.activityRule.scenario.onActivity { activity ->

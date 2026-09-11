@@ -99,7 +99,7 @@ class RunAllAutomaticChecksTest {
             gate.complete(Unit)
             runCurrent()
             execution.await()
-            assertEquals(RunAllStage.RESULTS, f.run.state.value.stage)
+            continueToResults(f)
             assertEquals(RunAllStageOutcome.COMPLETED, f.run.state.value.stageOutcomes[RunAllStage.AUTOMATIC])
             assertEquals(benchmark(), f.storage.state.value.benchmarkResult)
             val snapshots = f.snapshots()
@@ -144,6 +144,10 @@ class RunAllAutomaticChecksTest {
                 f.starts,
             )
             assertEquals(StorageBenchmarkPhase.SKIPPED, f.storage.state.value.benchmarkPhase)
+            assertTrue(f.run.state.value.awaitingContinue)
+            repeat(f.run.state.value.reviewCategories.size) {
+                f.run.continueAfterStage(f.run.state.value.stageToken)
+            }
             assertEquals(RunAllStage.DISPLAY, f.run.state.value.stage)
             assertTrue(
                 f.run.state.value.automaticIssues
@@ -326,7 +330,7 @@ class RunAllAutomaticChecksTest {
                 val execution = async { f.execute() }
                 runCurrent()
                 execution.await()
-                assertEquals(RunAllStage.RESULTS, f.run.state.value.stage)
+                continueToResults(f)
                 assertEquals(
                     if (error == StorageBenchmarkErrorCode.IO_ERROR) RunAllStageOutcome.ERROR else null,
                     f.run.state.value.automaticIssues[DiagnosticCategoryId.STORAGE],
@@ -356,6 +360,8 @@ class RunAllAutomaticChecksTest {
             f.recordingError = true
             f.execute()
             assertEquals(RunAllStageOutcome.ERROR, f.run.state.value.automaticIssues[DiagnosticCategoryId.AUDIO])
+            assertTrue(f.run.state.value.awaitingContinue)
+            f.run.continueAfterStage(f.run.state.value.stageToken)
             assertEquals(RunAllStage.AUDIO, f.run.state.value.stage)
             f.run.interruptRun(RunAllInterruptionReason.USER_CANCEL)
         }
@@ -398,8 +404,14 @@ class RunAllAutomaticChecksTest {
             }
         }
 
-    private fun assertStorageTimeoutEvidence(fixture: Fixture) {
+    private fun continueToResults(fixture: Fixture) {
+        assertTrue(fixture.run.state.value.awaitingContinue)
+        fixture.run.continueAfterStage(fixture.run.state.value.stageToken)
         assertEquals(RunAllStage.RESULTS, fixture.run.state.value.stage)
+    }
+
+    private fun assertStorageTimeoutEvidence(fixture: Fixture) {
+        continueToResults(fixture)
         assertNull(fixture.storage.state.value.benchmarkResult)
         val reading =
             fixture.snapshots().single { it.categoryId == DiagnosticCategoryId.STORAGE }.evidence.single {

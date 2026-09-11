@@ -42,6 +42,17 @@ import java.util.UUID
 @RunWith(AndroidJUnit4::class)
 class ReportPdfExporterTest {
     @Test
+    fun polishPdfPreservesLettersLongEvidenceAndSavedPayload() {
+        listOf("pl", "pl-PL").forEach { tag ->
+            assertLocalizedPdf(
+                locale = Locale.forLanguageTag(tag),
+                sample = "Wiarygodność pomiarów i źródło danych: ą ć ę ł ń ó ś ź ż. To nie dowód zużycia urządzenia",
+                expectedText = listOf("Raport diagnostyczny fonecheck", "Stopień ukończenia", "Wiarygodność"),
+            )
+        }
+    }
+
+    @Test
     fun labelsUseThePdfContextLanguageForNumbersAndDates() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val englishConfiguration =

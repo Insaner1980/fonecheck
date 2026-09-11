@@ -103,6 +103,7 @@ class JourneyEvidenceTest {
                             if (it.state.value.stage == RunAllStage.AUTOMATIC) {
                                 it.claimStage(it.state.value.stageToken)
                                 it.onAutomaticChecksComplete(it.state.value.stageToken)
+                                it.continueAfterStage(it.state.value.stageToken)
                             }
                         }
                     }
@@ -149,6 +150,8 @@ class JourneyEvidenceTest {
                     val accepted = requireNotNull(camera.value.lastCapture)
                     assertTrue(run.recordCameraCapture(accepted))
                     assertFalse(run.recordCameraCapture(accepted))
+                    assertTrue(run.state.value.awaitingContinue)
+                    run.continueAfterStage(run.state.value.stageToken)
                     callback.onCaptureSuccess(image)
                     assertEquals(4, closed)
                     now += 60000L
