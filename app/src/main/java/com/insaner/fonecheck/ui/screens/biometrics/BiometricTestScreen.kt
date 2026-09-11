@@ -83,18 +83,6 @@ fun BiometricTestScreen(
 
     TestScreenContent(modifier = modifier, liveStateUpdatedAtEpochMillis = liveStateUpdatedAtEpochMillis) {
         item {
-            DisclosureSection(
-                label = stringResource(R.string.biometric_capabilities_title),
-                summary = capabilityStatusLabel(state.capability),
-                tone = SemanticTone.NEUTRAL,
-                expanded = state.expandedSection == BiometricSection.CAPABILITIES,
-                onClick = { viewModel.toggleSection(BiometricSection.CAPABILITIES) },
-            ) {
-                CapabilitiesDetails(state.capability)
-            }
-        }
-
-        item {
             val classification = classifyBiometric(state.authResult)
             DisclosureSection(
                 label = stringResource(R.string.biometric_test_auth),
@@ -108,6 +96,17 @@ fun BiometricTestScreen(
                     promptReady = activity != null && biometricPrompt != null,
                     onAuthenticate = ::authenticate,
                 )
+            }
+        }
+        item {
+            DisclosureSection(
+                label = stringResource(R.string.biometric_capabilities_title),
+                summary = capabilityStatusLabel(state.capability),
+                tone = SemanticTone.NEUTRAL,
+                expanded = state.expandedSection == BiometricSection.CAPABILITIES,
+                onClick = { viewModel.toggleSection(BiometricSection.CAPABILITIES) },
+            ) {
+                CapabilitiesDetails(state.capability)
             }
         }
     }

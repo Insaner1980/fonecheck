@@ -1164,4 +1164,12 @@
         <item quantity="other">steg</item>
     </plurals>
     <string name="settings_language_turkish">Türkçe</string>
+    <string name="run_all_display_hide_controls">Dölj kontroller</string>
+    <string name="run_all_display_show_controls">Visa kontroller</string>
+    <string name="run_all_display_restore_hint">Tryck på skärmen för att visa kontrollerna igen.</string>
+    <string name="perf_cpu_core_count">Antal CPU-kärnor</string>
+    <string name="perf_ram_total_memory">Totalt RAM</string>
+    <string name="perf_gpu_renderer_name">GPU-renderare</string>
+    <string name="perf_ram_reading_available">RAM-information avläst</string>
+    <string name="perf_gpu_reading_available">GPU-information avläst</string>
 </resources>

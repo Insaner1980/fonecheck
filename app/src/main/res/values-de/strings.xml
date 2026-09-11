@@ -1158,4 +1158,12 @@
         <item quantity="other">Schritte</item>
     </plurals>
     <string name="settings_language_turkish">Türkçe</string>
+    <string name="run_all_display_hide_controls">Bedienelemente ausblenden</string>
+    <string name="run_all_display_show_controls">Bedienelemente anzeigen</string>
+    <string name="run_all_display_restore_hint">Tippe auf den Bildschirm, um die Bedienelemente wieder anzuzeigen.</string>
+    <string name="perf_cpu_core_count">CPU-Kernanzahl</string>
+    <string name="perf_ram_total_memory">RAM gesamt</string>
+    <string name="perf_gpu_renderer_name">GPU-Renderer</string>
+    <string name="perf_ram_reading_available">RAM-Daten gelesen</string>
+    <string name="perf_gpu_reading_available">GPU-Daten gelesen</string>
 </resources>

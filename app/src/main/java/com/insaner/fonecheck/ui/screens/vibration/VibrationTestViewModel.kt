@@ -31,7 +31,7 @@ enum class VibrationSection {
 data class VibrationTestState(
     val motor: MotorTestState = MotorTestState(),
     val haptic: HapticCapabilityState = HapticCapabilityState(),
-    val expandedSection: VibrationSection? = null,
+    val expandedSection: VibrationSection? = VibrationSection.MOTOR,
     val isPlaying: Boolean = false,
     val lastPattern: VibrationPattern? = null,
     val playbackError: Boolean = false,

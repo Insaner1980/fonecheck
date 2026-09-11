@@ -1226,4 +1226,12 @@
         <item quantity="other">steps</item>
     </plurals>
     <string name="settings_language_turkish">Türkçe</string>
+    <string name="run_all_display_hide_controls">Hide controls</string>
+    <string name="run_all_display_show_controls">Show controls</string>
+    <string name="run_all_display_restore_hint">Tap the screen to show the controls again.</string>
+    <string name="perf_cpu_core_count">CPU core count</string>
+    <string name="perf_ram_total_memory">Total RAM</string>
+    <string name="perf_gpu_renderer_name">GPU renderer</string>
+    <string name="perf_ram_reading_available">RAM information read</string>
+    <string name="perf_gpu_reading_available">GPU information read</string>
 </resources>

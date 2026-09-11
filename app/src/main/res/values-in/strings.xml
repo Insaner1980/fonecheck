@@ -1220,4 +1220,12 @@
         <item quantity="other">langkah</item>
     </plurals>
     <string name="settings_language_turkish">Türkçe</string>
+    <string name="run_all_display_hide_controls">Sembunyikan kontrol</string>
+    <string name="run_all_display_show_controls">Tampilkan kontrol</string>
+    <string name="run_all_display_restore_hint">Ketuk layar untuk menampilkan kontrol kembali.</string>
+    <string name="perf_cpu_core_count">Jumlah inti CPU</string>
+    <string name="perf_ram_total_memory">Total RAM</string>
+    <string name="perf_gpu_renderer_name">Perender GPU</string>
+    <string name="perf_ram_reading_available">Informasi RAM terbaca</string>
+    <string name="perf_gpu_reading_available">Informasi GPU terbaca</string>
 </resources>

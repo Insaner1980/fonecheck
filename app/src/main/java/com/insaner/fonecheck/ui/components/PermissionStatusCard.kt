@@ -19,6 +19,7 @@ fun PermissionStatusCard(
     onRequest: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
+    title: String = stringResource(R.string.permission_section_title),
 ) {
     val classification = classifyPermission(state)
     Column(
@@ -27,7 +28,7 @@ fun PermissionStatusCard(
     ) {
         // Nested inside a screen section, so it uses the panel rule rather than the panel edge.
         SectionHeader(
-            label = stringResource(R.string.permission_section_title),
+            label = title,
             ruleColor = FonecheckTheme.colors.rule,
             ruleThickness = FonecheckTheme.spacing.ruleThickness,
         )

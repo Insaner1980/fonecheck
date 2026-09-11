@@ -264,7 +264,8 @@ object RunAllSnapshotMapper {
                         classification = classifyMeasurement(MeasurementKind.RAM, hasRamReading),
                         informationalPass = true,
                         confidence = performance.ramConfidence,
-                        value = EvidenceValue.BooleanValue(true).takeIf { hasRamReading },
+                        value = performance.totalRamBytes?.takeIf { hasRamReading }?.let(EvidenceValue::LongValue),
+                        unit = EvidenceUnitCode("bytes"),
                         capturedAt = performance.capturedAt,
                     ),
                     classifiedEvidence(
@@ -273,7 +274,7 @@ object RunAllSnapshotMapper {
                         classification = classifyMeasurement(MeasurementKind.GPU, hasGpuReading),
                         informationalPass = true,
                         confidence = performance.gpuConfidence,
-                        value = EvidenceValue.BooleanValue(true).takeIf { hasGpuReading },
+                        value = performance.glRenderer.takeIf { hasGpuReading }?.let(EvidenceValue::RawTextValue),
                         capturedAt = performance.capturedAt,
                     ),
                 )

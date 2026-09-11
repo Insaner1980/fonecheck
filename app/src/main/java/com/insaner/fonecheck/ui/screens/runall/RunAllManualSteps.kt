@@ -1,7 +1,10 @@
 package com.insaner.fonecheck.ui.screens.runall
 
+import androidx.activity.compose.BackHandler
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,16 +23,23 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.viewinterop.AndroidView
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.domain.model.DiagnosticEvidence
 import com.insaner.fonecheck.domain.observation.DeviceObservation
 import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
 import com.insaner.fonecheck.domain.observation.MeasurementKind
@@ -40,6 +50,7 @@ import com.insaner.fonecheck.ui.classification.classifyBiometric
 import com.insaner.fonecheck.ui.classification.classifyButtonTest
 import com.insaner.fonecheck.ui.components.ButtonRow
 import com.insaner.fonecheck.ui.components.DataRow
+import com.insaner.fonecheck.ui.components.DisclosureHeader
 import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.IndeterminateRule
 import com.insaner.fonecheck.ui.components.ManualResultButtons
@@ -70,6 +81,7 @@ import com.insaner.fonecheck.ui.theme.toSemanticTone
 internal val displayTestPatterns = DisplayPattern.entries
 
 data class PermissionPrompt(
+    val title: String,
     val state: PermissionState,
     val rationale: String,
     val onRequest: () -> Unit,
@@ -107,6 +119,29 @@ fun FullCheckPreflightScreen(
             SectionHeader(stringResource(R.string.run_all_preflight_title))
             Note(stringResource(R.string.run_all_preflight_description))
         }
+        Column {
+            SectionHeader(stringResource(R.string.run_all_preflight_choices_title))
+            PreflightChoiceRow(
+                label = stringResource(R.string.run_all_preflight_speaker_option),
+                checked = selections.includeSpeaker,
+                onCheckedChange = { onSelectionsChange(selections.copy(includeSpeaker = it)) },
+            )
+            PreflightChoiceRow(
+                label = stringResource(R.string.run_all_preflight_microphone_option),
+                checked = selections.includeMicrophone,
+                onCheckedChange = { onSelectionsChange(selections.copy(includeMicrophone = it)) },
+            )
+            PreflightChoiceRow(
+                label = stringResource(R.string.run_all_preflight_camera_option),
+                checked = selections.includeCamera,
+                onCheckedChange = { onSelectionsChange(selections.copy(includeCamera = it)) },
+            )
+            PreflightChoiceRow(
+                label = stringResource(R.string.run_all_preflight_storage_option),
+                checked = selections.includeStorageBenchmark,
+                onCheckedChange = { onSelectionsChange(selections.copy(includeStorageBenchmark = it)) },
+            )
+        }
         if (showWarnings) {
             PreflightDisclosureGroup(
                 title = stringResource(R.string.run_all_preflight_what_happens_title),
@@ -134,29 +169,6 @@ fun FullCheckPreflightScreen(
                     ),
             )
         }
-        Column {
-            SectionHeader(stringResource(R.string.run_all_preflight_choices_title))
-            PreflightChoiceRow(
-                label = stringResource(R.string.run_all_preflight_speaker_option),
-                checked = selections.includeSpeaker,
-                onCheckedChange = { onSelectionsChange(selections.copy(includeSpeaker = it)) },
-            )
-            PreflightChoiceRow(
-                label = stringResource(R.string.run_all_preflight_microphone_option),
-                checked = selections.includeMicrophone,
-                onCheckedChange = { onSelectionsChange(selections.copy(includeMicrophone = it)) },
-            )
-            PreflightChoiceRow(
-                label = stringResource(R.string.run_all_preflight_camera_option),
-                checked = selections.includeCamera,
-                onCheckedChange = { onSelectionsChange(selections.copy(includeCamera = it)) },
-            )
-            PreflightChoiceRow(
-                label = stringResource(R.string.run_all_preflight_storage_option),
-                checked = selections.includeStorageBenchmark,
-                onCheckedChange = { onSelectionsChange(selections.copy(includeStorageBenchmark = it)) },
-            )
-        }
         PrimaryButton(
             label = stringResource(R.string.run_all_preflight_start),
             onClick = onContinue,
@@ -170,14 +182,22 @@ private fun PreflightDisclosureGroup(
     title: String,
     paragraphs: List<String>,
 ) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm)) {
-        SectionHeader(title)
-        paragraphs.forEach { paragraph ->
-            Text(
-                text = paragraph,
-                style = FonecheckTheme.type.rowLabel,
-                color = FonecheckTheme.colors.textSecondary,
-            )
+        DisclosureHeader(
+            label = title,
+            summary = "",
+            expanded = expanded,
+            onClick = { expanded = !expanded },
+        )
+        if (expanded) {
+            paragraphs.forEach { paragraph ->
+                Text(
+                    text = paragraph,
+                    style = FonecheckTheme.type.rowLabel,
+                    color = FonecheckTheme.colors.textSecondary,
+                )
+            }
         }
     }
 }
@@ -227,6 +247,7 @@ fun PermissionReviewScreen(
         }
         prompts.forEach { prompt ->
             PermissionStatusCard(
+                title = prompt.title,
                 state = prompt.state,
                 rationale = prompt.rationale,
                 onRequest = prompt.onRequest,
@@ -289,6 +310,7 @@ fun StageCompletionScreen(
     title: String,
     outcome: RunAllStageOutcome,
     permissionLimited: Boolean,
+    evidence: List<DiagnosticEvidence>,
     onContinue: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
@@ -324,6 +346,7 @@ fun StageCompletionScreen(
         if (permissionLimited) {
             Note(stringResource(R.string.run_all_permission_missing))
         }
+        StageCompletionEvidence(evidence)
         PrimaryButton(
             label = stringResource(R.string.run_all_buttons_continue),
             onClick = onContinue,
@@ -385,9 +408,27 @@ fun DisplayCheckStep(
     modifier: Modifier = Modifier,
 ) {
     val isLastColor = colorIndex == displayTestPatterns.lastIndex
+    var controlsVisible by rememberSaveable { mutableStateOf(true) }
+    val showControlsLabel = stringResource(R.string.run_all_display_show_controls)
+    BackHandler(enabled = !controlsVisible) { controlsVisible = true }
     Box(
         modifier = modifier.fillMaxSize().displayPatternBackground(displayTestPatterns[colorIndex]),
     ) {
+        if (!controlsVisible) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .semantics { contentDescription = showControlsLabel }
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            role = Role.Button,
+                            onClickLabel = showControlsLabel,
+                        ) { controlsVisible = true },
+            )
+            return@Box
+        }
         Column(
             modifier =
                 Modifier
@@ -395,9 +436,16 @@ fun DisplayCheckStep(
                     .fillMaxWidth()
                     .background(FonecheckTheme.colors.background)
                     .windowInsetsPadding(WindowInsets.safeDrawing)
+                    .verticalScroll(rememberScrollState())
                     .padding(FonecheckTheme.spacing.md),
             verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.md),
         ) {
+            SecondaryButton(
+                label = stringResource(R.string.run_all_display_hide_controls),
+                onClick = { controlsVisible = false },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Note(text = stringResource(R.string.run_all_display_restore_hint))
             ManualProgress(progress)
             Text(
                 text = stringResource(R.string.run_all_display_title),

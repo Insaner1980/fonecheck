@@ -15,6 +15,7 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LifecycleOwner
@@ -25,6 +26,7 @@ import com.insaner.fonecheck.ui.format.formatUiNumber
 import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -67,6 +69,7 @@ data class CameraTestState(
     val isPreviewActive: Boolean = false,
     val isCapturing: Boolean = false,
     val lastCapture: CaptureResult? = null,
+    val capturePreview: ImageBitmap? = null,
     val flashOn: Boolean = false,
     val flashTestResult: FlashTestResult = FlashTestResult.NOT_TESTED,
     val error: String? = null,
@@ -389,13 +392,13 @@ class CameraTestViewModel
             val attempt = captureSession.begin(cameraId, current.previewStageToken) ?: return
 
             capture.takePicture(
-                ContextCompat.getMainExecutor(getApplication()),
+                ioDispatcher.asExecutor(),
                 captureSession.callback(attempt),
             )
         }
 
         fun clearCaptureResult() {
-            _state.value = _state.value.copy(lastCapture = null, error = null)
+            _state.value = _state.value.copy(lastCapture = null, capturePreview = null, error = null)
         }
 
         fun toggleFlash() {
@@ -475,10 +478,22 @@ internal fun formatCameraMegapixels(
 internal fun CameraCaptureSession.callback(attempt: CameraCaptureAttempt): ImageCapture.OnImageCapturedCallback =
     object : ImageCapture.OnImageCapturedCallback() {
         override fun onCaptureSuccess(image: ImageProxy) {
-            val width = image.width
-            val height = image.height
-            image.close()
-            succeed(attempt, width, height)
+            try {
+                val preview =
+                    if (attempt.stageToken == null) {
+                        val buffer = image.planes[0].buffer.duplicate()
+                        val bytes = ByteArray(buffer.remaining())
+                        buffer.get(bytes)
+                        decodeCapturePreview(bytes, image.imageInfo.rotationDegrees)
+                    } else {
+                        null
+                    }
+                succeed(attempt, image.width, image.height, preview)
+            } catch (_: Exception) {
+                fail(attempt, "camera_capture_error")
+            } finally {
+                image.close()
+            }
         }
 
         override fun onError(exception: ImageCaptureException) {

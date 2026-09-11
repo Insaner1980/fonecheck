@@ -10,6 +10,19 @@ import org.junit.Test
 
 class BiometricTestViewModelTest {
     @Test
+    fun authenticationStartsExpandedWithoutLaunchingPromptAndCanBeCollapsed() {
+        val viewModel = BiometricTestViewModel(FakeBiometricCapabilityProvider(BiometricCapability()))
+
+        assertEquals(BiometricSection.AUTH_TEST, viewModel.state.value.expandedSection)
+        assertEquals(AuthResult.NONE, viewModel.state.value.authResult)
+        assertFalse(viewModel.state.value.promptActive)
+        viewModel.toggleSection(BiometricSection.AUTH_TEST)
+        assertEquals(null, viewModel.state.value.expandedSection)
+        viewModel.toggleSection(BiometricSection.CAPABILITIES)
+        assertEquals(BiometricSection.CAPABILITIES, viewModel.state.value.expandedSection)
+    }
+
+    @Test
     fun capabilityKeepsHardwareFeaturesAndAuthenticatorAvailabilitySeparate() {
         val capability =
             BiometricCapability(

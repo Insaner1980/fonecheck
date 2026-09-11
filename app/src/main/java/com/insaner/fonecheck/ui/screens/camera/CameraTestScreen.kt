@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.selected
@@ -203,56 +205,93 @@ private fun CameraPreviewSection(
         )
 
         if (state.isPreviewActive) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(4f / 3f)
-                        .background(FonecheckTheme.colors.segmentTrack),
-            ) {
-                AndroidView(
-                    factory = { previewView },
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
-            if (state.isCapturing) {
-                ScreenLoadingNote(message = stringResource(R.string.camera_capturing))
-            }
-            ButtonRow { buttonModifier ->
-                PrimaryButton(
-                    label = stringResource(R.string.camera_capture),
-                    onClick = viewModel::capturePhoto,
-                    modifier = buttonModifier,
-                    enabled = !state.isCapturing,
-                )
-                SecondaryButton(
-                    label = stringResource(R.string.camera_stop),
-                    onClick = viewModel::stopPreview,
-                    modifier = buttonModifier,
-                )
-            }
+            ActiveCameraPreview(
+                state = state,
+                previewView = previewView,
+                onCapture = viewModel::capturePhoto,
+                onStop = viewModel::stopPreview,
+            )
         }
 
         state.lastCapture?.let { result ->
-            CameraCaptureResult(result)
-            Note(stringResource(R.string.camera_confirm_question))
-            ManualResultButtons(
-                problemLabel = stringResource(R.string.camera_confirm_problem),
-                passLabel = stringResource(R.string.camera_confirm_pass),
-                onResult = viewModel::confirmSelectedCamera,
+            CameraCaptureSummary(
+                state = state,
+                result = result,
+                onConfirm = viewModel::confirmSelectedCamera,
             )
-            state.selectedCameraId?.let { selectedCameraId ->
-                state.confirmations[selectedCameraId]?.let { confirmed ->
-                    val classification = classifyCameraConfirmation(confirmed)
-                    StatusText(
-                        text =
-                            stringResource(
-                                if (confirmed) R.string.camera_confirm_pass else R.string.camera_confirm_problem,
-                            ),
-                        tone = classification.toSemanticTone(),
-                    )
-                }
-            }
+        }
+    }
+}
+
+@Composable
+private fun ActiveCameraPreview(
+    state: CameraTestState,
+    previewView: PreviewView,
+    onCapture: () -> Unit,
+    onStop: () -> Unit,
+) {
+    if (state.capturePreview != null) {
+        Note(stringResource(R.string.camera_captured))
+    }
+    Box(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(4f / 3f)
+                .background(FonecheckTheme.colors.segmentTrack),
+    ) {
+        if (state.capturePreview != null) {
+            CameraCapturedPreview(state)
+        } else {
+            AndroidView(
+                factory = { previewView },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
+    if (state.isCapturing) {
+        ScreenLoadingNote(message = stringResource(R.string.camera_capturing))
+    }
+    ButtonRow { buttonModifier ->
+        PrimaryButton(
+            label = stringResource(R.string.camera_capture),
+            onClick = onCapture,
+            modifier = buttonModifier,
+            enabled = !state.isCapturing,
+        )
+        SecondaryButton(
+            label = stringResource(R.string.camera_stop),
+            onClick = onStop,
+            modifier = buttonModifier,
+        )
+    }
+}
+
+@Composable
+private fun CameraCaptureSummary(
+    state: CameraTestState,
+    result: CaptureResult,
+    onConfirm: (Boolean) -> Unit,
+) {
+    CameraCaptureResult(result)
+    if (state.capturePreview != null) {
+        Note(stringResource(R.string.camera_confirm_question))
+        ManualResultButtons(
+            problemLabel = stringResource(R.string.camera_confirm_problem),
+            passLabel = stringResource(R.string.camera_confirm_pass),
+            onResult = onConfirm,
+        )
+    }
+    state.selectedCameraId?.let { selectedCameraId ->
+        state.confirmations[selectedCameraId]?.let { confirmed ->
+            val classification = classifyCameraConfirmation(confirmed)
+            StatusText(
+                text =
+                    stringResource(
+                        if (confirmed) R.string.camera_confirm_pass else R.string.camera_confirm_problem,
+                    ),
+                tone = classification.toSemanticTone(),
+            )
         }
     }
 }
@@ -279,6 +318,17 @@ internal fun CameraSelectionList(
             onClick = { onSelect(camera.cameraId) },
         )
     }
+}
+
+@Composable
+internal fun CameraCapturedPreview(state: CameraTestState) {
+    val preview = state.capturePreview ?: return
+    Image(
+        bitmap = preview,
+        contentDescription = stringResource(R.string.camera_captured),
+        contentScale = ContentScale.Fit,
+        modifier = Modifier.fillMaxSize(),
+    )
 }
 
 @Composable

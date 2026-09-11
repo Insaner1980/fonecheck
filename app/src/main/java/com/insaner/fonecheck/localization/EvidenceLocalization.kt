@@ -174,10 +174,26 @@ data class EvidenceLabelResource(
 )
 
 fun evidenceLabelResource(evidence: DiagnosticEvidence): EvidenceLabelResource? =
-    if (evidence.checkId.value == "camera.capture_dimensions" && evidence.value is EvidenceValue.LongValue) {
-        EvidenceLabelResource(R.string.camera_last_image_pixel_count)
-    } else {
-        evidenceLabelResource(evidence.checkId.value)
+    when {
+        evidence.checkId.value == "camera.capture_dimensions" && evidence.value is EvidenceValue.LongValue ->
+            EvidenceLabelResource(R.string.camera_last_image_pixel_count)
+        evidence.checkId.value == "performance.ram" ->
+            EvidenceLabelResource(
+                if (evidence.value is EvidenceValue.BooleanValue) {
+                    R.string.perf_ram_reading_available
+                } else {
+                    R.string.perf_ram_total_memory
+                },
+            )
+        evidence.checkId.value == "performance.gpu" ->
+            EvidenceLabelResource(
+                if (evidence.value is EvidenceValue.BooleanValue) {
+                    R.string.perf_gpu_reading_available
+                } else {
+                    R.string.perf_gpu_renderer_name
+                },
+            )
+        else -> evidenceLabelResource(evidence.checkId.value)
     }
 
 fun evidenceLabelResource(checkId: String): EvidenceLabelResource? =
@@ -202,7 +218,7 @@ private val EVIDENCE_LABEL_RESOURCES =
         "device.security" to R.string.label_root_artifact,
         "device.developer_options" to R.string.label_developer_options,
         "device.usb_debugging" to R.string.label_usb_debugging,
-        "performance.cpu" to R.string.perf_cpu_title,
+        "performance.cpu" to R.string.perf_cpu_core_count,
         "performance.ram" to R.string.perf_ram_title,
         "performance.gpu" to R.string.perf_gpu_title,
         "performance.cpu_benchmark" to R.string.perf_benchmark_cpu_rate,

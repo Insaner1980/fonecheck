@@ -540,7 +540,6 @@ class RunAllTestsViewModel
             val timeout =
                 when (stage) {
                     RunAllStage.AUTOMATIC -> AUTOMATIC_TIMEOUT_MS
-                    RunAllStage.DISPLAY -> DISPLAY_TIMEOUT_MS
                     RunAllStage.CAMERA -> CAMERA_TIMEOUT_MS
                     else -> null
                 } ?: return
@@ -614,7 +613,6 @@ class RunAllTestsViewModel
 
         companion object {
             const val AUTOMATIC_TIMEOUT_MS = 70_000L
-            const val DISPLAY_TIMEOUT_MS = 30_000L
             const val CAMERA_TIMEOUT_MS = 12_000L
 
             private fun outcomeFor(result: Boolean?): RunAllStageOutcome =

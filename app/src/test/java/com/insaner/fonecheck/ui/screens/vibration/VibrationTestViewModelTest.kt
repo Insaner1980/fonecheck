@@ -32,6 +32,20 @@ class VibrationTestViewModelTest {
     }
 
     @Test
+    fun motorControlsStartExpandedWithoutPlayingAndCanBeCollapsed() {
+        val platform = FakeVibrationPlatform()
+        val viewModel = VibrationTestViewModel(platform)
+
+        assertEquals(VibrationSection.MOTOR, viewModel.state.value.expandedSection)
+        assertFalse(viewModel.state.value.isPlaying)
+        assertTrue(platform.events.isEmpty())
+        viewModel.toggleSection(VibrationSection.MOTOR)
+        assertEquals(null, viewModel.state.value.expandedSection)
+        viewModel.toggleSection(VibrationSection.HAPTIC)
+        assertEquals(VibrationSection.HAPTIC, viewModel.state.value.expandedSection)
+    }
+
+    @Test
     fun startingANewPatternCancelsTheOwnedVibrationFirst() =
         runTest(dispatcher.scheduler) {
             val platform = FakeVibrationPlatform()

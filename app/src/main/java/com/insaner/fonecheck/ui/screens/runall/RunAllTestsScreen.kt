@@ -519,11 +519,61 @@ fun RunAllTestsScreen(
         onDone()
     }
 
+    fun currentSnapshots(): DiagnosticSnapshots {
+        val deviceInfo = deviceState.info.takeIf { !deviceState.isLoading && deviceState.error == null }
+        val performanceInfo =
+            performanceState.info.takeIf {
+                !performanceState.isInfoLoading && performanceState.infoError == null
+            }
+        val performanceBenchmark = performanceState.benchmarkResult
+        val simInfo = simState.info.takeIf { !simState.isLoading && simState.error == null }
+        val reportStorageState =
+            storageState.copy(
+                info =
+                    storageState.info.takeIf {
+                        !storageState.isInfoLoading && storageState.infoError == null
+                    },
+            )
+        return DiagnosticSnapshots(
+            device = deviceInfo,
+            performance = performanceInfo,
+            performanceBenchmark = performanceBenchmark,
+            performanceBenchmarkPhase = performanceState.benchmarkPhase,
+            sim = simInfo,
+            automaticIssues = sessionState.automaticIssues,
+            display = displayState,
+            audio = audioState,
+            camera = cameraState,
+            sensors = sensorState,
+            connectivity = connectivityState,
+            battery = batteryState,
+            thermal = thermalState,
+            storage = reportStorageState,
+            vibration = vibrationState,
+            buttons = buttonState,
+            biometrics = biometricState,
+        )
+    }
+
     val showButtonResult =
         sessionState.stage == RunAllStage.BUTTONS &&
             sessionState.stageOutcomes[RunAllStage.BUTTONS] == RunAllStageOutcome.PASSED
     if (sessionState.awaitingContinue && !showButtonResult) {
         val category = sessionState.reviewCategory
+        val evidence =
+            remember(sessionState.stageToken) {
+                RunAllSnapshotMapper
+                    .map(
+                        snapshots = currentSnapshots(),
+                        manual = sessionState.manualChecks,
+                        permissions = sessionState.permissions,
+                        selections = sessionState.selections,
+                        hardware = sessionState.hardware,
+                        capturedAt = Instant.now(),
+                    ).firstOrNull { it.categoryId == category?.categoryId }
+                    ?.evidence
+                    .orEmpty()
+            }
         StageCompletionScreen(
             title =
                 stringResource(
@@ -535,6 +585,7 @@ fun RunAllTestsScreen(
                 category?.let { sessionState.automaticIssues[it.categoryId] }
                     ?: sessionState.stageOutcomes.getValue(sessionState.stage),
             permissionLimited = category?.disposition == RunAllCategoryDisposition.PERMISSION_LIMITED,
+            evidence = evidence,
             onContinue = { sessionViewModel.continueAfterStage(sessionState.stageToken) },
             onCancel = cancelRunAndExit,
             modifier = modifier,
@@ -585,6 +636,7 @@ fun RunAllTestsScreen(
                         ) {
                             PermissionPrompt(
                                 state = microphonePermission.state,
+                                title = stringResource(R.string.settings_permission_microphone),
                                 rationale = stringResource(R.string.permission_rationale_microphone),
                                 onRequest = { requestPermission(microphonePermission) },
                                 onOpenSettings = microphonePermission::openSettings,
@@ -600,6 +652,7 @@ fun RunAllTestsScreen(
                         ) {
                             PermissionPrompt(
                                 state = cameraPermission.state,
+                                title = stringResource(R.string.settings_permission_camera),
                                 rationale = stringResource(R.string.permission_rationale_camera),
                                 onRequest = { requestPermission(cameraPermission) },
                                 onOpenSettings = cameraPermission::openSettings,
@@ -612,6 +665,7 @@ fun RunAllTestsScreen(
                         ) {
                             PermissionPrompt(
                                 state = locationPermission.state,
+                                title = stringResource(R.string.settings_permission_location),
                                 rationale = stringResource(R.string.permission_rationale_location),
                                 onRequest = { requestPermission(locationPermission) },
                                 onOpenSettings = locationPermission::openSettings,
@@ -624,6 +678,7 @@ fun RunAllTestsScreen(
                         ) {
                             PermissionPrompt(
                                 state = phonePermission.state,
+                                title = stringResource(R.string.settings_permission_phone),
                                 rationale = stringResource(R.string.permission_rationale_phone),
                                 onRequest = { requestPermission(phonePermission) },
                                 onOpenSettings = phonePermission::openSettings,
@@ -636,6 +691,7 @@ fun RunAllTestsScreen(
                         ) {
                             PermissionPrompt(
                                 state = bluetoothPermission.state,
+                                title = stringResource(R.string.settings_permission_bluetooth),
                                 rationale = stringResource(R.string.permission_rationale_bluetooth),
                                 onRequest = { requestPermission(bluetoothPermission) },
                                 onOpenSettings = bluetoothPermission::openSettings,
@@ -779,40 +835,8 @@ fun RunAllTestsScreen(
             )
 
         RunAllStage.RESULTS -> {
-            val deviceInfo = deviceState.info.takeIf { !deviceState.isLoading && deviceState.error == null }
-            val performanceInfo =
-                performanceState.info.takeIf {
-                    !performanceState.isInfoLoading && performanceState.infoError == null
-                }
-            val performanceBenchmark = performanceState.benchmarkResult
-            val simInfo = simState.info.takeIf { !simState.isLoading && simState.error == null }
-            val reportStorageState =
-                storageState.copy(
-                    info =
-                        storageState.info.takeIf {
-                            !storageState.isInfoLoading && storageState.infoError == null
-                        },
-                )
-            val snapshots =
-                DiagnosticSnapshots(
-                    device = deviceInfo,
-                    performance = performanceInfo,
-                    performanceBenchmark = performanceBenchmark,
-                    performanceBenchmarkPhase = performanceState.benchmarkPhase,
-                    sim = simInfo,
-                    automaticIssues = sessionState.automaticIssues,
-                    display = displayState,
-                    audio = audioState,
-                    camera = cameraState,
-                    sensors = sensorState,
-                    connectivity = connectivityState,
-                    battery = batteryState,
-                    thermal = thermalState,
-                    storage = reportStorageState,
-                    vibration = vibrationState,
-                    buttons = buttonState,
-                    biometrics = biometricState,
-                )
+            val snapshots = currentSnapshots()
+            val deviceInfo = snapshots.device
             val capturedAt = remember { Instant.now() }
             val categorySnapshots =
                 remember(

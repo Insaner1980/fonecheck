@@ -1206,4 +1206,12 @@
         <item quantity="other">passos</item>
     </plurals>
     <string name="settings_language_turkish">Türkçe</string>
+    <string name="run_all_display_hide_controls">Ocultar controles</string>
+    <string name="run_all_display_show_controls">Mostrar controles</string>
+    <string name="run_all_display_restore_hint">Toque na tela para mostrar os controles novamente.</string>
+    <string name="perf_cpu_core_count">Número de núcleos da CPU</string>
+    <string name="perf_ram_total_memory">RAM total</string>
+    <string name="perf_gpu_renderer_name">Renderizador da GPU</string>
+    <string name="perf_ram_reading_available">Dados de RAM lidos</string>
+    <string name="perf_gpu_reading_available">Dados de GPU lidos</string>
 </resources>

@@ -55,15 +55,22 @@ class FullCheckPreflightScreenTest {
             }
         }
 
-        composeRule.onNodeWithContentDescription(labels.whatHappens).performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText(labels.storage).assertDoesNotExist()
+        composeRule.onNodeWithText(labels.local).assertDoesNotExist()
+        composeRule.onNodeWithText(labels.camera).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(labels.whatHappens).performScrollTo().performClick()
+        composeRule.onNodeWithText(labels.storage).performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(labels.whatHappens).performScrollTo().performClick()
+        composeRule.onNodeWithText(labels.storage).assertDoesNotExist()
         composeRule
             .onNodeWithContentDescription(labels.permissionsAndControl)
             .performScrollTo()
             .assertIsDisplayed()
-        composeRule.onNodeWithContentDescription(labels.privacy).performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithContentDescription(labels.optionalTests).performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithText(labels.storage).performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(labels.privacy).performScrollTo().performClick()
         composeRule.onNodeWithText(labels.local).performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(labels.privacy).performScrollTo().performClick()
+        composeRule.onNodeWithText(labels.local).assertDoesNotExist()
+        composeRule.onNodeWithContentDescription(labels.optionalTests).performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText(labels.speaker).performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText(labels.microphone).performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText(labels.camera).performScrollTo().assertIsDisplayed()
