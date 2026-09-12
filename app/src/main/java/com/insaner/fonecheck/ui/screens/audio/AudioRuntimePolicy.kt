@@ -43,6 +43,16 @@ class AudioOperationGate {
 
     @Synchronized
     fun isCurrent(token: Long): Boolean = token == generation
+
+    @Synchronized
+    fun runIfCurrent(
+        token: Long,
+        action: () -> Unit,
+    ): Boolean {
+        if (token != generation) return false
+        action()
+        return true
+    }
 }
 
 enum class AudioRecordingStopMode {

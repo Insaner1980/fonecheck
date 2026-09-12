@@ -28,7 +28,6 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
@@ -191,9 +190,6 @@ private fun HomeStatusCell(
                 style = labelStyle,
                 color = colors.textPrimary,
                 modifier = Modifier.weight(1f),
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Visible,
             )
         }
         Box(
@@ -256,9 +252,7 @@ private fun HomeLegendEntry(
             text = statusLabel(status).uppercase(LocalLocale.current.platformLocale),
             style = FonecheckTheme.type.sectionLabel,
             color = FonecheckTheme.colors.textMuted,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Visible,
+            modifier = Modifier.weight(1f),
         )
     }
 }

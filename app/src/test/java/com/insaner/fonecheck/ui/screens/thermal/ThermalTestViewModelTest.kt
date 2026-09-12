@@ -2,6 +2,7 @@ package com.insaner.fonecheck.ui.screens.thermal
 
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import com.insaner.fonecheck.runtime.EpochMillisClock
+import com.insaner.fonecheck.runtime.NanoTimeSource
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -13,7 +14,7 @@ class ThermalTestViewModelTest {
     fun statusCallbackDoesNotRefreshOtherReadingTimes() {
         var now = 1_000L
         val platform = FakeThermalPlatform()
-        val viewModel = ThermalTestViewModel(platform, EpochMillisClock { now })
+        val viewModel = ThermalTestViewModel(platform, EpochMillisClock { now }, NanoTimeSource { now * 1_000_000L })
         viewModel.startMonitoring()
         val initial = viewModel.state.value
 
@@ -115,7 +116,7 @@ class ThermalTestViewModelTest {
     fun unavailableHeadroomRemainsUnavailableAndSamplingIsRateLimited() {
         var now = 1_000L
         val platform = FakeThermalPlatform(headroom = null)
-        val viewModel = ThermalTestViewModel(platform, EpochMillisClock { now })
+        val viewModel = ThermalTestViewModel(platform, EpochMillisClock { now }, NanoTimeSource { now * 1_000_000L })
 
         viewModel.startMonitoring()
         viewModel.stopMonitoring()
@@ -163,6 +164,33 @@ class ThermalTestViewModelTest {
         assertTrue(viewModel.state.value.isMonitoring)
         assertNull(viewModel.state.value.error)
         assertEquals(1, platform.registrationCount)
+    }
+
+    @Test
+    fun headroomSamplingUsesElapsedTimeWhenWallClockChanges() {
+        var epochMillis = 100_000L
+        var elapsedNanos = 0L
+        val platform = FakeThermalPlatform()
+        val viewModel =
+            ThermalTestViewModel(
+                platform,
+                EpochMillisClock { epochMillis },
+                NanoTimeSource { elapsedNanos },
+            )
+        viewModel.refresh()
+        epochMillis += 3_600_000L
+        elapsedNanos = 5_000_000_000L
+        viewModel.refresh()
+        assertEquals(1, platform.headroomReadCount)
+        epochMillis = 1_000L
+        elapsedNanos = 10_000_000_000L
+        viewModel.refresh()
+        assertEquals(2, platform.headroomReadCount)
+        assertEquals(
+            epochMillis,
+            viewModel.state.value.headroomReadAt
+                ?.toEpochMilli(),
+        )
     }
 
     private class FakeThermalPlatform(

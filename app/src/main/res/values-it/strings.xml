@@ -853,7 +853,6 @@
     <string name="export_json_error">Impossibile creare il file JSON. Puoi riprovare.</string>
     <string name="export_share_title">Condividi rapporto fonecheck</string>
     <string name="export_not_found">Rapporto salvato non trovato.</string>
-    <string name="export_unavailable">Questa versione dell’app non può esportare il rapporto salvato.</string>
     <string name="export_load_error">Impossibile caricare il rapporto salvato per l’esportazione.</string>
     <string name="comparison_title">Confronto rapporti</string>
     <string name="comparison_description">Primo rapporto → secondo rapporto</string>

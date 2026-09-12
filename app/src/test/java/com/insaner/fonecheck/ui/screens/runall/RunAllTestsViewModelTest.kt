@@ -497,6 +497,34 @@ class RunAllTestsViewModelTest {
         }
 
     @Test
+    fun completeReportSurvivesWallClockMovingBeforeStart() =
+        runTest {
+            val timestamps = listOf(200L, 100L).iterator()
+            val repository = FakeReportRepository()
+            val viewModel =
+                RunAllTestsViewModel(
+                    clock = EpochMillisClock { timestamps.next() },
+                    idProvider = IdProvider { "clock-adjusted-report" },
+                    reportRepository = repository,
+                )
+            enterResults(viewModel)
+
+            viewModel.completeReport(
+                viewModel.state.value.stageToken,
+                deviceContext(),
+                appContext(),
+                completeSnapshots(),
+            )
+
+            val report = requireNotNull(viewModel.state.value.report)
+            assertEquals(Instant.ofEpochMilli(200L), report.startedAt)
+            assertEquals(report.startedAt, report.completedAt)
+            dispatcher.scheduler.runCurrent()
+            assertEquals(ReportSaveStatus.SAVED, viewModel.state.value.saveStatus)
+            assertEquals(listOf(report), repository.insertAttempts)
+        }
+
+    @Test
     fun completeReportKeepsTheFirstCompletedReport() =
         runTest {
             var nextId = 1

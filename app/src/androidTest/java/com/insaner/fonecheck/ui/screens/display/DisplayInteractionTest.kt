@@ -1,7 +1,12 @@
 package com.insaner.fonecheck.ui.screens.display
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.FontScale
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
@@ -10,7 +15,9 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
@@ -21,6 +28,34 @@ import org.junit.Test
 class DisplayInteractionTest {
     @get:Rule
     val composeRule = createComposeRule()
+
+    @Test
+    fun visualResultRemainsReachableInShortWindowWithLargeFont() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        var passed = false
+        composeRule.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.FontScale(2f)) {
+                FonecheckTheme {
+                    Box(Modifier.requiredSize(width = 320.dp, height = 240.dp)) {
+                        VisualTestOverlay(
+                            state = VisualTestState(isActive = true, patternIndex = DisplayPattern.entries.lastIndex),
+                            onPrevious = {},
+                            onNext = {},
+                            onResult = { passed = it },
+                            onExit = {},
+                        )
+                    }
+                }
+            }
+        }
+
+        composeRule
+            .onNodeWithText(context.getString(R.string.display_looks_good))
+            .performScrollTo()
+            .assertIsDisplayed()
+            .performClick()
+        composeRule.runOnIdle { assertTrue(passed) }
+    }
 
     @Test
     fun dragAndSimultaneousPointersReachTheTouchCallbacksAndExitIsAccessible() {

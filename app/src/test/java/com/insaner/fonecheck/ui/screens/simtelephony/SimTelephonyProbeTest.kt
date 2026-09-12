@@ -96,6 +96,41 @@ class SimTelephonyProbeTest {
     }
 
     @Test
+    fun unavailableSubscriptionReadDoesNotMarkReadySimInactive() {
+        val snapshot =
+            SimTelephonySnapshot(
+                hasTelephonyHardware = true,
+                phoneStatePermissionGranted = true,
+                phoneCount = 1,
+                phoneTypeCode = 1,
+                dataNetworkTypeCode = null,
+                slots =
+                    listOf(
+                        SimSlotSnapshot(
+                            slotIndex = 0,
+                            stateCode = 5,
+                            activeSubscription = null,
+                            embedded = null,
+                            operatorName = null,
+                            countryIso = null,
+                            networkTypeCode = null,
+                        ),
+                    ),
+            )
+
+        val unavailable = SimTelephonyProbe.fromSnapshot(snapshot)
+        assertEquals(SimActivityCode.ACTIVE, unavailable.simSlots.single().activity)
+        assertEquals(SimInventoryCode.SINGLE_SIM, unavailable.inventory)
+
+        val empty =
+            SimTelephonyProbe.fromSnapshot(
+                snapshot.copy(slots = listOf(snapshot.slots.single().copy(activeSubscription = false))),
+            )
+        assertEquals(SimActivityCode.INACTIVE, empty.simSlots.single().activity)
+        assertEquals(SimInventoryCode.INACTIVE_SIM, empty.inventory)
+    }
+
+    @Test
     fun apiLevelGuardsModernModemCountAndEmbeddedSim() {
         var modernCalls = 0
         var legacyCalls = 0

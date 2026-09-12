@@ -49,7 +49,7 @@ class CaptureTimestampTest {
     }
 
     @Test
-    fun captureTimestampKeepsItsOriginalOuterSpacing() {
+    fun captureTimestampKeepsItsTickAndRowSpacing() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val capturedAt = Instant.parse("2026-08-17T14:05:00Z")
         val label = context.getString(R.string.live_state_label)
@@ -77,7 +77,7 @@ class CaptureTimestampTest {
         val valueBounds = composeRule.onNodeWithText(value).fetchSemanticsNode().boundsInRoot
         val density = context.resources.displayMetrics.density
 
-        assertEquals(4f * density, labelBounds.top - timestampBounds.top, 0.5f)
+        assertEquals(16f * density, labelBounds.top - timestampBounds.top, 0.5f)
         assertEquals(8f * density, timestampBounds.bottom - valueBounds.bottom, 0.5f)
     }
 }

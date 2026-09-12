@@ -10,6 +10,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -47,13 +48,14 @@ class PerformanceInfoViewModel
         val state: StateFlow<PerformanceInfoState> = _state.asStateFlow()
         private var infoJob: Job? = null
         private var benchmarkJob: Job? = null
+        private var benchmarkGeneration = 0L
 
         init {
             refreshInfo()
         }
 
         fun refreshInfo() {
-            infoJob?.cancel()
+            cancelInfoCapture()
             _state.value = _state.value.copy(isInfoLoading = true, infoError = null)
             infoJob =
                 viewModelScope.launch {
@@ -63,6 +65,7 @@ class PerformanceInfoViewModel
                     } catch (error: CancellationException) {
                         throw error
                     } catch (_: Exception) {
+                        coroutineContext.ensureActive()
                         _state.value = _state.value.copy(isInfoLoading = false, infoError = INFO_ERROR)
                     }
                 }
@@ -76,6 +79,7 @@ class PerformanceInfoViewModel
         @Suppress("kotlin:S6311") // The runner performs CPU work and intentionally inherits this background context.
         fun startBenchmark() {
             if (_state.value.benchmarkPhase == BenchmarkPhase.RUNNING) return
+            val generation = ++benchmarkGeneration
             _state.value =
                 _state.value.copy(
                     benchmarkPhase = BenchmarkPhase.RUNNING,
@@ -95,27 +99,33 @@ class PerformanceInfoViewModel
                                 benchmarkResult = result,
                             )
                     } catch (_: TimeoutCancellationException) {
-                        _state.value =
-                            _state.value.copy(
-                                benchmarkPhase = BenchmarkPhase.ERROR,
-                                benchmarkError = BENCHMARK_TIMEOUT,
-                            )
+                        publishBenchmarkError(generation, BENCHMARK_TIMEOUT)
                     } catch (_: CancellationException) {
+                        if (generation != benchmarkGeneration) return@launch
                         if (_state.value.benchmarkPhase == BenchmarkPhase.RUNNING) {
                             _state.value = _state.value.copy(benchmarkPhase = BenchmarkPhase.CANCELLED)
                         }
                     } catch (_: Exception) {
-                        _state.value =
-                            _state.value.copy(
-                                benchmarkPhase = BenchmarkPhase.ERROR,
-                                benchmarkError = BENCHMARK_ERROR,
-                            )
+                        publishBenchmarkError(generation, BENCHMARK_ERROR)
                     }
                 }
         }
 
+        private fun publishBenchmarkError(
+            generation: Long,
+            error: String,
+        ) {
+            if (generation != benchmarkGeneration) return
+            _state.value =
+                _state.value.copy(
+                    benchmarkPhase = BenchmarkPhase.ERROR,
+                    benchmarkError = error,
+                )
+        }
+
         fun cancelBenchmark() {
             if (_state.value.benchmarkPhase != BenchmarkPhase.RUNNING) return
+            benchmarkGeneration++
             _state.value = _state.value.copy(benchmarkPhase = BenchmarkPhase.CANCELLED)
             benchmarkJob?.cancel()
         }

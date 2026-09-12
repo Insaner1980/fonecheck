@@ -833,7 +833,6 @@
     <string name="export_json_error">Nie udało się utworzyć pliku JSON. Możesz spróbować ponownie.</string>
     <string name="export_share_title">Udostępnij raport fonecheck</string>
     <string name="export_not_found">Nie znaleziono zapisanego raportu.</string>
-    <string name="export_unavailable">Ta wersja aplikacji nie może wyeksportować tego zapisanego raportu.</string>
     <string name="export_load_error">Nie udało się wczytać zapisanego raportu do eksportu.</string>
     <string name="comparison_title">Porównanie raportów</string>
     <string name="comparison_description">Porównanie pierwszego raportu z drugim</string>

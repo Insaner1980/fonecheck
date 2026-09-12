@@ -360,7 +360,7 @@ class SensorTestViewModel
                 SensorChallengeEvaluator.evaluate(
                     challenge = activeChallenge,
                     values = values,
-                    nowMillis = System.currentTimeMillis(),
+                    nowMillis = android.os.SystemClock.elapsedRealtime(),
                     runtime = challengeRuntime,
                 )
             challengeRuntime = evaluation.runtime

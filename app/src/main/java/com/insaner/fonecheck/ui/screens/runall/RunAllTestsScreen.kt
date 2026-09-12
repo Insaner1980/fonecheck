@@ -103,7 +103,7 @@ fun RunAllTestsScreen(
     val currentOnDisplayFullscreenChange by rememberUpdatedState(onDisplayFullscreenChange)
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
-    val sessionState by sessionViewModel.state.collectAsStateWithLifecycle()
+    val sessionState = sessionViewModel.state.collectAsStateWithLifecycle().value
     val deviceState by deviceViewModel.state.collectAsStateWithLifecycle()
     val performanceState by performanceViewModel.state.collectAsStateWithLifecycle()
     val displayState by displayViewModel.state.collectAsStateWithLifecycle()
@@ -795,7 +795,11 @@ fun RunAllTestsScreen(
         RunAllStage.VIBRATION ->
             VibrationCheckStep(
                 progress = requireNotNull(sessionState.progress),
-                onPlayAgain = { vibrationViewModel.vibratePattern() },
+                onPlayAgain = {
+                    if (!vibrationViewModel.vibratePattern()) {
+                        sessionViewModel.recordVibration(sessionState.stageToken, null, RunAllStageOutcome.ERROR)
+                    }
+                },
                 onStop = vibrationViewModel::cancelVibration,
                 onSkip = {
                     vibrationViewModel.cancelVibration()
