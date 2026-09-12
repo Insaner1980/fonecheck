@@ -16,6 +16,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.ui.screens.display.DISPLAY_EXIT_BUTTON_TAG
@@ -70,6 +72,7 @@ class MainActivitySystemBarsTest {
             composeRule
                 .onNodeWithContentDescription(composeRule.activity.getString(R.string.navigation_back))
                 .assertDoesNotExist()
+            waitForSystemBarsVisibility(visible = false)
 
             composeRule.activityRule.scenario.recreate()
             composeRule.waitUntil(10_000L) {
@@ -79,8 +82,10 @@ class MainActivitySystemBarsTest {
             composeRule
                 .onNodeWithContentDescription(composeRule.activity.getString(R.string.navigation_back))
                 .assertDoesNotExist()
+            waitForSystemBarsVisibility(visible = false)
 
             composeRule.onNodeWithTag(DISPLAY_EXIT_BUTTON_TAG).performClick()
+            waitForSystemBarsVisibility(visible = true)
             composeRule
                 .onNodeWithContentDescription(composeRule.activity.getString(R.string.navigation_back))
                 .assertIsDisplayed()
@@ -93,6 +98,20 @@ class MainActivitySystemBarsTest {
                 .assertIsDisplayed()
         } finally {
             runBlocking { preferences.setOnboardingComplete(onboardingComplete) }
+        }
+    }
+
+    private fun waitForSystemBarsVisibility(visible: Boolean) {
+        composeRule.waitUntil(10_000L) {
+            var matches = false
+            composeRule.activityRule.scenario.onActivity { activity ->
+                val insets = ViewCompat.getRootWindowInsets(activity.window.decorView)
+                matches =
+                    insets != null &&
+                    insets.isVisible(WindowInsetsCompat.Type.statusBars()) == visible &&
+                    insets.isVisible(WindowInsetsCompat.Type.navigationBars()) == visible
+            }
+            matches
         }
     }
 }
