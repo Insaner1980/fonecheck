@@ -881,7 +881,6 @@
     <string name="export_json_error">Não foi possível criar o arquivo JSON. Tente novamente.</string>
     <string name="export_share_title">Compartilhar relatório do fonecheck</string>
     <string name="export_not_found">O relatório salvo não foi encontrado.</string>
-    <string name="export_unavailable">Esta versão do app não pode exportar este relatório salvo.</string>
     <string name="export_load_error">Não foi possível carregar o relatório salvo para exportação.</string>
 
     <!-- Comparison -->

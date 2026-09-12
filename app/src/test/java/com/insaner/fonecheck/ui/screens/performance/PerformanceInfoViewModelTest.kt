@@ -4,17 +4,21 @@ import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.domain.model.PerformanceBenchmarkResult
 import com.insaner.fonecheck.domain.model.PerformanceInfo
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -34,6 +38,28 @@ class PerformanceInfoViewModelTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+    }
+
+    @Test
+    fun obsoleteInfoFailureCannotFinishReplacementCapture() {
+        val ioScheduler = TestCoroutineScheduler()
+        val viewModel =
+            PerformanceInfoViewModel(
+                performanceInfoProvider = PerformanceInfoProvider { error("capture failed") },
+                benchmarkRunner = PerformanceBenchmarkRunner { benchmarkResult() },
+                ioDispatcher = StandardTestDispatcher(ioScheduler),
+            )
+        dispatcher.scheduler.runCurrent()
+        ioScheduler.runCurrent()
+
+        // Replace the read before its failure is delivered back to Main.
+        viewModel.refreshInfo()
+        dispatcher.scheduler.runCurrent()
+
+        assertEquals(PerformanceInfoState(isInfoLoading = true), viewModel.state.value)
+        viewModel.cancelInfoCapture()
+        ioScheduler.runCurrent()
+        dispatcher.scheduler.runCurrent()
     }
 
     @Test
@@ -76,6 +102,47 @@ class PerformanceInfoViewModelTest {
 
             assertEquals(BenchmarkPhase.CANCELLED, viewModel.state.value.benchmarkPhase)
             assertNull(viewModel.state.value.benchmarkResult)
+        }
+
+    @Test
+    fun cancelledBenchmarkCannotOverwriteItsReplacement() =
+        runTest(dispatcher.scheduler) {
+            for (failAfterCancellation in listOf(false, true)) {
+                val oldCompletion = CompletableDeferred<Unit>()
+                val newCompletion = CompletableDeferred<Unit>()
+                var calls = 0
+                val viewModel =
+                    viewModel(
+                        PerformanceBenchmarkRunner {
+                            if (++calls == 1) {
+                                withContext(NonCancellable) { oldCompletion.await() }
+                                if (failAfterCancellation) error("Obsolete benchmark failure")
+                            } else {
+                                newCompletion.await()
+                            }
+                            benchmarkResult()
+                        },
+                    )
+                advanceUntilIdle()
+                viewModel.startBenchmark()
+                runCurrent()
+                viewModel.cancelBenchmark()
+                viewModel.startBenchmark()
+                runCurrent()
+
+                oldCompletion.complete(Unit)
+                runCurrent()
+                assertEquals(2, calls)
+                assertEquals(BenchmarkPhase.RUNNING, viewModel.state.value.benchmarkPhase)
+                assertNull(viewModel.state.value.benchmarkError)
+                assertNull(viewModel.state.value.benchmarkResult)
+
+                newCompletion.complete(Unit)
+                runCurrent()
+                assertEquals(BenchmarkPhase.COMPLETED, viewModel.state.value.benchmarkPhase)
+                assertEquals(benchmarkResult(), viewModel.state.value.benchmarkResult)
+                assertNull(viewModel.state.value.benchmarkError)
+            }
         }
 
     @Test

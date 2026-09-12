@@ -1,5 +1,6 @@
 package com.insaner.fonecheck.ui.screens.export
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -9,6 +10,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.data.repository.ReportReadFailure
 import com.insaner.fonecheck.domain.model.CoverageSummary
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.ReportAppContext
@@ -85,6 +87,30 @@ class ReportExportScreenTest {
             }
         }
         composeRule.onNodeWithText(context.getString(R.string.export_pdf_error)).assertIsDisplayed()
+    }
+
+    @Test
+    fun unavailableReportExplainsCorruptionAndUnsupportedSchemaSeparately() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val reason = mutableStateOf(ReportReadFailure.CORRUPT_DATA)
+        composeRule.setContent {
+            FonecheckTheme {
+                ReportExportScreen(
+                    state = ReportExportState.Unavailable(reason.value),
+                    onExportPdf = {},
+                    onExportJson = {},
+                    onRetryLoad = {},
+                    onBack = {},
+                )
+            }
+        }
+        composeRule.onNodeWithText(context.getString(R.string.report_corrupt)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.report_unsupported)).assertDoesNotExist()
+
+        composeRule.runOnIdle { reason.value = ReportReadFailure.UNSUPPORTED_SCHEMA_VERSION }
+
+        composeRule.onNodeWithText(context.getString(R.string.report_unsupported)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.report_corrupt)).assertDoesNotExist()
     }
 
     private fun report() =

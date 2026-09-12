@@ -41,7 +41,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.data.repository.ReportReadFailure
 import com.insaner.fonecheck.domain.model.Applicability
@@ -94,7 +97,18 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val latestFullCheck by viewModel.latestFullCheck.collectAsStateWithLifecycle()
-    val currentTime = remember(latestFullCheck) { Instant.now() }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val currentTime by
+        produceState(initialValue = Instant.now(), key1 = lifecycle, key2 = latestFullCheck) {
+            if (latestFullCheck is LatestFullCheckState.Available) {
+                lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    while (true) {
+                        value = Instant.now()
+                        delay(60_000L)
+                    }
+                }
+            }
+        }
 
     HomeContent(
         latestFullCheck = latestFullCheck,

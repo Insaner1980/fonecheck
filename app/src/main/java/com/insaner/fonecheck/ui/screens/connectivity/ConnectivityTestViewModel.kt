@@ -30,6 +30,7 @@ import android.telephony.CellInfoNr
 import android.telephony.CellInfoWcdma
 import android.telephony.TelephonyManager
 import androidx.core.content.ContextCompat
+import androidx.core.location.LocationListenerCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -368,7 +369,7 @@ class ConnectivityTestViewModel
                     }
                 }
             networkCallback = callback
-            connectivityManager.registerDefaultNetworkCallback(callback)
+            connectivityManager.registerDefaultNetworkCallback(callback, Handler(Looper.getMainLooper()))
         }
 
         private fun refreshNetworkState() {
@@ -532,7 +533,7 @@ class ConnectivityTestViewModel
             val gps = _state.value.gps
             if (!_state.value.hasLocationPermission || !gps.isAvailable || !gps.isEnabled) return
 
-            val startTime = System.currentTimeMillis()
+            val startTime = android.os.SystemClock.elapsedRealtime()
             val token = gpsSearchGate.start(startTime) ?: return
             _state.update {
                 it.copy(
@@ -587,9 +588,9 @@ class ConnectivityTestViewModel
                     }
                 }
             val locationListener =
-                LocationListener { location ->
-                    if (!gpsSearchGate.complete(token)) return@LocationListener
-                    val fixTime = System.currentTimeMillis() - startTime
+                LocationListenerCompat { location ->
+                    if (!gpsSearchGate.complete(token)) return@LocationListenerCompat
+                    val fixTime = android.os.SystemClock.elapsedRealtime() - startTime
                     _state.update {
                         it.copy(
                             gps =
@@ -655,8 +656,9 @@ class ConnectivityTestViewModel
                 viewModelScope.launch {
                     while (gpsSearchGate.isActive(token)) {
                         delay(GPS_TICK_MILLIS)
-                        val elapsed = System.currentTimeMillis() - startTime
-                        when (gpsSearchGate.tick(token, System.currentTimeMillis())) {
+                        val nowMillis = android.os.SystemClock.elapsedRealtime()
+                        val elapsed = nowMillis - startTime
+                        when (gpsSearchGate.tick(token, nowMillis)) {
                             GpsSearchTick.ACTIVE ->
                                 _state.update {
                                     it.copy(gps = it.gps.copy(elapsedSearchMs = elapsed))

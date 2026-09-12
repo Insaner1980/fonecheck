@@ -849,7 +849,6 @@
     <string name="export_json_error">JSON dosyası oluşturulamadı. Yeniden deneyebilirsiniz.</string>
     <string name="export_share_title">fonecheck raporunu paylaş</string>
     <string name="export_not_found">Kaydedilen rapor bulunamadı.</string>
-    <string name="export_unavailable">Bu kayıtlı rapor bu uygulama sürümüyle dışa aktarılamıyor.</string>
     <string name="export_load_error">Kaydedilen rapor dışa aktarmak için yüklenemedi.</string>
     <string name="comparison_title">Rapor karşılaştırması</string>
     <string name="comparison_description">İlk rapor → ikinci rapor</string>

@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -47,6 +48,7 @@ class DeviceInfoViewModel
                     } catch (error: CancellationException) {
                         throw error
                     } catch (_: Exception) {
+                        coroutineContext.ensureActive()
                         _state.value =
                             _state.value.copy(
                                 isLoading = false,

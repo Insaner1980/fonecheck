@@ -843,7 +843,6 @@
     <string name="export_json_error">JSON-filen kunde inte skapas. Du kan försöka igen.</string>
     <string name="export_share_title">Dela fonecheck-rapport</string>
     <string name="export_not_found">Den sparade rapporten hittades inte.</string>
-    <string name="export_unavailable">Den här sparade rapporten kan inte exporteras med den här appversionen.</string>
     <string name="export_load_error">Den sparade rapporten kunde inte läsas in för export.</string>
     <string name="comparison_title">Rapportjämförelse</string>
     <string name="comparison_description">Första rapporten till andra rapporten</string>

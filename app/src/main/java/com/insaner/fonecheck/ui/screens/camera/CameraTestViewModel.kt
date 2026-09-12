@@ -120,7 +120,7 @@ class CameraTestViewModel
 
         private fun loadCapabilities() {
             val token = capabilityGate.begin()
-            _state.value = _state.value.copy(isLoading = true, error = null)
+            _state.update { it.copy(isLoading = true, error = null) }
             viewModelScope.launch(ioDispatcher) {
                 runCameraOperation(
                     action = "load camera capabilities",
@@ -323,8 +323,8 @@ class CameraTestViewModel
             stopPreview()
             val generation = ++previewGeneration
             val selected = _state.value.cameras.firstOrNull { it.cameraId == cameraId } ?: return
-            _state.value =
-                _state.value.copy(
+            _state.update {
+                it.copy(
                     selectedCameraId = cameraId,
                     isFrontCamera = selected.facingCode == CameraFacingCode.FRONT,
                     lastCapture = null,
@@ -332,6 +332,7 @@ class CameraTestViewModel
                     previewStageToken = stageToken,
                     captureCompletedAt = null,
                 )
+            }
             val context = getApplication<Application>()
 
             val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
@@ -370,7 +371,7 @@ class CameraTestViewModel
                             }.build()
 
                     provider.bindToLifecycle(lifecycleOwner, selector, preview, capture)
-                    _state.value = _state.value.copy(isPreviewActive = true)
+                    _state.update { it.copy(isPreviewActive = true) }
                 }
             }, ContextCompat.getMainExecutor(context))
         }
@@ -382,7 +383,7 @@ class CameraTestViewModel
             runCatching { cameraProvider?.unbindAll() }
             cameraProvider = null
             imageCapture = null
-            _state.value = _state.value.copy(isPreviewActive = false, isCapturing = false)
+            _state.update { it.copy(isPreviewActive = false, isCapturing = false) }
         }
 
         fun capturePhoto() {
@@ -398,13 +399,13 @@ class CameraTestViewModel
         }
 
         fun clearCaptureResult() {
-            _state.value = _state.value.copy(lastCapture = null, capturePreview = null, error = null)
+            _state.update { it.copy(lastCapture = null, capturePreview = null, error = null) }
         }
 
         fun toggleFlash() {
             val caps = _state.value.rearCapabilities
             if (caps == null || !caps.hasFlash) {
-                _state.value = _state.value.copy(flashTestResult = FlashTestResult.NOT_AVAILABLE)
+                _state.update { it.copy(flashTestResult = FlashTestResult.NOT_AVAILABLE) }
                 return
             }
 
@@ -412,19 +413,21 @@ class CameraTestViewModel
             runCameraOperation(
                 action = "change torch mode",
                 onFailure = { error ->
-                    _state.value =
-                        _state.value.copy(
+                    _state.update {
+                        it.copy(
                             error = error.message,
                             flashTestResult = FlashTestResult.NOT_AVAILABLE,
                         )
+                    }
                 },
             ) {
                 cameraManager.setTorchMode(caps.cameraId, newFlashOn)
-                _state.value =
-                    _state.value.copy(
+                _state.update {
+                    it.copy(
                         flashOn = newFlashOn,
                         flashTestResult = if (newFlashOn) FlashTestResult.ON else FlashTestResult.OFF,
                     )
+                }
             }
         }
 
@@ -433,7 +436,7 @@ class CameraTestViewModel
                 val caps = _state.value.rearCapabilities ?: return
                 runCameraOperation(action = "turn off torch") {
                     cameraManager.setTorchMode(caps.cameraId, false)
-                    _state.value = _state.value.copy(flashOn = false, flashTestResult = FlashTestResult.OFF)
+                    _state.update { it.copy(flashOn = false, flashTestResult = FlashTestResult.OFF) }
                 }
             }
         }

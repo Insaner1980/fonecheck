@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -31,6 +32,7 @@ import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.export.AndroidReportExporter
 import com.insaner.fonecheck.export.ReportPdfRenderer
 import com.insaner.fonecheck.ui.MainActivity
+import com.insaner.fonecheck.ui.TopBarAction
 import com.insaner.fonecheck.ui.screens.buttons.VolumeButtonDirection
 import com.insaner.fonecheck.ui.screens.runall.ReportSaveStatus
 import com.insaner.fonecheck.ui.screens.runall.RunAllHardwareProfile
@@ -62,6 +64,68 @@ class ReportRetestNavigationTest {
     private val sessions = ConcurrentHashMap<String, RunAllTestsViewModel>()
     private var renderVersion by mutableIntStateOf(0)
     private var renderedVersion = 0
+
+    @Test
+    fun repeatedHomeClickAndStaleBackDoNotChangeTwoEntries() {
+        composeRule.activityRule.scenario.onActivity { activity ->
+            activity.setContent {
+                val nav = rememberNavController()
+                FonecheckTheme {
+                    FonecheckNavHost(nav, appPreferences = AppPreferences(onboardingComplete = true))
+                }
+                SideEffect { navController = nav }
+            }
+        }
+        composeRule.waitForIdle()
+        composeRule.waitUntil(15_000L) {
+            navController.currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED
+        }
+        val homeEntry = composeRule.runOnIdle { navController.currentBackStackEntry!! }
+        val click =
+            composeRule
+                .onNodeWithContentDescription(text(R.string.home_settings_content_description))
+                .fetchSemanticsNode()
+                .config[SemanticsActions.OnClick]
+                .action!!
+        composeRule.runOnIdle {
+            click()
+            click()
+            assertTrue(navController.currentBackStackEntry!!.destination.hasRoute<Settings>())
+            assertSame(homeEntry, navController.previousBackStackEntry)
+        }
+        composeRule.waitForIdle()
+        composeRule.runOnIdle {
+            val settingsEntry = navController.currentBackStackEntry!!
+            navController.popBackStackFrom(settingsEntry)
+            navController.popBackStackFrom(settingsEntry)
+            assertSame(homeEntry, navController.currentBackStackEntry)
+        }
+    }
+
+    @Test
+    fun outgoingDisplayCannotClearThermalRefreshAction() {
+        var action: TopBarAction? = null
+        composeRule.activityRule.scenario.onActivity { activity ->
+            activity.setContent {
+                val nav = rememberNavController()
+                FonecheckTheme {
+                    FonecheckNavHost(
+                        nav,
+                        appPreferences = AppPreferences(onboardingComplete = true),
+                        onTopBarActionChange = { action = it },
+                    )
+                }
+                SideEffect { navController = nav }
+            }
+        }
+        composeRule.waitForIdle()
+        composeRule.runOnIdle { navController.navigate(DisplayTest) }
+        composeRule.waitForIdle()
+        composeRule.runOnIdle { assertEquals(R.string.display_refresh_info, action?.contentDescriptionResId) }
+        composeRule.runOnIdle { navController.navigate(ThermalTest) }
+        composeRule.waitForIdle()
+        composeRule.runOnIdle { assertEquals(R.string.thermal_refresh, action?.contentDescriptionResId) }
+    }
 
     @Test
     fun realNavHostOwnsFreshConsecutiveRunsAndReturnsToUnchangedReports() {
@@ -211,6 +275,8 @@ class ReportRetestNavigationTest {
             composeRule.activity.volumeButtonEventSource.record(VolumeButtonDirection.UP)
             composeRule.activity.volumeButtonEventSource.record(VolumeButtonDirection.DOWN)
         }
+        composeRule.waitUntil(15_000L) { session.state.value.awaitingContinue }
+        click(R.string.run_all_buttons_continue)
         val report = awaitSaved(session)
         assertEquals(ReportKind.CATEGORY_ONLY, report.kind)
         assertEquals(listOf(DiagnosticCategoryId.BUTTONS), report.categories.map { it.categoryId })

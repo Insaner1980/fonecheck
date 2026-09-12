@@ -23,24 +23,34 @@ fun formatUiNumber(
     minimumFractionDigits: Int = 0,
     maximumFractionDigits: Int = minimumFractionDigits,
     grouping: Boolean = false,
-): String =
+): String = createUiNumberFormat(locale, minimumFractionDigits, maximumFractionDigits, grouping).format(value)
+
+internal fun createUiNumberFormat(
+    locale: Locale,
+    minimumFractionDigits: Int,
+    maximumFractionDigits: Int,
+    grouping: Boolean,
+): NumberFormat =
     NumberFormat
         .getNumberInstance(uiLanguageLocale(locale))
         .apply {
             this.minimumFractionDigits = minimumFractionDigits
             this.maximumFractionDigits = maximumFractionDigits
             isGroupingUsed = grouping
-        }.format(value)
+        }
 
 fun formatUiScientificNumber(
     value: Number,
     locale: Locale,
     fractionDigits: Int,
-): String {
+): String = createUiScientificNumberFormat(locale, fractionDigits).format(value).replace('E', 'e')
+
+internal fun createUiScientificNumberFormat(
+    locale: Locale,
+    fractionDigits: Int,
+): DecimalFormat {
     val pattern = "0.${"0".repeat(fractionDigits)}E0"
     return DecimalFormat(pattern, DecimalFormatSymbols(uiLanguageLocale(locale)))
-        .format(value)
-        .replace('E', 'e')
 }
 
 @Composable
@@ -50,16 +60,17 @@ fun uiNumber(
     maximumFractionDigits: Int = minimumFractionDigits,
     grouping: Boolean = false,
 ): String {
-    val locale = uiLanguageLocale(LocalLocale.current.platformLocale)
-    return remember(value, locale, minimumFractionDigits, maximumFractionDigits, grouping) {
-        formatUiNumber(
-            value = value,
-            locale = locale,
-            minimumFractionDigits = minimumFractionDigits,
-            maximumFractionDigits = maximumFractionDigits,
-            grouping = grouping,
-        )
-    }
+    val locale = LocalLocale.current.platformLocale
+    val formatter =
+        remember(locale, minimumFractionDigits, maximumFractionDigits, grouping) {
+            createUiNumberFormat(
+                locale = locale,
+                minimumFractionDigits = minimumFractionDigits,
+                maximumFractionDigits = maximumFractionDigits,
+                grouping = grouping,
+            )
+        }
+    return remember(value, formatter) { formatter.format(value) }
 }
 
 @Composable
@@ -67,10 +78,12 @@ fun uiScientificNumber(
     value: Number,
     fractionDigits: Int,
 ): String {
-    val locale = uiLanguageLocale(LocalLocale.current.platformLocale)
-    return remember(value, locale, fractionDigits) {
-        formatUiScientificNumber(value, locale, fractionDigits)
-    }
+    val locale = LocalLocale.current.platformLocale
+    val formatter =
+        remember(locale, fractionDigits) {
+            createUiScientificNumberFormat(locale, fractionDigits)
+        }
+    return remember(value, formatter) { formatter.format(value).replace('E', 'e') }
 }
 
 @SuppressLint("AppBundleLocaleChanges")
