@@ -439,7 +439,7 @@ class RunAllTestsViewModel
                                 ReportKind.CATEGORY_ONLY
                             },
                         startedAt = startedAt,
-                        completedAt = Instant.ofEpochMilli(clock.currentTimeMillis()),
+                        completedAt = maxOf(startedAt, Instant.ofEpochMilli(clock.currentTimeMillis())),
                         device = device,
                         app = app,
                         snapshots =

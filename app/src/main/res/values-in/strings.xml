@@ -899,7 +899,6 @@
     <string name="export_json_error">File JSON tidak dapat dibuat. Coba lagi.</string>
     <string name="export_share_title">Bagikan laporan fonecheck</string>
     <string name="export_not_found">Laporan tersimpan tidak ditemukan.</string>
-    <string name="export_unavailable">Laporan tersimpan ini tidak dapat diekspor oleh versi aplikasi ini.</string>
     <string name="export_load_error">Laporan tersimpan tidak dapat dimuat untuk diekspor.</string>
     <string name="comparison_title">Perbandingan laporan</string>
     <string name="comparison_description">Laporan pertama → laporan kedua</string>

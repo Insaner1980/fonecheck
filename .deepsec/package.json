@@ -16,7 +16,8 @@
     "deepsec:report:custom": "pnpm run deepsec:report"
   },
   "dependencies": {
-    "deepsec": "2.3.8"
+    "@anthropic-ai/sdk": "0.125.0",
+    "deepsec": "2.3.9"
   },
   "pnpm": {
     "overrides": {

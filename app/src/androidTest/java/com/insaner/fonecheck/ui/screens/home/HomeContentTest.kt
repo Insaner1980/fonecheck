@@ -87,7 +87,7 @@ class HomeContentTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun statusPanelShowsOnlySingleLineNamesWithMatchingLegendColumns() {
+    fun statusPanelFitsNamesWithMatchingLegendColumns() {
         val baseContext = InstrumentationRegistry.getInstrumentation().targetContext
         val savedValues =
             mapOf(
@@ -193,12 +193,16 @@ class HomeContentTest {
                             )
                     val nameLayouts = mutableListOf<TextLayoutResult>()
                     labelNode.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(nameLayouts) }
-                    assertEquals("$case: $label must stay on one line.", 1, nameLayouts.single().lineCount)
+                    if (columns == 2) {
+                        assertEquals("$case: $label must stay on one line.", 1, nameLayouts.single().lineCount)
+                    }
                     assertFalse("$case: $label must fit its cell.", nameLayouts.single().didOverflowWidth)
                     assertFalse("$case: $label must not be ellipsised.", nameLayouts.single().isLineEllipsized(0))
                     cellHeights += cell.fetchSemanticsNode().boundsInRoot.height
                 }
-                cellHeights.forEach { assertEquals(cellHeights.first(), it, 0.5f) }
+                if (columns == 2) {
+                    cellHeights.forEach { assertEquals(cellHeights.first(), it, 0.5f) }
+                }
 
                 val passLabel = context.getString(R.string.run_all_status_pass).uppercase(locale)
                 val failLabel = context.getString(R.string.run_all_status_fail).uppercase(locale)
@@ -213,6 +217,61 @@ class HomeContentTest {
                     assertTrue(case, passBounds.bottom < failBounds.top)
                 }
             }
+        }
+    }
+
+    @Test
+    fun narrowStatusPanelWrapsLongLocalizedNamesAndLegendWithoutOverflow() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val configuration =
+            Configuration(context.resources.configuration).apply { setLocale(Locale.forLanguageTag("es")) }
+        val localizedContext = context.createConfigurationContext(configuration)
+        composeRule.setContent {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride
+                    .Locales(LocaleList("es"))
+                    .then(DeviceConfigurationOverride.FontScale(2f))
+                    .then(DeviceConfigurationOverride.ForcedSize(DpSize(240.dp, 800.dp))),
+            ) {
+                FonecheckTheme {
+                    HomeContent(
+                        latestFullCheck = LatestFullCheckState.Empty,
+                        onNavigate = {},
+                        onRunAllTests = {},
+                        modifier = Modifier.padding(horizontal = 6.dp),
+                    )
+                }
+            }
+        }
+
+        diagnosticDestinations.forEach { destination ->
+            val tag = "home_category_${destination.category.stableId}"
+            val label = localizedContext.getString(destination.labelResId)
+            composeRule.onNodeWithTag(tag).performScrollTo().assertTextEquals(label)
+            val layouts = mutableListOf<TextLayoutResult>()
+            composeRule
+                .onNode(hasAnyAncestor(hasTestTag(tag)) and hasText(label), useUnmergedTree = true)
+                .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+            assertFalse(label, layouts.single().hasVisualOverflow)
+            if (destination.category == DiagnosticCategoryId.BUTTONS) {
+                assertTrue("The long volume-button label must wrap.", layouts.single().lineCount > 1)
+            }
+        }
+        listOf(
+            R.string.run_all_status_pass,
+            R.string.run_all_status_fail,
+            R.string.run_all_status_warning,
+            R.string.run_all_status_info,
+            R.string.status_not_available,
+            R.string.status_not_measured,
+        ).forEach { labelRes ->
+            val label = localizedContext.getString(labelRes).uppercase(Locale.forLanguageTag("es"))
+            val layouts = mutableListOf<TextLayoutResult>()
+            composeRule
+                .onNodeWithText(label)
+                .performScrollTo()
+                .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+            assertFalse(label, layouts.single().hasVisualOverflow)
         }
     }
 

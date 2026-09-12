@@ -152,7 +152,7 @@ private fun SpeakerTestSection(
         Note(stringResource(R.string.audio_speaker_description))
         ButtonRow { buttonModifier ->
             frequencies.forEach { frequency ->
-                val isActive = state.isPlaying && state.currentFrequency == frequency
+                val isActive = state.activeTone == AudioTestType.SPEAKER && state.currentFrequency == frequency
                 ToneSelectionButton(
                     label = frequencyLabel(frequency),
                     isActive = isActive,
@@ -163,7 +163,7 @@ private fun SpeakerTestSection(
                 )
             }
         }
-        ToneStopButton(isPlaying = state.isPlaying, onStop = viewModel::stopTone)
+        ToneStopButton(isPlaying = state.activeTone == AudioTestType.SPEAKER, onStop = viewModel::stopTone)
         AudioManualResult(
             check = AudioManualCheck.SPEAKER,
             result = state.manualResults[AudioManualCheck.SPEAKER],
@@ -196,7 +196,7 @@ private fun StereoTestSection(
         Note(stringResource(R.string.audio_stereo_description))
         ButtonRow { buttonModifier ->
             channels.forEach { (channel, label) ->
-                val isActive = state.isPlaying && state.stereoChannel == channel
+                val isActive = state.activeTone == AudioTestType.STEREO && state.stereoChannel == channel
                 ToneSelectionButton(
                     label = label,
                     isActive = isActive,
@@ -207,7 +207,7 @@ private fun StereoTestSection(
                 )
             }
         }
-        ToneStopButton(isPlaying = state.isPlaying, onStop = viewModel::stopTone)
+        ToneStopButton(isPlaying = state.activeTone == AudioTestType.STEREO, onStop = viewModel::stopTone)
         AudioManualResult(
             check = AudioManualCheck.STEREO,
             result = state.manualResults[AudioManualCheck.STEREO],
@@ -251,7 +251,7 @@ private fun EarpieceTestSection(
                 )
 
             true -> {
-                if (state.isPlaying) {
+                if (state.activeTone == AudioTestType.EARPIECE) {
                     SecondaryButton(
                         label = stringResource(R.string.audio_stop),
                         onClick = viewModel::stopTone,

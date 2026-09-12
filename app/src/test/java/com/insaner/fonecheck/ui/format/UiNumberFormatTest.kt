@@ -6,6 +6,37 @@ import java.util.Locale
 
 class UiNumberFormatTest {
     @Test
+    fun `reused decimal formatters preserve independent locale and precision settings`() {
+        val finnish = createUiNumberFormat(Locale.forLanguageTag("fi-US"), 1, 3, false)
+        val english = createUiNumberFormat(Locale.forLanguageTag("en-FI"), 2, 2, true)
+        listOf<Number>(1234.567, -0.0, 12, 0.000125, Double.NaN, Double.POSITIVE_INFINITY).forEach { value ->
+            assertEquals(formatUiNumber(value, Locale.forLanguageTag("fi-US"), 1, 3), finnish.format(value))
+            assertEquals(formatUiNumber(value, Locale.forLanguageTag("en-FI"), 2, 2, true), english.format(value))
+        }
+        assertEquals("12,0", finnish.format(12))
+        assertEquals("1,234.50", english.format(1234.5))
+    }
+
+    @Test
+    fun `reused scientific formatters preserve independent locale and precision settings`() {
+        val finnish = createUiScientificNumberFormat(Locale.forLanguageTag("fi-US"), 2)
+        val english = createUiScientificNumberFormat(Locale.forLanguageTag("en-FI"), 3)
+        listOf<Number>(0.000125, -1234.567, 0, Long.MAX_VALUE, Double.NaN, Double.POSITIVE_INFINITY).forEach { value ->
+            assertEquals(
+                formatUiScientificNumber(value, Locale.forLanguageTag("fi-US"), 2),
+                finnish.format(value).replace('E', 'e'),
+            )
+            assertEquals(
+                formatUiScientificNumber(value, Locale.forLanguageTag("en-FI"), 3),
+                english.format(value).replace('E', 'e'),
+            )
+        }
+        val minusSign = java.text.DecimalFormatSymbols(Locale.forLanguageTag("fi")).minusSign
+        assertEquals("1,25e${minusSign}4", finnish.format(0.000125).replace('E', 'e'))
+        assertEquals("1.250e-4", english.format(0.000125).replace('E', 'e'))
+    }
+
+    @Test
     fun `Turkish UI uses generic Turkish regardless of region and device formatting default`() {
         assertRegionalCommaDecimalFormatting(
             expectedLanguageTag = "tr",

@@ -27,7 +27,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,6 +51,7 @@ import com.insaner.fonecheck.data.preferences.AppPreferencesRepository
 import com.insaner.fonecheck.data.preferences.AppThemeMode
 import com.insaner.fonecheck.navigation.FonecheckNavHost
 import com.insaner.fonecheck.navigation.navigationChromeFor
+import com.insaner.fonecheck.navigation.popBackStackFrom
 import com.insaner.fonecheck.ui.components.IconBoxButton
 import com.insaner.fonecheck.ui.components.InstrumentTickRule
 import com.insaner.fonecheck.ui.screens.buttons.VolumeButtonEventSource
@@ -164,13 +164,12 @@ class MainActivity : AppCompatActivity() {
     private fun LoadedFonecheckContent(preferences: AppPreferences) {
         val navController = rememberNavController()
         val backStackEntry by navController.currentBackStackEntryAsState()
-        val currentDestination = backStackEntry?.destination
-        val currentRoute = currentDestination?.route
+        val currentEntry = backStackEntry
+        val currentDestination = currentEntry?.destination
         var isDisplayFullscreen by remember { mutableStateOf(false) }
-        var topBarAction by remember(currentRoute) { mutableStateOf<TopBarAction?>(null) }
+        var topBarAction by remember(currentEntry?.id) { mutableStateOf<TopBarAction?>(null) }
         val navigationChrome = navigationChromeFor(currentDestination)
 
-        LaunchedEffect(currentRoute) { isDisplayFullscreen = false }
         ConfigureSystemBars(isDisplayFullscreen)
 
         Scaffold(
@@ -200,7 +199,7 @@ class MainActivity : AppCompatActivity() {
                                     IconBoxButton(
                                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                         contentDescription = stringResource(R.string.navigation_back),
-                                        onClick = { navController.popBackStack() },
+                                        onClick = { currentEntry?.let(navController::popBackStackFrom) },
                                     )
                                 }
                             },

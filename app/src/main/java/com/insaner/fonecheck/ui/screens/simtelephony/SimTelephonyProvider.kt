@@ -56,10 +56,10 @@ class AndroidSimTelephonyProvider
                         telephonyManager.phoneCount
                     },
                 )
-            val subscriptions = activeSubscriptions(hasPermission).associateBy(SubscriptionInfo::getSimSlotIndex)
+            val subscriptions = activeSubscriptions(hasPermission)?.associateBy(SubscriptionInfo::getSimSlotIndex)
             val slots =
                 (0 until phoneCount).map { slotIndex ->
-                    val subscription = subscriptions[slotIndex]
+                    val subscription = subscriptions?.get(slotIndex)
                     val subscriptionTelephonyManager =
                         subscription?.let {
                             runCatching {
@@ -71,7 +71,7 @@ class AndroidSimTelephonyProvider
                         stateCode =
                             runCatching { telephonyManager.getSimState(slotIndex) }
                                 .getOrDefault(TelephonyManager.SIM_STATE_UNKNOWN),
-                        activeSubscription = if (hasPermission) subscription != null else null,
+                        activeSubscription = subscriptions?.let { subscription != null },
                         embedded =
                             subscription?.let {
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) it.isEmbedded else null
@@ -101,15 +101,15 @@ class AndroidSimTelephonyProvider
         }
 
         @Suppress("MissingPermission")
-        private fun activeSubscriptions(hasPermission: Boolean): List<SubscriptionInfo> {
-            if (!hasPermission) return emptyList()
-            val manager = context.getSystemService(SubscriptionManager::class.java) ?: return emptyList()
+        private fun activeSubscriptions(hasPermission: Boolean): List<SubscriptionInfo>? {
+            if (!hasPermission) return null
+            val manager = context.getSystemService(SubscriptionManager::class.java) ?: return null
             return try {
                 manager.activeSubscriptionInfoList.orEmpty()
             } catch (_: SecurityException) {
-                emptyList()
+                null
             } catch (_: RuntimeException) {
-                emptyList()
+                null
             }
         }
 

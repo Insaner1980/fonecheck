@@ -1,0 +1,27 @@
+JUnit version 4.13.2
+.................
+Time: 0,08
+
+OK (17 tests)
+
+Fork 1
+Parity comparisons: 1344; Java 21.0.12
+decimal-before median ns/op=927.096 bytes/op=2271.74656
+decimal-after median ns/op=347.648 bytes/op=227.9456
+scientific-before median ns/op=971.964 bytes/op=2488.41536
+scientific-after median ns/op=386.768 bytes/op=292.6144
+Checksum: 0
+Fork 2
+Parity comparisons: 1344; Java 21.0.12
+decimal-before median ns/op=896.136 bytes/op=2271.74656
+decimal-after median ns/op=340.862 bytes/op=227.9456
+scientific-before median ns/op=922.896 bytes/op=2488.41536
+scientific-after median ns/op=369.448 bytes/op=292.6144
+Checksum: 0
+Fork 3
+Parity comparisons: 1344; Java 21.0.12
+decimal-before median ns/op=944.61 bytes/op=2271.74656
+decimal-after median ns/op=366.12 bytes/op=227.9456
+scientific-before median ns/op=980.954 bytes/op=2488.41536
+scientific-after median ns/op=389.096 bytes/op=292.6144
+Checksum: 0
