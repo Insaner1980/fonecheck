@@ -4,6 +4,7 @@ import com.insaner.fonecheck.testing.testDeviceInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -95,6 +96,27 @@ class DeviceInfoViewModelTest {
             assertFalse(viewModel.state.value.isLoading)
             assertNotNull(viewModel.state.value.error)
         }
+
+    @Test
+    fun obsoleteCaptureFailureCannotFinishReplacementCapture() {
+        val ioScheduler = TestCoroutineScheduler()
+        val viewModel =
+            DeviceInfoViewModel(
+                deviceInfoProvider = DeviceInfoProvider { error("capture failed") },
+                ioDispatcher = StandardTestDispatcher(ioScheduler),
+            )
+        dispatcher.scheduler.runCurrent()
+        ioScheduler.runCurrent()
+
+        // Replace the read before its failure is delivered back to Main.
+        viewModel.refresh()
+        dispatcher.scheduler.runCurrent()
+
+        assertEquals(DeviceInfoState(isLoading = true), viewModel.state.value)
+        viewModel.cancelCapture()
+        ioScheduler.runCurrent()
+        dispatcher.scheduler.runCurrent()
+    }
 
     @Test
     fun queuedCaptureCanBeCancelledBeforeItStarts() =

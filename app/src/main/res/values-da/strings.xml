@@ -877,7 +877,6 @@
     <string name="export_json_error">JSON-filen kunne ikke oprettes. Du kan prøve igen.</string>
     <string name="export_share_title">Del fonecheck-rapport</string>
     <string name="export_not_found">Den gemte rapport blev ikke fundet.</string>
-    <string name="export_unavailable">Denne gemte rapport kan ikke eksporteres med denne appversion.</string>
     <string name="export_load_error">Den gemte rapport kunne ikke indlæses til eksport.</string>
     <string name="comparison_title">Rapportsammenligning</string>
     <string name="comparison_description">Første rapport til anden rapport</string>

@@ -17,6 +17,7 @@ import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
+import com.insaner.fonecheck.data.repository.ReportReadFailure
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.ui.components.IndeterminateRule
 import com.insaner.fonecheck.ui.components.LongValueRow
@@ -117,7 +118,13 @@ fun ReportExportScreen(
         is ReportExportState.Unavailable ->
             ReportStateScreen(
                 type = ScreenStateType.UNAVAILABLE,
-                message = stringResource(R.string.export_unavailable),
+                message =
+                    stringResource(
+                        when (state.reason) {
+                            ReportReadFailure.CORRUPT_DATA -> R.string.report_corrupt
+                            ReportReadFailure.UNSUPPORTED_SCHEMA_VERSION -> R.string.report_unsupported
+                        },
+                    ),
                 onRetry = onRetryLoad,
                 onBack = onBack,
                 modifier = modifier,

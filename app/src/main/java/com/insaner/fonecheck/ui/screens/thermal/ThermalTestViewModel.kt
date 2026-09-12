@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import com.insaner.fonecheck.runtime.EpochMillisClock
+import com.insaner.fonecheck.runtime.NanoTimeSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,6 +41,7 @@ class ThermalTestViewModel
     constructor(
         private val platform: ThermalPlatform,
         private val clock: EpochMillisClock,
+        private val nanoTimeSource: NanoTimeSource = NanoTimeSource(System::nanoTime),
     ) : ViewModel() {
         private val _state = MutableStateFlow(ThermalTestState())
         val state: StateFlow<ThermalTestState> = _state.asStateFlow()
@@ -92,7 +94,7 @@ class ThermalTestViewModel
         }
 
         fun refresh() {
-            val nowMillis = clock.currentTimeMillis()
+            val nowMillis = nanoTimeSource.nanoTime() / 1_000_000L
             val status =
                 if (platform.statusApiSupported) {
                     platform.readStatus() ?: ThermalStatusCode.UNAVAILABLE

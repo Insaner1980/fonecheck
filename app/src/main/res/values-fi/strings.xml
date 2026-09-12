@@ -899,7 +899,6 @@
     <string name="export_json_error">JSON-tiedostoa ei voitu luoda. Voit yrittää uudelleen.</string>
     <string name="export_share_title">Jaa fonecheck-raportti</string>
     <string name="export_not_found">Tallennettua raporttia ei löytynyt.</string>
-    <string name="export_unavailable">Tätä tallennettua raporttia ei voi viedä tällä sovellusversiolla.</string>
     <string name="export_load_error">Tallennettua raporttia ei voitu ladata vientiä varten.</string>
     <string name="comparison_title">Raporttien vertailu</string>
     <string name="comparison_description">Ensimmäinen raportti → toinen raportti</string>

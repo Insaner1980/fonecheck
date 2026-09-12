@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -366,7 +368,7 @@ private fun DisplaySection(
 }
 
 @Composable
-private fun VisualTestOverlay(
+internal fun VisualTestOverlay(
     state: VisualTestState,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
@@ -390,7 +392,10 @@ private fun VisualTestOverlay(
             color = FonecheckTheme.colors.background,
         ) {
             Column(
-                modifier = Modifier.padding(FonecheckTheme.spacing.md),
+                modifier =
+                    Modifier
+                        .verticalScroll(rememberScrollState())
+                        .padding(FonecheckTheme.spacing.md),
                 verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
             ) {
                 Row(
