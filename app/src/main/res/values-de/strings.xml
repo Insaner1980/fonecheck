@@ -849,7 +849,6 @@
     <string name="export_json_error">Die JSON-Datei konnte nicht erstellt werden. Du kannst es erneut versuchen.</string>
     <string name="export_share_title">fonecheck-Bericht teilen</string>
     <string name="export_not_found">Der gespeicherte Bericht wurde nicht gefunden.</string>
-    <string name="export_unavailable">Diese App-Version kann diesen gespeicherten Bericht nicht exportieren.</string>
     <string name="export_load_error">Der gespeicherte Bericht konnte nicht zum Exportieren geladen werden.</string>
     <string name="comparison_title">Berichtsvergleich</string>
     <string name="comparison_description">Erster Bericht im Vergleich zum zweiten Bericht</string>

@@ -48,25 +48,32 @@ fun FonecheckNavHost(
     onTopBarActionChange: (TopBarAction?) -> Unit = {},
     appPreferences: AppPreferences = AppPreferences(),
 ) {
+    fun publishTopBarAction(
+        source: NavBackStackEntry,
+        action: TopBarAction?,
+    ) {
+        if (navController.currentBackStackEntry === source) onTopBarActionChange(action)
+    }
+
     NavHost(
         navController = navController,
         startDestination = initialDestination(appPreferences),
         modifier = modifier,
     ) {
-        composable<Home> {
+        composable<Home> { backStackEntry ->
             HomeScreen(
-                onNavigate = { route -> navController.navigate(route) },
-                onRunAllTests = { navController.navigate(RunAllTests) },
+                onNavigate = { route -> navController.navigateFrom(backStackEntry, route) },
+                onRunAllTests = { navController.navigateFrom(backStackEntry, RunAllTests) },
             )
         }
-        composable<DeviceInfo> {
-            DeviceInfoScreen(onTopBarActionChange = onTopBarActionChange)
+        composable<DeviceInfo> { backStackEntry ->
+            DeviceInfoScreen(onTopBarActionChange = { action -> publishTopBarAction(backStackEntry, action) })
         }
-        composable<PerformanceInfo> {
-            PerformanceInfoScreen(onTopBarActionChange = onTopBarActionChange)
+        composable<PerformanceInfo> { backStackEntry ->
+            PerformanceInfoScreen(onTopBarActionChange = { action -> publishTopBarAction(backStackEntry, action) })
         }
-        composable<SimTelephony> {
-            SimTelephonyScreen(onTopBarActionChange = onTopBarActionChange)
+        composable<SimTelephony> { backStackEntry ->
+            SimTelephonyScreen(onTopBarActionChange = { action -> publishTopBarAction(backStackEntry, action) })
         }
         composable<AudioTest> {
             AudioTestScreen()
@@ -77,22 +84,22 @@ fun FonecheckNavHost(
         composable<SensorTest> {
             SensorTestScreen()
         }
-        composable<ConnectivityTest> {
-            ConnectivityTestScreen(onTopBarActionChange = onTopBarActionChange)
+        composable<ConnectivityTest> { backStackEntry ->
+            ConnectivityTestScreen(onTopBarActionChange = { action -> publishTopBarAction(backStackEntry, action) })
         }
         composable<BatteryTest> {
             BatteryTestScreen()
         }
-        composable<ThermalTest> {
-            ThermalTestScreen(onTopBarActionChange = onTopBarActionChange)
+        composable<ThermalTest> { backStackEntry ->
+            ThermalTestScreen(onTopBarActionChange = { action -> publishTopBarAction(backStackEntry, action) })
         }
-        composable<StorageTest> {
-            StorageTestScreen(onTopBarActionChange = onTopBarActionChange)
+        composable<StorageTest> { backStackEntry ->
+            StorageTestScreen(onTopBarActionChange = { action -> publishTopBarAction(backStackEntry, action) })
         }
-        composable<DisplayTest> {
+        composable<DisplayTest> { backStackEntry ->
             DisplayTestScreen(
                 onFullscreenChange = onDisplayFullscreenChange,
-                onTopBarActionChange = onTopBarActionChange,
+                onTopBarActionChange = { action -> publishTopBarAction(backStackEntry, action) },
             )
         }
         composable<VibrationTest> {
@@ -106,17 +113,17 @@ fun FonecheckNavHost(
         }
         composable<RunAllTests> { backStackEntry ->
             RunAllTestsScreen(
-                onDone = { navController.popBackStack() },
+                onDone = { navController.popBackStackFrom(backStackEntry) },
                 onOpenCategory = { route -> navController.openReportRetest(backStackEntry, route) },
                 onDisplayFullscreenChange = onDisplayFullscreenChange,
                 showTestWarnings = appPreferences.testWarningsEnabled,
             )
         }
-        composable<Settings> {
+        composable<Settings> { backStackEntry ->
             SettingsRoute(
-                onOpenLanguage = { navController.navigate(LanguageSettings) },
-                onOpenLicenses = { navController.navigate(Licenses) },
-                onOpenOnboarding = { navController.navigate(Onboarding(reopened = true)) },
+                onOpenLanguage = { navController.navigateFrom(backStackEntry, LanguageSettings) },
+                onOpenLicenses = { navController.navigateFrom(backStackEntry, Licenses) },
+                onOpenOnboarding = { navController.navigateFrom(backStackEntry, Onboarding(reopened = true)) },
             )
         }
         composable<LanguageSettings> { LanguageSelectionRoute() }
@@ -125,8 +132,9 @@ fun FonecheckNavHost(
             val route = backStackEntry.toRoute<Onboarding>()
             OnboardingRoute(
                 onFinish = {
+                    if (navController.currentBackStackEntry !== backStackEntry) return@OnboardingRoute
                     if (route.reopened) {
-                        navController.popBackStack()
+                        navController.popBackStackFrom(backStackEntry)
                     } else {
                         navController.navigate(Home) {
                             popUpTo(navController.graph.id) { inclusive = true }
@@ -138,7 +146,7 @@ fun FonecheckNavHost(
         }
         composable<Report> { backStackEntry ->
             ReportDetailRoute(
-                onBack = { navController.popBackStack() },
+                onBack = { navController.popBackStackFrom(backStackEntry) },
                 onRetest = { route -> navController.openReportRetest(backStackEntry, route) },
             )
         }
@@ -152,7 +160,7 @@ fun FonecheckNavHost(
                 )
             } else {
                 RunAllTestsScreen(
-                    onDone = { navController.popBackStack() },
+                    onDone = { navController.popBackStackFrom(backStackEntry) },
                     onOpenCategory = { destination -> navController.openReportRetest(backStackEntry, destination) },
                     onDisplayFullscreenChange = onDisplayFullscreenChange,
                     targetCategory = category,
@@ -160,21 +168,34 @@ fun FonecheckNavHost(
                 )
             }
         }
-        composable<History> {
+        composable<History> { backStackEntry ->
             HistoryRoute(
-                onOpen = { reportId -> navController.navigate(Report(reportId)) },
+                onOpen = { reportId -> navController.navigateFrom(backStackEntry, Report(reportId)) },
                 onCompare = { firstReportId, secondReportId ->
-                    navController.navigate(ReportComparison(firstReportId, secondReportId))
+                    navController.navigateFrom(backStackEntry, ReportComparison(firstReportId, secondReportId))
                 },
-                onExport = { reportId -> navController.navigate(ReportExport(reportId)) },
+                onExport = { reportId -> navController.navigateFrom(backStackEntry, ReportExport(reportId)) },
             )
         }
-        composable<ReportComparison> {
-            ReportComparisonRoute(onBack = { navController.popBackStack() })
+        composable<ReportComparison> { backStackEntry ->
+            ReportComparisonRoute(onBack = { navController.popBackStackFrom(backStackEntry) })
         }
-        composable<ReportExport> {
-            ReportExportRoute(onBack = { navController.popBackStack() })
+        composable<ReportExport> { backStackEntry ->
+            ReportExportRoute(onBack = { navController.popBackStackFrom(backStackEntry) })
         }
+    }
+}
+
+internal fun NavHostController.popBackStackFrom(source: NavBackStackEntry) {
+    if (currentBackStackEntry === source) popBackStack()
+}
+
+private fun NavHostController.navigateFrom(
+    source: NavBackStackEntry,
+    route: Any,
+) {
+    if (currentBackStackEntry === source && source.lifecycle.currentState == Lifecycle.State.RESUMED) {
+        navigate(route)
     }
 }
 

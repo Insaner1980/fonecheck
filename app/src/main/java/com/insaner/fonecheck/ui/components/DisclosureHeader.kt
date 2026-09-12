@@ -87,6 +87,7 @@ fun DisclosureHeader(
     leading: (@Composable () -> Unit)? = null,
 ) {
     val stacked = stackedRowLayout()
+    val expansionIcon = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown
     val expansionState =
         stringResource(
             if (expanded) R.string.accessibility_expanded else R.string.accessibility_collapsed,
@@ -147,7 +148,7 @@ fun DisclosureHeader(
                 Spacer(modifier = Modifier.width(FonecheckTheme.spacing.xs))
             }
             Icon(
-                imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                imageVector = expansionIcon,
                 contentDescription = null,
                 tint = FonecheckTheme.colors.textMuted,
             )

@@ -109,6 +109,11 @@ function Test-GradleSonarTokenConfigured {
 }
 
 if ($SonarArgs.Count -gt 0) {
+    if ($PlanOnly) {
+        Write-Output "sonar: CLI delegation requested; no command executed."
+        Write-Output "  - actual external call requires -AllowExternalUpload"
+        exit 0
+    }
     if (-not $AllowExternalUpload) {
         throw "EXTERNAL_SERVICE_APPROVAL_REQUIRED: SonarQube CLI -komennot vaativat -AllowExternalUpload-valitsimen."
     }

@@ -8,6 +8,7 @@ import com.insaner.fonecheck.domain.model.TelephonyHardwareCode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -32,6 +33,27 @@ class SimTelephonyViewModelTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+    }
+
+    @Test
+    fun obsoleteCaptureFailureCannotFinishReplacementCapture() {
+        val ioScheduler = TestCoroutineScheduler()
+        val viewModel =
+            SimTelephonyViewModel(
+                provider = SimTelephonyProvider { error("capture failed") },
+                ioDispatcher = StandardTestDispatcher(ioScheduler),
+            )
+        dispatcher.scheduler.runCurrent()
+        ioScheduler.runCurrent()
+
+        // Replace the read before its failure is delivered back to Main.
+        viewModel.refresh()
+        dispatcher.scheduler.runCurrent()
+
+        assertEquals(SimTelephonyState(isLoading = true), viewModel.state.value)
+        viewModel.cancelCapture()
+        ioScheduler.runCurrent()
+        dispatcher.scheduler.runCurrent()
     }
 
     @Test

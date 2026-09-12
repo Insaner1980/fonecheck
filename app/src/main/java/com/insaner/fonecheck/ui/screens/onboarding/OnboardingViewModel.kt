@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
 enum class OnboardingPage(
@@ -40,6 +41,7 @@ class OnboardingViewModel
     ) : ViewModel() {
         private val _state = MutableStateFlow(OnboardingState())
         val state: StateFlow<OnboardingState> = _state.asStateFlow()
+        private val completionSaved = AtomicBoolean(false)
 
         fun nextPage() {
             _state.value =
@@ -53,11 +55,12 @@ class OnboardingViewModel
         }
 
         fun completeOnboarding() {
-            if (_state.value.isSaving) return
+            if (_state.value.isSaving || completionSaved.get()) return
             _state.value = _state.value.copy(isSaving = true, saveFailed = false)
             viewModelScope.launch {
                 try {
                     preferencesRepository.setOnboardingComplete(true)
+                    completionSaved.set(true)
                     _state.value = _state.value.copy(isSaving = false, finished = true)
                 } catch (error: CancellationException) {
                     throw error
