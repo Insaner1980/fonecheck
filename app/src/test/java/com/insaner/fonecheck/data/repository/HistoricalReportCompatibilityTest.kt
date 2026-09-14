@@ -11,8 +11,10 @@ import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticCheckId
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
+import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.ReportSchemaVersion
+import com.insaner.fonecheck.domain.model.ScoreCalculator
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
@@ -30,6 +32,58 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class HistoricalReportCompatibilityTest {
+    @Test
+    fun `version one stored scores survive reading and current comparison basis gates their delta`() =
+        runTest {
+            // Present-engine compatibility tests, not a reconstruction or endorsement of the version-1 formula.
+            val template = syntheticReport(listOf(DiagnosticCategoryId.BATTERY))
+            val before =
+                template.copy(
+                    stableId = "historical-before",
+                    score = ScoreSummary(ScoreVersion(1), 80, ScoreState.COMPLETE),
+                )
+            val category = template.categories.single()
+            val item = category.evidence.single()
+            for (source in listOf(item.source, EvidenceSource.USER_CONFIRMATION)) {
+                val after =
+                    template.copy(
+                        stableId = "historical-after",
+                        score = ScoreSummary(ScoreVersion(1), 86, ScoreState.COMPLETE),
+                        categories = listOf(category.copy(evidence = listOf(item.copy(source = source)))),
+                    )
+                // Deliberately differ from today's calculation so an accidental recalculation is observable.
+                assertEquals(100, ScoreCalculator.calculate(before.categories).score.value)
+                assertEquals(100, ScoreCalculator.calculate(after.categories).score.value)
+                val beforeRow = storedRow(before)
+                val afterRow = storedRow(after)
+                val dao = StoredRowDao()
+                dao.insert(beforeRow)
+                dao.insert(afterRow)
+                val loaded = RoomReportRepository(dao).getForComparison(before.stableId, after.stableId)
+
+                assertEquals(ReportLoadResult.Available(before), loaded.first)
+                assertEquals(ReportLoadResult.Available(after), loaded.second)
+                val savedBefore = (loaded.first as ReportLoadResult.Available).report
+                val savedAfter = (loaded.second as ReportLoadResult.Available).report
+                val matchingBasis = source == item.source
+                assertEquals(
+                    source.name,
+                    ScoreComparison.Compatible(
+                        before = 80,
+                        after = 86,
+                        delta = if (matchingBasis) 6 else null,
+                        beforeState = ScoreState.COMPLETE,
+                        afterState = ScoreState.COMPLETE,
+                        version = ScoreVersion(1),
+                        evidenceBasisCompatible = matchingBasis,
+                    ),
+                    ReportComparisonEngine.compare(savedBefore, savedAfter).score,
+                )
+                assertEquals(beforeRow, dao.getById(before.stableId))
+                assertEquals(afterRow, dao.getById(after.stableId))
+            }
+        }
+
     @Test
     fun `stored historical subset loads without modifying its row`() =
         runTest {

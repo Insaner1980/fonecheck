@@ -11,6 +11,8 @@ import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.ReportSchemaVersion
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreVersion
+import com.insaner.fonecheck.domain.model.evidenceBelongsToCategory
+import com.insaner.fonecheck.domain.model.hasUniqueCheckIds
 import java.time.Instant
 
 enum class EvidenceChange {
@@ -277,15 +279,10 @@ object ReportComparisonEngine {
             "A report must not contain duplicate categories."
         }
         categories.forEach { category ->
-            require(category.evidence.all { it.categoryId == category.categoryId }) {
+            require(evidenceBelongsToCategory(category.categoryId, category.evidence)) {
                 "Evidence must belong to its containing category."
             }
-            require(
-                category.evidence
-                    .map { it.checkId }
-                    .distinct()
-                    .size == category.evidence.size,
-            ) {
+            require(hasUniqueCheckIds(category.evidence)) {
                 "A report category must not contain duplicate check IDs."
             }
         }

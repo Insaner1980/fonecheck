@@ -55,10 +55,52 @@ class ScoreCalculatorTest {
     }
 
     @Test
-    fun `pass warning and fail use version one point values`() {
+    fun `pass warning and fail use current point values`() {
         assertScore(DiagnosticStatus.PASS, 100)
         assertScore(DiagnosticStatus.WARNING, 65)
         assertScore(DiagnosticStatus.FAIL, 0)
+    }
+
+    @Test
+    fun `current scoreability covers every applicability and status combination`() {
+        val expectedApplicablePoints =
+            mapOf(
+                DiagnosticStatus.PASS to 100,
+                DiagnosticStatus.WARNING to 65,
+                DiagnosticStatus.FAIL to 0,
+                DiagnosticStatus.INFO to null,
+                DiagnosticStatus.NOT_TESTED to null,
+                DiagnosticStatus.NOT_AVAILABLE to null,
+            )
+        val information =
+            (1..3).map {
+                evidence(DiagnosticCategoryId.BATTERY, "battery.info_$it", DiagnosticStatus.INFO)
+            }
+        for (applicability in Applicability.entries) {
+            for (status in DiagnosticStatus.entries) {
+                val item =
+                    evidence(DiagnosticCategoryId.BATTERY, "battery.subject", status).copy(
+                        applicability = applicability,
+                    )
+                // Keep coverage at least 75% so the coverage gate cannot hide accidental scoring.
+                val result =
+                    ScoreCalculator.calculate(
+                        listOf(category(DiagnosticCategoryId.BATTERY, *(information + item).toTypedArray())),
+                    )
+                val expected =
+                    if (applicability == Applicability.APPLICABLE) expectedApplicablePoints.getValue(status) else null
+                val scenario = "$applicability / $status"
+
+                assertTrue(scenario, result.coverage.percentage >= 75)
+                assertEquals(scenario, ScoreVersion.CURRENT, result.score.version)
+                assertEquals(scenario, expected, result.score.value)
+                assertEquals(
+                    scenario,
+                    if (expected == null) ScoreState.INCOMPLETE else ScoreState.COMPLETE,
+                    result.score.state,
+                )
+            }
+        }
     }
 
     @Test

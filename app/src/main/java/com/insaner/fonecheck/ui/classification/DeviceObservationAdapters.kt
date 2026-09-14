@@ -1,7 +1,5 @@
 package com.insaner.fonecheck.ui.classification
 
-import android.os.BatteryManager
-import com.insaner.fonecheck.domain.observation.BatteryHealthCode
 import com.insaner.fonecheck.domain.observation.BiometricCapabilityOutcome
 import com.insaner.fonecheck.domain.observation.BiometricOutcome
 import com.insaner.fonecheck.domain.observation.ButtonTestOutcome
@@ -12,8 +10,8 @@ import com.insaner.fonecheck.domain.observation.InteractiveCheck
 import com.insaner.fonecheck.domain.observation.MeasurementKind
 import com.insaner.fonecheck.domain.observation.MeasurementOutcome
 import com.insaner.fonecheck.domain.observation.ObservationClassification
-import com.insaner.fonecheck.domain.observation.PermissionObservation
 import com.insaner.fonecheck.domain.permission.PermissionState
+import com.insaner.fonecheck.runtime.batteryHealthCodeFromAndroid
 import com.insaner.fonecheck.ui.screens.audio.AudioManualCheck
 import com.insaner.fonecheck.ui.screens.biometrics.AuthResult
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricAvailability
@@ -24,34 +22,11 @@ import com.insaner.fonecheck.ui.screens.vibration.VibrationMotorResult
 
 fun classifyBatteryHealth(androidStatus: Int): ObservationClassification =
     DeviceObservationClassifier.classify(
-        DeviceObservation.BatteryHealth(
-            when (androidStatus) {
-                BatteryManager.BATTERY_HEALTH_UNKNOWN -> BatteryHealthCode.UNKNOWN
-                BatteryManager.BATTERY_HEALTH_GOOD -> BatteryHealthCode.GOOD
-                BatteryManager.BATTERY_HEALTH_OVERHEAT -> BatteryHealthCode.OVERHEAT
-                BatteryManager.BATTERY_HEALTH_DEAD -> BatteryHealthCode.DEAD
-                BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> BatteryHealthCode.OVER_VOLTAGE
-                BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> BatteryHealthCode.UNSPECIFIED_FAILURE
-                BatteryManager.BATTERY_HEALTH_COLD -> BatteryHealthCode.COLD
-                else -> BatteryHealthCode.OTHER
-            },
-        ),
+        DeviceObservation.BatteryHealth(batteryHealthCodeFromAndroid(androidStatus)),
     )
 
 fun classifyPermission(state: PermissionState): ObservationClassification =
-    DeviceObservationClassifier.classify(
-        DeviceObservation.Permission(
-            when (state) {
-                PermissionState.NOT_REQUESTED -> PermissionObservation.NOT_REQUESTED
-                PermissionState.GRANTED -> PermissionObservation.GRANTED
-                PermissionState.DENIED -> PermissionObservation.DENIED
-                PermissionState.SETTINGS_RECOVERY -> PermissionObservation.SETTINGS_RECOVERY
-                PermissionState.NOT_REQUIRED -> PermissionObservation.NOT_REQUIRED
-                PermissionState.HARDWARE_ABSENT -> PermissionObservation.HARDWARE_ABSENT
-                PermissionState.PARTIAL -> PermissionObservation.PARTIAL
-            },
-        ),
-    )
+    DeviceObservationClassifier.classify(DeviceObservation.Permission(state))
 
 fun classifyGpsProvider(enabled: Boolean): ObservationClassification =
     DeviceObservationClassifier.classify(DeviceObservation.GpsProvider(enabled))

@@ -1,5 +1,6 @@
 package com.insaner.fonecheck.ui.screens.thermal
 
+import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.NanoTimeSource
@@ -10,6 +11,46 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ThermalTestViewModelTest {
+    @Test
+    fun stateDerivesSeverityAndConfidenceFromEveryStatus() {
+        val initial = ThermalTestState()
+        ThermalStatusCode.entries.forEach { status ->
+            val expectedConfidence =
+                if (status == ThermalStatusCode.UNAVAILABLE) Confidence.UNAVAILABLE else Confidence.HIGH
+            val constructed = ThermalTestState(status = status)
+            val copied = initial.copy(status = status)
+
+            assertEquals(ThermalRuntimePolicy.severity(status), constructed.severity)
+            assertEquals(expectedConfidence, constructed.statusConfidence)
+            assertEquals(constructed.severity, copied.severity)
+            assertEquals(expectedConfidence, copied.statusConfidence)
+            assertEquals(ThermalSeverityCode.UNAVAILABLE, copied.copy(status = ThermalStatusCode.UNAVAILABLE).severity)
+            assertEquals(Confidence.UNAVAILABLE, copied.copy(status = ThermalStatusCode.UNAVAILABLE).statusConfidence)
+        }
+    }
+
+    @Test
+    fun refreshPublishesEveryStatusWithDerivedSeverityAndConfidence() {
+        val platform = FakeThermalPlatform()
+        val viewModel = ThermalTestViewModel(platform, EpochMillisClock { 1_000L })
+
+        ThermalStatusCode.entries.forEach { status ->
+            platform.currentStatus = status
+            viewModel.refresh()
+
+            assertEquals(status, viewModel.state.value.status)
+            assertEquals(ThermalRuntimePolicy.severity(status), viewModel.state.value.severity)
+            assertEquals(
+                if (status == ThermalStatusCode.UNAVAILABLE) Confidence.UNAVAILABLE else Confidence.HIGH,
+                viewModel.state.value.statusConfidence,
+            )
+            assertEquals(
+                ThermalErrorCode.STATUS_UNAVAILABLE.takeIf { status == ThermalStatusCode.UNAVAILABLE },
+                viewModel.state.value.error,
+            )
+        }
+    }
+
     @Test
     fun statusCallbackDoesNotRefreshOtherReadingTimes() {
         var now = 1_000L
@@ -58,10 +99,22 @@ class ThermalTestViewModelTest {
         viewModel.startMonitoring()
 
         assertFalse(viewModel.state.value.statusApiSupported)
-        assertEquals(ThermalStatusCode.UNAVAILABLE, viewModel.state.value.status)
-        assertEquals(ThermalSeverityCode.UNAVAILABLE, viewModel.state.value.severity)
+        assertUnavailableThermalStatus(viewModel.state.value)
         assertFalse(viewModel.state.value.isMonitoring)
         assertEquals(0, platform.registrationCount)
+        assertNull(viewModel.state.value.error)
+    }
+
+    @Test
+    fun failedStatusReadOnSupportedApiRetainsUnavailableError() {
+        val platform = FakeThermalPlatform(currentStatus = null)
+        val viewModel = ThermalTestViewModel(platform, EpochMillisClock { 1_000L })
+
+        viewModel.refresh()
+
+        assertTrue(viewModel.state.value.statusApiSupported)
+        assertUnavailableThermalStatus(viewModel.state.value)
+        assertEquals(ThermalErrorCode.STATUS_UNAVAILABLE, viewModel.state.value.error)
     }
 
     @Test
@@ -87,6 +140,12 @@ class ThermalTestViewModelTest {
 
         assertEquals(ThermalStatusCode.SEVERE, viewModel.state.value.status)
         assertEquals(ThermalSeverityCode.SEVERE, viewModel.state.value.severity)
+        assertEquals(Confidence.HIGH, viewModel.state.value.statusConfidence)
+
+        platform.emit(ThermalStatusCode.UNAVAILABLE)
+
+        assertUnavailableThermalStatus(viewModel.state.value)
+        assertEquals(ThermalErrorCode.STATUS_UNAVAILABLE, viewModel.state.value.error)
 
         viewModel.stopMonitoring()
         viewModel.stopMonitoring()
@@ -109,6 +168,7 @@ class ThermalTestViewModelTest {
 
         assertEquals(ThermalStatusCode.LIGHT, viewModel.state.value.status)
         assertEquals(ThermalSeverityCode.LIGHT, viewModel.state.value.severity)
+        assertEquals(Confidence.HIGH, viewModel.state.value.statusConfidence)
         assertTrue(viewModel.state.value.isMonitoring)
     }
 
@@ -191,6 +251,12 @@ class ThermalTestViewModelTest {
             viewModel.state.value.headroomReadAt
                 ?.toEpochMilli(),
         )
+    }
+
+    private fun assertUnavailableThermalStatus(state: ThermalTestState) {
+        assertEquals(ThermalStatusCode.UNAVAILABLE, state.status)
+        assertEquals(ThermalSeverityCode.UNAVAILABLE, state.severity)
+        assertEquals(Confidence.UNAVAILABLE, state.statusConfidence)
     }
 
     private class FakeThermalPlatform(

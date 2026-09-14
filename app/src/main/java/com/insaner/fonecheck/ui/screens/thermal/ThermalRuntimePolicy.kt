@@ -1,6 +1,7 @@
 package com.insaner.fonecheck.ui.screens.thermal
 
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
+import com.insaner.fonecheck.runtime.thermalStatusCodeFromAndroid
 import com.insaner.fonecheck.ui.screens.battery.BatteryTemperatureNormalizer
 
 enum class ThermalSeverityCode {
@@ -18,16 +19,7 @@ object ThermalRuntimePolicy {
         rawStatus: Int?,
     ): ThermalStatusCode {
         if (sdkInt < ANDROID_10_API_LEVEL) return ThermalStatusCode.UNAVAILABLE
-        return when (rawStatus) {
-            0 -> ThermalStatusCode.NONE
-            1 -> ThermalStatusCode.LIGHT
-            2 -> ThermalStatusCode.MODERATE
-            3 -> ThermalStatusCode.SEVERE
-            4 -> ThermalStatusCode.CRITICAL
-            5 -> ThermalStatusCode.EMERGENCY
-            6 -> ThermalStatusCode.SHUTDOWN
-            else -> ThermalStatusCode.UNAVAILABLE
-        }
+        return rawStatus?.let(::thermalStatusCodeFromAndroid) ?: ThermalStatusCode.UNAVAILABLE
     }
 
     fun severity(status: ThermalStatusCode): ThermalSeverityCode =

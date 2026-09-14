@@ -10,6 +10,8 @@ import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.ReportSchemaVersion
 import com.insaner.fonecheck.domain.model.ScoreState
+import com.insaner.fonecheck.domain.model.evidenceBelongsToCategory
+import com.insaner.fonecheck.domain.model.hasUniqueCheckIds
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.time.Instant
@@ -56,17 +58,10 @@ private fun DiagnosticReport.toEntity(payloadJson: String): ReportEntity {
     require(categories.all { it.evidence.isNotEmpty() }) {
         "Every report category must contain evidence."
     }
-    require(categories.all { category -> category.evidence.all { it.categoryId == category.categoryId } }) {
+    require(categories.all { category -> evidenceBelongsToCategory(category.categoryId, category.evidence) }) {
         "Evidence must belong to its containing category."
     }
-    require(
-        categories.all { category ->
-            category.evidence
-                .map { it.checkId }
-                .distinct()
-                .size == category.evidence.size
-        },
-    ) {
+    require(categories.all { category -> hasUniqueCheckIds(category.evidence) }) {
         "A report category must not contain duplicate check IDs."
     }
     val categoryId =

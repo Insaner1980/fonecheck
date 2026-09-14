@@ -68,34 +68,15 @@ internal suspend fun runAutomaticChecks(
             issue?.let { sessionViewModel.reportAutomaticIssue(token, DiagnosticCategoryId.STORAGE, it) }
         }
         if (retestCategory == null || retestCategory == DiagnosticCategoryId.AUDIO) {
-            var microphoneIssue: RunAllStageOutcome? = null
-            try {
-                updateHeadphones()
-                if (entry.selections.includeMicrophone && entry.permissions.microphone) {
-                    try {
-                        startRecording(AUTOMATIC_MICROPHONE_DURATION_MS)
-                        val completed =
-                            withTimeoutOrNull(AUTOMATIC_MICROPHONE_TIMEOUT_MS) {
-                                while (audioState().isRecording) {
-                                    delay(AUTOMATIC_STATE_POLL_INTERVAL_MS)
-                                }
-                            } != null
-                        microphoneIssue =
-                            when {
-                                !completed -> RunAllStageOutcome.TIMED_OUT
-                                !audioState().hasRecordedAudio -> RunAllStageOutcome.ERROR
-                                else -> null
-                            }
-                    } finally {
-                        cancelRecording()
-                    }
-                }
-            } catch (error: CancellationException) {
-                throw error
-            } catch (_: Exception) {
-                microphoneIssue = RunAllStageOutcome.ERROR
-                cancelRecording()
-            }
+            val microphoneIssue =
+                runAutomaticAudioCheck(
+                    includeMicrophone = entry.selections.includeMicrophone,
+                    microphonePermission = entry.permissions.microphone,
+                    audioState = audioState,
+                    updateHeadphones = updateHeadphones,
+                    startRecording = startRecording,
+                    cancelRecording = cancelRecording,
+                )
             microphoneIssue?.let {
                 sessionViewModel.reportAutomaticIssue(
                     token,
@@ -125,6 +106,45 @@ internal suspend fun runAutomaticChecks(
     }
     coroutineContext.ensureActive()
     sessionViewModel.onAutomaticChecksComplete(token)
+}
+
+private suspend fun runAutomaticAudioCheck(
+    includeMicrophone: Boolean,
+    microphonePermission: Boolean,
+    audioState: () -> AudioTestState,
+    updateHeadphones: () -> Unit,
+    startRecording: (Long) -> Unit,
+    cancelRecording: () -> Unit,
+): RunAllStageOutcome? {
+    var microphoneIssue: RunAllStageOutcome? = null
+    try {
+        updateHeadphones()
+        if (includeMicrophone && microphonePermission) {
+            try {
+                startRecording(AUTOMATIC_MICROPHONE_DURATION_MS)
+                val completed =
+                    withTimeoutOrNull(AUTOMATIC_MICROPHONE_TIMEOUT_MS) {
+                        while (audioState().isRecording) {
+                            delay(AUTOMATIC_STATE_POLL_INTERVAL_MS)
+                        }
+                    } != null
+                microphoneIssue =
+                    when {
+                        !completed -> RunAllStageOutcome.TIMED_OUT
+                        !audioState().hasRecordedAudio -> RunAllStageOutcome.ERROR
+                        else -> null
+                    }
+            } finally {
+                cancelRecording()
+            }
+        }
+    } catch (error: CancellationException) {
+        throw error
+    } catch (_: Exception) {
+        microphoneIssue = RunAllStageOutcome.ERROR
+        cancelRecording()
+    }
+    return microphoneIssue
 }
 
 private suspend fun runAutomaticInfoChecks(

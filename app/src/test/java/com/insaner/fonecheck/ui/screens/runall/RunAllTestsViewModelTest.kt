@@ -158,6 +158,35 @@ class RunAllTestsViewModelTest {
     }
 
     @Test
+    fun categoryRetestsKeepTheirSelectionsAndEnterPermissionReview() {
+        DiagnosticCategoryId.entries.forEach { category ->
+            val viewModel = runAllViewModel()
+            viewModel.onCategoryRetestRequested(category, RunAllHardwareProfile.ALL_AVAILABLE)
+
+            val state = viewModel.state.value
+            assertEquals(category, state.targetCategory)
+            assertEquals(RunAllStage.PERMISSIONS, state.stage)
+            assertEquals(
+                RunAllSelections(
+                    includeSpeaker = category == DiagnosticCategoryId.AUDIO,
+                    includeMicrophone = category == DiagnosticCategoryId.AUDIO,
+                    includeCamera = category == DiagnosticCategoryId.CAMERA,
+                    includeStorageBenchmark = category == DiagnosticCategoryId.STORAGE,
+                ),
+                state.selections,
+            )
+            val kinds = relevantRunAllPermissionKinds(state.targetCategory, state.selections)
+            if (shouldAutoResolveRunAllPermissions(state.targetCategory, kinds)) {
+                viewModel.onPermissionsResolved(RunAllPermissions())
+                assertFalse(viewModel.state.value.stage == RunAllStage.PERMISSIONS)
+            } else {
+                assertEquals(RunAllStage.PERMISSIONS, viewModel.state.value.stage)
+            }
+            viewModel.interruptRun(RunAllInterruptionReason.USER_CANCEL)
+        }
+    }
+
+    @Test
     fun preflightChoicesAndResolvedPermissionsBuildTheActivePlan() {
         val viewModel = runAllViewModel()
         val selections = RunAllSelections(includeCamera = true, includeStorageBenchmark = false)

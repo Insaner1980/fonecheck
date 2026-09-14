@@ -1,6 +1,5 @@
 package com.insaner.fonecheck.ui.screens.runall
 
-import android.os.BatteryManager
 import com.insaner.fonecheck.domain.model.Applicability
 import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.domain.model.DeviceInfo
@@ -21,6 +20,7 @@ import com.insaner.fonecheck.domain.model.PerformanceInfo
 import com.insaner.fonecheck.domain.model.SimInventoryCode
 import com.insaner.fonecheck.domain.model.SimTelephonyInfo
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
+import com.insaner.fonecheck.domain.observation.BatteryHealthCode
 import com.insaner.fonecheck.domain.observation.DeviceObservation
 import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
 import com.insaner.fonecheck.domain.observation.InteractiveCheck
@@ -31,6 +31,7 @@ import com.insaner.fonecheck.domain.observation.ObservationState
 import com.insaner.fonecheck.domain.observation.isUnusedSimSlot
 import com.insaner.fonecheck.domain.observation.toDiagnosticStatus
 import com.insaner.fonecheck.domain.observation.toEvidenceReasonCode
+import com.insaner.fonecheck.runtime.batteryHealthCodeFromAndroid
 import com.insaner.fonecheck.ui.classification.classifyBatteryHealth
 import com.insaner.fonecheck.ui.classification.classifyBiometric
 import com.insaner.fonecheck.ui.classification.classifyBiometricCapability
@@ -2064,13 +2065,15 @@ object RunAllSnapshotMapper {
         )
 
     private fun batteryHealthCode(healthStatus: Int): String =
-        when (healthStatus) {
-            BatteryManager.BATTERY_HEALTH_GOOD -> "good"
-            BatteryManager.BATTERY_HEALTH_OVERHEAT -> "overheat"
-            BatteryManager.BATTERY_HEALTH_DEAD -> "dead"
-            BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> "over_voltage"
-            BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> "unspecified_failure"
-            BatteryManager.BATTERY_HEALTH_COLD -> "cold"
-            else -> "unknown"
+        when (batteryHealthCodeFromAndroid(healthStatus)) {
+            BatteryHealthCode.GOOD -> "good"
+            BatteryHealthCode.OVERHEAT -> "overheat"
+            BatteryHealthCode.DEAD -> "dead"
+            BatteryHealthCode.OVER_VOLTAGE -> "over_voltage"
+            BatteryHealthCode.UNSPECIFIED_FAILURE -> "unspecified_failure"
+            BatteryHealthCode.COLD -> "cold"
+            BatteryHealthCode.UNKNOWN,
+            BatteryHealthCode.OTHER,
+            -> "unknown"
         }
 }

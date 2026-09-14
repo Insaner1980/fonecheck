@@ -10,6 +10,7 @@ import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
 import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.EvidenceValue
+import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.SimSlotStateCode
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
 import com.insaner.fonecheck.domain.observation.ObservationClassification
@@ -24,6 +25,77 @@ import org.junit.Test
 import java.time.Instant
 
 class EvidenceLocalizationTest {
+    @Test
+    fun `every diagnostic category retains its localized label`() {
+        val expected =
+            mapOf(
+                DiagnosticCategoryId.DEVICE to R.string.home_cat_device,
+                DiagnosticCategoryId.PERFORMANCE to R.string.home_cat_performance,
+                DiagnosticCategoryId.SIM to R.string.home_cat_sim,
+                DiagnosticCategoryId.DISPLAY to R.string.home_cat_display,
+                DiagnosticCategoryId.AUDIO to R.string.home_cat_audio,
+                DiagnosticCategoryId.CAMERA to R.string.home_cat_camera,
+                DiagnosticCategoryId.SENSORS to R.string.home_cat_sensors,
+                DiagnosticCategoryId.CONNECTIVITY to R.string.home_cat_connectivity,
+                DiagnosticCategoryId.BATTERY to R.string.home_cat_battery,
+                DiagnosticCategoryId.THERMAL to R.string.home_cat_thermal,
+                DiagnosticCategoryId.STORAGE to R.string.home_cat_storage,
+                DiagnosticCategoryId.VIBRATION to R.string.home_cat_vibration,
+                DiagnosticCategoryId.BUTTONS to R.string.home_cat_buttons,
+                DiagnosticCategoryId.BIOMETRICS to R.string.home_cat_biometrics,
+            )
+        assertEquals(expected, DiagnosticCategoryId.entries.associateWith(::diagnosticCategoryStringRes))
+    }
+
+    @Test
+    fun `every diagnostic status retains its meaning including unavailable and not measured`() {
+        val expected =
+            mapOf(
+                DiagnosticStatus.PASS to R.string.run_all_status_pass,
+                DiagnosticStatus.FAIL to R.string.run_all_status_fail,
+                DiagnosticStatus.WARNING to R.string.run_all_status_warning,
+                DiagnosticStatus.INFO to R.string.run_all_status_info,
+                DiagnosticStatus.NOT_AVAILABLE to R.string.status_not_available,
+                DiagnosticStatus.NOT_TESTED to R.string.status_not_measured,
+            )
+        assertEquals(expected, DiagnosticStatus.entries.associateWith(::diagnosticStatusStringRes))
+    }
+
+    @Test
+    fun `every score state retains its localized label`() {
+        val expected =
+            mapOf(
+                ScoreState.INCOMPLETE to R.string.report_score_incomplete,
+                ScoreState.PARTIAL to R.string.report_score_partial,
+                ScoreState.COMPLETE to R.string.report_score_complete,
+            )
+        assertEquals(expected, ScoreState.entries.associateWith(::scoreStateStringRes))
+    }
+
+    @Test
+    fun `every evidence source retains its localized label`() {
+        val expected =
+            mapOf(
+                EvidenceSource.AUTOMATIC_MEASUREMENT to R.string.report_source_automatic,
+                EvidenceSource.ANDROID_API to R.string.report_source_android_api,
+                EvidenceSource.USER_CONFIRMATION to R.string.report_source_user,
+                EvidenceSource.DERIVED to R.string.report_source_derived,
+                EvidenceSource.ESTIMATE to R.string.report_source_estimate,
+            )
+        assertEquals(expected, EvidenceSource.entries.associateWith(::evidenceSourceStringRes))
+    }
+
+    @Test
+    fun `every confidence value retains its localized label`() {
+        val expected =
+            mapOf(
+                Confidence.HIGH to R.string.confidence_high,
+                Confidence.LOW to R.string.confidence_low,
+                Confidence.UNAVAILABLE to R.string.confidence_unavailable,
+            )
+        assertEquals(expected, Confidence.entries.associateWith(::confidenceStringRes))
+    }
+
     @Test
     fun performanceLabelsDistinguishMeasuredValuesFromLegacyReadingFlags() {
         fun observation(

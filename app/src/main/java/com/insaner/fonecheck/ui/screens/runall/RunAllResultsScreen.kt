@@ -40,11 +40,12 @@ import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.TestResult
-import com.insaner.fonecheck.domain.model.TestStatus
 import com.insaner.fonecheck.domain.model.presentationConfidence
 import com.insaner.fonecheck.domain.model.presentationReason
 import com.insaner.fonecheck.localization.evidenceLabelResource
 import com.insaner.fonecheck.localization.evidenceReasonStringRes
+import com.insaner.fonecheck.localization.evidenceSourceStringRes
+import com.insaner.fonecheck.localization.scoreStateStringRes
 import com.insaner.fonecheck.localization.shouldShowEvidenceReason
 import com.insaner.fonecheck.localization.stableTextStringRes
 import com.insaner.fonecheck.navigation.CategoryRetest
@@ -173,15 +174,15 @@ fun RunAllResultsScreen(
         }
     val attentionResults =
         categories.filter {
-            it.status is TestStatus.Fail || it.status is TestStatus.Warning
+            it.status == DiagnosticStatus.FAIL || it.status == DiagnosticStatus.WARNING
         }
     val completedResults =
         categories.filter {
-            it.status == TestStatus.Pass || it.status is TestStatus.Info
+            it.status == DiagnosticStatus.PASS || it.status == DiagnosticStatus.INFO
         }
     val incompleteResults =
         categories.filter {
-            it.status == TestStatus.NotAvailable || it.status == TestStatus.NotTested
+            it.status == DiagnosticStatus.NOT_AVAILABLE || it.status == DiagnosticStatus.NOT_TESTED
         }
     var expandedCategoryName by rememberSaveable(attentionResults) {
         mutableStateOf(attentionResults.firstOrNull()?.category?.name)
@@ -191,7 +192,7 @@ fun RunAllResultsScreen(
         item {
             ResultsSummary(
                 report = report,
-                categoryTones = categories.map { it.status.semanticTone() },
+                categoryTones = categories.map { it.status.toSemanticTone() },
             )
         }
 
@@ -499,14 +500,7 @@ private fun ReportMetadataSection(
 }
 
 @Composable
-private fun scoreStateLabel(state: ScoreState): String =
-    stringResource(
-        when (state) {
-            ScoreState.COMPLETE -> R.string.report_score_complete
-            ScoreState.PARTIAL -> R.string.report_score_partial
-            ScoreState.INCOMPLETE -> R.string.report_score_incomplete
-        },
-    )
+private fun scoreStateLabel(state: ScoreState): String = stringResource(scoreStateStringRes(state))
 
 @Composable
 private fun ReportSaveSection(
@@ -536,7 +530,7 @@ private fun CategoryResult(
 ) {
     val destination = diagnosticDestinations.first { it.category == result.category }
     val title = stringResource(destination.labelResId)
-    val diagnosticStatus = result.status.toDiagnosticStatus()
+    val diagnosticStatus = result.status
     val status = statusLabel(diagnosticStatus)
     val openAction =
         if (canOpenCategory) {
@@ -558,7 +552,7 @@ private fun CategoryResult(
             strongDivider = false,
             leading = { StatusLamp(status = diagnosticStatus) },
         )
-        if (result.status != TestStatus.NotTested) {
+        if (result.status != DiagnosticStatus.NOT_TESTED) {
             Note(text = result.summary)
         }
         if (isExpanded) {
@@ -615,8 +609,8 @@ private fun ResultDetail(
     Column {
         DataRow(
             label = result.name,
-            value = statusLabel(result.status.toDiagnosticStatus()),
-            tone = result.status.semanticTone(),
+            value = statusLabel(result.status),
+            tone = result.status.toSemanticTone(),
             confidence = result.confidence.takeUnless { hasDetail },
         )
         result.detail?.let { detail ->
@@ -649,7 +643,7 @@ private fun ResultDetail(
 private fun DiagnosticCategoryResult.toUiResult(): CategoryTestResult =
     CategoryTestResult(
         category = categoryId,
-        status = aggregateStatus.toLegacyStatus(),
+        status = aggregateStatus,
         summary = categorySummary(aggregateStatus),
         results = evidence.map { it.toUiResult() },
     )
@@ -659,7 +653,7 @@ private fun DiagnosticEvidence.toUiResult(): TestResult =
     TestResult(
         id = checkId.value,
         name = evidenceLabel(this),
-        status = status.toLegacyStatus(),
+        status = status,
         detail = evidenceDetail(this),
         confidence = presentationConfidence(),
         timestamp = capturedAt.toEpochMilli(),
@@ -675,16 +669,6 @@ internal fun repeatedConsecutiveReasons(reasons: List<String?>): Set<String> =
         reasons.zipWithNext().forEach { (first, second) ->
             first?.takeIf { it == second }?.let(::add)
         }
-    }
-
-private fun DiagnosticStatus.toLegacyStatus(): TestStatus =
-    when (this) {
-        DiagnosticStatus.PASS -> TestStatus.Pass
-        DiagnosticStatus.FAIL -> TestStatus.Fail()
-        DiagnosticStatus.WARNING -> TestStatus.Warning()
-        DiagnosticStatus.INFO -> TestStatus.Info("")
-        DiagnosticStatus.NOT_AVAILABLE -> TestStatus.NotAvailable
-        DiagnosticStatus.NOT_TESTED -> TestStatus.NotTested
     }
 
 @Composable
@@ -773,30 +757,4 @@ internal fun reasonLabel(reason: EvidenceReasonCode): String =
     evidenceReasonStringRes(reason)?.let { stringResource(it) } ?: stableCodeFallback(reason.value)
 
 @Composable
-internal fun sourceLabel(source: EvidenceSource): String =
-    stringResource(
-        when (source) {
-            EvidenceSource.AUTOMATIC_MEASUREMENT -> R.string.report_source_automatic
-            EvidenceSource.ANDROID_API -> R.string.report_source_android_api
-            EvidenceSource.USER_CONFIRMATION -> R.string.report_source_user
-            EvidenceSource.DERIVED -> R.string.report_source_derived
-            EvidenceSource.ESTIMATE -> R.string.report_source_estimate
-        },
-    )
-
-/**
- * The report is assembled from [DiagnosticStatus] and drawn from the legacy [TestStatus], so the
- * screen converts back once and reads the status word, the tone and the lamp from that one value.
- * The vocabulary has a single source rather than three parallel when blocks that can drift apart.
- */
-private fun TestStatus.toDiagnosticStatus(): DiagnosticStatus =
-    when (this) {
-        TestStatus.Pass -> DiagnosticStatus.PASS
-        is TestStatus.Warning -> DiagnosticStatus.WARNING
-        is TestStatus.Fail -> DiagnosticStatus.FAIL
-        is TestStatus.Info -> DiagnosticStatus.INFO
-        TestStatus.NotAvailable -> DiagnosticStatus.NOT_AVAILABLE
-        TestStatus.NotTested -> DiagnosticStatus.NOT_TESTED
-    }
-
-private fun TestStatus.semanticTone(): SemanticTone = toDiagnosticStatus().toSemanticTone()
+internal fun sourceLabel(source: EvidenceSource): String = stringResource(evidenceSourceStringRes(source))

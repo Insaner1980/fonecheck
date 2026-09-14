@@ -26,7 +26,7 @@ Timing tags indicate when to revalidate a still-relevant item. They do not overr
 - [ ] `PRE-RELEASE` **ConnectivityTestViewModel is 649 lines** (`ui/screens/connectivity/ConnectivityTestViewModel.kt`) — covers WiFi, Bluetooth, NFC, GPS, and mobile network. Should it be split into focused ViewModels per connectivity domain?
 - [ ] `PRE-RELEASE` **AudioTestViewModel is 403 lines** (`ui/screens/audio/AudioTestViewModel.kt`) — handles tone generation, recording, playback, and earpiece routing. Consider splitting speaker vs microphone concerns.
 - [ ] `PRE-RELEASE` **SensorTestViewModel is 393 lines** (`ui/screens/sensor/SensorTestViewModel.kt`) — manages all sensor types + interactive challenges in one class. Evaluate extracting challenge logic.
-- [ ] `PRE-PHASE 4` **Unused domain models** — `TestResult`, `TestSession`, `TestCategory`, and `TestStatus` (in `domain/model/`) are defined but never imported or used anywhere. Keep for Phase 4, or remove until needed?
+- [ ] `PRE-PHASE 4` **Unused domain models** — `TestResult`, `TestCategory`, and `TestStatus` (in `domain/model/`) are defined but never imported or used anywhere. Keep for Phase 4, or remove until needed?
 - [ ] `PRE-PHASE 4` **DeviceInfo domain model** (`domain/model/DeviceInfo.kt`) — defined but DeviceInfoViewModel constructs its own state instead of using it. Align or remove?
 - [ ] `PRE-PHASE 4` **Database layer is placeholder** — `FonecheckDatabase` contains only `PlaceholderEntity`. No DAOs, no real entities. Acceptable for current phase, but confirm Phase 4 readiness plan.
 - [ ] `NEXT TOUCH` **DI module completeness** — Verify all `@Module` classes in `di/` provide everything needed. No repository bindings exist since repositories aren't implemented.

@@ -193,7 +193,8 @@ class RoomReportRepositoryTest {
     @Test
     fun `insert rejects reports that cannot be represented safely`() =
         runTest {
-            val repository = RoomReportRepository(FakeReportDao())
+            val dao = FakeReportDao()
+            val repository = RoomReportRepository(dao)
             val battery = batteryReport("battery", "Alpha")
             val category = battery.categories.single()
             val full = fullReport("full", "Alpha")
@@ -224,6 +225,37 @@ class RoomReportRepositoryTest {
                 repository,
                 battery.copy(kind = ReportKind.CATEGORY_ONLY, categories = listOf(category, category)),
             )
+            assertTrue(dao.entities.isEmpty())
+        }
+
+    @Test
+    fun `category ownership across the report is checked before duplicate check ids`() =
+        runTest {
+            val dao = FakeReportDao()
+            val repository = RoomReportRepository(dao)
+            val full = fullReport("malformed", "Alpha")
+            val firstEvidence =
+                full.categories
+                    .first()
+                    .evidence
+                    .single()
+            val malformed =
+                full.copy(
+                    categories =
+                        full.categories.mapIndexed { index, category ->
+                            when (index) {
+                                0 -> category.copy(evidence = listOf(firstEvidence, firstEvidence))
+                                1 -> category.copy(evidence = listOf(firstEvidence))
+                                else -> category
+                            }
+                        },
+                )
+
+            val error = runCatching { repository.insert(malformed) }.exceptionOrNull()
+
+            assertTrue(error is IllegalArgumentException)
+            assertEquals("Evidence must belong to its containing category.", error?.message)
+            assertTrue(dao.entities.isEmpty())
         }
 
     private suspend fun assertInvalid(

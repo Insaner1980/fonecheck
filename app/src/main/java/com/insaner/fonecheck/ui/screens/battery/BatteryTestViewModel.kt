@@ -11,6 +11,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.Confidence
+import com.insaner.fonecheck.domain.observation.BatteryHealthCode
+import com.insaner.fonecheck.runtime.batteryHealthCodeFromAndroid
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -274,17 +276,6 @@ class BatteryTestViewModel
 
         // ── Label helpers ───────────────────────────────────────────────────────────
 
-        fun getHealthLabel(health: Int): Int =
-            when (health) {
-                BatteryManager.BATTERY_HEALTH_GOOD -> R.string.batt_health_good
-                BatteryManager.BATTERY_HEALTH_OVERHEAT -> R.string.batt_health_overheat
-                BatteryManager.BATTERY_HEALTH_DEAD -> R.string.batt_health_dead
-                BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> R.string.batt_health_over_voltage
-                BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> R.string.batt_health_failure
-                BatteryManager.BATTERY_HEALTH_COLD -> R.string.batt_health_cold
-                else -> R.string.batt_health_unknown
-            }
-
         fun getChargingStatusLabel(status: Int): Int =
             when (status) {
                 BatteryManager.BATTERY_STATUS_CHARGING -> R.string.batt_status_charging
@@ -325,4 +316,17 @@ class BatteryTestViewModel
 
                 else -> BatteryFlowStatus.UNKNOWN
             }
+    }
+
+internal fun getHealthLabel(health: Int): Int =
+    when (batteryHealthCodeFromAndroid(health)) {
+        BatteryHealthCode.GOOD -> R.string.batt_health_good
+        BatteryHealthCode.OVERHEAT -> R.string.batt_health_overheat
+        BatteryHealthCode.DEAD -> R.string.batt_health_dead
+        BatteryHealthCode.OVER_VOLTAGE -> R.string.batt_health_over_voltage
+        BatteryHealthCode.UNSPECIFIED_FAILURE -> R.string.batt_health_failure
+        BatteryHealthCode.COLD -> R.string.batt_health_cold
+        BatteryHealthCode.UNKNOWN,
+        BatteryHealthCode.OTHER,
+        -> R.string.batt_health_unknown
     }

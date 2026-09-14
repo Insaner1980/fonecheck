@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
+import com.insaner.fonecheck.localization.diagnosticStatusStringRes
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import kotlin.math.ceil
 
@@ -97,19 +98,11 @@ fun StatusLamp(
     }
 }
 
-/** The spoken and written name of a status. The one mapping from a status to its word. */
+/** The spoken and written name of a status, or the UI placeholder when no status exists. */
 @Composable
 fun statusLabel(status: DiagnosticStatus?): String =
     stringResource(
-        when (status) {
-            DiagnosticStatus.PASS -> R.string.run_all_status_pass
-            DiagnosticStatus.WARNING -> R.string.run_all_status_warning
-            DiagnosticStatus.FAIL -> R.string.run_all_status_fail
-            DiagnosticStatus.INFO -> R.string.run_all_status_info
-            DiagnosticStatus.NOT_AVAILABLE -> R.string.status_not_available
-            DiagnosticStatus.NOT_TESTED -> R.string.status_not_measured
-            null -> R.string.value_unavailable_short
-        },
+        status?.let(::diagnosticStatusStringRes) ?: R.string.value_unavailable_short,
     )
 
 private fun statusImageVector(status: DiagnosticStatus?): ImageVector? =

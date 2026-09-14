@@ -28,7 +28,7 @@
 - Room database (schema-ready)
 - Compose Navigation (type-safe, `@Serializable` routes)
 - MVVM with ViewModels
-- Automatic run-all session: one centralized destination list drives the Home grid and the category-separated result report. `RunAllTestsScreen` reuses the existing category ViewModels as diagnostic data sources, performs safe checks automatically, asks only for required user confirmations, and freezes one in-memory `TestSession` when the run completes.
+- Automatic run-all session: one centralized destination list drives the Home grid and the category-separated result report. `RunAllTestsScreen` reuses the existing category ViewModels as diagnostic data sources, performs safe checks automatically, asks only for required user confirmations, and freezes one immutable `DiagnosticReport` when the run completes.
 
 ## Folder Structure
 ```
@@ -358,3 +358,33 @@ for text; `attention` is its text-safe form.
 - If the merge check reports conflicts, resolve them and repeat the check before pushing. Do not report the branch ready while conflicts remain.
 - When continuing a branch after a GitHub squash merge, reconcile its history with `origin/main`. An `ours` strategy merge is appropriate only after verifying that `origin/main` has exactly the same tree as a known ancestor of the working branch; otherwise inspect and preserve both sides' changes.
 - Prefer a fresh branch from the updated main for the next task after a squash merge. Do not switch branches during unfinished work or rewrite published history without authorization.
+
+
+<!-- graft:start -->
+## Graft — optional local structural context
+
+Graft 0.18.0 indexes this working tree in the ignored, regenerable `graft/` cache.
+Read AGENTS.md and PROJECT.md for project rules and durable context first.
+Use Graft when a map, symbol lookup or compact API view helps the current task:
+
+- `graft map` gives source-set clusters and connected symbols.
+- `graft ask "<literal identifier>" --source --in app/src/main/` locates code.
+- `graft skeleton <file>` gives signatures and source spans.
+- `graft grep "<pattern>"` searches indexed files; use `rg` for a complete
+  repository search, including resources, configuration and scripts.
+- `graft callers <symbol> --depth 2` shows indexed incoming relationships;
+  add `--direction out` for outgoing relationships.
+- `graft check --json` checks structural freshness. Query commands refresh
+  automatically; `graft build` explicitly regenerates the structural cache.
+
+The local Kotlin pilot found incomplete class spans for multiline annotated
+constructors, missing object-method and callable-reference edges, and unresolved
+extension overloads. Empty callers/callees do not prove that no dependencies
+exist. Verify important relationships and changes directly against current
+source. The map does not replace PROJECT.md or establish architectural boundaries.
+
+Use structural mode only: no `--deep`, provider, API key or paid model.
+Native Codex MCP and hooks are not registered by this pilot. Do not broaden
+integration or upgrade the package automatically. Graft's token-saving footers
+compare against reading whole files, not measured savings in this workflow.
+<!-- graft:end -->

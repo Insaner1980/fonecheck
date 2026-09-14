@@ -22,8 +22,6 @@ data class ThermalTestState(
     val statusApiSupported: Boolean = false,
     val headroomApiSupported: Boolean = false,
     val status: ThermalStatusCode = ThermalStatusCode.UNAVAILABLE,
-    val severity: ThermalSeverityCode = ThermalSeverityCode.UNAVAILABLE,
-    val statusConfidence: Confidence = Confidence.UNAVAILABLE,
     val headroom: Float? = null,
     val headroomConfidence: Confidence = Confidence.UNAVAILABLE,
     val batteryTemperatureCelsius: Float? = null,
@@ -33,7 +31,13 @@ data class ThermalTestState(
     val headroomReadAt: Instant? = null,
     val batteryTemperatureReadAt: Instant? = null,
     val error: ThermalErrorCode? = null,
-)
+) {
+    val severity: ThermalSeverityCode
+        get() = ThermalRuntimePolicy.severity(status)
+
+    val statusConfidence: Confidence
+        get() = if (status == ThermalStatusCode.UNAVAILABLE) Confidence.UNAVAILABLE else Confidence.HIGH
+}
 
 @HiltViewModel
 class ThermalTestViewModel
@@ -63,13 +67,6 @@ class ThermalTestViewModel
                         _state.update { current ->
                             current.copy(
                                 status = status,
-                                severity = ThermalRuntimePolicy.severity(status),
-                                statusConfidence =
-                                    if (status == ThermalStatusCode.UNAVAILABLE) {
-                                        Confidence.UNAVAILABLE
-                                    } else {
-                                        Confidence.HIGH
-                                    },
                                 capturedAt = Instant.ofEpochMilli(clock.currentTimeMillis()),
                                 error =
                                     ThermalErrorCode.STATUS_UNAVAILABLE.takeIf {
@@ -111,13 +108,6 @@ class ThermalTestViewModel
                     statusApiSupported = platform.statusApiSupported,
                     headroomApiSupported = platform.headroomApiSupported,
                     status = status,
-                    severity = ThermalRuntimePolicy.severity(status),
-                    statusConfidence =
-                        if (status == ThermalStatusCode.UNAVAILABLE) {
-                            Confidence.UNAVAILABLE
-                        } else {
-                            Confidence.HIGH
-                        },
                     headroom = headroom,
                     headroomConfidence =
                         if (headroom != null) Confidence.LOW else Confidence.UNAVAILABLE,
