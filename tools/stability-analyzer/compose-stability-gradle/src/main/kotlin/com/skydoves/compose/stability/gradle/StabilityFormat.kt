@@ -7,6 +7,14 @@ import kotlinx.serialization.json.*
  * See https://kotlinlang.org/spec/declarations.html#function-signature.
  */
 internal object StabilityFormat {
+  private class ParsedBaseline(
+    private val entries: List<StabilityEntry>,
+    val legacy: Boolean,
+  ) : AbstractList<StabilityEntry>() {
+    override val size: Int = entries.size
+    override fun get(index: Int): StabilityEntry = entries[index]
+  }
+
   fun identity(entry: StabilityEntry): String = entry.qualifiedName +
     "(receiver=" + (entry.receiver?.type?.let(::JsonPrimitive) ?: JsonNull) +
     "; params=" + JsonArray(entry.parameters.map { JsonPrimitive(it.type) }) + ")"
@@ -105,18 +113,22 @@ internal object StabilityFormat {
       lines.first { it.startsWith("  skippable: ") }.substringAfter(": ").toBooleanStrict(),
       lines.firstOrNull { it.startsWith("  restartable: ") }?.substringAfter(": ")?.toBooleanStrict() ?: true,
       receiver)
-  }.also { entries ->
-    // Receiver-bearing baselines have enough information and must never contain duplicate IDs.
-    unique(if (text.contains("// fonecheck receiver-aware format 1")) entries else entries.filter { it.receiver != null })
+  }.let { entries ->
+    val legacy = !text.contains("// fonecheck receiver-aware format 1")
+    // Receiver-aware baselines have enough information and must never contain duplicate IDs.
+    unique(if (legacy) entries.filter { it.receiver != null } else entries)
+    ParsedBaseline(entries, legacy)
   }
 
   fun referenceForComparison(current: List<StabilityEntry>, old: List<StabilityEntry>): Map<String, StabilityEntry> {
     unique(current)
+    val legacyReceiverFallback = (old as? ParsedBaseline)?.legacy ?: true
     val result = sortedMapOf<String, StabilityEntry>()
     current.forEach { entry ->
       val exact = old.filter { identity(it) == identity(entry) }
       require(exact.size <= 1) { "Ambiguous legacy baseline identity: ${identity(entry)}" }
       val candidates = if (exact.isNotEmpty()) exact else old.filter {
+        legacyReceiverFallback &&
         it.receiver == null && entry.receiver != null && it.qualifiedName == entry.qualifiedName &&
           it.parameters.map { p -> p.type } == entry.parameters.map { p -> p.type } &&
           current.none { now -> identity(now) == identity(it) }
@@ -145,7 +157,11 @@ internal object StabilityFormat {
       val prior = old.filter { it.qualifiedName == name && it !in result.values }
       if (prior.isNotEmpty()) {
         require(entries.size == 1 && prior.size == 1) { "Ambiguous changed overload signatures: $name" }
-        result[identity(entries.single())] = prior.single()
+        val currentEntry = entries.single()
+        val priorEntry = prior.single()
+        if (legacyReceiverFallback || currentEntry.receiver?.type == priorEntry.receiver?.type) {
+          result[identity(currentEntry)] = priorEntry
+        }
       }
     }
     // Keep removals visible. Indistinguishable legacy duplicates were already retained and checked above.

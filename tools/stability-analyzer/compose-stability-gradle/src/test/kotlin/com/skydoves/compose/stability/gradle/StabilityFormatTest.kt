@@ -133,6 +133,15 @@ class StabilityFormatTest {
     assertEquals(1, differences.size)
     assertEquals(StabilityFormat.identity(extension), (differences.single() as StabilityDifference.NewFunction).name)
   }
+  @Test fun receiverAwareBaselineDoesNotTreatExtensionAsLegacy() {
+    val old = entry()
+    val baseline = StabilityFormat.readBaseline(StabilityFormat.write(listOf(old), "test"))
+    val extension = entry(receiver="A").let { it.copy(receiver=it.receiver!!.copy(stability="RUNTIME")) }
+    val differences = compareStability(StabilityFormat.unique(listOf(extension)),
+      StabilityFormat.referenceForComparison(listOf(extension), baseline), true)
+    assertEquals(1, differences.size)
+    assertEquals(StabilityFormat.identity(extension), (differences.single() as StabilityDifference.NewFunction).name)
+  }
   @Test fun legacyDuplicateRowsAreRetainedAndAmbiguousStabilityFails() {
     val old = entry().copy(parameters=emptyList())
     val text = StabilityFormat.write(listOf(old), "test").replace("// fonecheck receiver-aware format 1\n", "")
