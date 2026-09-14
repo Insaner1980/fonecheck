@@ -1,0 +1,13 @@
+// Explicitly redirect only dump tasks; check tasks keep using tracked baselines.
+gradle.projectsEvaluated {
+    rootProject.allprojects { target ->
+        ['debugStabilityDump', 'releaseStabilityDump'].each { taskName ->
+            def dump = target.tasks.findByName(taskName)
+            if (dump != null) {
+                dump.outputDir.set(rootProject.layout.buildDirectory.dir(
+                    'stability-patch-dumps/' + target.providers.gradleProperty('stabilityDumpRun').getOrElse('A')))
+                dump.outputDir.disallowChanges()
+            }
+        }
+    }
+}

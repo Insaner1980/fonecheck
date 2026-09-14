@@ -14,7 +14,25 @@
   ],
   "buildTasks": [":app:assembleDebug"],
   "testTasks": [":app:testDebugUnitTest"],
-  "includedBuilds": [],
+  "includedBuilds": [
+    {
+      "path": "tools/stability-analyzer",
+      "sourceModules": [
+        {
+          "path": "compose-stability-compiler",
+          "sourceSets": ["main", "test"]
+        },
+        {
+          "path": "compose-stability-gradle",
+          "sourceSets": ["main", "test"]
+        }
+      ],
+      "dependencyTasks": [
+        ":stability-analyzer:compose-stability-compiler:dependencies",
+        ":stability-analyzer:compose-stability-gradle:dependencies"
+      ]
+    }
+  ],
   "checks": {
     "dependabotEnabled": true,
     "ktlintTasks": [":app:ktlintCheck"],

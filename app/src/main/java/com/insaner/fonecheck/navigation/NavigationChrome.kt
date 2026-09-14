@@ -12,32 +12,16 @@ internal data class NavigationChrome(
     val showTopBar: Boolean = true,
 )
 
-internal fun navigationChromeFor(destination: NavDestination?): NavigationChrome =
-    when {
+internal fun navigationChromeFor(destination: NavDestination?): NavigationChrome {
+    val diagnosticDestination = diagnosticDestinations.firstOrNull { destination.matches(it.route::class) }
+    return when {
         destination.matches(Home::class) ->
             NavigationChrome(
                 R.string.app_name,
                 showBackAction = false,
                 showTopBar = false,
             )
-        destination.matches(DeviceInfo::class) -> NavigationChrome(R.string.home_cat_device, showBackAction = true)
-        destination.matches(PerformanceInfo::class) ->
-            NavigationChrome(R.string.home_cat_performance, showBackAction = true)
-        destination.matches(SimTelephony::class) -> NavigationChrome(R.string.home_cat_sim, showBackAction = true)
-        destination.matches(AudioTest::class) -> NavigationChrome(R.string.home_cat_audio, showBackAction = true)
-        destination.matches(CameraTest::class) -> NavigationChrome(R.string.home_cat_camera, showBackAction = true)
-        destination.matches(SensorTest::class) -> NavigationChrome(R.string.home_cat_sensors, showBackAction = true)
-        destination.matches(ConnectivityTest::class) ->
-            NavigationChrome(R.string.home_cat_connectivity, showBackAction = true)
-        destination.matches(BatteryTest::class) -> NavigationChrome(R.string.home_cat_battery, showBackAction = true)
-        destination.matches(ThermalTest::class) -> NavigationChrome(R.string.home_cat_thermal, showBackAction = true)
-        destination.matches(StorageTest::class) -> NavigationChrome(R.string.home_cat_storage, showBackAction = true)
-        destination.matches(DisplayTest::class) -> NavigationChrome(R.string.home_cat_display, showBackAction = true)
-        destination.matches(VibrationTest::class) ->
-            NavigationChrome(R.string.home_cat_vibration, showBackAction = true)
-        destination.matches(ButtonTest::class) -> NavigationChrome(R.string.home_cat_buttons, showBackAction = true)
-        destination.matches(BiometricTest::class) ->
-            NavigationChrome(R.string.home_cat_biometrics, showBackAction = true)
+        diagnosticDestination != null -> NavigationChrome(diagnosticDestination.labelResId, showBackAction = true)
         destination.matches(RunAllTests::class) -> NavigationChrome(R.string.full_check_title, showBackAction = true)
         destination.matches(Settings::class) -> NavigationChrome(R.string.settings_title, showBackAction = true)
         destination.matches(LanguageSettings::class) ->
@@ -56,5 +40,6 @@ internal fun navigationChromeFor(destination: NavDestination?): NavigationChrome
             NavigationChrome(R.string.export_title, showBackAction = true)
         else -> NavigationChrome(R.string.app_name, showBackAction = destination != null)
     }
+}
 
 private fun <T : Any> NavDestination?.matches(route: KClass<T>): Boolean = this?.hasRoute(route) == true

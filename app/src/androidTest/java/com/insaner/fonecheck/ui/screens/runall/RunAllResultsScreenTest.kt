@@ -1,7 +1,15 @@
 package com.insaner.fonecheck.ui.screens.runall
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -32,6 +40,7 @@ import com.insaner.fonecheck.domain.model.ReportSchemaVersion
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
+import com.insaner.fonecheck.localization.diagnosticStatusStringRes
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -155,6 +164,84 @@ class RunAllResultsScreenTest {
                 useUnmergedTree = true,
             ).performScrollTo()
             .assertIsDisplayed()
+    }
+
+    @Test
+    fun allStatusesKeepTheirGroupsAndEvidenceLabelsInEveryReportMode() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val baseline = report()
+        var currentReport by mutableStateOf(baseline)
+        var mode by mutableStateOf(ReportResultMode.COMPLETED_RUN)
+        composeRule.setContent {
+            FonecheckTheme {
+                key(currentReport, mode) {
+                    RunAllResultsScreen(
+                        report = currentReport,
+                        saveStatus = ReportSaveStatus.SAVED,
+                        onRetrySave = {},
+                        onOpenCategory = {},
+                        onDone = {},
+                        mode = mode,
+                    )
+                }
+            }
+        }
+
+        for (resultMode in ReportResultMode.entries) {
+            for (kind in ReportKind.entries) {
+                for (status in DiagnosticStatus.entries) {
+                    composeRule.runOnIdle {
+                        mode = resultMode
+                        currentReport =
+                            baseline.copy(
+                                kind = kind,
+                                categories =
+                                    baseline.categories.map { category ->
+                                        category.copy(
+                                            aggregateStatus = status,
+                                            evidence = category.evidence.map { it.copy(status = status) },
+                                        )
+                                    },
+                            )
+                    }
+                    val attention = status == DiagnosticStatus.FAIL || status == DiagnosticStatus.WARNING
+                    val group =
+                        when (status) {
+                            DiagnosticStatus.FAIL, DiagnosticStatus.WARNING -> R.string.run_all_needs_attention
+                            DiagnosticStatus.PASS, DiagnosticStatus.INFO -> R.string.run_all_completed
+                            DiagnosticStatus.NOT_AVAILABLE,
+                            DiagnosticStatus.NOT_TESTED,
+                            -> R.string.run_all_not_completed
+                        }
+                    composeRule
+                        .scrollToReportText(context.getString(group), ignoreCase = true)
+                        .performScrollTo()
+                        .assertIsDisplayed()
+                    val title = context.getString(R.string.home_cat_battery)
+                    val header = composeRule.scrollToReportText(title, ignoreCase = true)
+                    header.performScrollTo().assert(
+                        SemanticsMatcher.expectValue(
+                            SemanticsProperties.StateDescription,
+                            context.getString(
+                                if (attention) R.string.accessibility_expanded else R.string.accessibility_collapsed,
+                            ),
+                        ),
+                    )
+                    val label = context.getString(diagnosticStatusStringRes(status))
+                    header.assert(hasText(label))
+                    if (!attention) header.performClick()
+
+                    // Exclude the clickable category header: this must be the evidence status.
+                    composeRule
+                        .onNode(
+                            hasText(label) and
+                                hasAnyAncestor(hasTestTag("report_category_battery")) and
+                                !hasClickAction(),
+                        ).performScrollTo()
+                        .assertIsDisplayed()
+                }
+            }
+        }
     }
 
     private fun report(): DiagnosticReport {

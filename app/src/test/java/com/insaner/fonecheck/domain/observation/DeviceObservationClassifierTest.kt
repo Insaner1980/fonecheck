@@ -9,6 +9,7 @@ import com.insaner.fonecheck.domain.model.SimInventoryCode
 import com.insaner.fonecheck.domain.model.SimSlotInfo
 import com.insaner.fonecheck.domain.model.SimSlotStateCode
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
+import com.insaner.fonecheck.domain.permission.PermissionState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -135,8 +136,8 @@ class DeviceObservationClassifierTest {
                 DeviceObservation.Biometric(BiometricOutcome.NOT_RECOGNIZED) to
                     ObservationReason.BIOMETRIC_NOT_RECOGNIZED,
                 DeviceObservation.Biometric(BiometricOutcome.ERROR) to ObservationReason.BIOMETRIC_ERROR,
-                DeviceObservation.Permission(PermissionObservation.DENIED) to ObservationReason.PERMISSION_DENIED,
-                DeviceObservation.Permission(PermissionObservation.HARDWARE_ABSENT) to
+                DeviceObservation.Permission(PermissionState.DENIED) to ObservationReason.PERMISSION_DENIED,
+                DeviceObservation.Permission(PermissionState.HARDWARE_ABSENT) to
                     ObservationReason.HARDWARE_UNAVAILABLE,
                 DeviceObservation.Thermal(ThermalStatusCode.UNAVAILABLE) to
                     ObservationReason.THERMAL_STATUS_UNAVAILABLE,
@@ -171,7 +172,7 @@ class DeviceObservationClassifierTest {
                 DeviceObservation.Thermal(ThermalStatusCode.NONE),
                 DeviceObservation.ButtonTest(ButtonTestOutcome.COMPLETED),
                 DeviceObservation.Biometric(BiometricOutcome.SUCCESS),
-                DeviceObservation.Permission(PermissionObservation.GRANTED),
+                DeviceObservation.Permission(PermissionState.GRANTED),
                 DeviceObservation.UserConfirmation(InteractiveCheck.DISPLAY, passed = true),
             )
 
@@ -179,6 +180,66 @@ class DeviceObservationClassifierTest {
             val classification = DeviceObservationClassifier.classify(observation)
             assertEquals(ObservationState.PASS, classification.state)
             assertNull(classification.reason)
+        }
+    }
+
+    @Test
+    fun `every permission state preserves classification and durable conversion`() {
+        val cases =
+            mapOf(
+                PermissionState.NOT_REQUESTED to
+                    Triple(
+                        ObservationReason.PERMISSION_NOT_REQUESTED,
+                        DiagnosticStatus.NOT_TESTED,
+                        "permission_not_requested",
+                    ),
+                PermissionState.GRANTED to Triple(null, DiagnosticStatus.PASS, null),
+                PermissionState.DENIED to
+                    Triple(ObservationReason.PERMISSION_DENIED, DiagnosticStatus.NOT_TESTED, "permission_denied"),
+                PermissionState.SETTINGS_RECOVERY to
+                    Triple(
+                        ObservationReason.PERMISSION_OPEN_SETTINGS,
+                        DiagnosticStatus.NOT_TESTED,
+                        "permission_open_settings",
+                    ),
+                PermissionState.NOT_REQUIRED to Triple(null, DiagnosticStatus.PASS, null),
+                PermissionState.HARDWARE_ABSENT to
+                    Triple(
+                        ObservationReason.HARDWARE_UNAVAILABLE,
+                        DiagnosticStatus.NOT_AVAILABLE,
+                        "hardware_unavailable",
+                    ),
+                PermissionState.PARTIAL to
+                    Triple(ObservationReason.PERMISSION_PARTIAL, DiagnosticStatus.NOT_TESTED, "permission_partial"),
+            )
+
+        assertEquals(PermissionState.entries.toSet(), cases.keys)
+        cases.forEach { (state, expected) ->
+            val (reason, status, reasonCode) = expected
+            val classification = DeviceObservationClassifier.classify(DeviceObservation.Permission(state))
+            assertEquals(
+                state.name,
+                if (status == DiagnosticStatus.PASS) ObservationState.PASS else ObservationState.NOT_MEASURED,
+                classification.state,
+            )
+            assertEquals(state.name, reason, classification.reason)
+            assertEquals(state.name, ObservationProminence.STANDARD, classification.prominence)
+            assertEquals(
+                state.name,
+                when (status) {
+                    DiagnosticStatus.NOT_TESTED -> NotMeasuredKind.USER_ACTION
+                    DiagnosticStatus.NOT_AVAILABLE -> NotMeasuredKind.UNAVAILABLE
+                    else -> null
+                },
+                classification.notMeasuredKind,
+            )
+            assertEquals(state.name, status, classification.toDiagnosticStatus())
+            assertEquals(
+                state.name,
+                if (status == DiagnosticStatus.PASS) DiagnosticStatus.INFO else status,
+                classification.toDiagnosticStatus(informationalPass = true),
+            )
+            assertEquals(state.name, reasonCode?.let(::EvidenceReasonCode), classification.toEvidenceReasonCode())
         }
     }
 

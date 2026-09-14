@@ -9,6 +9,7 @@ import com.insaner.fonecheck.domain.model.SimInventoryCode
 import com.insaner.fonecheck.domain.model.SimSlotInfo
 import com.insaner.fonecheck.domain.model.SimSlotStateCode
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
+import com.insaner.fonecheck.domain.permission.PermissionState
 
 enum class ObservationState {
     PASS,
@@ -238,16 +239,6 @@ enum class BiometricCapabilityOutcome {
     UNKNOWN,
 }
 
-enum class PermissionObservation {
-    NOT_REQUESTED,
-    GRANTED,
-    DENIED,
-    SETTINGS_RECOVERY,
-    NOT_REQUIRED,
-    HARDWARE_ABSENT,
-    PARTIAL,
-}
-
 sealed interface DeviceObservation {
     data class RootArtifact(
         val detected: Boolean,
@@ -317,7 +308,7 @@ sealed interface DeviceObservation {
     ) : DeviceObservation
 
     data class Permission(
-        val state: PermissionObservation,
+        val state: PermissionState,
     ) : DeviceObservation
 }
 
@@ -514,16 +505,16 @@ object DeviceObservationClassifier {
             BiometricCapabilityOutcome.UNKNOWN -> notMeasured(ObservationReason.VALUE_NOT_EXPOSED)
         }
 
-    private fun classifyPermission(state: PermissionObservation): ObservationClassification =
+    private fun classifyPermission(state: PermissionState): ObservationClassification =
         when (state) {
-            PermissionObservation.NOT_REQUESTED -> notMeasured(ObservationReason.PERMISSION_NOT_REQUESTED)
-            PermissionObservation.GRANTED,
-            PermissionObservation.NOT_REQUIRED,
+            PermissionState.NOT_REQUESTED -> notMeasured(ObservationReason.PERMISSION_NOT_REQUESTED)
+            PermissionState.GRANTED,
+            PermissionState.NOT_REQUIRED,
             -> pass()
-            PermissionObservation.DENIED -> notMeasured(ObservationReason.PERMISSION_DENIED)
-            PermissionObservation.SETTINGS_RECOVERY -> notMeasured(ObservationReason.PERMISSION_OPEN_SETTINGS)
-            PermissionObservation.HARDWARE_ABSENT -> notMeasured(ObservationReason.HARDWARE_UNAVAILABLE)
-            PermissionObservation.PARTIAL -> notMeasured(ObservationReason.PERMISSION_PARTIAL)
+            PermissionState.DENIED -> notMeasured(ObservationReason.PERMISSION_DENIED)
+            PermissionState.SETTINGS_RECOVERY -> notMeasured(ObservationReason.PERMISSION_OPEN_SETTINGS)
+            PermissionState.HARDWARE_ABSENT -> notMeasured(ObservationReason.HARDWARE_UNAVAILABLE)
+            PermissionState.PARTIAL -> notMeasured(ObservationReason.PERMISSION_PARTIAL)
         }
 
     private fun notedWhen(

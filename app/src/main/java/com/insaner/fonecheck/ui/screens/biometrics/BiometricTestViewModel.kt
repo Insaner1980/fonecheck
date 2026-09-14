@@ -39,10 +39,12 @@ data class BiometricTestState(
     val capability: BiometricCapability = BiometricCapability(),
     val authResult: AuthResult = AuthResult.NONE,
     val authErrorMessage: String? = null,
-    val promptActive: Boolean = false,
     val failedAttempts: Int = 0,
     val expandedSection: BiometricSection? = BiometricSection.AUTH_TEST,
-)
+) {
+    val promptActive: Boolean
+        get() = authResult == AuthResult.IN_PROGRESS || authResult == AuthResult.NOT_RECOGNIZED
+}
 
 @HiltViewModel
 class BiometricTestViewModel
@@ -68,7 +70,6 @@ class BiometricTestViewModel
                     _state.value.copy(
                         authResult = unavailableResult(_state.value.capability.weakStatus),
                         authErrorMessage = null,
-                        promptActive = false,
                         failedAttempts = 0,
                     )
                 return false
@@ -77,7 +78,6 @@ class BiometricTestViewModel
                 _state.value.copy(
                     authResult = AuthResult.IN_PROGRESS,
                     authErrorMessage = null,
-                    promptActive = true,
                     failedAttempts = 0,
                 )
             return true
@@ -128,7 +128,6 @@ class BiometricTestViewModel
                 _state.value.copy(
                     authResult = result,
                     authErrorMessage = errorMessage.takeIf { result == AuthResult.ERROR },
-                    promptActive = false,
                 )
         }
 

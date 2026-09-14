@@ -22,10 +22,10 @@ data class DiagnosticCategorySnapshot(
 ) {
     init {
         require(evidence.isNotEmpty()) { "A diagnostic snapshot must contain evidence." }
-        require(evidence.all { it.categoryId == categoryId }) {
+        require(evidenceBelongsToCategory(categoryId, evidence)) {
             "Snapshot evidence must belong to its category."
         }
-        require(evidence.map { it.checkId }.distinct().size == evidence.size) {
+        require(hasUniqueCheckIds(evidence)) {
             "A diagnostic snapshot must not contain duplicate check IDs."
         }
     }

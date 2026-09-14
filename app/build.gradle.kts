@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
-    alias(libs.plugins.stability.analyzer)
+    id("com.github.skydoves.compose.stability.analyzer") // Local composite patch supplies the version.
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt)
     alias(libs.plugins.owasp.dependency.check)
@@ -69,6 +69,16 @@ android {
 
 val composeStabilityConfig = rootProject.layout.projectDirectory.file("config/compose-stability.conf")
 
+// Keep source-level signatures: local project substitution otherwise changes plugin discovery order.
+// Remove with tools/stability-analyzer once equivalent upstream behavior has been verified.
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.add(
+            "-Xcompiler-plugin-order=com.skydoves.compose.stability.compiler>androidx.compose.compiler.plugins.kotlin",
+        )
+    }
+}
+
 composeCompiler {
     stabilityConfigurationFiles.add(composeStabilityConfig)
 }
@@ -94,6 +104,10 @@ configurations.configureEach {
         // AGP's sdklib still requests vulnerable HttpClient 4.5.6 for the lint tool process.
         resolutionStrategy.force(
             "org.apache.httpcomponents:httpclient:${libs.versions.apacheHttpClient.get()}",
+            "org.apache.commons:commons-lang3:3.20.0",
+            "org.bouncycastle:bcpkix-jdk18on:1.85",
+            "org.bouncycastle:bcprov-jdk18on:1.85",
+            "org.bouncycastle:bcutil-jdk18on:1.85",
         )
     }
 }

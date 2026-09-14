@@ -4,12 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -28,7 +23,6 @@ import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
 import com.insaner.fonecheck.localization.observationStatusStringRes
 import com.insaner.fonecheck.ui.TopBarAction
 import com.insaner.fonecheck.ui.components.ButtonRow
-import com.insaner.fonecheck.ui.components.CaptureTimestamp
 import com.insaner.fonecheck.ui.components.DataRow
 import com.insaner.fonecheck.ui.components.HairlineRule
 import com.insaner.fonecheck.ui.components.LongValueRow
@@ -36,10 +30,11 @@ import com.insaner.fonecheck.ui.components.Note
 import com.insaner.fonecheck.ui.components.ObservationReasonNote
 import com.insaner.fonecheck.ui.components.PrimaryButton
 import com.insaner.fonecheck.ui.components.RegisterRefreshTopBarAction
+import com.insaner.fonecheck.ui.components.ScreenLoadingNote
 import com.insaner.fonecheck.ui.components.SecondaryButton
 import com.insaner.fonecheck.ui.components.SectionHeader
+import com.insaner.fonecheck.ui.components.TestScreenContent
 import com.insaner.fonecheck.ui.components.formatCaptureTimestamp
-import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.toSemanticTone
 import java.time.Instant
 import java.time.ZoneId
@@ -115,49 +110,45 @@ internal fun DeviceInfoContent(
     onCopyAll: () -> Unit = {},
     onExport: () -> Unit = {},
 ) {
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(FonecheckTheme.spacing.md),
-        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.lg),
+    TestScreenContent(
+        modifier = modifier,
+        liveStateUpdatedAtEpochMillis = state.info?.capturedAt?.toEpochMilli(),
     ) {
         if (state.isLoading && state.info == null) {
-            Note(
-                text = stringResource(R.string.device_loading),
-                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-            )
+            item { ScreenLoadingNote(message = stringResource(R.string.device_loading)) }
         }
 
         state.info?.let { info ->
-            IdentitySection(info, onCopyValue)
-            OperatingSystemSection(info, onCopyValue)
-            DrmSection(info, onCopyValue)
-            SecuritySection(info, onCopyValue)
+            item { IdentitySection(info, onCopyValue) }
+            item { OperatingSystemSection(info, onCopyValue) }
+            item { DrmSection(info, onCopyValue) }
+            item { SecuritySection(info, onCopyValue) }
         }
 
         state.error?.let {
-            Note(
-                text = stringResource(R.string.device_capture_error_description),
-                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
-            )
-        }
-
-        state.info?.let { info ->
-            ButtonRow { buttonModifier ->
-                SecondaryButton(
-                    label = stringResource(R.string.device_copy_all),
-                    onClick = onCopyAll,
-                    modifier = buttonModifier,
-                )
-                PrimaryButton(
-                    label = stringResource(R.string.device_export),
-                    onClick = onExport,
-                    modifier = buttonModifier,
+            item {
+                Note(
+                    text = stringResource(R.string.device_capture_error_description),
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
                 )
             }
-            CaptureTimestamp(info.capturedAt)
+        }
+
+        if (state.info != null) {
+            item {
+                ButtonRow { buttonModifier ->
+                    SecondaryButton(
+                        label = stringResource(R.string.device_copy_all),
+                        onClick = onCopyAll,
+                        modifier = buttonModifier,
+                    )
+                    PrimaryButton(
+                        label = stringResource(R.string.device_export),
+                        onClick = onExport,
+                        modifier = buttonModifier,
+                    )
+                }
+            }
         }
     }
 }

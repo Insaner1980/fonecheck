@@ -1,5 +1,6 @@
 package com.insaner.fonecheck.ui.screens.runall
 
+import android.os.BatteryManager
 import com.insaner.fonecheck.domain.model.Applicability
 import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.domain.model.DiagnosticCatalog
@@ -66,7 +67,6 @@ import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkErrorCode
 import com.insaner.fonecheck.ui.screens.storage.StorageBenchmarkPhase
 import com.insaner.fonecheck.ui.screens.storage.StorageInfo
 import com.insaner.fonecheck.ui.screens.storage.StorageTestState
-import com.insaner.fonecheck.ui.screens.thermal.ThermalSeverityCode
 import com.insaner.fonecheck.ui.screens.thermal.ThermalTestState
 import com.insaner.fonecheck.ui.screens.vibration.HapticCapabilityState
 import com.insaner.fonecheck.ui.screens.vibration.VibrationCapabilityRead
@@ -139,7 +139,6 @@ class RunAllSnapshotMapperTest {
                                     statusApiSupported = true,
                                     headroomApiSupported = true,
                                     status = ThermalStatusCode.SEVERE,
-                                    severity = ThermalSeverityCode.SEVERE,
                                     headroom = 0.5f,
                                     batteryTemperatureCelsius = 30f,
                                     capturedAt = statusAt,
@@ -965,6 +964,104 @@ class RunAllSnapshotMapperTest {
     }
 
     @Test
+    fun everyBatteryHealthInputPreservesReportEvidence() {
+        data class HealthEvidenceCase(
+            val raw: Int,
+            val value: String?,
+            val status: DiagnosticStatus,
+            val reason: String?,
+        )
+
+        val cases =
+            listOf(
+                HealthEvidenceCase(
+                    BatteryManager.BATTERY_HEALTH_UNKNOWN,
+                    null,
+                    DiagnosticStatus.NOT_AVAILABLE,
+                    "battery_health_unavailable",
+                ),
+                HealthEvidenceCase(
+                    BatteryManager.BATTERY_HEALTH_GOOD,
+                    "good",
+                    DiagnosticStatus.INFO,
+                    null,
+                ),
+                HealthEvidenceCase(
+                    BatteryManager.BATTERY_HEALTH_OVERHEAT,
+                    "overheat",
+                    DiagnosticStatus.WARNING,
+                    "battery_overheat",
+                ),
+                HealthEvidenceCase(
+                    BatteryManager.BATTERY_HEALTH_DEAD,
+                    "dead",
+                    DiagnosticStatus.FAIL,
+                    "battery_dead",
+                ),
+                HealthEvidenceCase(
+                    BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE,
+                    "over_voltage",
+                    DiagnosticStatus.FAIL,
+                    "battery_over_voltage",
+                ),
+                HealthEvidenceCase(
+                    BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE,
+                    "unspecified_failure",
+                    DiagnosticStatus.FAIL,
+                    "battery_unspecified_failure",
+                ),
+                HealthEvidenceCase(
+                    BatteryManager.BATTERY_HEALTH_COLD,
+                    "cold",
+                    DiagnosticStatus.WARNING,
+                    "battery_cold",
+                ),
+                HealthEvidenceCase(
+                    99,
+                    null,
+                    DiagnosticStatus.NOT_AVAILABLE,
+                    "battery_health_unavailable",
+                ),
+                HealthEvidenceCase(
+                    -1,
+                    null,
+                    DiagnosticStatus.NOT_AVAILABLE,
+                    "battery_health_unavailable",
+                ),
+            )
+        val capturedAt = Instant.parse("2026-08-08T12:00:00Z")
+        cases.forEach { case ->
+            val evidence =
+                mappedEvidence(
+                    snapshots =
+                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                            battery =
+                                BatteryTestState(
+                                    health = HealthState(healthStatusRaw = case.raw),
+                                ),
+                        ),
+                    capturedAt = capturedAt,
+                ).getValue("battery.health")
+
+            assertEquals(
+                DiagnosticEvidence(
+                    categoryId = DiagnosticCategoryId.BATTERY,
+                    checkId = DiagnosticCheckId(DiagnosticCategoryId.BATTERY, "battery.health"),
+                    status = case.status,
+                    confidence = if (case.value == null) Confidence.UNAVAILABLE else Confidence.HIGH,
+                    source = EvidenceSource.ANDROID_API,
+                    applicability = Applicability.APPLICABLE,
+                    reason = case.reason?.let(::EvidenceReasonCode),
+                    value = case.value?.let(EvidenceValue::StableTextCodeValue),
+                    unit = null,
+                    capturedAt = capturedAt,
+                ),
+                evidence,
+            )
+        }
+    }
+
+    @Test
     fun batteryFaultAndCurrentTemperatureNoteRemainDistinct() {
         val evidence =
             mappedEvidence(
@@ -1020,8 +1117,6 @@ class RunAllSnapshotMapperTest {
                                 ThermalTestState(
                                     statusApiSupported = true,
                                     status = ThermalStatusCode.NONE,
-                                    severity = ThermalSeverityCode.NORMAL,
-                                    statusConfidence = Confidence.HIGH,
                                     batteryTemperatureCelsius = 32.0f,
                                     batteryTemperatureConfidence = Confidence.HIGH,
                                 ),
@@ -1052,8 +1147,6 @@ class RunAllSnapshotMapperTest {
                                     statusApiSupported = true,
                                     headroomApiSupported = true,
                                     status = ThermalStatusCode.SEVERE,
-                                    severity = ThermalSeverityCode.SEVERE,
-                                    statusConfidence = Confidence.HIGH,
                                     headroom = 1.1f,
                                     headroomConfidence = Confidence.LOW,
                                 ),

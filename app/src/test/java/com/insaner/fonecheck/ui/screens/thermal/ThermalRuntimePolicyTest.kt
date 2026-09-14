@@ -23,6 +23,12 @@ class ThermalRuntimePolicyTest {
     }
 
     @Test
+    fun missingStatusRemainsUnavailableOnSupportedAndUnsupportedApis() {
+        assertEquals(ThermalStatusCode.UNAVAILABLE, ThermalRuntimePolicy.status(sdkInt = 28, rawStatus = null))
+        assertEquals(ThermalStatusCode.UNAVAILABLE, ThermalRuntimePolicy.status(sdkInt = 29, rawStatus = null))
+    }
+
+    @Test
     fun severityDoesNotClaimThrottlingForUnavailableOrNormalStatus() {
         assertEquals(ThermalSeverityCode.UNAVAILABLE, ThermalRuntimePolicy.severity(ThermalStatusCode.UNAVAILABLE))
         assertEquals(ThermalSeverityCode.NORMAL, ThermalRuntimePolicy.severity(ThermalStatusCode.NONE))

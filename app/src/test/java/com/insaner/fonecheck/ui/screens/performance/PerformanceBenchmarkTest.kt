@@ -59,6 +59,8 @@ class PerformanceBenchmarkTest {
             assertEquals(4L, result.cpuOperationsPerSecond)
             assertNull(result.memoryMebibytesPerSecond)
             assertEquals(BenchmarkErrorCode.MEMORY_ALLOCATION_FAILED, result.error)
+            assertEquals(ThermalStatusCode.UNAVAILABLE, result.thermalBefore)
+            assertEquals(ThermalStatusCode.UNAVAILABLE, result.thermalAfter)
         }
 
     @Test

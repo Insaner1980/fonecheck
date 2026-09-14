@@ -42,7 +42,7 @@ class BiometricAuthenticationActionTest {
         promptReady = true
         composeRule.onNodeWithTag("biometric_authenticate").assertIsEnabled()
 
-        state = state.copy(authResult = AuthResult.IN_PROGRESS, promptActive = true)
+        state = state.copy(authResult = AuthResult.IN_PROGRESS)
         composeRule.onNodeWithTag("biometric_authenticate").assertIsNotEnabled()
     }
 }

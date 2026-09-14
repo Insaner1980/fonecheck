@@ -3,10 +3,46 @@ package com.insaner.fonecheck.domain.model
 import com.insaner.fonecheck.data.repository.ReportPayloadCodec
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import java.time.Instant
 
 class ReportAssemblerTest {
+    @Test
+    fun `snapshot rejects evidence from another category`() {
+        val valid = snapshot(DiagnosticCategoryId.BATTERY, DiagnosticStatus.PASS)
+
+        val error =
+            assertThrows(IllegalArgumentException::class.java) {
+                valid.copy(categoryId = DiagnosticCategoryId.CAMERA)
+            }
+
+        assertEquals("Snapshot evidence must belong to its category.", error.message)
+    }
+
+    @Test
+    fun `snapshot rejects duplicate check ids`() {
+        val valid = snapshot(DiagnosticCategoryId.BATTERY, DiagnosticStatus.PASS)
+        val evidence = valid.evidence.single()
+
+        val error =
+            assertThrows(IllegalArgumentException::class.java) {
+                valid.copy(evidence = listOf(evidence, evidence.copy(status = DiagnosticStatus.FAIL)))
+            }
+
+        assertEquals("A diagnostic snapshot must not contain duplicate check IDs.", error.message)
+    }
+
+    @Test
+    fun `snapshot rejects empty evidence independently`() {
+        val error =
+            assertThrows(IllegalArgumentException::class.java) {
+                snapshot(DiagnosticCategoryId.BATTERY)
+            }
+
+        assertEquals("A diagnostic snapshot must contain evidence.", error.message)
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun `new full report cannot be assembled from a historical subset`() {
         ReportAssembler.assemble(

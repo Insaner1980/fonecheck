@@ -18,22 +18,28 @@ enum class VibrationPattern(
     PATTERN(800L),
 }
 
-enum class VibrationEffectCode {
-    CLICK,
-    DOUBLE_CLICK,
-    HEAVY_CLICK,
-    TICK,
+@SuppressLint("InlinedApi") // IDs are queried only behind the platform's API guard.
+enum class VibrationEffectCode(
+    val androidEffectId: Int,
+) {
+    CLICK(VibrationEffect.EFFECT_CLICK),
+    DOUBLE_CLICK(VibrationEffect.EFFECT_DOUBLE_CLICK),
+    HEAVY_CLICK(VibrationEffect.EFFECT_HEAVY_CLICK),
+    TICK(VibrationEffect.EFFECT_TICK),
 }
 
-enum class VibrationPrimitiveCode {
-    CLICK,
-    THUD,
-    SPIN,
-    QUICK_RISE,
-    SLOW_RISE,
-    QUICK_FALL,
-    TICK,
-    LOW_TICK,
+@SuppressLint("InlinedApi") // IDs are queried only behind the platform's API guard.
+enum class VibrationPrimitiveCode(
+    val androidPrimitiveId: Int,
+) {
+    CLICK(VibrationEffect.Composition.PRIMITIVE_CLICK),
+    THUD(VibrationEffect.Composition.PRIMITIVE_THUD),
+    SPIN(VibrationEffect.Composition.PRIMITIVE_SPIN),
+    QUICK_RISE(VibrationEffect.Composition.PRIMITIVE_QUICK_RISE),
+    SLOW_RISE(VibrationEffect.Composition.PRIMITIVE_SLOW_RISE),
+    QUICK_FALL(VibrationEffect.Composition.PRIMITIVE_QUICK_FALL),
+    TICK(VibrationEffect.Composition.PRIMITIVE_TICK),
+    LOW_TICK(VibrationEffect.Composition.PRIMITIVE_LOW_TICK),
 }
 
 enum class VibrationCapabilityRead {
@@ -134,12 +140,12 @@ class AndroidVibrationPlatform
 
         @RequiresApi(Build.VERSION_CODES.R)
         private fun readSupportedEffects(vibrator: Vibrator): List<VibrationEffectCode> {
+            // SDK IntDefs are hidden; lint cannot follow enum IDs through map/toIntArray.
+            // VibrationCapabilityPolicyTest verifies every ID, query order and response index.
+            @SuppressLint("WrongConstant")
             val support =
                 vibrator.areEffectsSupported(
-                    VibrationEffect.EFFECT_CLICK,
-                    VibrationEffect.EFFECT_DOUBLE_CLICK,
-                    VibrationEffect.EFFECT_HEAVY_CLICK,
-                    VibrationEffect.EFFECT_TICK,
+                    *VibrationEffectCode.entries.map { it.androidEffectId }.toIntArray(),
                 )
             return VibrationCapabilityPolicy.supportedEffects(
                 results = support,
@@ -147,19 +153,14 @@ class AndroidVibrationPlatform
             )
         }
 
-        @SuppressLint("InlinedApi")
         @RequiresApi(Build.VERSION_CODES.R)
         private fun readSupportedPrimitives(vibrator: Vibrator): List<VibrationPrimitiveCode> {
+            // SDK IntDefs are hidden; lint cannot follow enum IDs through map/toIntArray.
+            // VibrationCapabilityPolicyTest verifies every ID, query order and response index.
+            @SuppressLint("WrongConstant")
             val support =
                 vibrator.arePrimitivesSupported(
-                    VibrationEffect.Composition.PRIMITIVE_CLICK,
-                    VibrationEffect.Composition.PRIMITIVE_THUD,
-                    VibrationEffect.Composition.PRIMITIVE_SPIN,
-                    VibrationEffect.Composition.PRIMITIVE_QUICK_RISE,
-                    VibrationEffect.Composition.PRIMITIVE_SLOW_RISE,
-                    VibrationEffect.Composition.PRIMITIVE_QUICK_FALL,
-                    VibrationEffect.Composition.PRIMITIVE_TICK,
-                    VibrationEffect.Composition.PRIMITIVE_LOW_TICK,
+                    *VibrationPrimitiveCode.entries.map { it.androidPrimitiveId }.toIntArray(),
                 )
             return VibrationCapabilityPolicy.supportedPrimitives(support)
         }

@@ -11,8 +11,10 @@ import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
 import com.insaner.fonecheck.domain.model.EvidenceSource
+import com.insaner.fonecheck.domain.model.EvidenceUnitCode
 import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.ReportKind
+import com.insaner.fonecheck.domain.model.ReportSchemaVersion
 import com.insaner.fonecheck.domain.model.ScoreCalculator
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreVersion
@@ -20,10 +22,112 @@ import com.insaner.fonecheck.testing.testReport
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Instant
 
 class ReportComparisonEngineTest {
+    @Test
+    fun passStatusTransitionsDefineScoreBasisEligibility() {
+        val before = scoreBasisEvidence()
+        val expectedCompatibility =
+            mapOf(
+                DiagnosticStatus.PASS to true,
+                DiagnosticStatus.FAIL to true,
+                DiagnosticStatus.WARNING to true,
+                DiagnosticStatus.INFO to false,
+                DiagnosticStatus.NOT_TESTED to false,
+                DiagnosticStatus.NOT_AVAILABLE to false,
+            )
+
+        for ((status, compatible) in expectedCompatibility) {
+            val comparison = compareScoreBasis(before, before.copy(status = status))
+
+            assertEquals(status.name, compatible, comparison.evidenceBasisCompatible)
+            assertEquals(status.name, if (compatible) 6 else null, comparison.delta)
+        }
+    }
+
+    @Test
+    fun nonApplicablePassIsExcludedFromScoreBasis() {
+        val before = scoreBasisEvidence()
+        val comparison = compareScoreBasis(before, before.copy(applicability = Applicability.NOT_APPLICABLE))
+
+        assertEquals(false, comparison.evidenceBasisCompatible)
+        assertNull(comparison.delta)
+    }
+
+    @Test
+    fun checkIdSourceAndNullableUnitDefineBasisButValueConfidenceAndReasonDoNot() {
+        val before = scoreBasisEvidence()
+        val changes =
+            listOf(
+                Triple("check ID", before.copy(checkId = DiagnosticCheckId(before.categoryId, "battery.other")), false),
+                Triple("source", before.copy(source = EvidenceSource.USER_CONFIRMATION), false),
+                Triple("unit", before.copy(unit = EvidenceUnitCode("ratio")), false),
+                Triple("absent unit", before.copy(unit = null), false),
+                Triple("value", before.copy(value = EvidenceValue.IntValue(79)), true),
+                Triple("confidence", before.copy(confidence = Confidence.LOW), true),
+                Triple("reason", before.copy(reason = EvidenceReasonCode("updated_observation")), true),
+            )
+
+        for ((name, after, compatible) in changes) {
+            val comparison = compareScoreBasis(before, after)
+
+            assertEquals(name, compatible, comparison.evidenceBasisCompatible)
+            assertEquals(name, if (compatible) 6 else null, comparison.delta)
+        }
+    }
+
+    @Test
+    fun equalHistoricalVersionOneCurrentlyAllowsStoredScoreDeltaWithoutDefiningItsFormula() {
+        // Present-engine compatibility only; these synthetic scores do not reconstruct the version-1 formula.
+        assertEqualStoredVersionAllowsDelta(ScoreVersion(1))
+    }
+
+    @Test
+    fun equalUnknownPositiveScoreVersionsCurrentlyAllowStoredScoreDelta() {
+        // ScoreVersion and report constructors accept positive versions without a known-version registry.
+        assertEqualStoredVersionAllowsDelta(ScoreVersion(Int.MAX_VALUE))
+    }
+
+    @Test
+    fun differentSchemasSuppressScoreAndCoverageDeltasAtEngineBoundary() {
+        val before = scoreBasisReport("before", scoreBasisEvidence(), 80)
+        // Domain objects allow positive schemas; repository reads reject this unsupported schema separately.
+        val after = scoreBasisReport("after", scoreBasisEvidence(), 86).copy(schemaVersion = ReportSchemaVersion(2))
+
+        val comparison = ReportComparisonEngine.compare(before, after)
+
+        assertEquals(ReportSchemaVersion.CURRENT, before.schemaVersion)
+        assertEquals(false, (comparison.score as ScoreComparison.Compatible).evidenceBasisCompatible)
+        assertNull(comparison.score.deltaOrNull())
+        assertNull(comparison.coverage.delta)
+    }
+
+    @Test
+    fun missingBeforeAfterOrBothScoresPreserveCompatibleModelWithoutDelta() {
+        for ((beforeValue, afterValue) in listOf(null to 86, 80 to null, null to null)) {
+            val before = scoreBasisReport("before", scoreBasisEvidence(), beforeValue)
+            val after = scoreBasisReport("after", scoreBasisEvidence(), afterValue)
+
+            assertEquals(
+                "$beforeValue -> $afterValue",
+                ScoreComparison.Compatible(
+                    before = beforeValue,
+                    after = afterValue,
+                    delta = null,
+                    beforeState = before.score.state,
+                    afterState = after.score.state,
+                    version = ScoreVersion.CURRENT,
+                    evidenceBasisCompatible = true,
+                ),
+                ReportComparisonEngine.compare(before, after).score,
+            )
+        }
+    }
+
     @Test
     fun changedReasonIsMetadataAndTimestampAloneIsNotAValueChange() {
         val first =
@@ -307,8 +411,8 @@ class ReportComparisonEngineTest {
     fun compatibleVersionsExposeDeltasAndIncompatibleScoreVersionsDoNot() {
         val compatible =
             ReportComparisonEngine.compare(
-                report(id = "before", score = 80, coverage = 75),
-                report(id = "after", score = 86, coverage = 100),
+                report(id = "before", score = 80, coverage = 75, scoreVersion = ScoreVersion.CURRENT),
+                report(id = "after", score = 86, coverage = 100, scoreVersion = ScoreVersion.CURRENT),
             )
         assertEquals(
             ScoreComparison.Compatible(
@@ -333,6 +437,49 @@ class ReportComparisonEngineTest {
             incompatible.score,
         )
         assertNull(incompatible.score.deltaOrNull())
+    }
+
+    @Test
+    fun evidenceFromAnotherCategoryIsRejectedInEitherReport() {
+        val valid = categoryReport("valid", DiagnosticCategoryId.BATTERY)
+        val malformed =
+            valid.copy(
+                categories =
+                    listOf(
+                        category(
+                            DiagnosticCategoryId.BATTERY,
+                            DiagnosticStatus.PASS,
+                            evidence(DiagnosticCategoryId.CAMERA, "result", DiagnosticStatus.PASS),
+                        ),
+                    ),
+            )
+
+        for ((before, after) in listOf(malformed to valid, valid to malformed)) {
+            val error =
+                assertThrows(IllegalArgumentException::class.java) {
+                    ReportComparisonEngine.compare(before, after)
+                }
+
+            assertEquals("Evidence must belong to its containing category.", error.message)
+        }
+    }
+
+    @Test
+    fun categoriesWithEmptyEvidenceCanStillBeCompared() {
+        val categories = listOf(category(DiagnosticCategoryId.BATTERY, DiagnosticStatus.INFO))
+        val comparison =
+            ReportComparisonEngine.compare(
+                report("before", categories).copy(kind = ReportKind.CATEGORY_ONLY),
+                report("after", categories).copy(kind = ReportKind.CATEGORY_ONLY),
+            )
+
+        assertEquals(DiagnosticCategoryId.BATTERY, comparison.categories.single().categoryId)
+        assertTrue(
+            comparison.categories
+                .single()
+                .evidence
+                .isEmpty(),
+        )
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -360,6 +507,64 @@ class ReportComparisonEngineTest {
         status: DiagnosticStatus,
         vararg evidence: DiagnosticEvidence,
     ) = DiagnosticCategoryResult(id, status, evidence.toList())
+
+    private fun scoreBasisEvidence() =
+        evidence(DiagnosticCategoryId.BATTERY, "level", DiagnosticStatus.PASS).copy(
+            applicability = Applicability.APPLICABLE,
+            source = EvidenceSource.ANDROID_API,
+            unit = EvidenceUnitCode("percent"),
+            value = EvidenceValue.IntValue(80),
+            confidence = Confidence.HIGH,
+            reason = EvidenceReasonCode("original_observation"),
+        )
+
+    private fun scoreBasisReport(
+        id: String,
+        item: DiagnosticEvidence,
+        score: Int?,
+        version: ScoreVersion = ScoreVersion.CURRENT,
+    ): DiagnosticReport =
+        testReport(
+            id = id,
+            kind = ReportKind.CATEGORY_ONLY,
+            categories = listOf(category(item.categoryId, item.status, item)),
+            // Use stored scores to test delta eligibility independently of score calculation.
+            scoreValue = score,
+            scoreState = if (score == null) ScoreState.INCOMPLETE else ScoreState.PARTIAL,
+            scoreVersion = version,
+        ).copy(schemaVersion = ReportSchemaVersion.CURRENT)
+
+    private fun compareScoreBasis(
+        before: DiagnosticEvidence,
+        after: DiagnosticEvidence,
+    ): ScoreComparison.Compatible =
+        ReportComparisonEngine
+            .compare(
+                scoreBasisReport("before", before, 80),
+                scoreBasisReport("after", after, 86),
+            ).score as ScoreComparison.Compatible
+
+    private fun assertEqualStoredVersionAllowsDelta(version: ScoreVersion) {
+        val item = scoreBasisEvidence()
+        val comparison =
+            ReportComparisonEngine.compare(
+                scoreBasisReport("before", item, 80, version),
+                scoreBasisReport("after", item, 86, version),
+            )
+
+        assertEquals(
+            ScoreComparison.Compatible(
+                before = 80,
+                after = 86,
+                delta = 6,
+                beforeState = ScoreState.PARTIAL,
+                afterState = ScoreState.PARTIAL,
+                version = version,
+                evidenceBasisCompatible = true,
+            ),
+            comparison.score,
+        )
+    }
 
     private fun evidence(
         categoryId: DiagnosticCategoryId,

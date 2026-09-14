@@ -10,6 +10,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.reflect.KClass
 
 class NavigationChromeTest {
     @Test
@@ -22,24 +23,22 @@ class NavigationChromeTest {
     }
 
     @Test
-    fun `diagnostic and primary routes have matching titles and back actions`() {
+    fun `every diagnostic destination uses its shared label and diagnostic chrome`() {
+        diagnosticDestinations.forEach { destination ->
+            val chrome = navigationChromeFor(destinationFor(destination.route::class))
+
+            assertEquals(destination.labelResId, chrome.titleResId)
+            assertTrue(chrome.showBackAction)
+            assertTrue(chrome.showTopBar)
+        }
+    }
+
+    @Test
+    fun `primary routes have matching titles and back actions`() {
         val routes =
             mapOf(
-                destinationFor<DeviceInfo>() to R.string.home_cat_device,
-                destinationFor<PerformanceInfo>() to R.string.home_cat_performance,
-                destinationFor<SimTelephony>() to R.string.home_cat_sim,
-                destinationFor<AudioTest>() to R.string.home_cat_audio,
-                destinationFor<CameraTest>() to R.string.home_cat_camera,
-                destinationFor<SensorTest>() to R.string.home_cat_sensors,
-                destinationFor<ConnectivityTest>() to R.string.home_cat_connectivity,
-                destinationFor<BatteryTest>() to R.string.home_cat_battery,
-                destinationFor<ThermalTest>() to R.string.home_cat_thermal,
-                destinationFor<StorageTest>() to R.string.home_cat_storage,
-                destinationFor<DisplayTest>() to R.string.home_cat_display,
-                destinationFor<VibrationTest>() to R.string.home_cat_vibration,
-                destinationFor<ButtonTest>() to R.string.home_cat_buttons,
-                destinationFor<BiometricTest>() to R.string.home_cat_biometrics,
                 destinationFor<RunAllTests>() to R.string.full_check_title,
+                destinationFor<CategoryRetest>() to R.string.report_retest,
                 destinationFor<Settings>() to R.string.settings_title,
                 destinationFor<LanguageSettings>() to R.string.settings_language,
                 destinationFor<Licenses>() to R.string.licenses_title,
@@ -71,9 +70,11 @@ class NavigationChromeTest {
         )
     }
 
+    private inline fun <reified T : Any> destinationFor(): NavDestination = destinationFor(T::class)
+
     @OptIn(InternalSerializationApi::class, ExperimentalSerializationApi::class)
-    private inline fun <reified T : Any> destinationFor(): NavDestination {
-        val descriptor = T::class.serializer().descriptor
+    private fun <T : Any> destinationFor(route: KClass<T>): NavDestination {
+        val descriptor = route.serializer().descriptor
         var routeId = descriptor.serialName.hashCode()
         repeat(descriptor.elementsCount) { index ->
             routeId = 31 * routeId + descriptor.getElementName(index).hashCode()

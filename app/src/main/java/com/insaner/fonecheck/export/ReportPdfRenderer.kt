@@ -7,15 +7,15 @@ import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import androidx.core.content.ContextCompat
 import com.insaner.fonecheck.R
-import com.insaner.fonecheck.domain.model.Confidence
-import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticReport
-import com.insaner.fonecheck.domain.model.DiagnosticStatus
-import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.EvidenceUnitCode
-import com.insaner.fonecheck.domain.model.ScoreState
+import com.insaner.fonecheck.localization.confidenceStringRes
+import com.insaner.fonecheck.localization.diagnosticCategoryStringRes
+import com.insaner.fonecheck.localization.diagnosticStatusStringRes
 import com.insaner.fonecheck.localization.evidenceLabelResource
 import com.insaner.fonecheck.localization.evidenceReasonStringRes
+import com.insaner.fonecheck.localization.evidenceSourceStringRes
+import com.insaner.fonecheck.localization.scoreStateStringRes
 import com.insaner.fonecheck.localization.stableCodeDisplayText
 import com.insaner.fonecheck.localization.stableTextStringRes
 import com.insaner.fonecheck.ui.format.formatPdfDateTime
@@ -139,17 +139,14 @@ class ReportPdfRenderer
                         context.getString(
                             R.string.report_scope_category,
                             context.getString(
-                                report.categories
-                                    .single()
-                                    .categoryId
-                                    .labelResource(),
+                                diagnosticCategoryStringRes(report.categories.single().categoryId),
                             ),
                         )
                     }
                 },
                 scoreScopeNote = context.getString(R.string.report_score_scope_note),
                 timeSemantics = context.getString(R.string.report_time_semantics),
-                categoryName = { context.getString(it.labelResource()) },
+                categoryName = { context.getString(diagnosticCategoryStringRes(it)) },
                 checkName = { evidence ->
                     evidenceLabelResource(evidence)?.let { resource ->
                         resource.formatArgument?.let { argument ->
@@ -157,10 +154,10 @@ class ReportPdfRenderer
                         } ?: context.getString(resource.stringResId)
                     } ?: stableCodeDisplayText(evidence.checkId.value.substringAfter('.'))
                 },
-                statusName = { context.getString(it.labelResource()) },
-                scoreStateName = { context.getString(it.labelResource()) },
-                sourceName = { context.getString(it.labelResource()) },
-                confidenceName = { context.getString(it.labelResource()) },
+                statusName = { context.getString(diagnosticStatusStringRes(it)) },
+                scoreStateName = { context.getString(scoreStateStringRes(it)) },
+                sourceName = { context.getString(evidenceSourceStringRes(it)) },
+                confidenceName = { context.getString(confidenceStringRes(it)) },
                 reasonName = { reason ->
                     evidenceReasonStringRes(reason)?.let(context::getString)
                         ?: stableCodeDisplayText(reason.value)
@@ -218,57 +215,6 @@ class ReportPdfRenderer
             const val CONTENT_HEIGHT = 700
             const val FOOTER_BASELINE = 820f
         }
-    }
-
-private fun DiagnosticCategoryId.labelResource(): Int =
-    when (this) {
-        DiagnosticCategoryId.DEVICE -> R.string.home_cat_device
-        DiagnosticCategoryId.PERFORMANCE -> R.string.home_cat_performance
-        DiagnosticCategoryId.SIM -> R.string.home_cat_sim
-        DiagnosticCategoryId.DISPLAY -> R.string.home_cat_display
-        DiagnosticCategoryId.AUDIO -> R.string.home_cat_audio
-        DiagnosticCategoryId.CAMERA -> R.string.home_cat_camera
-        DiagnosticCategoryId.SENSORS -> R.string.home_cat_sensors
-        DiagnosticCategoryId.CONNECTIVITY -> R.string.home_cat_connectivity
-        DiagnosticCategoryId.BATTERY -> R.string.home_cat_battery
-        DiagnosticCategoryId.THERMAL -> R.string.home_cat_thermal
-        DiagnosticCategoryId.STORAGE -> R.string.home_cat_storage
-        DiagnosticCategoryId.VIBRATION -> R.string.home_cat_vibration
-        DiagnosticCategoryId.BUTTONS -> R.string.home_cat_buttons
-        DiagnosticCategoryId.BIOMETRICS -> R.string.home_cat_biometrics
-    }
-
-private fun DiagnosticStatus.labelResource(): Int =
-    when (this) {
-        DiagnosticStatus.PASS -> R.string.run_all_status_pass
-        DiagnosticStatus.FAIL -> R.string.run_all_status_fail
-        DiagnosticStatus.WARNING -> R.string.run_all_status_warning
-        DiagnosticStatus.INFO -> R.string.run_all_status_info
-        DiagnosticStatus.NOT_AVAILABLE -> R.string.run_all_status_unavailable
-        DiagnosticStatus.NOT_TESTED -> R.string.status_not_measured
-    }
-
-private fun ScoreState.labelResource(): Int =
-    when (this) {
-        ScoreState.INCOMPLETE -> R.string.report_score_incomplete
-        ScoreState.PARTIAL -> R.string.report_score_partial
-        ScoreState.COMPLETE -> R.string.report_score_complete
-    }
-
-private fun EvidenceSource.labelResource(): Int =
-    when (this) {
-        EvidenceSource.AUTOMATIC_MEASUREMENT -> R.string.report_source_automatic
-        EvidenceSource.ANDROID_API -> R.string.report_source_android_api
-        EvidenceSource.USER_CONFIRMATION -> R.string.report_source_user
-        EvidenceSource.DERIVED -> R.string.report_source_derived
-        EvidenceSource.ESTIMATE -> R.string.report_source_estimate
-    }
-
-private fun Confidence.labelResource(): Int =
-    when (this) {
-        Confidence.HIGH -> R.string.confidence_high
-        Confidence.LOW -> R.string.confidence_low
-        Confidence.UNAVAILABLE -> R.string.confidence_unavailable
     }
 
 private fun localizedUnitName(

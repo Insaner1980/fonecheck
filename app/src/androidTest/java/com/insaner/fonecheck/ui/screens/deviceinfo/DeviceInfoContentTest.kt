@@ -1,23 +1,34 @@
 package com.insaner.fonecheck.ui.screens.deviceinfo
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.DeviceConfigurationOverride
 import androidx.compose.ui.test.FontScale
 import androidx.compose.ui.test.ForcedSize
 import androidx.compose.ui.test.Locales
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasScrollToIndexAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.then
 import androidx.compose.ui.text.TextLayoutResult
@@ -40,11 +51,104 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.Instant
 import java.time.ZoneOffset
+import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
 class DeviceInfoContentTest {
     @get:Rule
     val composeRule = createComposeRule()
+
+    @Test
+    fun initialLoadingKeepsLocalizedTextAndPoliteAnnouncement() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        var language by mutableStateOf("en")
+        composeRule.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.Locales(LocaleList(language))) {
+                FonecheckTheme {
+                    DeviceInfoContent(state = DeviceInfoState(isLoading = true))
+                }
+            }
+        }
+
+        listOf("en", "fi").forEach { tag ->
+            composeRule.runOnIdle { language = tag }
+            val configuration =
+                Configuration(context.resources.configuration).apply { setLocale(Locale.forLanguageTag(tag)) }
+            val localizedContext = context.createConfigurationContext(configuration)
+            val loadingText = localizedContext.getString(R.string.device_loading)
+            composeRule.onAllNodesWithText(loadingText).assertCountEquals(1)
+            composeRule
+                .onNodeWithText(loadingText)
+                .assertIsDisplayed()
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
+            composeRule.onNodeWithText(localizedContext.getString(R.string.live_state_label)).assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun sectionsKeepTheirOrderAndGrouping() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        composeRule.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.ForcedSize(DpSize(320.dp, 240.dp))) {
+                FonecheckTheme {
+                    DeviceInfoContent(state = DeviceInfoState(info = deviceInfo(rootArtifactDetected = false)))
+                }
+            }
+        }
+
+        val sectionTitles =
+            listOf(
+                R.string.device_identity_title,
+                R.string.os_info_title,
+                R.string.drm_info_title,
+                R.string.security_info_title,
+            )
+        val firstHeadingTop =
+            composeRule
+                .onNodeWithContentDescription(context.getString(sectionTitles.first()))
+                .fetchSemanticsNode()
+                .boundsInRoot.top
+        sectionTitles.forEachIndexed { index, title ->
+            composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(index)
+            val heading = composeRule.onNodeWithContentDescription(context.getString(title))
+            heading.assertIsDisplayed()
+            assertEquals(firstHeadingTop, heading.fetchSemanticsNode().boundsInRoot.top, 1f)
+        }
+    }
+
+    @Test
+    fun snapshotHasExactlyOneBottomTimestampWithTheCapturedTime() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val info = deviceInfo(rootArtifactDetected = false)
+        var refreshing by mutableStateOf(false)
+        composeRule.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.Locales(LocaleList("en"))) {
+                FonecheckTheme {
+                    DeviceInfoContent(state = DeviceInfoState(info = info, isLoading = refreshing))
+                }
+            }
+        }
+
+        val englishContext =
+            context.createConfigurationContext(
+                Configuration(context.resources.configuration).apply { setLocale(Locale.ENGLISH) },
+            )
+        val label = englishContext.getString(R.string.live_state_label)
+        val timestamp =
+            englishContext.getString(
+                R.string.live_state_updated_at,
+                formatCapturedAt(info.capturedAt, Locale.ENGLISH),
+            )
+        val timestampMatcher = hasText(timestamp) or hasContentDescription(timestamp)
+        listOf(false, true).forEach { isRefreshing ->
+            composeRule.runOnIdle { refreshing = isRefreshing }
+            composeRule.onNode(hasScrollToIndexAction()).performScrollToNode(timestampMatcher)
+            composeRule.onNode(timestampMatcher).performScrollTo().assertIsDisplayed()
+            composeRule.onAllNodesWithText(label).assertCountEquals(1)
+            composeRule.onAllNodes(timestampMatcher).assertCountEquals(1)
+            composeRule.onNodeWithText(englishContext.getString(R.string.device_loading)).assertDoesNotExist()
+        }
+    }
 
     @Test
     fun danishDeveloperOptionsLabelWrapsOnlyBetweenWordsAtLargeFontScale() {
@@ -70,6 +174,7 @@ class DeviceInfoContentTest {
 
         listOf(true, false).forEach { isEnabled ->
             composeRule.runOnIdle { enabled = isEnabled }
+            composeRule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Indstillinger for udviklere"))
             val label = composeRule.onNodeWithText("Indstillinger for udviklere", useUnmergedTree = true)
             label.performScrollTo().assertIsDisplayed()
             val layouts = mutableListOf<TextLayoutResult>()
@@ -99,20 +204,29 @@ class DeviceInfoContentTest {
             }
         }
 
-        composeRule.onNodeWithText(context.getString(R.string.device_identity_title)).assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.os_info_title)).assertExists()
-        composeRule.onNodeWithText(context.getString(R.string.drm_info_title)).assertExists()
-        composeRule.onNodeWithText(context.getString(R.string.security_info_title)).assertExists()
-        composeRule.onNodeWithText(context.getString(R.string.device_value_restricted)).assertExists()
-        composeRule.onNodeWithText(context.getString(R.string.device_serial_restricted_note)).assertExists()
-        composeRule.onNodeWithText(context.getString(R.string.run_all_status_warning)).assertExists()
-        composeRule.onNodeWithText(context.getString(R.string.device_root_finding_note)).assertExists()
-        composeRule.onNodeWithText(context.getString(R.string.device_root_heuristic_disclaimer)).assertExists()
-        composeRule.onNodeWithText(context.getString(R.string.status_enabled)).assertExists()
-        composeRule.onNodeWithText(context.getString(R.string.device_developer_options_note)).assertExists()
+        listOf(
+            R.string.device_identity_title,
+            R.string.os_info_title,
+            R.string.drm_info_title,
+            R.string.security_info_title,
+        ).forEach { title ->
+            val text = context.getString(title)
+            composeRule.onNode(hasScrollToIndexAction()).performScrollToNode(hasContentDescription(text))
+            composeRule.onNodeWithContentDescription(text).assertIsDisplayed()
+        }
+        listOf(
+            R.string.device_value_restricted,
+            R.string.device_serial_restricted_note,
+            R.string.run_all_status_warning,
+            R.string.device_root_finding_note,
+            R.string.device_root_heuristic_disclaimer,
+            R.string.status_enabled,
+            R.string.device_developer_options_note,
+        ).forEach { text -> scrollToText(context.getString(text)).assertIsDisplayed() }
+        composeRule.onNode(hasScrollToIndexAction()).performScrollToNode(hasContentDescription("radio-one\nradio-two"))
         composeRule
             .onNodeWithContentDescription("radio-one\nradio-two", useUnmergedTree = true)
-            .assertExists()
+            .assertIsDisplayed()
     }
 
     @Test
@@ -133,10 +247,10 @@ class DeviceInfoContentTest {
             }
         }
 
-        composeRule.onNodeWithText(context.getString(R.string.device_value_unavailable)).assertExists()
-        composeRule.onNodeWithText(context.getString(R.string.run_all_status_pass)).assertExists()
+        scrollToText(context.getString(R.string.device_value_unavailable)).assertIsDisplayed()
+        scrollToText(context.getString(R.string.run_all_status_pass)).assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.device_root_finding_note)).assertDoesNotExist()
-        composeRule.onNodeWithText(context.getString(R.string.device_root_heuristic_disclaimer)).assertExists()
+        scrollToText(context.getString(R.string.device_root_heuristic_disclaimer)).assertIsDisplayed()
     }
 
     @Test
@@ -162,13 +276,9 @@ class DeviceInfoContentTest {
             .performSemanticsAction(SemanticsActions.OnLongClick)
         assertEquals("Pixel 10", copiedValue)
 
-        composeRule
-            .onNodeWithText(context.getString(R.string.device_copy_all))
-            .performScrollTo()
+        scrollToText(context.getString(R.string.device_copy_all))
             .performClick()
-        composeRule
-            .onNodeWithText(context.getString(R.string.device_export))
-            .performScrollTo()
+        scrollToText(context.getString(R.string.device_export))
             .performClick()
         assertTrue(copiedAll)
         assertTrue(exported)
@@ -193,6 +303,7 @@ class DeviceInfoContentTest {
             }
         }
 
+        scrollToText("radio-one").assertIsDisplayed()
         composeRule.onAllNodesWithText("radio-one", useUnmergedTree = true).assertCountEquals(1)
         composeRule
             .onNodeWithText("radio-one")
@@ -252,6 +363,11 @@ class DeviceInfoContentTest {
                 context.getString(R.string.device_captured_at, "2026-08-17 14:05"),
             ),
         )
+    }
+
+    private fun scrollToText(text: String): SemanticsNodeInteraction {
+        composeRule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(text))
+        return composeRule.onNodeWithText(text).performScrollTo()
     }
 
     private fun deviceInfo(rootArtifactDetected: Boolean) =

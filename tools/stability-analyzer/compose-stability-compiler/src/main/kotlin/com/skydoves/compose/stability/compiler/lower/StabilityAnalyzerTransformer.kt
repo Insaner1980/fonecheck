@@ -1,0 +1,1266 @@
+/*
+ * Designed and developed by 2025 skydoves (Jaewoong Eum)
+ * Modified for fonecheck: lossless receiver-aware reports. See tools/stability-analyzer/README.md.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.skydoves.compose.stability.compiler.lower
+
+import com.skydoves.compose.stability.compiler.FqNameMatcher
+import com.skydoves.compose.stability.compiler.StabilityInfoCollector
+import com.skydoves.compose.stability.runtime.ParameterStability
+import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
+import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.IrStatement
+import org.jetbrains.kotlin.ir.declarations.IrClass
+import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.declarations.IrParameterKind
+import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
+import org.jetbrains.kotlin.ir.declarations.IrVariable
+import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.expressions.IrConst
+import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.types.IrType
+import org.jetbrains.kotlin.ir.types.classFqName
+import org.jetbrains.kotlin.ir.types.classOrNull
+import org.jetbrains.kotlin.ir.types.isNothing
+import org.jetbrains.kotlin.ir.types.isPrimitiveType
+import org.jetbrains.kotlin.ir.types.isString
+import org.jetbrains.kotlin.ir.types.isUnit
+import org.jetbrains.kotlin.ir.types.makeNotNull
+import org.jetbrains.kotlin.ir.util.hasAnnotation
+import org.jetbrains.kotlin.ir.util.isFunctionOrKFunction
+import org.jetbrains.kotlin.ir.util.isNullable
+import org.jetbrains.kotlin.ir.util.isSuspendFunctionTypeOrSubtype
+import org.jetbrains.kotlin.ir.util.kotlinFqName
+import org.jetbrains.kotlin.ir.util.render
+import org.jetbrains.kotlin.name.FqName
+
+public class StabilityAnalyzerTransformer(
+  private val pluginContext: IrPluginContext,
+  private val stabilityCollector: StabilityInfoCollector? = null,
+  private val traceAll: Boolean = false,
+  private val traceAllThreshold: Int = 2,
+  private val stabilityConfigurationMatchers: List<FqNameMatcher> = emptyList(),
+) : IrElementTransformerVoidWithContext() {
+
+  private val composableFqName = FqName("androidx.compose.runtime.Composable")
+  private val stableFqName = FqName("androidx.compose.runtime.Stable")
+  private val immutableFqName = FqName("androidx.compose.runtime.Immutable")
+  private val traceRecompositionFqName =
+    FqName("com.skydoves.compose.stability.runtime.TraceRecomposition")
+  private val ignoreStabilityReportFqName =
+    FqName("com.skydoves.compose.stability.runtime.IgnoreStabilityReport")
+  private val previewFqName = FqName("androidx.compose.ui.tooling.preview.Preview")
+  private val nonRestartableComposableFqName =
+    FqName("androidx.compose.runtime.NonRestartableComposable")
+  private val nonSkippableComposableFqName =
+    FqName("androidx.compose.runtime.NonSkippableComposable")
+  private val readOnlyComposableFqName =
+    FqName("androidx.compose.runtime.ReadOnlyComposable")
+  private val explicitGroupsComposableFqName =
+    FqName("androidx.compose.runtime.ExplicitGroupsComposable")
+
+  private val irBuilder = RecompositionIrBuilder(pluginContext)
+  private var irBuilderInitialized = false
+
+  // Cycle detection for recursive types
+  private val analyzingTypes = ThreadLocal.withInitial { mutableSetOf<String>() }
+
+  override fun visitFunctionNew(declaration: IrFunction): IrStatement {
+    // Handle property getters - extract actual property name
+    // Property getters have names like "<get-propertyName>"
+    val rawFunctionName = declaration.name.asString()
+    val rawFqName = declaration.kotlinFqName.asString()
+
+    val nameAndFqn = if (rawFunctionName.startsWith("<get-") && rawFunctionName.endsWith(">")) {
+      // This is a property getter - extract property name
+      val propertyName = rawFunctionName.substring(5, rawFunctionName.length - 1)
+
+      // Build proper FQN by replacing <get-xxx> with property name
+      val propertyFqName = if (rawFqName.contains("<get-")) {
+        rawFqName.replace(Regex("<get-([^>]+)>"), "$1")
+      } else {
+        rawFqName
+      }
+
+      Pair(propertyName, propertyFqName)
+    } else {
+      Pair(rawFunctionName, rawFqName)
+    }
+
+    val functionName = nameAndFqn.first
+    val fqName = nameAndFqn.second
+
+    // Check if function has @TraceRecomposition annotation
+    val hasTraceRecomposition = declaration.hasAnnotation(traceRecompositionFqName)
+
+    // Only process @Composable functions
+    if (!declaration.hasAnnotation(composableFqName)) {
+      return super.visitFunctionNew(declaration)
+    }
+
+    // Skip stability reporting if function has @IgnoreStabilityReport
+    // or @Preview annotation
+    val shouldIgnoreReport = declaration.hasAnnotation(ignoreStabilityReportFqName) ||
+      hasPreviewAnnotation(declaration)
+
+    // Collect stability information if collector is available and not ignored
+    if (!shouldIgnoreReport) {
+      stabilityCollector?.let { collector ->
+        val visibility = when {
+          declaration.visibility.isPublicAPI -> "public"
+          declaration.visibility.toString().contains("internal") -> "internal"
+          declaration.visibility.toString().contains("private") -> "private"
+          else -> "public"
+        }
+
+        // Local patch: receiver kind, not the synthetic name, defines receiver identity.
+        // Dispatch receivers are the enclosing instance (already identified by the FQN).
+        val receiver = declaration.parameters.singleOrNull { it.kind == IrParameterKind.ExtensionReceiver }
+          ?.let { param ->
+            val stability = analyzeParameterStability(param.type)
+            com.skydoves.compose.stability.compiler.ParameterStabilityInfo(
+              name = param.name.asString(),
+              type = param.type.render(),
+              stability = stability,
+              reason = getStabilityReason(param.type, stability),
+            )
+          }
+        val parameters = declaration.parameters
+          .filter {
+            val name = it.name.asString()
+            it.kind != IrParameterKind.ExtensionReceiver &&
+              it.kind != IrParameterKind.DispatchReceiver && !name.startsWith("$")
+          }
+          .map { param ->
+            val renderedType = param.type.render()
+
+            // If rendered type contains @[Composable], it's a composable function - STABLE
+            val isComposableFunction =
+              renderedType.contains("@[Composable]") || renderedType.contains("@Composable")
+
+            val stability = if (isComposableFunction) {
+              "STABLE"
+            } else {
+              analyzeParameterStability(param.type)
+            }
+
+            val reason = if (isComposableFunction) {
+              "composable function type"
+            } else {
+              getStabilityReason(param.type, stability)
+            }
+
+            com.skydoves.compose.stability.compiler.ParameterStabilityInfo(
+              name = param.name.asString(),
+              type = renderedType,
+              stability = stability,
+              reason = reason,
+            )
+          }
+
+        collector.recordComposable(
+          com.skydoves.compose.stability.compiler.ComposableStabilityInfo(
+            qualifiedName = fqName,
+            simpleName = functionName,
+            visibility = visibility,
+            skippable = isSkippable(declaration, parameters),
+            restartable = isRestartable(declaration),
+            returnType = declaration.returnType.render(),
+            parameters = parameters,
+            receiver = receiver,
+          ),
+        )
+      }
+    }
+
+    // If @TraceRecomposition is present, inject tracking code automatically.
+    // Otherwise, trace-all mode auto-instruments every eligible restartable composable.
+    if (hasTraceRecomposition) {
+      // Extract annotation parameters
+      val annotation = declaration.annotations.find { annot ->
+        val annotationClass = annot.symbol.owner.parent as? IrClass
+        annotationClass?.kotlinFqName == traceRecompositionFqName
+      }
+
+      var tag = ""
+      var threshold = 1
+      var traceStates = false
+
+      annotation?.let { annot ->
+        val annotationClass = annot.symbol.owner
+        val paramNameToIndex = annotationClass.parameters
+          .mapIndexed { index, param ->
+            param.name.asString() to index
+          }
+          .toMap()
+
+        // Cover tag
+        paramNameToIndex["tag"]?.let { index ->
+          annot.arguments.getOrNull(index)?.let { value ->
+            tag = extractConstStringValue(value) ?: ""
+          }
+        }
+
+        // Cover threshold
+        paramNameToIndex["threshold"]?.let { index ->
+          annot.arguments.getOrNull(index)?.let { value ->
+            threshold = extractConstIntValue(value) ?: 1
+          }
+        }
+
+        // Cover traceStates
+        paramNameToIndex["traceStates"]?.let { index ->
+          annot.arguments.getOrNull(index)?.let { value ->
+            traceStates = extractConstBooleanValue(value) ?: false
+          }
+        }
+      }
+
+      instrumentForTracing(
+        declaration = declaration,
+        functionName = functionName,
+        fqName = fqName,
+        tag = tag,
+        threshold = threshold,
+        traceStates = traceStates,
+        isAutoTraced = false,
+      )
+    } else if (traceAll && isAutoTraceable(declaration, rawFunctionName)) {
+      instrumentForTracing(
+        declaration = declaration,
+        functionName = functionName,
+        fqName = fqName,
+        tag = "",
+        threshold = traceAllThreshold,
+        // State detection multiplies the injected IR across a whole module; auto mode only
+        // needs parameter-level data, so it stays off unless the annotation requests it.
+        traceStates = false,
+        isAutoTraced = true,
+      )
+    }
+
+    return super.visitFunctionNew(declaration)
+  }
+
+  /**
+   * Determines whether trace-all may safely instrument a composable that has no explicit
+   * `@TraceRecomposition` annotation. Only restartable block-bodied composables qualify;
+   * everything else (previews, getters, inline/lambda/readonly composables) is skipped so
+   * auto-instrumentation can never change restartability semantics or break compilation.
+   */
+  private fun isAutoTraceable(declaration: IrFunction, rawFunctionName: String): Boolean {
+    if (declaration.body !is IrBlockBody) return false
+    if (!declaration.returnType.isUnit()) return false
+    if (declaration.isInline) return false
+    if (declaration.name.isSpecial) return false
+    if (rawFunctionName.startsWith("<get-")) return false
+    // Backtick-escaped names can contain whitespace, which would break the single-token
+    // name/fq fields in the log header that downstream parsers rely on.
+    if (rawFunctionName.any { it.isWhitespace() }) return false
+    if ((declaration as? IrSimpleFunction)?.isSuspend == true) return false
+    if (declaration.hasAnnotation(nonRestartableComposableFqName)) return false
+    if (declaration.hasAnnotation(readOnlyComposableFqName)) return false
+    if (declaration.hasAnnotation(explicitGroupsComposableFqName)) return false
+    if (declaration.hasAnnotation(ignoreStabilityReportFqName)) return false
+    if (hasPreviewAnnotation(declaration)) return false
+    return true
+  }
+
+  /**
+   * Injects recomposition-tracking IR into [declaration]. Shared by the `@TraceRecomposition`
+   * path (annotation values win) and the trace-all auto path.
+   */
+  private fun instrumentForTracing(
+    declaration: IrFunction,
+    functionName: String,
+    fqName: String,
+    tag: String,
+    threshold: Int,
+    traceStates: Boolean,
+    isAutoTraced: Boolean,
+  ) {
+    if (declaration.body == null) {
+      return
+    }
+
+    // Initialize IR builder symbols once
+    if (!irBuilderInitialized) {
+      irBuilderInitialized = irBuilder.initializeSymbols(currentFile)
+      if (!irBuilderInitialized) {
+        return
+      }
+    }
+
+    // Analyze parameter stability
+    val parameterStabilities = declaration.parameters
+      .filter {
+        val name = it.name.asString()
+        !name.startsWith("$") && name != "<this>"
+      }
+      .map { param ->
+        val renderedType = param.type.render()
+
+        // If rendered type contains @[Composable], it's a composable function - STABLE
+        val isComposableFunction =
+          renderedType.contains("@[Composable]") || renderedType.contains("@Composable")
+
+        val stability = if (isComposableFunction) {
+          ParameterStability.STABLE
+        } else {
+          analyzeTypeStability(param.type)
+        }
+
+        RecompositionIrBuilder.ParameterStabilityData(
+          name = param.name.asString(),
+          typeString = renderedType,
+          parameter = param,
+          stability = stability,
+        )
+      }
+
+    // Detect state variables if traceStates is enabled
+    val stateVariables = if (traceStates) {
+      detectStateVariables(declaration.body as? IrBlockBody)
+    } else {
+      emptyList()
+    }
+
+    // Inject tracking code
+    irBuilder.injectTrackingCode(
+      function = declaration,
+      functionName = functionName,
+      tag = tag,
+      threshold = threshold,
+      parameterStabilities = parameterStabilities,
+      stateVariables = stateVariables,
+      fqName = fqName,
+      isAutoTraced = isAutoTraced,
+    )
+  }
+
+  // FqNames for Compose State types
+  private val stateTypeFqNames = setOf(
+    "androidx.compose.runtime.MutableState",
+    "androidx.compose.runtime.MutableIntState",
+    "androidx.compose.runtime.MutableLongState",
+    "androidx.compose.runtime.MutableFloatState",
+    "androidx.compose.runtime.MutableDoubleState",
+    "androidx.compose.runtime.State",
+    "androidx.compose.runtime.MutableTransitionState",
+    "androidx.compose.runtime.snapshots.SnapshotStateList",
+    "androidx.compose.runtime.snapshots.SnapshotStateMap",
+  )
+
+  // FqNames for derived state types
+  private val derivedStateTypeFqNames = setOf(
+    "androidx.compose.runtime.DerivedState",
+  )
+
+  /**
+   * Detects state variable declarations in the function body's top-level statements.
+   * Looks for local variables whose type is a known Compose State type.
+   *
+   * Returns a list of [RecompositionIrBuilder.StateVariableData] for each detected state.
+   */
+  private fun detectStateVariables(
+    body: IrBlockBody?,
+  ): List<RecompositionIrBuilder.StateVariableData> {
+    if (body == null) return emptyList()
+
+    val result = mutableListOf<RecompositionIrBuilder.StateVariableData>()
+    collectStateVariablesRecursive(body.statements, result)
+    return result
+  }
+
+  private fun collectStateVariablesRecursive(
+    statements: List<org.jetbrains.kotlin.ir.IrStatement>,
+    result: MutableList<RecompositionIrBuilder.StateVariableData>,
+  ) {
+    for (statement in statements) {
+      // Recurse into blocks (Compose compiler wraps remember in blocks)
+      if (
+        statement is org.jetbrains.kotlin.ir.expressions.IrBlock
+      ) {
+        collectStateVariablesRecursive(
+          statement.statements,
+          result,
+        )
+        continue
+      }
+
+      // Recurse into when branches (Compose wraps body in IrWhen)
+      if (
+        statement is org.jetbrains.kotlin.ir.expressions.IrWhen
+      ) {
+        for (branch in statement.branches) {
+          val branchResult = branch.result
+          if (
+            branchResult is
+              org.jetbrains.kotlin.ir.expressions.IrBlock
+          ) {
+            collectStateVariablesRecursive(
+              branchResult.statements,
+              result,
+            )
+          }
+        }
+        continue
+      }
+
+      // Handle IrLocalDelegatedProperty (var x by remember { stateOf() })
+      val delegatedProp = statement as?
+        org.jetbrains.kotlin.ir.declarations.IrLocalDelegatedProperty
+      if (delegatedProp != null) {
+        val delegate = delegatedProp.delegate ?: continue
+        val delegateType =
+          delegate.type.classFqName?.asString()
+        if (delegateType != null) {
+          val isState =
+            stateTypeFqNames.any { delegateType == it }
+          val isDerived =
+            derivedStateTypeFqNames.any { delegateType == it }
+          if (isState || isDerived) {
+            result.add(
+              RecompositionIrBuilder.StateVariableData(
+                name = delegatedProp.name.asString(),
+                typeString = delegatedProp.type.render(),
+                variable = delegate,
+                isDelegated = true,
+                getter = delegatedProp.getter,
+              ),
+            )
+          }
+        }
+        continue
+      }
+
+      // Handle plain IrVariable (val state = mutableStateOf())
+      val variable = statement as? IrVariable ?: continue
+      val typeFqName =
+        variable.type.classFqName?.asString() ?: continue
+      val isStateType = stateTypeFqNames.any { typeFqName == it }
+      val isDerivedState = derivedStateTypeFqNames.any {
+        typeFqName == it
+      }
+      if (isStateType || isDerivedState) {
+        // Non-delegated: skip (same-instance comparison won't work)
+        continue
+      }
+      // Check initializer type for delegated fallback
+      val initType =
+        variable.initializer?.type?.classFqName?.asString()
+      if (initType != null) {
+        val initIsState =
+          stateTypeFqNames.any { initType == it }
+        val initIsDerived =
+          derivedStateTypeFqNames.any { initType == it }
+        if (initIsState || initIsDerived) {
+          result.add(
+            RecompositionIrBuilder.StateVariableData(
+              name = variable.name.asString(),
+              typeString = variable.type.render(),
+              variable = variable,
+              isDelegated = true,
+            ),
+          )
+        }
+      }
+    }
+  }
+
+  /**
+   * Analyzes type stability following the same order as K2 implementation.
+   * Order matters for correctness and consistency.
+   *
+   * Analysis order (must match KtStabilityInferencer):
+   * 1. Nullable types (MUST be first)
+   * 2. Type parameters (T, E, K, V) - RUNTIME
+   * 3. Function types (including suspend) - STABLE
+   * 4. Known stable types and stability configuration files types
+   * 5. @Stable/@Immutable annotations
+   * 6. Primitives
+   * 7. String
+   * 8. Unit/Nothing
+   * 9. Mutable collections - UNSTABLE
+   * 10. Kotlinx immutable collections - STABLE
+   * 11. Standard collections - RUNTIME
+   * 12. Value classes (inline classes)
+   * 13. Enums - STABLE
+   * 14. @Parcelize - check properties
+   * 15. Sealed classes - STABLE
+   * 16. Interfaces - RUNTIME
+   * 17. Abstract classes - RUNTIME
+   * 18. Regular classes (with property analysis)
+   */
+  private fun analyzeTypeStability(type: IrType): ParameterStability {
+    // 1. Nullable types - MUST be checked first to strip nullability
+    if (type.isNullable()) {
+      return analyzeTypeStability(type.makeNotNull())
+    }
+
+    // 2. Function types (including lambdas, suspend, @Composable) - STABLE FIRST
+    // This must be checked before getting classSymbol to avoid edge cases
+    if (type.isFunctionOrKFunction()) {
+      return ParameterStability.STABLE
+    }
+
+    val classSymbol = type.classOrNull
+    val fqName = try {
+      type.classFqName?.asString()
+    } catch (e: StackOverflowError) {
+      return ParameterStability.RUNTIME
+    }
+
+    // Check for suspend functions using multiple methods
+    val typeString = type.render()
+    val isSuspend = type.isSuspendFunctionTypeOrSubtype() ||
+      (fqName?.startsWith("kotlin.coroutines.SuspendFunction") == true) ||
+      (fqName?.contains("SuspendFunction") == true) ||
+      typeString.startsWith("suspend ") ||
+      typeString.contains("SuspendFunction")
+
+    if (isSuspend) {
+      return ParameterStability.STABLE
+    }
+
+    val typeId = fqName ?: classSymbol?.owner?.name?.asString() ?: type.render()
+    val currentlyAnalyzing = analyzingTypes.get()
+    if (typeId in currentlyAnalyzing) {
+      return ParameterStability.RUNTIME
+    }
+
+    currentlyAnalyzing.add(typeId)
+    try {
+      return analyzeTypeStabilityInternal(type, classSymbol, fqName)
+    } finally {
+      currentlyAnalyzing.remove(typeId)
+    }
+  }
+
+  /**
+   * Internal implementation separated for proper cleanup.
+   */
+  private fun analyzeTypeStabilityInternal(
+    type: IrType,
+    classSymbol: org.jetbrains.kotlin.ir.symbols.IrClassSymbol?,
+    fqName: String?,
+  ): ParameterStability {
+    // 2b. Type parameters (T, E, K, V in generics) - RUNTIME
+    // If we can't resolve to a class, it's likely a type parameter
+    if (classSymbol == null) {
+      return ParameterStability.RUNTIME
+    }
+
+    // 2b'. Stability configuration file types - an explicit user override that a type is stable.
+    // Checked before every instability determination (including the known-unstable Java types
+    // below) so the override always wins, matching the Compose compiler's configuration file.
+    if (isStabilityConfigurationFileType(type)) {
+      return ParameterStability.STABLE
+    }
+
+    // 2c. Known unstable types (Java mutable classes)
+    // Java classes don't expose mutable fields in Kotlin IR, so we need explicit checks
+    if (isKnownUnstableJavaType(fqName)) {
+      return ParameterStability.UNSTABLE
+    }
+
+    // 3. Known stable types
+    if (isKnownStableType(type)) {
+      return ParameterStability.STABLE
+    }
+
+    // 4. Check for @Stable or @Immutable annotations
+    if (type.hasStableAnnotation()) {
+      return ParameterStability.STABLE
+    }
+
+    // 5. Get class for further checks
+    val clazz = classSymbol.owner
+
+    // 6. Primitives are always stable
+    if (type.isPrimitiveType()) {
+      return ParameterStability.STABLE
+    }
+
+    // 7. String is stable
+    if (type.isString()) {
+      return ParameterStability.STABLE
+    }
+
+    // 8. Unit and Nothing are stable
+    if (type.isUnit() || type.isNothing()) {
+      return ParameterStability.STABLE
+    }
+
+    // 9. Check for mutable collections (always unstable)
+    if (type.isMutableCollection()) {
+      return ParameterStability.UNSTABLE
+    }
+
+    // 10. Check for kotlinx immutable collections (always stable)
+    if (fqName != null && fqName.startsWith("kotlinx.collections.immutable.")) {
+      if (fqName.contains("Immutable") || fqName.contains("Persistent")) {
+        return ParameterStability.STABLE
+      }
+    }
+
+    // 11. Standard collections (List, Set, Map) - RUNTIME check needed
+    if (type.isCollection()) {
+      return ParameterStability.RUNTIME
+    }
+
+    // 12. Value classes (inline classes) - stability depends on underlying type
+    if (clazz.isValueClass()) {
+      return analyzeValueClass(clazz)
+    }
+
+    // 13. Enum classes are always stable
+    if (clazz.isEnumClassIr()) {
+      return ParameterStability.STABLE
+    }
+
+    // 14. @Parcelize data classes - check only properties, ignore Parcelable interface
+    if (clazz.hasAnnotation(FqName("kotlinx.parcelize.Parcelize"))) {
+      val properties = clazz.declarations
+        .filterIsInstance<org.jetbrains.kotlin.ir.declarations.IrProperty>()
+        .filter { it.representsStoredState() }
+
+      if (properties.isEmpty()) {
+        return ParameterStability.STABLE
+      }
+
+      when (analyzeStoredPropertyStability(properties)) {
+        ParameterStability.UNSTABLE -> return ParameterStability.UNSTABLE
+        ParameterStability.STABLE -> return ParameterStability.STABLE
+        else -> Unit
+      }
+      // If properties have mixed stability, fall through to interface check
+    }
+
+    // 15. Interfaces - concrete implementation unknown (Compose 2.4.0: Unknown)
+    if (clazz.isInterfaceIr()) {
+      return ParameterStability.UNKNOWN
+    }
+
+    // 16. Abstract classes - concrete implementation unknown (Compose 2.4.0: Unknown)
+    //     EXCEPT: sealed classes with @Stable/@Immutable annotations
+    //     Issue #31: @Immutable sealed classes should be trusted as stable
+    if (clazz.modality == org.jetbrains.kotlin.descriptors.Modality.ABSTRACT) {
+      // Check if this is a sealed class (sealed classes are abstract but stable if annotated)
+      val isSealed = try {
+        clazz.sealedSubclasses.isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
+
+      // Check if it has @Stable or @Immutable annotation
+      val hasStabilityAnnotation = clazz.hasAnnotation(stableFqName) ||
+        clazz.hasAnnotation(immutableFqName)
+
+      // Only mark as UNKNOWN if it's NOT a sealed class AND doesn't have stability annotation
+      if (!isSealed && !hasStabilityAnnotation) {
+        return ParameterStability.UNKNOWN
+      }
+      // Sealed classes and annotated abstract classes continue to property analysis
+    }
+
+    // 16b. Non-final (open) classes - concrete subtype unknown (Compose 2.4.0: Unknown)
+    //      EXCEPT: classes explicitly trusted via @Stable/@Immutable.
+    if (clazz.modality == org.jetbrains.kotlin.descriptors.Modality.OPEN &&
+      !clazz.hasAnnotation(stableFqName) &&
+      !clazz.hasAnnotation(immutableFqName)
+    ) {
+      return ParameterStability.UNKNOWN
+    }
+
+    // 17. Cross-module types require explicit @Stable/@Immutable/@StabilityInferred
+    if (isFromDifferentModule(clazz) &&
+      !type.hasStableAnnotation() &&
+      !type.hasStabilityInferredAnnotation()
+    ) {
+      return ParameterStability.UNSTABLE
+    }
+
+    // 18. Regular classes - analyze properties first before checking @StabilityInferred
+    val propertyStability = analyzeClassProperties(clazz, fqName)
+
+    when (propertyStability) {
+      ParameterStability.STABLE -> return ParameterStability.STABLE
+      ParameterStability.UNSTABLE -> return ParameterStability.UNSTABLE
+      ParameterStability.UNKNOWN -> return ParameterStability.UNKNOWN
+      ParameterStability.RUNTIME -> {
+        // 19. Refine with @StabilityInferred: parameters=0 means stable, else runtime.
+        //
+        // Only for declarations outside this compilation unit, where the annotation is baked into
+        // the binary and is the intended cross-module channel. For a class in the module being
+        // compiled, the annotation exists only once the Compose compiler plugin's IR lowering has
+        // run, and whether that happens before or after this extension is decided by the resolved
+        // order of `kotlinCompilerPluginClasspath` — nothing pins it. Reading it here made the
+        // verdict depend on artifact ordering (issue #107). Our own property analysis is
+        // authoritative for source classes anyway, and skipping the annotation also matches the
+        // IDE plugin, which only ever sees source and therefore never finds it.
+        if (!isFromDifferentModule(clazz)) {
+          return ParameterStability.RUNTIME
+        }
+        val stabilityInferredParams = type.getStabilityInferredParameters()
+        return if (stabilityInferredParams == 0) {
+          ParameterStability.STABLE
+        } else {
+          ParameterStability.RUNTIME
+        }
+      }
+    }
+  }
+
+  /**
+   * Analyzes class properties to determine overall stability.
+   * Matches K2 implementation logic.
+   */
+  private fun analyzeClassProperties(clazz: IrClass, fqName: String?): ParameterStability {
+    // Issue #31: Check if parent sealed class has @Immutable/@Stable
+    val parentHasStabilityAnnotation = clazz.superTypes.any { superType ->
+      val superClassSymbol = superType.classOrNull
+      if (superClassSymbol != null) {
+        val superClass = superClassSymbol.owner
+        // Check if superclass is sealed AND has stability annotation
+        val isSealed = try {
+          superClass.sealedSubclasses.isNotEmpty()
+        } catch (e: Exception) {
+          false
+        }
+        val hasAnnotation = superClass.hasAnnotation(stableFqName) ||
+          superClass.hasAnnotation(immutableFqName)
+        isSealed && hasAnnotation
+      } else {
+        false
+      }
+    }
+
+    if (parentHasStabilityAnnotation) {
+      return ParameterStability.STABLE
+    }
+
+    // Check superclass stability first (matches IDE plugin logic)
+    val superClassStability = analyzeSuperclassStability(clazz)
+
+    val properties = clazz.declarations
+      .filterIsInstance<org.jetbrains.kotlin.ir.declarations.IrProperty>()
+      .filter { it.representsStoredState() }
+
+    // If there are no state-storing properties, defer to the superclass. A bare-UNKNOWN
+    // superclass (an abstract/open base with no destabilizing state) must NOT taint a concrete
+    // subclass — matching the Compose compiler, which drops an `Unknown` superclass. Genuine
+    // inherited stored state never reaches here: it survives the filter above as a resolved
+    // fake-override, keeping the list non-empty. So only a truly unstable/runtime base
+    // propagates (issue #178). This also keeps sealed classes with no properties STABLE.
+    if (properties.isEmpty()) {
+      return when (superClassStability) {
+        ParameterStability.UNSTABLE -> ParameterStability.UNSTABLE
+        ParameterStability.RUNTIME -> ParameterStability.RUNTIME
+        else -> ParameterStability.STABLE
+      }
+    }
+
+    return analyzeStoredPropertyStability(properties)
+  }
+
+  private fun analyzeStoredPropertyStability(
+    properties: List<org.jetbrains.kotlin.ir.declarations.IrProperty>,
+  ): ParameterStability {
+    val hasMutableProperty = properties.any { it.isVar }
+    if (hasMutableProperty) {
+      return ParameterStability.UNSTABLE
+    }
+
+    val propertyStabilities = properties.mapNotNull { property ->
+      property.getter?.returnType?.let { analyzeTypeStability(it) }
+    }
+
+    if (propertyStabilities.any { it == ParameterStability.UNSTABLE }) {
+      return ParameterStability.UNSTABLE
+    }
+
+    if (propertyStabilities.all { it == ParameterStability.STABLE }) {
+      return ParameterStability.STABLE
+    }
+
+    // Mixed stability (some RUNTIME) - class needs runtime check
+    return ParameterStability.RUNTIME
+  }
+
+  /**
+   * Analyzes superclass stability.
+   * Returns the stability of the superclass, or null if no superclass or superclass is stable.
+   * Matches IDE plugin's analyzeSuperclassStability logic.
+   */
+  private fun analyzeSuperclassStability(clazz: IrClass): ParameterStability? {
+    val superTypes = clazz.superTypes.filter { superType ->
+      // Filter out kotlin.Any and other common base types
+      val fqName = superType.classFqName?.asString()
+      fqName != "kotlin.Any" && fqName != null
+    }
+
+    for (superType in superTypes) {
+      val stability = analyzeTypeStability(superType)
+
+      // If superclass is unstable or runtime, propagate that
+      if (stability != ParameterStability.STABLE) {
+        return stability
+      }
+    }
+
+    return null // All superclasses are stable or no superclasses
+  }
+
+  /**
+   * True when this property stores state — it has a backing field, or (for an inherited fake
+   * override) resolves through its override chain to a declaration that does.
+   *
+   * Computed getter-only properties (e.g. `open val foo: Bar? get() = null`) hold no state and
+   * must be excluded from stability inference. This mirrors the Compose compiler, whose class
+   * inference guards on `member.backingField?.let { ... }` and never inspects the type of a
+   * property without a backing field — so a stateless computed property (even of an interface
+   * type) never makes a class runtime/unstable. Inherited stored `var`/unstable fields still
+   * count, because they resolve through the override chain to a backed declaration (issue #178).
+   */
+  private fun org.jetbrains.kotlin.ir.declarations.IrProperty.representsStoredState(): Boolean {
+    if (backingField != null) return true
+    return resolvesToBackedProperty(this, HashSet())
+  }
+
+  private fun resolvesToBackedProperty(
+    property: org.jetbrains.kotlin.ir.declarations.IrProperty,
+    seen: MutableSet<org.jetbrains.kotlin.ir.symbols.IrPropertySymbol>,
+  ): Boolean {
+    if (property.backingField != null) return true
+    if (!seen.add(property.symbol)) return false
+    return property.overriddenSymbols.any { symbol ->
+      val owner = try {
+        symbol.owner
+      } catch (e: Exception) {
+        null
+      }
+      owner != null && resolvesToBackedProperty(owner, seen)
+    }
+  }
+
+  /**
+   * Analyzes value class (inline class) stability.
+   * Value classes inherit the stability of their underlying type.
+   */
+  private fun analyzeValueClass(clazz: IrClass): ParameterStability {
+    val properties = clazz.declarations
+      .filterIsInstance<org.jetbrains.kotlin.ir.declarations.IrProperty>()
+      .filter { it.representsStoredState() }
+
+    val underlyingProperty = properties.firstOrNull()
+    if (underlyingProperty != null) {
+      val underlyingType = underlyingProperty.getter?.returnType
+      if (underlyingType != null) {
+        return analyzeTypeStability(underlyingType)
+      }
+    }
+
+    return ParameterStability.RUNTIME
+  }
+
+  private fun IrType.hasStableAnnotation(): Boolean {
+    val classSymbol = this.classOrNull ?: return false
+    val clazz = classSymbol.owner
+    return clazz.hasAnnotation(stableFqName) || clazz.hasAnnotation(immutableFqName)
+  }
+
+  private fun IrType.hasStabilityInferredAnnotation(): Boolean {
+    val classSymbol = this.classOrNull ?: return false
+    val clazz = classSymbol.owner
+    val stabilityInferredFqName =
+      FqName("androidx.compose.runtime.internal.StabilityInferred")
+    return clazz.hasAnnotation(stabilityInferredFqName)
+  }
+
+  /**
+   * Read the `parameters` field from @StabilityInferred annotation.
+   * Returns 0 when all type parameters are stable, non-zero bitmask otherwise.
+   * Returns null if the annotation is not present.
+   */
+  private fun IrType.getStabilityInferredParameters(): Int? {
+    val classSymbol = this.classOrNull ?: return null
+    val clazz = classSymbol.owner
+    val stabilityInferredFqName =
+      FqName("androidx.compose.runtime.internal.StabilityInferred")
+
+    val annotation = clazz.annotations.find { annot ->
+      try {
+        val annotationClass = annot.symbol.owner.parent as? IrClass
+        annotationClass?.kotlinFqName == stabilityInferredFqName
+      } catch (e: Exception) {
+        false
+      }
+    } ?: return null
+
+    val annotationClass = annotation.symbol.owner
+    val paramNameToIndex = annotationClass.parameters
+      .mapIndexed { index, param -> param.name.asString() to index }
+      .toMap()
+
+    val parametersIndex = paramNameToIndex["parameters"] ?: return null
+    val value = annotation.arguments.getOrNull(parametersIndex) ?: return null
+    return extractConstIntValue(value)
+  }
+
+  private fun IrType.isCollection(): Boolean {
+    val className = this.classFqName?.asString() ?: return false
+    return className.startsWith("kotlin.collections.") &&
+      (
+        className.contains("List") ||
+          className.contains("Set") ||
+          className.contains("Map")
+        )
+  }
+
+  private fun IrType.isMutableCollection(): Boolean {
+    val className = this.classFqName?.asString() ?: return false
+    return className.startsWith("kotlin.collections.") && className.contains("Mutable")
+  }
+
+  private fun IrClass.isValueClass(): Boolean {
+    val jvmInlineFqName = FqName("kotlin.jvm.JvmInline")
+    return this.hasAnnotation(jvmInlineFqName)
+  }
+
+  private fun IrClass.isEnumClassIr(): Boolean = this.superTypes.any {
+    it.classFqName?.asString() == "kotlin.Enum"
+  }
+
+  private fun IrClass.isInterfaceIr(): Boolean {
+    val hasNoConstructors = this.declarations
+      .none { it is org.jetbrains.kotlin.ir.declarations.IrConstructor }
+
+    // Also check if modality is ABSTRACT
+    return hasNoConstructors && this.modality == org.jetbrains.kotlin.descriptors.Modality.ABSTRACT
+  }
+
+  private fun isKnownStableType(type: IrType): Boolean {
+    val fqName = type.classFqName?.asString() ?: return false
+    return fqName in KNOWN_STABLE_TYPES
+  }
+
+  private fun isStabilityConfigurationFileType(type: IrType): Boolean {
+    val fqName = type.classFqName?.asString() ?: return false
+    return stabilityConfigurationMatchers.any { it.matches(fqName) }
+  }
+
+  /**
+   * Check if a function has @Preview annotation (directly or via meta-annotation).
+   * This includes:
+   * - Direct @Preview annotation
+   * - Custom annotations that are meta-annotated with @Preview
+   */
+  private fun hasPreviewAnnotation(function: IrFunction): Boolean {
+    // Check direct @Preview annotation
+    if (function.hasAnnotation(previewFqName)) {
+      return true
+    }
+
+    // Check for meta-annotations (annotations on annotations)
+    for (annotation in function.annotations) {
+      try {
+        val annotationType = annotation.type
+        val annotationClass = annotationType.classOrNull?.owner
+        if (annotationClass != null && annotationClass.hasAnnotation(previewFqName)) {
+          return true
+        }
+      } catch (e: Exception) {
+        // Skip annotations that can't be resolved
+        continue
+      }
+    }
+
+    return false
+  }
+
+  /**
+   * Check if a type is a known unstable Java class.
+   *
+   * This is necessary because Java classes don't expose their mutable fields
+   * as IrProperty in Kotlin IR. The IDE plugin can detect these via K2 Analysis API,
+   * but in IR we need explicit checks for common mutable Java types.
+   */
+  private fun isKnownUnstableJavaType(fqName: String?): Boolean {
+    if (fqName == null) return false
+
+    return fqName in setOf(
+      "java.lang.StringBuilder",
+      "java.lang.StringBuffer",
+      "java.util.Date",
+      "java.util.Calendar",
+      "java.util.GregorianCalendar",
+      "java.util.ArrayList",
+      "java.util.HashMap",
+      "java.util.HashSet",
+      "java.util.LinkedList",
+      "java.util.TreeMap",
+      "java.util.TreeSet",
+    )
+  }
+
+  private fun extractConstStringValue(expr: IrExpression): String? = try {
+    extractConstValue(expr)?.toString()
+  } catch (e: Exception) {
+    null
+  }
+
+  private fun extractConstIntValue(expr: IrExpression): Int? = extractConstValue(expr) as? Int
+
+  private fun extractConstBooleanValue(expr: IrExpression): Boolean? = extractConstValue(expr) as? Boolean
+
+  /** Reads a direct constant with the existing reflective field fallback order. */
+  private fun extractConstValue(expr: IrExpression): Any? {
+    if (expr !is IrConst) {
+      return null
+    }
+    return try {
+      val fields = listOf("value", "getValue")
+      for (fieldName in fields) {
+        try {
+          val valueField = expr.javaClass.getDeclaredField(fieldName)
+          valueField.isAccessible = true
+          return valueField.get(expr)
+        } catch (e: NoSuchFieldException) {
+          continue
+        }
+      }
+      null
+    } catch (e: Exception) {
+      null
+    }
+  }
+
+  /**
+   * Analyze parameter stability and return as string.
+   */
+  private fun analyzeParameterStability(type: IrType): String = when (analyzeTypeStability(type)) {
+    ParameterStability.STABLE -> "STABLE"
+    ParameterStability.UNSTABLE -> "UNSTABLE"
+    ParameterStability.RUNTIME -> "RUNTIME"
+    ParameterStability.UNKNOWN -> "UNKNOWN"
+  }
+
+  /**
+   * Get the reason why a type has the given stability.
+   */
+  private fun getStabilityReason(type: IrType, stability: String): String? = when (stability) {
+    "STABLE" -> when {
+      type.isPrimitiveType() -> "primitive type"
+      type.isString() -> "String is immutable"
+      type.isFunctionOrKFunction() ||
+        type.isSuspendFunctionTypeOrSubtype() ||
+        type.render().contains("suspend ") ||
+        type.render().contains("SuspendFunction") -> "function type"
+      // Checked before @Stable / known-stable to match the analysis precedence: a configured type
+      // is forced stable regardless of its own annotations (issue #176).
+      isStabilityConfigurationFileType(type) -> "stability configuration file type"
+      type.hasStableAnnotation() -> "marked @Stable or @Immutable"
+      isKnownStableType(type) -> "known stable type"
+      else -> "class with no mutable properties"
+    }
+    "UNSTABLE" -> when {
+      type.isMutableCollection() -> "mutable collection"
+      isKnownUnstableJavaType(type.classFqName?.asString()) -> "mutable Java class"
+      // Ordered after the two branches above because their analysis steps (2c, 9) run before the
+      // out-of-module step (17), so they must keep winning when a type matches both.
+      else -> outOfModuleUnstableReason(type) ?: "has mutable properties or unstable members"
+    }
+    "RUNTIME" -> "requires runtime check"
+    "UNKNOWN" -> "interface or non-final class; concrete implementation unknown"
+    else -> null
+  }
+
+  /**
+   * Determine if a composable function is restartable, i.e. whether the Compose compiler generates
+   * a restart group for it. It does not for `@NonRestartableComposable`, `@ReadOnlyComposable`, or
+   * `@ExplicitGroupsComposable` composables, `inline` functions, or composables that return a
+   * non-`Unit` value (e.g. `@Composable fun rememberFoo(): Foo`). These are the restart-group-relevant
+   * subset of the conditions in [isAutoTraceable] (which additionally filters out non-block bodies,
+   * property getters, `suspend`, `@IgnoreStabilityReport`, and `@Preview`) (issue #184).
+   */
+  private fun isRestartable(declaration: IrFunction): Boolean {
+    if (declaration.hasAnnotation(nonRestartableComposableFqName)) return false
+    if (declaration.hasAnnotation(readOnlyComposableFqName)) return false
+    if (declaration.hasAnnotation(explicitGroupsComposableFqName)) return false
+    if (declaration.isInline) return false
+    if (!declaration.returnType.isUnit()) return false
+    return true
+  }
+
+  /**
+   * Determine if a composable function is skippable. A non-restartable composable (see
+   * [isRestartable]) can never be skipped, and `@NonSkippableComposable` opts out of skipping
+   * explicitly; otherwise a function is skippable if all parameters are stable.
+   */
+  private fun isSkippable(
+    declaration: IrFunction,
+    parameters: List<com.skydoves.compose.stability.compiler.ParameterStabilityInfo>,
+  ): Boolean {
+    // Skipping requires a restart group, so a non-restartable composable is never skippable.
+    if (!isRestartable(declaration)) return false
+    // @NonSkippableComposable is restartable but opts out of skipping (issue #184).
+    if (declaration.hasAnnotation(nonSkippableComposableFqName)) return false
+    // Otherwise a function is skippable only if all parameters are stable.
+    return parameters.all { it.stability == "STABLE" }
+  }
+
+  public companion object {
+    /**
+     * Set of known stable types from Compose and standard library.
+     * Must match StabilityAnalysisConstants.KNOWN_STABLE_TYPES in IDEA plugin.
+     */
+    private val KNOWN_STABLE_TYPES: Set<String> = setOf(
+      // Compose UI types
+      "androidx.compose.ui.Modifier",
+      "androidx.compose.ui.graphics.Color",
+      "androidx.compose.ui.unit.Dp",
+      "androidx.compose.ui.unit.TextUnit",
+      "androidx.compose.ui.unit.IntOffset",
+      "androidx.compose.ui.unit.IntSize",
+      "androidx.compose.ui.geometry.Offset",
+      "androidx.compose.ui.geometry.Size",
+      "androidx.compose.ui.unit.DpOffset",
+      "androidx.compose.ui.unit.DpSize",
+      "androidx.compose.ui.unit.Constraints",
+
+      // Compose Foundation shapes
+      "androidx.compose.foundation.shape.RoundedCornerShape",
+      "androidx.compose.foundation.shape.CircleShape",
+      "androidx.compose.foundation.shape.CutCornerShape",
+      "androidx.compose.foundation.shape.CornerBasedShape",
+      "androidx.compose.foundation.shape.AbsoluteRoundedCornerShape",
+      "androidx.compose.foundation.shape.AbsoluteCutCornerShape",
+      "androidx.compose.ui.graphics.RectangleShape",
+
+      // Compose text value classes
+      "androidx.compose.ui.text.style.TextAlign",
+      "androidx.compose.ui.text.style.TextDirection",
+      "androidx.compose.ui.text.style.TextDecoration",
+      "androidx.compose.ui.text.style.TextOverflow",
+      "androidx.compose.ui.text.style.TextIndent",
+      "androidx.compose.ui.text.style.TextGeometricTransform",
+      "androidx.compose.ui.text.style.BaselineShift",
+      "androidx.compose.ui.text.style.LineHeightStyle",
+      "androidx.compose.ui.text.font.FontStyle",
+      "androidx.compose.ui.text.font.FontWeight",
+      "androidx.compose.ui.text.font.FontSynthesis",
+      "androidx.compose.ui.text.intl.LocaleList",
+
+      // Compose UI unit value classes
+      "androidx.compose.ui.unit.LayoutDirection",
+
+      // Compose graphics value classes
+      "androidx.compose.ui.graphics.BlendMode",
+      "androidx.compose.ui.graphics.FilterQuality",
+      "androidx.compose.ui.graphics.StrokeCap",
+      "androidx.compose.ui.graphics.StrokeJoin",
+      "androidx.compose.ui.graphics.TileMode",
+      "androidx.compose.ui.graphics.PathFillType",
+      "androidx.compose.ui.graphics.ClipOp",
+      "androidx.compose.ui.graphics.ColorFilter",
+      "androidx.compose.ui.graphics.Shadow",
+      "androidx.compose.ui.graphics.drawscope.DrawStyle",
+
+      // Kotlin standard types
+      "kotlin.Pair",
+      "kotlin.Triple",
+      "kotlin.Result",
+      "kotlin.time.Duration",
+      "kotlin.ranges.IntRange",
+      "kotlin.ranges.LongRange",
+      "kotlin.ranges.CharRange",
+
+      // Java types
+      "java.math.BigInteger",
+      "java.math.BigDecimal",
+      "java.util.Locale",
+
+      // Kotlinx immutable collections
+      "kotlinx.collections.immutable.ImmutableList",
+      "kotlinx.collections.immutable.ImmutableSet",
+      "kotlinx.collections.immutable.ImmutableMap",
+      "kotlinx.collections.immutable.PersistentList",
+      "kotlinx.collections.immutable.PersistentSet",
+      "kotlinx.collections.immutable.PersistentMap",
+
+      // Guava immutable collections
+      "com.google.common.collect.ImmutableList",
+      "com.google.common.collect.ImmutableEnumMap",
+      "com.google.common.collect.ImmutableMap",
+      "com.google.common.collect.ImmutableEnumSet",
+      "com.google.common.collect.ImmutableSet",
+
+      // Dagger
+      "dagger.Lazy",
+
+      // Protobuf types
+      "com.google.protobuf.GeneratedMessage",
+      "com.google.protobuf.GeneratedMessageLite",
+      "com.google.protobuf.MessageLite",
+    )
+  }
+
+  /**
+   * The reason text for an UNSTABLE verdict produced by the out-of-module step (17) of
+   * [analyzeTypeStabilityInternal], or `null` when the verdict came from somewhere else and the
+   * caller should fall back to the generic property-analysis reason.
+   *
+   * The guard repeats step 17's, so a type carrying `@StabilityInferred` — which falls through to
+   * normal property analysis — is not claimed here. Value classes are excluded because step 12
+   * resolves them from their underlying type first; enums cannot reach this point at all, since
+   * step 13 always returns STABLE. Step 14 (`@Parcelize`) can also return UNSTABLE before step 17,
+   * in which case both descriptions apply and this one wins — a labelling choice, not an error.
+   *
+   * Reason strings must not contain parentheses: `StabilityCheckTask` round-trips the `.stability`
+   * baseline with `substringBefore(" (")` / `substringAfter(" (").substringBefore(")")`.
+   */
+  private fun outOfModuleUnstableReason(type: IrType): String? {
+    val clazz = type.classOrNull?.owner ?: return null
+    if (clazz.isValueClass()) return null
+    if (!isFromDifferentModule(clazz)) return null
+    if (type.hasStableAnnotation() || type.hasStabilityInferredAnnotation()) return null
+    // A Java class gets IR_EXTERNAL_JAVA_DECLARATION_STUB even when it lives in this Gradle
+    // module's own `src/main/java`, so it must not be described as cross-module.
+    return if (clazz.origin == OriginCompat.IR_EXTERNAL_JAVA_DECLARATION_STUB) {
+      "Java class; stability cannot be inferred"
+    } else {
+      "cross-module type without @Stable/@Immutable"
+    }
+  }
+
+  /**
+   * Checks if a class is declared outside the compilation unit being compiled — another Gradle
+   * module, a published library, an AAR/klib, or a Java source root.
+   *
+   * `FirClass.irOrigin()` assigns `IR_EXTERNAL_DECLARATION_STUB` to every class that has no
+   * container `FirFile` in this module, so a sibling Gradle module's types (which always arrive as
+   * compiled binaries on the compile classpath) are covered by the origin alone. This is the same
+   * signal `androidx.compose.compiler…StabilityInferencer` uses; no package-name matching or
+   * Gradle-side project scanning is involved (issue #107).
+   */
+  private fun isFromDifferentModule(clazz: IrClass): Boolean = try {
+    val origin = clazz.origin
+    origin == OriginCompat.IR_EXTERNAL_DECLARATION_STUB ||
+      origin == OriginCompat.IR_EXTERNAL_JAVA_DECLARATION_STUB
+  } catch (e: Exception) {
+    false
+  }
+}

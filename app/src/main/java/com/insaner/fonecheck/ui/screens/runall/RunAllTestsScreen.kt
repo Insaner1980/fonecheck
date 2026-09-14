@@ -35,6 +35,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.DeviceInfo
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
+import com.insaner.fonecheck.domain.model.DiagnosticCategorySnapshot
+import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.ReportAppContext
 import com.insaner.fonecheck.domain.model.ReportDeviceContext
 import com.insaner.fonecheck.domain.permission.PermissionKind
@@ -104,6 +106,7 @@ fun RunAllTestsScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     val sessionState = sessionViewModel.state.collectAsStateWithLifecycle().value
+    val relevantPermissionKinds = relevantRunAllPermissionKinds(sessionState.targetCategory, sessionState.selections)
     val deviceState by deviceViewModel.state.collectAsStateWithLifecycle()
     val performanceState by performanceViewModel.state.collectAsStateWithLifecycle()
     val displayState by displayViewModel.state.collectAsStateWithLifecycle()
@@ -315,7 +318,7 @@ fun RunAllTestsScreen(
 
             RunAllStage.PERMISSIONS -> {
                 val retestCategory = sessionState.targetCategory
-                if (retestCategory != null && !requiresPermissionReview(retestCategory)) {
+                if (shouldAutoResolveRunAllPermissions(retestCategory, relevantPermissionKinds)) {
                     sessionViewModel.onPermissionsResolved(currentPermissions(context))
                 }
             }
@@ -627,78 +630,10 @@ fun RunAllTestsScreen(
         RunAllStage.PERMISSIONS ->
             PermissionReviewScreen(
                 prompts =
-                    listOfNotNull(
-                        if ((
-                                sessionState.targetCategory == null ||
-                                    sessionState.targetCategory == DiagnosticCategoryId.AUDIO
-                            ) &&
-                            sessionState.selections.includeMicrophone
-                        ) {
-                            PermissionPrompt(
-                                state = microphonePermission.state,
-                                title = stringResource(R.string.settings_permission_microphone),
-                                rationale = stringResource(R.string.permission_rationale_microphone),
-                                onRequest = { requestPermission(microphonePermission) },
-                                onOpenSettings = microphonePermission::openSettings,
-                            )
-                        } else {
-                            null
-                        },
-                        if ((
-                                sessionState.targetCategory == null ||
-                                    sessionState.targetCategory == DiagnosticCategoryId.CAMERA
-                            ) &&
-                            sessionState.selections.includeCamera
-                        ) {
-                            PermissionPrompt(
-                                state = cameraPermission.state,
-                                title = stringResource(R.string.settings_permission_camera),
-                                rationale = stringResource(R.string.permission_rationale_camera),
-                                onRequest = { requestPermission(cameraPermission) },
-                                onOpenSettings = cameraPermission::openSettings,
-                            )
-                        } else {
-                            null
-                        },
-                        if (sessionState.targetCategory == null ||
-                            sessionState.targetCategory == DiagnosticCategoryId.CONNECTIVITY
-                        ) {
-                            PermissionPrompt(
-                                state = locationPermission.state,
-                                title = stringResource(R.string.settings_permission_location),
-                                rationale = stringResource(R.string.permission_rationale_location),
-                                onRequest = { requestPermission(locationPermission) },
-                                onOpenSettings = locationPermission::openSettings,
-                            )
-                        } else {
-                            null
-                        },
-                        if (sessionState.targetCategory == null ||
-                            sessionState.targetCategory == DiagnosticCategoryId.SIM
-                        ) {
-                            PermissionPrompt(
-                                state = phonePermission.state,
-                                title = stringResource(R.string.settings_permission_phone),
-                                rationale = stringResource(R.string.permission_rationale_phone),
-                                onRequest = { requestPermission(phonePermission) },
-                                onOpenSettings = phonePermission::openSettings,
-                            )
-                        } else {
-                            null
-                        },
-                        if (sessionState.targetCategory == null ||
-                            sessionState.targetCategory == DiagnosticCategoryId.CONNECTIVITY
-                        ) {
-                            PermissionPrompt(
-                                state = bluetoothPermission.state,
-                                title = stringResource(R.string.settings_permission_bluetooth),
-                                rationale = stringResource(R.string.permission_rationale_bluetooth),
-                                onRequest = { requestPermission(bluetoothPermission) },
-                                onOpenSettings = bluetoothPermission::openSettings,
-                            )
-                        } else {
-                            null
-                        },
+                    runAllPermissionPrompts(
+                        relevantKinds = relevantPermissionKinds,
+                        controllers = permissionControllers,
+                        onRequest = ::requestPermission,
                     ),
                 onContinue = {
                     permissionControllers.forEach(PermissionController::refresh)
@@ -838,70 +773,91 @@ fun RunAllTestsScreen(
                 onCancel = cancelRunAndExit,
             )
 
-        RunAllStage.RESULTS -> {
-            val snapshots = currentSnapshots()
-            val deviceInfo = snapshots.device
-            val capturedAt = remember { Instant.now() }
-            val categorySnapshots =
-                remember(
-                    snapshots,
-                    sessionState.manualChecks,
-                    sessionState.permissions,
-                    sessionState.selections,
-                    sessionState.hardware,
-                    capturedAt,
-                ) {
-                    RunAllSnapshotMapper.map(
-                        snapshots = snapshots,
-                        manual = sessionState.manualChecks,
-                        permissions = sessionState.permissions,
-                        selections = sessionState.selections,
-                        hardware = sessionState.hardware,
-                        capturedAt = capturedAt,
-                    )
-                }
-            val deviceContext =
-                remember(deviceInfo) {
-                    reportDeviceContext(deviceInfo)
-                }
-            val appContext =
-                remember(context) {
-                    val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                    ReportAppContext(
-                        versionName = packageInfo.versionName.orEmpty(),
-                        versionCode = PackageInfoCompat.getLongVersionCode(packageInfo),
-                    )
-                }
-            LaunchedEffect(categorySnapshots, deviceContext, appContext, sessionState.stageToken) {
-                sessionViewModel.completeReport(
-                    sessionState.stageToken,
-                    deviceContext,
-                    appContext,
-                    categorySnapshots,
-                )
-            }
-            sessionState.report?.let { report ->
-                RunAllResultsScreen(
-                    report = report,
-                    saveStatus = sessionState.saveStatus,
-                    onRetrySave = sessionViewModel::retryReportSave,
-                    onOpenCategory = { route ->
-                        val current = sessionViewModel.state.value
-                        if (current.report === report && current.saveStatus == ReportSaveStatus.SAVED) {
-                            onOpenCategory(route)
-                        }
-                    },
-                    onDone = onDone,
-                    modifier = modifier.fillMaxSize(),
-                    mode = ReportResultMode.COMPLETED_RUN,
-                )
-            } ?: AutomaticCheckScreen(
-                title = stringResource(R.string.run_all_results_title),
-                description = stringResource(R.string.run_all_results_description),
+        RunAllStage.RESULTS ->
+            CompletedRunResults(
+                snapshots = currentSnapshots(),
+                sessionState = sessionState,
+                onCompleteReport = sessionViewModel::completeReport,
+                onRetrySave = sessionViewModel::retryReportSave,
+                onOpenCategory = { report, route ->
+                    val current = sessionViewModel.state.value
+                    if (current.report === report && current.saveStatus == ReportSaveStatus.SAVED) {
+                        onOpenCategory(route)
+                    }
+                },
+                onDone = onDone,
                 modifier = modifier,
             )
-        }
     }
+}
+
+@Composable
+private fun CompletedRunResults(
+    snapshots: DiagnosticSnapshots,
+    sessionState: RunAllTestsState,
+    onCompleteReport: (Long, ReportDeviceContext, ReportAppContext, List<DiagnosticCategorySnapshot>) -> Unit,
+    onRetrySave: () -> Unit,
+    onOpenCategory: (DiagnosticReport, Any) -> Unit,
+    onDone: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    val deviceInfo = snapshots.device
+    val currentOnCompleteReport by rememberUpdatedState(onCompleteReport)
+    val capturedAt = remember { Instant.now() }
+    val categorySnapshots =
+        remember(
+            snapshots,
+            sessionState.manualChecks,
+            sessionState.permissions,
+            sessionState.selections,
+            sessionState.hardware,
+            capturedAt,
+        ) {
+            RunAllSnapshotMapper.map(
+                snapshots = snapshots,
+                manual = sessionState.manualChecks,
+                permissions = sessionState.permissions,
+                selections = sessionState.selections,
+                hardware = sessionState.hardware,
+                capturedAt = capturedAt,
+            )
+        }
+    val deviceContext =
+        remember(deviceInfo) {
+            reportDeviceContext(deviceInfo)
+        }
+    val appContext =
+        remember(context) {
+            val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+            ReportAppContext(
+                versionName = packageInfo.versionName.orEmpty(),
+                versionCode = PackageInfoCompat.getLongVersionCode(packageInfo),
+            )
+        }
+    LaunchedEffect(categorySnapshots, deviceContext, appContext, sessionState.stageToken) {
+        currentOnCompleteReport(
+            sessionState.stageToken,
+            deviceContext,
+            appContext,
+            categorySnapshots,
+        )
+    }
+    sessionState.report?.let { report ->
+        RunAllResultsScreen(
+            report = report,
+            saveStatus = sessionState.saveStatus,
+            onRetrySave = onRetrySave,
+            onOpenCategory = { route -> onOpenCategory(report, route) },
+            onDone = onDone,
+            modifier = modifier.fillMaxSize(),
+            mode = ReportResultMode.COMPLETED_RUN,
+        )
+    } ?: AutomaticCheckScreen(
+        title = stringResource(R.string.run_all_results_title),
+        description = stringResource(R.string.run_all_results_description),
+        modifier = modifier,
+    )
 }
 
 private fun playSpeakerTone(viewModel: AudioTestViewModel) {
@@ -941,12 +897,6 @@ private fun currentPermissions(context: Context): RunAllPermissions =
             Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
                 permissionGranted(context, Manifest.permission.BLUETOOTH_CONNECT),
     )
-
-private fun requiresPermissionReview(categoryId: DiagnosticCategoryId): Boolean =
-    categoryId == DiagnosticCategoryId.AUDIO ||
-        categoryId == DiagnosticCategoryId.CAMERA ||
-        categoryId == DiagnosticCategoryId.SIM ||
-        categoryId == DiagnosticCategoryId.CONNECTIVITY
 
 private fun permissionGranted(
     context: Context,
