@@ -51,6 +51,13 @@ object BiometricTest
 object RunAllTests
 
 @Serializable
+data class FullAccess(
+    val featureId: String,
+)
+
+internal const val FULL_CHECK_FEATURE_ID = "full_check"
+
+@Serializable
 object Settings
 
 @Serializable
@@ -58,11 +65,6 @@ object LanguageSettings
 
 @Serializable
 object Licenses
-
-@Serializable
-data class Onboarding(
-    val reopened: Boolean = false,
-)
 
 @Serializable
 data class Report(

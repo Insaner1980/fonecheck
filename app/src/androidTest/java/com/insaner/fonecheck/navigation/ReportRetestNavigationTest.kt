@@ -28,12 +28,12 @@ import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticCategorySnapshot
 import com.insaner.fonecheck.domain.model.DiagnosticReport
 import com.insaner.fonecheck.domain.model.DiagnosticSnapshotVersion
+import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.export.AndroidReportExporter
 import com.insaner.fonecheck.export.ReportPdfRenderer
 import com.insaner.fonecheck.ui.MainActivity
 import com.insaner.fonecheck.ui.TopBarAction
-import com.insaner.fonecheck.ui.screens.buttons.VolumeButtonDirection
 import com.insaner.fonecheck.ui.screens.runall.ReportSaveStatus
 import com.insaner.fonecheck.ui.screens.runall.RunAllHardwareProfile
 import com.insaner.fonecheck.ui.screens.runall.RunAllPermissions
@@ -71,7 +71,7 @@ class ReportRetestNavigationTest {
             activity.setContent {
                 val nav = rememberNavController()
                 FonecheckTheme {
-                    FonecheckNavHost(nav, appPreferences = AppPreferences(onboardingComplete = true))
+                    FonecheckNavHost(nav, appPreferences = AppPreferences(homeIntroductionDismissed = true))
                 }
                 SideEffect { navController = nav }
             }
@@ -111,7 +111,7 @@ class ReportRetestNavigationTest {
                 FonecheckTheme {
                     FonecheckNavHost(
                         nav,
-                        appPreferences = AppPreferences(onboardingComplete = true),
+                        appPreferences = AppPreferences(homeIntroductionDismissed = true),
                         onTopBarActionChange = { action = it },
                     )
                 }
@@ -135,7 +135,7 @@ class ReportRetestNavigationTest {
                 val nav = rememberNavController()
                 val entry by nav.currentBackStackEntryAsState()
                 FonecheckTheme {
-                    FonecheckNavHost(nav, appPreferences = AppPreferences(onboardingComplete = true))
+                    FonecheckNavHost(nav, appPreferences = AppPreferences(homeIntroductionDismissed = true))
                 }
                 val current = entry
                 if (current != null &&
@@ -180,6 +180,7 @@ class ReportRetestNavigationTest {
             )
         }
         val original = awaitSaved(originalSession)
+        expandBatteryResult()
         openRetestTwice()
         val cancelledEntry = assertFreshRetest(originalEntry, originalSession)
         click(R.string.report_retest_cancel)
@@ -194,11 +195,11 @@ class ReportRetestNavigationTest {
         val bEntry = assertFreshRetest(originalEntry, originalSession)
         assertNotEquals(cancelledEntry, bEntry)
         val bSession = sessions.getValue(bEntry)
-        val b = completeButtons(bSession)
+        val b = completeBattery(bSession)
         openRetestTwice()
         val cEntry = assertFreshRetest(bEntry, bSession)
         val cSession = sessions.getValue(cEntry)
-        val c = completeButtons(cSession)
+        val c = completeBattery(cSession)
         assertNotEquals(b.stableId, c.stableId)
         click(R.string.run_all_done)
         assertEquals(bEntry, resumedEntry())
@@ -227,6 +228,7 @@ class ReportRetestNavigationTest {
             // Reopen through the production saved-report route, then cancel back to it.
             composeRule.runOnIdle { navController.navigate(Report(original.stableId)) }
             val savedEntry = resumedEntry()
+            expandBatteryResult()
             openRetestTwice()
             assertFreshRetest(savedEntry, originalSession)
             click(R.string.report_retest_cancel)
@@ -247,7 +249,7 @@ class ReportRetestNavigationTest {
         val entryId = resumedEntry()
         assertNotEquals(sourceEntry, entryId)
         composeRule.runOnIdle {
-            assertEquals(CategoryRetest("buttons"), navController.currentBackStackEntry!!.toRoute<CategoryRetest>())
+            assertEquals(CategoryRetest("battery"), navController.currentBackStackEntry!!.toRoute<CategoryRetest>())
             assertEquals(sourceEntry, navController.previousBackStackEntry!!.id)
             assertEquals(RunAllTestsState(), sessions.getValue(entryId).state.value)
             assertNotSame(sourceSession, sessions.getValue(entryId))
@@ -267,33 +269,29 @@ class ReportRetestNavigationTest {
         assertEquals(renderVersion, renderedVersion)
     }
 
-    private fun completeButtons(session: RunAllTestsViewModel): DiagnosticReport {
+    private fun completeBattery(session: RunAllTestsViewModel): DiagnosticReport {
         click(R.string.report_retest_start)
-        composeRule.waitUntil(15_000L) { session.state.value.stage == RunAllStage.BUTTONS }
-        composeRule.waitForIdle()
-        composeRule.runOnIdle {
-            composeRule.activity.volumeButtonEventSource.record(VolumeButtonDirection.UP)
-            composeRule.activity.volumeButtonEventSource.record(VolumeButtonDirection.DOWN)
-        }
         composeRule.waitUntil(15_000L) { session.state.value.awaitingContinue }
-        click(R.string.run_all_buttons_continue)
+        composeRule.runOnIdle {
+            session.continueAfterStage(session.state.value.stageToken)
+        }
         val report = awaitSaved(session)
         assertEquals(ReportKind.CATEGORY_ONLY, report.kind)
-        assertEquals(listOf(DiagnosticCategoryId.BUTTONS), report.categories.map { it.categoryId })
-        assertTrue(
-            report.categories
-                .single()
-                .evidence
-                .any { it.checkId.value == "buttons.power" },
-        )
-        // Successful volume evidence is collapsed by default.
+        assertEquals(listOf(DiagnosticCategoryId.BATTERY), report.categories.map { it.categoryId })
+        assertTrue(report.categories.single().evidence.isNotEmpty())
+        if (report.categories.single().aggregateStatus !in setOf(DiagnosticStatus.FAIL, DiagnosticStatus.WARNING)) {
+            expandBatteryResult()
+        }
+        return report
+    }
+
+    private fun expandBatteryResult() {
         composeRule
             .scrollToReportText(
-                text(R.string.home_cat_buttons),
+                text(R.string.home_cat_battery),
                 ignoreCase = true,
             ).performScrollTo()
             .performClick()
-        return report
     }
 
     private fun awaitSaved(session: RunAllTestsViewModel): DiagnosticReport {

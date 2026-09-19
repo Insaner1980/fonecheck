@@ -18,11 +18,9 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,7 +61,6 @@ import com.insaner.fonecheck.ui.theme.SemanticTone
 fun SettingsRoute(
     onOpenLanguage: () -> Unit,
     onOpenLicenses: () -> Unit,
-    onOpenOnboarding: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -71,7 +68,6 @@ fun SettingsRoute(
     var selectedLanguage by remember {
         mutableStateOf(AppLanguage.fromLocale(AppCompatDelegate.getApplicationLocales()[0]))
     }
-    val currentOnOpenOnboarding by rememberUpdatedState(onOpenOnboarding)
     val context = LocalContext.current
     val packageInfo = remember { context.packageManager.getPackageInfo(context.packageName, 0) }
     val appVersion =
@@ -84,12 +80,6 @@ fun SettingsRoute(
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refreshPermissions()
         selectedLanguage = AppLanguage.fromLocale(AppCompatDelegate.getApplicationLocales()[0])
-    }
-    LaunchedEffect(state.openOnboarding) {
-        if (state.openOnboarding) {
-            viewModel.consumeOpenOnboarding()
-            currentOnOpenOnboarding()
-        }
     }
     SettingsScreen(
         state = state,
@@ -121,7 +111,6 @@ fun SettingsRoute(
             }
         },
         onOpenLicenses = onOpenLicenses,
-        onReopenOnboarding = viewModel::reopenOnboarding,
         modifier = modifier,
     )
 }
@@ -140,7 +129,6 @@ fun SettingsScreen(
     onOpenPrivacy: () -> Unit,
     onOpenSupport: () -> Unit,
     onOpenLicenses: () -> Unit,
-    onReopenOnboarding: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var confirmDeleteAll by remember { mutableStateOf(false) }
@@ -165,6 +153,7 @@ fun SettingsScreen(
             }
         }
         item { AppearanceSection(state, onThemeMode, selectedLanguage, onOpenLanguage, onTestWarnings) }
+        item { FullAccessSection() }
         item { PermissionSection(state.permissions, onOpenAppSettings) }
         item {
             ReportsSection(
@@ -178,7 +167,6 @@ fun SettingsScreen(
                 onOpenPrivacy = onOpenPrivacy,
                 onOpenSupport = onOpenSupport,
                 onOpenLicenses = onOpenLicenses,
-                onReopenOnboarding = onReopenOnboarding,
             )
         }
         item {
@@ -230,6 +218,16 @@ fun SettingsScreen(
                 )
             },
         )
+    }
+}
+
+@Composable
+private fun FullAccessSection() {
+    Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm)) {
+        SectionHeader(stringResource(R.string.full_access_title))
+        Note(stringResource(R.string.home_intro_body))
+        Note(stringResource(R.string.home_intro_free))
+        Note(stringResource(R.string.full_access_offer))
     }
 }
 
@@ -411,7 +409,6 @@ private fun LinkSection(
     onOpenPrivacy: () -> Unit,
     onOpenSupport: () -> Unit,
     onOpenLicenses: () -> Unit,
-    onReopenOnboarding: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm)) {
         SectionHeader(stringResource(R.string.settings_privacy_section))
@@ -419,7 +416,6 @@ private fun LinkSection(
         SettingsLink(R.string.settings_privacy, "settings_privacy", onOpenPrivacy)
         SettingsLink(R.string.settings_support, "settings_support", onOpenSupport)
         SettingsLink(R.string.settings_licenses, "settings_licenses", onOpenLicenses)
-        SettingsLink(R.string.settings_onboarding, "settings_onboarding", onReopenOnboarding)
     }
 }
 

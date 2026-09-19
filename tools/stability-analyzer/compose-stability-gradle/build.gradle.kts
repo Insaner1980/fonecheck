@@ -15,6 +15,7 @@ gradlePlugin {
     }
 }
 tasks.register<JavaExec>("auditReports") {
+    description = "Audits Compose stability reports."
     classpath = sourceSets.main.get().runtimeClasspath
     mainClass.set("com.skydoves.compose.stability.gradle.StabilityAudit")
     args(rootProject.file("../..").absolutePath)

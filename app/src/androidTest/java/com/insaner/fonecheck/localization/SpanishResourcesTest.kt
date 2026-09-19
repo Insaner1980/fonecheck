@@ -24,7 +24,7 @@ class SpanishResourcesTest {
         val expected =
             mapOf(
                 R.string.full_check_title to "Comprobación completa",
-                R.string.onboarding_title to "Primeros pasos",
+                R.string.home_intro_title to "Empieza aquí",
                 R.string.settings_language to "Idioma",
                 R.string.home_cat_battery to "Batería",
                 R.string.home_cat_camera to "Cámara",

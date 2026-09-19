@@ -29,7 +29,7 @@ class SwedishResourcesTest {
             assertEquals(AppLanguage.SWEDISH, AppLanguage.fromLocale(context.resources.configuration.locales[0]))
             mapOf(
                 R.string.full_check_title to "Fullständig kontroll",
-                R.string.onboarding_title to "Kom igång",
+                R.string.home_intro_title to "Börja här",
                 R.string.settings_language to "Språk",
                 R.string.settings_language_swedish to "Svenska",
                 R.string.home_cat_battery to "Batteri",

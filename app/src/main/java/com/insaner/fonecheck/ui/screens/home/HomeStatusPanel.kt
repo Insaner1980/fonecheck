@@ -31,7 +31,9 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
+import com.insaner.fonecheck.navigation.DiagnosticAccess
 import com.insaner.fonecheck.navigation.DiagnosticDestination
+import com.insaner.fonecheck.navigation.FullAccess
 import com.insaner.fonecheck.navigation.diagnosticDestinations
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.StatusLamp
@@ -115,7 +117,15 @@ internal fun HomeStatusPanel(
                                 destination = destination,
                                 labelStyle = labelStyle,
                                 status = status,
-                                onClick = { onNavigate(destination.route) },
+                                onClick = {
+                                    onNavigate(
+                                        if (destination.access == DiagnosticAccess.FREE) {
+                                            destination.route
+                                        } else {
+                                            FullAccess(destination.category.stableId)
+                                        },
+                                    )
+                                },
                                 columnLayout = columnLayout,
                                 modifier =
                                     Modifier
@@ -185,12 +195,26 @@ private fun HomeStatusCell(
                 lampSize = StatusLampSize,
             )
             Spacer(modifier = Modifier.width(columnLayout.labelOffset - StatusLampSize))
-            Text(
-                text = label,
-                style = labelStyle,
-                color = colors.textPrimary,
-                modifier = Modifier.weight(1f),
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label,
+                    style = labelStyle,
+                    color = colors.textPrimary,
+                )
+                Text(
+                    text =
+                        stringResource(
+                            if (destination.access == DiagnosticAccess.FREE) {
+                                R.string.access_free
+                            } else {
+                                R.string.access_full
+                            },
+                        ),
+                    style = FonecheckTheme.type.note,
+                    color = colors.textMuted,
+                    modifier = Modifier.testTag("home_category_access_${destination.category.stableId}"),
+                )
+            }
         }
         Box(
             modifier =

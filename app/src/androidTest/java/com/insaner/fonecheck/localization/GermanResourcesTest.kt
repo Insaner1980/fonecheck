@@ -26,7 +26,7 @@ class GermanResourcesTest {
             val context = base.createConfigurationContext(configuration)
             mapOf(
                 R.string.full_check_title to "Gesamtcheck",
-                R.string.onboarding_title to "Erste Schritte",
+                R.string.home_intro_title to "Hier starten",
                 R.string.settings_language to "Sprache",
                 R.string.settings_language_german to "Deutsch",
                 R.string.home_cat_battery to "Akku",

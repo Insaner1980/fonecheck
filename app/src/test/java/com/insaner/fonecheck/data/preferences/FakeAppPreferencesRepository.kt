@@ -17,7 +17,7 @@ class FakeAppPreferencesRepository(
         values.update { it.copy(testWarningsEnabled = enabled) }
     }
 
-    override suspend fun setOnboardingComplete(complete: Boolean) {
-        values.update { it.copy(onboardingComplete = complete) }
+    override suspend fun setHomeIntroductionDismissed(dismissed: Boolean) {
+        values.update { it.copy(homeIntroductionDismissed = dismissed) }
     }
 }

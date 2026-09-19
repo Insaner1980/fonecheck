@@ -26,7 +26,7 @@ class DanishResourcesTest {
             assertEquals(AppLanguage.DANISH, AppLanguage.fromLocale(context.resources.configuration.locales[0]))
             mapOf(
                 R.string.full_check_title to "Fuld kontrol",
-                R.string.onboarding_title to "Kom godt i gang",
+                R.string.home_intro_title to "Start her",
                 R.string.settings_language to "Sprog",
                 R.string.settings_language_danish to "Dansk",
                 R.string.home_cat_storage to "Lager",

@@ -33,7 +33,7 @@ class NorwegianBokmalResourcesTest {
             )
             mapOf(
                 R.string.full_check_title to "Fullstendig sjekk",
-                R.string.onboarding_title to "Kom i gang",
+                R.string.home_intro_title to "Start her",
                 R.string.settings_language to "Språk",
                 R.string.settings_language_norwegian_bokmal to "Norsk bokmål",
                 R.string.home_cat_battery to "Batteri",

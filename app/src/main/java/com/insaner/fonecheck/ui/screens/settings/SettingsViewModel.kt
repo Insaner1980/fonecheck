@@ -65,7 +65,6 @@ data class SettingsState(
     val isLoading: Boolean = true,
     val isDeletingReports: Boolean = false,
     val error: String? = null,
-    val openOnboarding: Boolean = false,
 )
 
 @HiltViewModel
@@ -129,14 +128,6 @@ class SettingsViewModel
                         )
                 }
             }
-        }
-
-        fun reopenOnboarding() {
-            _state.value = _state.value.copy(openOnboarding = true, error = null)
-        }
-
-        fun consumeOpenOnboarding() {
-            _state.value = _state.value.copy(openOnboarding = false)
         }
 
         fun clearError() {

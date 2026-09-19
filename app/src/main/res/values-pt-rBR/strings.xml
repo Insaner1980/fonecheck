@@ -599,6 +599,32 @@
     <string name="storage_refresh">Atualizar informações de armazenamento</string>
     <!-- Home and Full Check -->
     <string name="full_check_title">Verificação completa</string>
+    <string name="home_intro_title">Comece aqui</string>
+    <string name="home_intro_body">O fonecheck ajuda você a examinar este celular com diagnósticos guiados e relatórios salvos.</string>
+    <string name="home_intro_free">Grátis: Dispositivo, Tela, Bateria e Sensores.</string>
+    <string name="home_intro_full">Full adiciona todos os outros diagnósticos e a verificação completa, que reúne testes automáticos e assistidos em um relatório salvo. É uma compra única de € 6,99, sem assinatura.</string>
+    <string name="home_intro_privacy">O processamento e os relatórios salvos ficam neste dispositivo. Nada é enviado; uma exportação só sai do app quando você escolhe onde compartilhar.</string>
+    <string name="home_intro_dismiss">Entendi</string>
+    <string name="home_intro_dismissing">Salvando…</string>
+    <string name="home_intro_retry">Tentar de novo</string>
+    <string name="home_intro_dismiss_error">Não foi possível dispensar esta introdução. Tente novamente.</string>
+    <string name="access_free">Grátis</string>
+    <string name="access_full">Full</string>
+    <string name="full_access_title">fonecheck Full</string>
+    <string name="full_access_offer">Full desbloqueia todos os diagnósticos e a verificação completa por uma compra única de € 6,99. Não há assinatura.</string>
+    <string name="full_access_return">Voltar aos diagnósticos grátis</string>
+    <string name="full_access_generic_description">Full inclui mais diagnósticos guiados e o fluxo de relatório da verificação completa.</string>
+    <string name="full_access_performance_description">Desempenho mostra dados de processador, memória e gráficos e executa testes curtos de CPU e memória.</string>
+    <string name="full_access_sim_description">SIM mostra informações de slot, operadora, rede móvel e serviço telefônico disponíveis pelo Android.</string>
+    <string name="full_access_audio_description">Áudio orienta testes de alto-falante, estéreo, auricular, microfone, fones e botões de volume.</string>
+    <string name="full_access_camera_description">Câmera lista as câmeras do celular e orienta testes de prévia, captura, zoom e lanterna.</string>
+    <string name="full_access_connectivity_description">Conectividade mostra disponibilidade e estado de Wi-Fi, rede móvel, Bluetooth, NFC e localização ou GNSS.</string>
+    <string name="full_access_thermal_description">Térmico mostra o estado térmico, a margem e os limites de temperatura informados pelo Android.</string>
+    <string name="full_access_storage_description">Armazenamento mostra o uso do espaço e pode executar um teste opcional de leitura e gravação no cache privado.</string>
+    <string name="full_access_vibration_description">Vibração reproduz padrões selecionáveis para você confirmar o motor pelo toque.</string>
+    <string name="full_access_buttons_description">Botões de volume detecta os pressionamentos de aumentar e diminuir volume para confirmar as duas teclas.</string>
+    <string name="full_access_biometrics_description">Biometria mostra o recurso do Android e permite testar uma solicitação de sistema somente biométrica.</string>
+    <string name="full_access_full_check_description">A verificação completa combina leituras automáticas e testes assistidos em um relatório salvo.</string>
     <string name="home_start_full_check">Iniciar verificação completa</string>
     <string name="home_history_content_description">Abrir histórico de relatórios</string>
     <string name="home_settings_content_description">Abrir configurações</string>
@@ -740,7 +766,7 @@
     <string name="report_load_error">Não foi possível carregar o relatório salvo.</string>
     <string name="report_retry">Tentar novamente</string>
 
-    <!-- Settings and onboarding -->
+    <!-- Settings -->
     <string name="settings_title">Configurações</string>
     <string name="settings_appearance">Aparência</string>
     <string name="settings_theme">Tema</string>
@@ -779,7 +805,6 @@
     <string name="settings_support">Entrar em contato com o suporte</string>
     <string name="external_app_unavailable">Nenhum app compatível está disponível.</string>
     <string name="settings_licenses">Licenças de código aberto</string>
-    <string name="settings_onboarding">Ver introdução novamente</string>
     <string name="settings_about">Sobre</string>
     <string name="settings_version">Versão</string>
     <string name="settings_disclaimer">O fonecheck relata observações disponíveis pelo Android e confirmações do usuário. Não certifica a condição física, a segurança nem a possibilidade de reparo.</string>
@@ -788,29 +813,6 @@
     <string name="licenses_title">Licenças de código aberto</string>
     <string name="licenses_description">O fonecheck inclui bibliotecas de código aberto. A lista de componentes e os termos de licença aplicáveis estão incluídos abaixo e no pacote de distribuição.</string>
     <string name="licenses_notices_heading">Avisos de terceiros</string>
-    <string name="onboarding_title">Primeiros passos</string>
-    <string name="onboarding_progress">Etapa %1$s de %2$s</string>
-    <string name="onboarding_skip">Pular</string>
-    <string name="onboarding_previous">Voltar</string>
-    <string name="onboarding_next">Avançar</string>
-    <string name="onboarding_start">Começar a usar o fonecheck</string>
-    <string name="onboarding_saving">Salvando…</string>
-    <string name="onboarding_retry">Tentar novamente</string>
-    <string name="onboarding_save_error">Não foi possível salvar sua escolha na introdução. Tente novamente.</string>
-    <string name="onboarding_welcome_title">Conheça melhor seu celular</string>
-    <string name="onboarding_welcome_body">O fonecheck reúne informações do dispositivo, diagnósticos guiados e relatórios salvos em um só lugar, de forma clara.</string>
-    <string name="onboarding_testing_title">Verificações transparentes</string>
-    <string name="onboarding_testing_body">Verificações seguras podem ser executadas automaticamente. Testes que dependem de visão, audição, toque, movimento ou outra observação pessoal sempre pedem que você confirme o resultado.</string>
-    <string name="onboarding_privacy_title">Seus dados de diagnóstico ficam no dispositivo</string>
-    <string name="onboarding_privacy_body">O fonecheck não envia resultados de diagnóstico para servidores. Os dados ficam neste dispositivo, a menos que você exporte ou compartilhe um relatório explicitamente.</string>
-    <string name="onboarding_privacy_note">Os relatórios podem conter detalhes técnicos do dispositivo. Confira o destino antes de compartilhar um arquivo exportado.</string>
-    <string name="onboarding_permissions_title">Permissões só quando necessárias</string>
-    <string name="onboarding_permissions_body">O acesso à câmera, ao microfone, à localização, ao telefone ou a dispositivos por perto só é solicitado quando você inicia uma verificação que precisa dele.</string>
-    <string name="onboarding_permissions_note">Você pode negar ou pular uma verificação que dependa de permissão. Abrir as configurações ou esta introdução nunca solicita uma permissão sensível.</string>
-    <string name="onboarding_reports_title">Relatórios salvos são registros de um momento</string>
-    <string name="onboarding_reports_body">Um relatório salvo é um registro imutável daquela sessão de testes. Testar novamente cria um novo registro, de modo que as comparações nunca reescrevem observações anteriores.</string>
-    <string name="onboarding_ready_title">Comece quando quiser</string>
-    <string name="onboarding_ready_body">Execute um diagnóstico por vez ou escolha a verificação completa para uma sessão guiada. Os resultados são evidências de diagnóstico, não uma garantia de reparo ou certificação.</string>
 
     <!-- History -->
     <string name="history_title">Histórico de relatórios</string>

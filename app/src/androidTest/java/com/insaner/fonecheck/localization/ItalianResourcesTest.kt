@@ -29,7 +29,7 @@ class ItalianResourcesTest {
             assertEquals(AppLanguage.ITALIAN, AppLanguage.fromLocale(context.resources.configuration.locales[0]))
             mapOf(
                 R.string.full_check_title to "Controllo completo",
-                R.string.onboarding_title to "Primi passi",
+                R.string.home_intro_title to "Inizia qui",
                 R.string.settings_language to "Lingua",
                 R.string.settings_language_italian to "Italiano",
                 R.string.home_cat_storage to "Archiviazione",

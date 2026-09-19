@@ -44,9 +44,9 @@ class DataStoreAppPreferencesRepositoryTest {
             warnings.setTestWarningsEnabled(false)
             assertFalse(warnings.preferences.first().testWarningsEnabled)
 
-            val onboarding = repository(File(temporaryFolder.root, "onboarding.preferences_pb"))
-            onboarding.setOnboardingComplete(true)
-            assertTrue(onboarding.preferences.first().onboardingComplete)
+            val introduction = repository(File(temporaryFolder.root, "introduction.preferences_pb"))
+            introduction.setHomeIntroductionDismissed(true)
+            assertTrue(introduction.preferences.first().homeIntroductionDismissed)
         }
 
     @Test

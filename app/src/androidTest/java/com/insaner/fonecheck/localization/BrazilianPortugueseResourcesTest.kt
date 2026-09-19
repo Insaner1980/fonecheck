@@ -28,7 +28,7 @@ class BrazilianPortugueseResourcesTest {
         val expected =
             mapOf(
                 R.string.full_check_title to "Verificação completa",
-                R.string.onboarding_title to "Primeiros passos",
+                R.string.home_intro_title to "Comece aqui",
                 R.string.settings_language to "Idioma",
                 R.string.settings_language_portuguese_brazil to "Português (Brasil)",
                 R.string.home_cat_battery to "Bateria",

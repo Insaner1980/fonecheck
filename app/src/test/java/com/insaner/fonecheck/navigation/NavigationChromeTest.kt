@@ -38,11 +38,11 @@ class NavigationChromeTest {
         val routes =
             mapOf(
                 destinationFor<RunAllTests>() to R.string.full_check_title,
+                destinationFor<FullAccess>() to R.string.full_access_title,
                 destinationFor<CategoryRetest>() to R.string.report_retest,
                 destinationFor<Settings>() to R.string.settings_title,
                 destinationFor<LanguageSettings>() to R.string.settings_language,
                 destinationFor<Licenses>() to R.string.licenses_title,
-                destinationFor<Onboarding>() to R.string.onboarding_title,
                 destinationFor<History>() to R.string.history_title,
             )
 

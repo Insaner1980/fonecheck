@@ -689,6 +689,15 @@ private fun com.insaner.fonecheck.ui.preview.SpecimenWindow(): kotlin.Unit
   params:
 
 @Composable
+public fun com.insaner.fonecheck.ui.screens.access.FullAccessScreen(featureId: kotlin.String, onBack: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+    - featureId: STABLE (String is immutable)
+    - onBack: STABLE (function type)
+    - modifier: STABLE (marked @Stable or @Immutable)
+
+@Composable
 private fun com.insaner.fonecheck.ui.screens.audio.AudioErrorState(error: com.insaner.fonecheck.ui.screens.audio.AudioOperationError): kotlin.Unit
   skippable: true
   restartable: true
@@ -1709,7 +1718,7 @@ private fun com.insaner.fonecheck.ui.screens.home.HomeBrandHeader(onHistory: kot
     - onSettings: STABLE (function type)
 
 @Composable
-internal fun com.insaner.fonecheck.ui.screens.home.HomeContent(latestFullCheck: com.insaner.fonecheck.ui.screens.home.LatestFullCheckState, onNavigate: kotlin.Function1<kotlin.Any, kotlin.Unit>, onRunAllTests: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, onRetryLatestFullCheck: kotlin.Function0<kotlin.Unit>, currentTime: java.time.Instant): kotlin.Unit
+internal fun com.insaner.fonecheck.ui.screens.home.HomeContent(latestFullCheck: com.insaner.fonecheck.ui.screens.home.LatestFullCheckState, onNavigate: kotlin.Function1<kotlin.Any, kotlin.Unit>, onRunAllTests: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, introduction: com.insaner.fonecheck.ui.screens.home.HomeIntroductionState, onDismissIntroduction: kotlin.Function0<kotlin.Unit>, onRetryLatestFullCheck: kotlin.Function0<kotlin.Unit>, currentTime: java.time.Instant): kotlin.Unit
   skippable: true
   restartable: true
   params:
@@ -1717,8 +1726,18 @@ internal fun com.insaner.fonecheck.ui.screens.home.HomeContent(latestFullCheck: 
     - onNavigate: STABLE (function type)
     - onRunAllTests: STABLE (function type)
     - modifier: STABLE (marked @Stable or @Immutable)
+    - introduction: STABLE (class with no mutable properties)
+    - onDismissIntroduction: STABLE (function type)
     - onRetryLatestFullCheck: STABLE (function type)
     - currentTime: STABLE (stability configuration file type)
+
+@Composable
+private fun com.insaner.fonecheck.ui.screens.home.HomeIntroduction(state: com.insaner.fonecheck.ui.screens.home.HomeIntroductionState, onDismiss: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+    - state: STABLE (class with no mutable properties)
+    - onDismiss: STABLE (function type)
 
 @Composable
 private fun com.insaner.fonecheck.ui.screens.home.HomeLegendEntry(status: com.insaner.fonecheck.domain.model.DiagnosticStatus, labelOffset: androidx.compose.ui.unit.Dp, modifier: androidx.compose.ui.Modifier): kotlin.Unit
@@ -1821,40 +1840,6 @@ private fun com.insaner.fonecheck.ui.screens.home.reportStatusText(report: com.i
   params:
     - report: STABLE (stability configuration file type)
     - presentation: STABLE (class with no mutable properties)
-
-@Composable
-private fun com.insaner.fonecheck.ui.screens.onboarding.OnboardingActions(isSaving: kotlin.Boolean, pageIndex: kotlin.Int, isLastPage: kotlin.Boolean, onPrevious: kotlin.Function0<kotlin.Unit>, onNext: kotlin.Function0<kotlin.Unit>, onSkip: kotlin.Function0<kotlin.Unit>, onComplete: kotlin.Function0<kotlin.Unit>): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - isSaving: STABLE (primitive type)
-    - pageIndex: STABLE (primitive type)
-    - isLastPage: STABLE (primitive type)
-    - onPrevious: STABLE (function type)
-    - onNext: STABLE (function type)
-    - onSkip: STABLE (function type)
-    - onComplete: STABLE (function type)
-
-@Composable
-public fun com.insaner.fonecheck.ui.screens.onboarding.OnboardingRoute(onFinish: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, viewModel: com.insaner.fonecheck.ui.screens.onboarding.OnboardingViewModel): kotlin.Unit
-  skippable: false
-  restartable: true
-  params:
-    - onFinish: STABLE (function type)
-    - modifier: STABLE (marked @Stable or @Immutable)
-    - viewModel: RUNTIME (requires runtime check)
-
-@Composable
-public fun com.insaner.fonecheck.ui.screens.onboarding.OnboardingScreen(state: com.insaner.fonecheck.ui.screens.onboarding.OnboardingState, onPrevious: kotlin.Function0<kotlin.Unit>, onNext: kotlin.Function0<kotlin.Unit>, onSkip: kotlin.Function0<kotlin.Unit>, onComplete: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - state: STABLE (class with no mutable properties)
-    - onPrevious: STABLE (function type)
-    - onNext: STABLE (function type)
-    - onSkip: STABLE (function type)
-    - onComplete: STABLE (function type)
-    - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
 private fun com.insaner.fonecheck.ui.screens.performance.BenchmarkResultRows(result: com.insaner.fonecheck.domain.model.PerformanceBenchmarkResult): kotlin.Unit
@@ -2568,6 +2553,12 @@ private fun com.insaner.fonecheck.ui.screens.settings.AppearanceSection(state: c
     - onTestWarnings: STABLE (function type)
 
 @Composable
+private fun com.insaner.fonecheck.ui.screens.settings.FullAccessSection(): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+
+@Composable
 public fun com.insaner.fonecheck.ui.screens.settings.LanguageSelectionRoute(modifier: androidx.compose.ui.Modifier): kotlin.Unit
   skippable: true
   restartable: true
@@ -2591,14 +2582,13 @@ public fun com.insaner.fonecheck.ui.screens.settings.LicensesScreen(modifier: an
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
-private fun com.insaner.fonecheck.ui.screens.settings.LinkSection(onOpenPrivacy: kotlin.Function0<kotlin.Unit>, onOpenSupport: kotlin.Function0<kotlin.Unit>, onOpenLicenses: kotlin.Function0<kotlin.Unit>, onReopenOnboarding: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+private fun com.insaner.fonecheck.ui.screens.settings.LinkSection(onOpenPrivacy: kotlin.Function0<kotlin.Unit>, onOpenSupport: kotlin.Function0<kotlin.Unit>, onOpenLicenses: kotlin.Function0<kotlin.Unit>): kotlin.Unit
   skippable: true
   restartable: true
   params:
     - onOpenPrivacy: STABLE (function type)
     - onOpenSupport: STABLE (function type)
     - onOpenLicenses: STABLE (function type)
-    - onReopenOnboarding: STABLE (function type)
 
 @Composable
 private fun com.insaner.fonecheck.ui.screens.settings.PermissionRow(label: kotlin.Int, granted: kotlin.Boolean): kotlin.Unit
@@ -2653,18 +2643,17 @@ private fun com.insaner.fonecheck.ui.screens.settings.SettingsLink(label: kotlin
     - onClick: STABLE (function type)
 
 @Composable
-public fun com.insaner.fonecheck.ui.screens.settings.SettingsRoute(onOpenLanguage: kotlin.Function0<kotlin.Unit>, onOpenLicenses: kotlin.Function0<kotlin.Unit>, onOpenOnboarding: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, viewModel: com.insaner.fonecheck.ui.screens.settings.SettingsViewModel): kotlin.Unit
+public fun com.insaner.fonecheck.ui.screens.settings.SettingsRoute(onOpenLanguage: kotlin.Function0<kotlin.Unit>, onOpenLicenses: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, viewModel: com.insaner.fonecheck.ui.screens.settings.SettingsViewModel): kotlin.Unit
   skippable: false
   restartable: true
   params:
     - onOpenLanguage: STABLE (function type)
     - onOpenLicenses: STABLE (function type)
-    - onOpenOnboarding: STABLE (function type)
     - modifier: STABLE (marked @Stable or @Immutable)
     - viewModel: RUNTIME (requires runtime check)
 
 @Composable
-public fun com.insaner.fonecheck.ui.screens.settings.SettingsScreen(state: com.insaner.fonecheck.ui.screens.settings.SettingsState, appVersion: kotlin.String, onThemeMode: kotlin.Function1<com.insaner.fonecheck.data.preferences.AppThemeMode, kotlin.Unit>, selectedLanguage: com.insaner.fonecheck.localization.AppLanguage, onOpenLanguage: kotlin.Function0<kotlin.Unit>, onTestWarnings: kotlin.Function1<kotlin.Boolean, kotlin.Unit>, onOpenAppSettings: kotlin.Function0<kotlin.Unit>, onDeleteAll: kotlin.Function0<kotlin.Unit>, onOpenPrivacy: kotlin.Function0<kotlin.Unit>, onOpenSupport: kotlin.Function0<kotlin.Unit>, onOpenLicenses: kotlin.Function0<kotlin.Unit>, onReopenOnboarding: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
+public fun com.insaner.fonecheck.ui.screens.settings.SettingsScreen(state: com.insaner.fonecheck.ui.screens.settings.SettingsState, appVersion: kotlin.String, onThemeMode: kotlin.Function1<com.insaner.fonecheck.data.preferences.AppThemeMode, kotlin.Unit>, selectedLanguage: com.insaner.fonecheck.localization.AppLanguage, onOpenLanguage: kotlin.Function0<kotlin.Unit>, onTestWarnings: kotlin.Function1<kotlin.Boolean, kotlin.Unit>, onOpenAppSettings: kotlin.Function0<kotlin.Unit>, onDeleteAll: kotlin.Function0<kotlin.Unit>, onOpenPrivacy: kotlin.Function0<kotlin.Unit>, onOpenSupport: kotlin.Function0<kotlin.Unit>, onOpenLicenses: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
   skippable: true
   restartable: true
   params:
@@ -2679,7 +2668,6 @@ public fun com.insaner.fonecheck.ui.screens.settings.SettingsScreen(state: com.i
     - onOpenPrivacy: STABLE (function type)
     - onOpenSupport: STABLE (function type)
     - onOpenLicenses: STABLE (function type)
-    - onReopenOnboarding: STABLE (function type)
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable

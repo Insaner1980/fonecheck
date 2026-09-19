@@ -29,7 +29,7 @@ class IndonesianResourcesTest {
             assertEquals(AppLanguage.INDONESIAN, AppLanguage.fromLocale(context.resources.configuration.locales[0]))
             mapOf(
                 R.string.full_check_title to "Pemeriksaan lengkap",
-                R.string.onboarding_title to "Memulai",
+                R.string.home_intro_title to "Mulai di sini",
                 R.string.settings_language to "Bahasa",
                 R.string.settings_language_indonesian to "Bahasa Indonesia",
                 R.string.home_cat_battery to "Baterai",

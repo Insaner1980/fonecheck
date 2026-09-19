@@ -33,6 +33,48 @@ class DiagnosticDestinationTest {
     }
 
     @Test
+    fun freeAndFullAvailabilityMatchesTheProductBoundary() {
+        val expectedFree =
+            setOf(
+                DiagnosticCategoryId.DEVICE,
+                DiagnosticCategoryId.DISPLAY,
+                DiagnosticCategoryId.SENSORS,
+                DiagnosticCategoryId.BATTERY,
+            )
+
+        assertEquals(
+            expectedFree,
+            diagnosticDestinations
+                .filter { it.access == DiagnosticAccess.FREE }
+                .mapTo(mutableSetOf()) { it.category },
+        )
+        assertEquals(
+            DiagnosticCatalog.categories.toSet() - expectedFree,
+            diagnosticDestinations
+                .filter { it.access == DiagnosticAccess.FULL }
+                .mapTo(mutableSetOf()) { it.category },
+        )
+    }
+
+    @Test
+    fun reportRetestsApplyTheSameProductBoundary() {
+        diagnosticDestinations.forEach { destination ->
+            val route = CategoryRetest(destination.category.stableId)
+            val expected =
+                if (destination.access == DiagnosticAccess.FULL) {
+                    FullAccess(destination.category.stableId)
+                } else {
+                    route
+                }
+
+            assertEquals(expected, reportRetestDestination(route))
+        }
+
+        val unknown = CategoryRetest("unknown")
+        assertEquals(unknown, reportRetestDestination(unknown))
+    }
+
+    @Test
     fun implementedDestinationsFollowCanonicalOrderAndIncludeThermalAndStorage() {
         assertEquals(DiagnosticCatalog.categories, diagnosticDestinations.map { it.category })
         assertEquals(ThermalTest, diagnosticDestinations.single { it.category == DiagnosticCategoryId.THERMAL }.route)

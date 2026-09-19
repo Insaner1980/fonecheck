@@ -29,7 +29,7 @@ class SettingsScreenTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun settingsExposeThemeLanguageWarningsPermissionsLinksAndOnboarding() {
+    fun settingsExposeThemeLanguageWarningsPermissionsLinksAndFullInformation() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         var theme: AppThemeMode? = null
         val language = AppLanguage.SYSTEM
@@ -39,7 +39,6 @@ class SettingsScreenTest {
         var openedPrivacy = false
         var openedSupport = false
         var openedLicenses = false
-        var openedOnboarding = false
         composeRule.setContent {
             FonecheckTheme {
                 SettingsScreen(
@@ -60,7 +59,6 @@ class SettingsScreenTest {
                     onOpenPrivacy = { openedPrivacy = true },
                     onOpenSupport = { openedSupport = true },
                     onOpenLicenses = { openedLicenses = true },
-                    onReopenOnboarding = { openedOnboarding = true },
                 )
             }
         }
@@ -90,10 +88,8 @@ class SettingsScreenTest {
         composeRule.onNodeWithTag("settings_privacy").performScrollTo().performClick()
         composeRule.onNodeWithTag("settings_support").performScrollTo().performClick()
         composeRule.onNodeWithTag("settings_licenses").performScrollTo().performClick()
-        composeRule.onNodeWithTag("settings_onboarding").performScrollTo().performClick()
-        assertTrue(
-            openedLanguage && openedSettings && openedPrivacy && openedSupport && openedLicenses && openedOnboarding,
-        )
+        composeRule.onNodeWithText(context.getString(R.string.full_access_offer)).performScrollTo().assertIsDisplayed()
+        assertTrue(openedLanguage && openedSettings && openedPrivacy && openedSupport && openedLicenses)
     }
 
     @Test
@@ -113,7 +109,6 @@ class SettingsScreenTest {
                     onOpenPrivacy = {},
                     onOpenSupport = {},
                     onOpenLicenses = {},
-                    onReopenOnboarding = {},
                 )
             }
         }

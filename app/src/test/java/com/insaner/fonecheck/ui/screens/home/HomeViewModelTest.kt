@@ -1,5 +1,7 @@
 package com.insaner.fonecheck.ui.screens.home
 
+import com.insaner.fonecheck.data.preferences.AppPreferencesRepository
+import com.insaner.fonecheck.data.preferences.FakeAppPreferencesRepository
 import com.insaner.fonecheck.data.repository.FakeReportRepository
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.testing.batteryReport
@@ -14,6 +16,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -37,7 +40,7 @@ class HomeViewModelTest {
     @Test
     fun `empty repository produces an empty latest full check state`() =
         runTest(dispatcher.scheduler) {
-            val viewModel = HomeViewModel(FakeReportRepository())
+            val viewModel = HomeViewModel(FakeReportRepository(), FakeAppPreferencesRepository())
 
             advanceUntilIdle()
 
@@ -61,7 +64,7 @@ class HomeViewModelTest {
             repository.insert(full)
             repository.insert(categoryRetest)
 
-            val viewModel = HomeViewModel(repository)
+            val viewModel = HomeViewModel(repository, FakeAppPreferencesRepository())
             advanceUntilIdle()
 
             val state = viewModel.latestFullCheck.value
@@ -77,9 +80,54 @@ class HomeViewModelTest {
                     summariesFlowOverride = flow { error("load_failed") }
                 }
 
-            val viewModel = HomeViewModel(repository)
+            val viewModel = HomeViewModel(repository, FakeAppPreferencesRepository())
             advanceUntilIdle()
 
             assertSame(LatestFullCheckState.Error, viewModel.latestFullCheck.value)
+        }
+
+    @Test
+    fun `first Home visit shows a dismissible introduction and persists dismissal`() =
+        runTest(dispatcher.scheduler) {
+            val preferences = FakeAppPreferencesRepository()
+            val viewModel = HomeViewModel(FakeReportRepository(), preferences)
+            advanceUntilIdle()
+
+            assertTrue(viewModel.introduction.value.isVisible)
+
+            viewModel.dismissIntroduction()
+            assertTrue(viewModel.introduction.value.isDismissing)
+            advanceUntilIdle()
+
+            assertTrue(preferences.values.value.homeIntroductionDismissed)
+            assertFalse(viewModel.introduction.value.isVisible)
+            assertFalse(viewModel.introduction.value.isDismissing)
+        }
+
+    @Test
+    fun `failed introduction dismissal stays visible and can be retried`() =
+        runTest(dispatcher.scheduler) {
+            val preferences = FakeAppPreferencesRepository()
+            var writes = 0
+            val repository =
+                object : AppPreferencesRepository by preferences {
+                    override suspend fun setHomeIntroductionDismissed(dismissed: Boolean) {
+                        if (++writes == 1) throw java.io.IOException("Write failed")
+                        preferences.setHomeIntroductionDismissed(dismissed)
+                    }
+                }
+            val viewModel = HomeViewModel(FakeReportRepository(), repository)
+            advanceUntilIdle()
+
+            viewModel.dismissIntroduction()
+            advanceUntilIdle()
+            assertTrue(viewModel.introduction.value.isVisible)
+            assertTrue(viewModel.introduction.value.dismissFailed)
+
+            viewModel.dismissIntroduction()
+            advanceUntilIdle()
+            assertEquals(2, writes)
+            assertFalse(viewModel.introduction.value.isVisible)
+            assertFalse(viewModel.introduction.value.dismissFailed)
         }
 }
