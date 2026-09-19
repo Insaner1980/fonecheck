@@ -15,6 +15,9 @@ import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.insaner.fonecheck.data.local.FonecheckDatabase
+import com.insaner.fonecheck.data.preferences.AppPreferences
+import com.insaner.fonecheck.data.preferences.AppPreferencesRepository
+import com.insaner.fonecheck.data.preferences.AppThemeMode
 import com.insaner.fonecheck.data.repository.ReportLoadResult
 import com.insaner.fonecheck.data.repository.ReportPayloadCodec
 import com.insaner.fonecheck.data.repository.RoomReportRepository
@@ -184,7 +187,20 @@ class JourneyEvidenceTest {
                 assertEquals(ReportLoadResult.Available(original), repository.getById(original.stableId))
                 assertEquals(ReportLoadResult.Available(retest), repository.getById(retest.stableId))
                 assertFalse(reportScopesAreComparable(original.kind, null, retest.kind, DiagnosticCategoryId.CAMERA))
-                val home = withContext(Dispatchers.Main) { HomeViewModel(repository).also { store.put("home", it) } }
+                val preferences =
+                    object : AppPreferencesRepository {
+                        override val preferences = MutableStateFlow(AppPreferences(homeIntroductionDismissed = true))
+
+                        override suspend fun setThemeMode(mode: AppThemeMode) = Unit
+
+                        override suspend fun setTestWarningsEnabled(enabled: Boolean) = Unit
+
+                        override suspend fun setHomeIntroductionDismissed(dismissed: Boolean) = Unit
+                    }
+                val home =
+                    withContext(Dispatchers.Main) {
+                        HomeViewModel(repository, preferences).also { store.put("home", it) }
+                    }
                 assertEquals(
                     original,
                     (

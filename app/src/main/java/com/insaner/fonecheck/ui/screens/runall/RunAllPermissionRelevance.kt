@@ -9,22 +9,24 @@ internal fun relevantRunAllPermissionKinds(
     selections: RunAllSelections,
 ): List<PermissionKind> =
     buildList {
-        if ((targetCategory == null || targetCategory == DiagnosticCategoryId.AUDIO) && selections.includeMicrophone) {
+        if (targetCategory.includes(DiagnosticCategoryId.AUDIO) && selections.includeMicrophone) {
             add(PermissionKind.MICROPHONE)
         }
-        if ((targetCategory == null || targetCategory == DiagnosticCategoryId.CAMERA) && selections.includeCamera) {
+        if (targetCategory.includes(DiagnosticCategoryId.CAMERA) && selections.includeCamera) {
             add(PermissionKind.CAMERA)
         }
-        if (targetCategory == null || targetCategory == DiagnosticCategoryId.CONNECTIVITY) {
+        if (targetCategory.includes(DiagnosticCategoryId.CONNECTIVITY)) {
             add(PermissionKind.LOCATION)
         }
-        if (targetCategory == null || targetCategory == DiagnosticCategoryId.SIM) {
+        if (targetCategory.includes(DiagnosticCategoryId.SIM)) {
             add(PermissionKind.PHONE)
         }
-        if (targetCategory == null || targetCategory == DiagnosticCategoryId.CONNECTIVITY) {
+        if (targetCategory.includes(DiagnosticCategoryId.CONNECTIVITY)) {
             add(PermissionKind.BLUETOOTH)
         }
     }
+
+private fun DiagnosticCategoryId?.includes(category: DiagnosticCategoryId): Boolean = this == null || this == category
 
 internal fun shouldAutoResolveRunAllPermissions(
     targetCategory: DiagnosticCategoryId?,

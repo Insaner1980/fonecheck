@@ -1,6 +1,5 @@
 package com.insaner.fonecheck.ui.screens.settings
 
-import com.insaner.fonecheck.data.preferences.AppPreferences
 import com.insaner.fonecheck.data.preferences.AppThemeMode
 import com.insaner.fonecheck.data.preferences.FakeAppPreferencesRepository
 import com.insaner.fonecheck.data.repository.FakeReportRepository
@@ -60,9 +59,9 @@ class SettingsViewModelTest {
         }
 
     @Test
-    fun deleteAllAndReopenOnboardingRequireExplicitCommands() =
+    fun deleteAllReportsRequiresAnExplicitCommand() =
         runTest(dispatcher.scheduler) {
-            val preferences = FakeAppPreferencesRepository(AppPreferences(onboardingComplete = true))
+            val preferences = FakeAppPreferencesRepository()
             val reports = FakeReportRepository().apply { insert(report("one")) }
             val viewModel = SettingsViewModel(preferences, reports, FakePermissions())
             advanceUntilIdle()
@@ -70,13 +69,6 @@ class SettingsViewModelTest {
             viewModel.deleteAllReports()
             advanceUntilIdle()
             assertEquals(0, viewModel.state.value.reportCount)
-
-            viewModel.reopenOnboarding()
-            advanceUntilIdle()
-            assertTrue(preferences.values.value.onboardingComplete)
-            assertTrue(viewModel.state.value.openOnboarding)
-            viewModel.consumeOpenOnboarding()
-            assertFalse(viewModel.state.value.openOnboarding)
         }
 
     private class FakePermissions(

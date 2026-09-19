@@ -1,5 +1,6 @@
 package com.insaner.fonecheck.ui.screens.runall
 
+import com.insaner.fonecheck.data.preferences.FakeAppPreferencesRepository
 import com.insaner.fonecheck.data.repository.FakeReportRepository
 import com.insaner.fonecheck.data.repository.ReportLoadResult
 import com.insaner.fonecheck.domain.model.Applicability
@@ -689,7 +690,7 @@ class RunAllTestsViewModelTest {
                     ),
                 )
             repository.insert(original)
-            val home = HomeViewModel(repository)
+            val home = HomeViewModel(repository, FakeAppPreferencesRepository())
             var now = 300L
             for (id in listOf("retest-b", "retest-c")) {
                 val viewModel = RunAllTestsViewModel(EpochMillisClock { now }, IdProvider { id }, repository)

@@ -599,6 +599,32 @@
 
     <!-- Home and Full Check -->
     <string name="full_check_title">Fuld kontrol</string>
+    <string name="home_intro_title">Start her</string>
+    <string name="home_intro_body">fonecheck hjælper dig med at undersøge denne telefon med guidet diagnostik og gemte rapporter.</string>
+    <string name="home_intro_free">Gratis: Enhed, Skærm, Batteri og Sensorer.</string>
+    <string name="home_intro_full">Full tilføjer alle andre diagnoser og fuld kontrol, som samler automatiske og brugerassisterede kontroller i en gemt rapport. Et engangskøb på 6,99 € uden abonnement.</string>
+    <string name="home_intro_privacy">Behandling og gemte rapporter bliver på denne enhed. Intet uploades; en eksport forlader kun appen, når du vælger, hvor den skal deles.</string>
+    <string name="home_intro_dismiss">Forstået</string>
+    <string name="home_intro_dismissing">Gemmer…</string>
+    <string name="home_intro_retry">Prøv igen</string>
+    <string name="home_intro_dismiss_error">Introduktionen kunne ikke skjules. Prøv igen.</string>
+    <string name="access_free">Gratis</string>
+    <string name="access_full">Full</string>
+    <string name="full_access_title">fonecheck Full</string>
+    <string name="full_access_offer">Full låser op for alle diagnoser og fuld kontrol som et engangskøb på 6,99 €. Der er intet abonnement.</string>
+    <string name="full_access_return">Tilbage til gratis diagnostik</string>
+    <string name="full_access_generic_description">Full omfatter flere guidede diagnoser og rapportforløbet for fuld kontrol.</string>
+    <string name="full_access_performance_description">Ydeevne viser processor-, hukommelses- og grafikdata og kører korte CPU- og hukommelsestest.</string>
+    <string name="full_access_sim_description">SIM viser oplysninger om plads, operatør, mobilnetværk og telefontjeneste, som Android stiller til rådighed.</string>
+    <string name="full_access_audio_description">Lyd guider test af højttaler, stereo, ørehøjttaler, mikrofon, hovedtelefoner og lydstyrkeknapper.</string>
+    <string name="full_access_camera_description">Kamera viser telefonens kameraer og guider test af forhåndsvisning, optagelse, zoom og lygte.</string>
+    <string name="full_access_connectivity_description">Forbindelse viser tilgængelighed og status for wi-fi, mobilnetværk, Bluetooth, NFC og placering eller GNSS.</string>
+    <string name="full_access_thermal_description">Temperatur viser termisk status, råderum og temperaturgrænser rapporteret af Android.</string>
+    <string name="full_access_storage_description">Lager viser pladsforbrug og kan køre en valgfri læse- og skrivetest i appens private cache.</string>
+    <string name="full_access_vibration_description">Vibration afspiller valgbare mønstre, så du kan bekræfte motoren ved berøring.</string>
+    <string name="full_access_buttons_description">Lydstyrkeknapper registrerer tryk på Lydstyrke op og ned, så du kan bekræfte begge knapper.</string>
+    <string name="full_access_biometrics_description">Biometri viser Android-funktionalitet og lader dig teste en systemdialog kun med biometri.</string>
+    <string name="full_access_full_check_description">Fuld kontrol samler automatiske målinger og brugerassisterede kontroller i én gemt rapport.</string>
     <string name="home_start_full_check">Start fuld kontrol</string>
     <string name="home_history_content_description">Åbn rapporthistorik</string>
     <string name="home_settings_content_description">Åbn indstillinger</string>
@@ -738,7 +764,7 @@
     <string name="report_load_error">Den gemte rapport kunne ikke indlæses.</string>
     <string name="report_retry">Prøv igen</string>
 
-    <!-- Settings and onboarding -->
+    <!-- Settings -->
     <string name="settings_title">Indstillinger</string>
     <string name="settings_appearance">Udseende</string>
     <string name="settings_theme">Tema</string>
@@ -777,7 +803,6 @@
     <string name="settings_support">Kontakt support</string>
     <string name="external_app_unavailable">Ingen kompatibel app er tilgængelig.</string>
     <string name="settings_licenses">Open source-licenser</string>
-    <string name="settings_onboarding">Se introduktionen igen</string>
     <string name="settings_about">Om</string>
     <string name="settings_version">Version</string>
     <string name="settings_disclaimer">fonecheck viser observationer fra Android og brugerbekræftelser. Appen certificerer ikke fysisk tilstand, sikkerhed eller mulighed for reparation.</string>
@@ -786,29 +811,6 @@
     <string name="licenses_title">Open source-licenser</string>
     <string name="licenses_description">fonecheck indeholder open source-biblioteker. Oversigten over komponenter og de gældende licensvilkår findes nedenfor og i appens udgivelsespakke.</string>
     <string name="licenses_notices_heading">Meddelelser fra tredjeparter</string>
-    <string name="onboarding_title">Kom godt i gang</string>
-    <string name="onboarding_progress">Trin %1$s af %2$s</string>
-    <string name="onboarding_skip">Spring over</string>
-    <string name="onboarding_previous">Tilbage</string>
-    <string name="onboarding_next">Næste</string>
-    <string name="onboarding_start">Begynd at bruge fonecheck</string>
-    <string name="onboarding_saving">Gemmer…</string>
-    <string name="onboarding_retry">Prøv igen</string>
-    <string name="onboarding_save_error">Dit valg i introduktionen kunne ikke gemmes. Prøv igen.</string>
-    <string name="onboarding_welcome_title">Lær din telefon bedre at kende</string>
-    <string name="onboarding_welcome_body">fonecheck samler enhedsoplysninger, guidede tests og gemte rapporter ét overskueligt sted.</string>
-    <string name="onboarding_testing_title">Du ved, hvad der testes</string>
-    <string name="onboarding_testing_body">Sikre kontroller kan køre automatisk. Tests, der kræver syn, hørelse, berøring, bevægelse eller en anden personlig observation, beder dig altid bekræfte resultatet.</string>
-    <string name="onboarding_privacy_title">Dine testdata forbliver lokale</string>
-    <string name="onboarding_privacy_body">fonecheck uploader ikke testresultater. Data forbliver på denne enhed, medmindre du selv eksporterer eller deler en rapport.</string>
-    <string name="onboarding_privacy_note">Rapporter kan indeholde tekniske enhedsoplysninger. Kontrollér modtageren, før du deler en eksporteret fil.</string>
-    <string name="onboarding_permissions_title">Tilladelser, når de behøves</string>
-    <string name="onboarding_permissions_body">Der anmodes kun om adgang til kamera, mikrofon, position, telefon eller enheder i nærheden, når du starter en kontrol, der kræver det.</string>
-    <string name="onboarding_permissions_note">Du kan afslå en tilladelse eller springe en kontrol, der kræver den, over. Åbning af Indstillinger eller denne introduktion anmoder aldrig om en følsom tilladelse.</string>
-    <string name="onboarding_reports_title">Gemte rapporter er øjebliksbilleder</string>
-    <string name="onboarding_reports_body">En gemt rapport er en uforanderlig registrering af den pågældende testsession. En ny test opretter et nyt øjebliksbillede, så sammenligninger aldrig overskriver tidligere observationer.</string>
-    <string name="onboarding_ready_title">Klar, når du er</string>
-    <string name="onboarding_ready_body">Kør én test ad gangen, eller vælg Fuld kontrol for et guidet forløb. Resultaterne er observationer fra tests, ikke en reparationsgaranti eller certificering.</string>
 
     <!-- History and PDF -->
     <string name="history_title">Rapporthistorik</string>

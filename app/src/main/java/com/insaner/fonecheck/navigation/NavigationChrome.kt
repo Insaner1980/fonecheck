@@ -23,12 +23,11 @@ internal fun navigationChromeFor(destination: NavDestination?): NavigationChrome
             )
         diagnosticDestination != null -> NavigationChrome(diagnosticDestination.labelResId, showBackAction = true)
         destination.matches(RunAllTests::class) -> NavigationChrome(R.string.full_check_title, showBackAction = true)
+        destination.matches(FullAccess::class) -> NavigationChrome(R.string.full_access_title, showBackAction = true)
         destination.matches(Settings::class) -> NavigationChrome(R.string.settings_title, showBackAction = true)
         destination.matches(LanguageSettings::class) ->
             NavigationChrome(R.string.settings_language, showBackAction = true)
         destination.matches(Licenses::class) -> NavigationChrome(R.string.licenses_title, showBackAction = true)
-        destination.matches(Onboarding::class) ->
-            NavigationChrome(R.string.onboarding_title, showBackAction = true)
         destination.matches(Report::class) ->
             NavigationChrome(R.string.report_saved_title, showBackAction = true)
         destination.matches(CategoryRetest::class) ->

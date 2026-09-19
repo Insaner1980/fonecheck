@@ -65,6 +65,9 @@ import com.insaner.fonecheck.domain.model.ReportSchemaVersion
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
+import com.insaner.fonecheck.navigation.DeviceInfo
+import com.insaner.fonecheck.navigation.DiagnosticAccess
+import com.insaner.fonecheck.navigation.FullAccess
 import com.insaner.fonecheck.navigation.History
 import com.insaner.fonecheck.navigation.Report
 import com.insaner.fonecheck.navigation.Settings
@@ -85,6 +88,31 @@ import java.util.Locale
 class HomeContentTest {
     @get:Rule
     val composeRule = createComposeRule()
+
+    @Test
+    fun firstVisitIntroductionDoesNotBlockHomeAndCanBeDismissed() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        var route: Any? = null
+        var dismissed = false
+        composeRule.setContent {
+            FonecheckTheme {
+                HomeContent(
+                    latestFullCheck = LatestFullCheckState.Empty,
+                    introduction = HomeIntroductionState(isVisible = true),
+                    onNavigate = { route = it },
+                    onRunAllTests = {},
+                    onDismissIntroduction = { dismissed = true },
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("home_introduction").assertIsDisplayed()
+        composeRule.onNodeWithTag("home_category_device").performScrollTo().performClick()
+        assertEquals(DeviceInfo, route)
+        composeRule.onNodeWithTag("home_introduction_dismiss").performScrollTo().performClick()
+        assertTrue(dismissed)
+        composeRule.onNodeWithText(context.getString(R.string.home_intro_privacy)).performScrollTo().assertIsDisplayed()
+    }
 
     @Test
     fun statusPanelFitsNamesWithMatchingLegendColumns() {
@@ -184,7 +212,6 @@ class HomeContentTest {
                     cell.assertHeightIsAtLeast(48.dp)
                     composeRule.onNodeWithTag("home_category_reading_$id", useUnmergedTree = true).assertDoesNotExist()
                     val label = context.getString(destination.labelResId)
-                    cell.assertTextEquals(label)
                     val labelNode =
                         composeRule
                             .onNode(
@@ -247,7 +274,7 @@ class HomeContentTest {
         diagnosticDestinations.forEach { destination ->
             val tag = "home_category_${destination.category.stableId}"
             val label = localizedContext.getString(destination.labelResId)
-            composeRule.onNodeWithTag(tag).performScrollTo().assertTextEquals(label)
+            composeRule.onNodeWithTag(tag).performScrollTo()
             val layouts = mutableListOf<TextLayoutResult>()
             composeRule
                 .onNode(hasAnyAncestor(hasTestTag(tag)) and hasText(label), useUnmergedTree = true)
@@ -290,6 +317,35 @@ class HomeContentTest {
             .assertIsDisplayed()
         composeRule.onNodeWithTag("home_category_device").assertExists()
         composeRule.onNodeWithTag("home_category_biometrics").assertExists()
+    }
+
+    @Test
+    fun diagnosticAvailabilityIsVisibleWithoutReplacingResultStatus() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        setHomeContent(LatestFullCheckState.Empty)
+
+        diagnosticDestinations.forEach { destination ->
+            val label =
+                context.getString(
+                    if (destination.access == DiagnosticAccess.FREE) {
+                        R.string.access_free
+                    } else {
+                        R.string.access_full
+                    },
+                )
+            composeRule
+                .onNodeWithTag("home_category_access_${destination.category.stableId}", useUnmergedTree = true)
+                .performScrollTo()
+                .assertTextEquals(label)
+        }
+        composeRule
+            .onNodeWithTag("home_category_performance")
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.StateDescription,
+                    context.getString(R.string.value_unavailable_short),
+                ),
+            )
     }
 
     @Test
@@ -509,7 +565,13 @@ class HomeContentTest {
                 .performScrollTo()
                 .assertHeightIsAtLeast(48.dp)
                 .performClick()
-            assertEquals(destination.route, route)
+            val expectedRoute =
+                if (destination.access == DiagnosticAccess.FREE) {
+                    destination.route
+                } else {
+                    FullAccess(destination.category.stableId)
+                }
+            assertEquals(expectedRoute, route)
         }
         composeRule
             .onNodeWithTag("home_category_performance")

@@ -5,6 +5,11 @@ import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.localization.diagnosticCategoryStringRes
 
+internal enum class DiagnosticAccess {
+    FREE,
+    FULL,
+}
+
 internal data class DiagnosticDestination(
     val category: DiagnosticCategoryId,
     val route: Any,
@@ -12,7 +17,18 @@ internal data class DiagnosticDestination(
     @get:StringRes
     val labelResId: Int
         get() = diagnosticCategoryStringRes(category)
+
+    val access: DiagnosticAccess
+        get() = if (category in freeDiagnosticCategories) DiagnosticAccess.FREE else DiagnosticAccess.FULL
 }
+
+private val freeDiagnosticCategories =
+    setOf(
+        DiagnosticCategoryId.DEVICE,
+        DiagnosticCategoryId.DISPLAY,
+        DiagnosticCategoryId.SENSORS,
+        DiagnosticCategoryId.BATTERY,
+    )
 
 private val implementedDestinations =
     mapOf(

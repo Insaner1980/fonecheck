@@ -27,7 +27,7 @@ enum class AppThemeMode {
 data class AppPreferences(
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val testWarningsEnabled: Boolean = true,
-    val onboardingComplete: Boolean = false,
+    val homeIntroductionDismissed: Boolean = false,
 )
 
 interface AppPreferencesRepository {
@@ -37,7 +37,7 @@ interface AppPreferencesRepository {
 
     suspend fun setTestWarningsEnabled(enabled: Boolean)
 
-    suspend fun setOnboardingComplete(complete: Boolean)
+    suspend fun setHomeIntroductionDismissed(dismissed: Boolean)
 }
 
 class DataStoreAppPreferencesRepository(
@@ -61,7 +61,7 @@ class DataStoreAppPreferencesRepository(
                             ?.let { stored -> AppThemeMode.entries.firstOrNull { it.name == stored } }
                             ?: AppThemeMode.SYSTEM,
                     testWarningsEnabled = values[TEST_WARNINGS_KEY] ?: true,
-                    onboardingComplete = values[ONBOARDING_COMPLETE_KEY] ?: false,
+                    homeIntroductionDismissed = values[HOME_INTRODUCTION_DISMISSED_KEY] ?: false,
                 )
             }
 
@@ -73,13 +73,15 @@ class DataStoreAppPreferencesRepository(
         dataStore.edit { it[TEST_WARNINGS_KEY] = enabled }
     }
 
-    override suspend fun setOnboardingComplete(complete: Boolean) {
-        dataStore.edit { it[ONBOARDING_COMPLETE_KEY] = complete }
+    override suspend fun setHomeIntroductionDismissed(dismissed: Boolean) {
+        dataStore.edit { it[HOME_INTRODUCTION_DISMISSED_KEY] = dismissed }
     }
 
     companion object {
         val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
         private val TEST_WARNINGS_KEY = booleanPreferencesKey("test_warnings_enabled")
-        private val ONBOARDING_COMPLETE_KEY = booleanPreferencesKey("onboarding_complete")
+
+        // Keep the released key so completed legacy onboarding also suppresses the new Home introduction.
+        private val HOME_INTRODUCTION_DISMISSED_KEY = booleanPreferencesKey("onboarding_complete")
     }
 }

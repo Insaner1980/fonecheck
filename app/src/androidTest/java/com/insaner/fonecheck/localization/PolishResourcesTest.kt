@@ -31,7 +31,7 @@ class PolishResourcesTest {
             assertEquals(AppLanguage.POLISH, AppLanguage.fromLocale(context.resources.configuration.locales[0]))
             mapOf(
                 R.string.full_check_title to "Pełna diagnostyka",
-                R.string.onboarding_title to "Pierwsze kroki",
+                R.string.home_intro_title to "Zacznij tutaj",
                 R.string.settings_language to "Język",
                 R.string.settings_language_polish to "Polski",
                 R.string.home_cat_storage to "Pamięć",

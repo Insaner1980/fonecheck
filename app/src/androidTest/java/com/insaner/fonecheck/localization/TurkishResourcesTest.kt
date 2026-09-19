@@ -33,7 +33,7 @@ class TurkishResourcesTest {
             mapOf(
                 R.string.full_check_title to "Tam kontrol",
                 R.string.settings_language_turkish to "Türkçe",
-                R.string.onboarding_title to "Başlarken",
+                R.string.home_intro_title to "Buradan başlayın",
                 R.string.home_cat_storage to "Depolama",
                 R.string.perf_ram_title to "RAM",
                 R.string.history_title to "Rapor geçmişi",

@@ -2,6 +2,7 @@ package com.insaner.fonecheck.ui.screens.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.insaner.fonecheck.data.preferences.AppPreferencesRepository
 import com.insaner.fonecheck.data.repository.ReportLoadResult
 import com.insaner.fonecheck.data.repository.ReportReadFailure
 import com.insaner.fonecheck.data.repository.ReportRepository
@@ -34,23 +35,69 @@ sealed interface LatestFullCheckState {
     data object Error : LatestFullCheckState
 }
 
+data class HomeIntroductionState(
+    val isVisible: Boolean = false,
+    val isDismissing: Boolean = false,
+    val dismissFailed: Boolean = false,
+)
+
 @HiltViewModel
 class HomeViewModel
     @Inject
     constructor(
         private val reportRepository: ReportRepository,
+        private val preferencesRepository: AppPreferencesRepository,
     ) : ViewModel() {
         private val _latestFullCheck = MutableStateFlow<LatestFullCheckState>(LatestFullCheckState.Loading)
         val latestFullCheck: StateFlow<LatestFullCheckState> = _latestFullCheck.asStateFlow()
+        private val _introduction = MutableStateFlow(HomeIntroductionState())
+        val introduction: StateFlow<HomeIntroductionState> = _introduction.asStateFlow()
 
         private var reportsJob: Job? = null
 
         init {
             observeLatestFullCheck()
+            observeIntroduction()
         }
 
         fun retry() {
             observeLatestFullCheck()
+        }
+
+        fun dismissIntroduction() {
+            val current = _introduction.value
+            if (!current.isVisible || current.isDismissing) return
+            _introduction.value = current.copy(isDismissing = true, dismissFailed = false)
+            viewModelScope.launch {
+                try {
+                    preferencesRepository.setHomeIntroductionDismissed(true)
+                    _introduction.value = HomeIntroductionState()
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (_: Exception) {
+                    _introduction.value =
+                        HomeIntroductionState(
+                            isVisible = true,
+                            dismissFailed = true,
+                        )
+                }
+            }
+        }
+
+        private fun observeIntroduction() {
+            viewModelScope.launch {
+                preferencesRepository.preferences.collectLatest { preferences ->
+                    if (preferences.homeIntroductionDismissed) {
+                        _introduction.value = HomeIntroductionState()
+                    } else if (!_introduction.value.isDismissing) {
+                        _introduction.value =
+                            _introduction.value.copy(
+                                isVisible = true,
+                                dismissFailed = false,
+                            )
+                    }
+                }
+            }
         }
 
         private fun observeLatestFullCheck() {

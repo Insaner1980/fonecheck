@@ -24,7 +24,7 @@ class FrenchResourcesTest {
             val context = localizedContext(base, Locale.forLanguageTag(tag))
             mapOf(
                 R.string.full_check_title to "Vérification complète",
-                R.string.onboarding_title to "Premiers pas",
+                R.string.home_intro_title to "Commencez ici",
                 R.string.settings_language to "Langue",
                 R.string.settings_language_french to "Français",
                 R.string.home_cat_battery to "Batterie",

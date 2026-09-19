@@ -97,6 +97,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val latestFullCheck by viewModel.latestFullCheck.collectAsStateWithLifecycle()
+    val introduction by viewModel.introduction.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val currentTime by
         produceState(initialValue = Instant.now(), key1 = lifecycle, key2 = latestFullCheck) {
@@ -112,8 +113,10 @@ fun HomeScreen(
 
     HomeContent(
         latestFullCheck = latestFullCheck,
+        introduction = introduction,
         onNavigate = onNavigate,
         onRunAllTests = onRunAllTests,
+        onDismissIntroduction = viewModel::dismissIntroduction,
         onRetryLatestFullCheck = viewModel::retry,
         modifier = modifier,
         currentTime = currentTime,
@@ -121,11 +124,14 @@ fun HomeScreen(
 }
 
 @Composable
+@Suppress("kotlin:S107") // Explicit state and action slots keep this testable Compose contract clear.
 internal fun HomeContent(
     latestFullCheck: LatestFullCheckState,
     onNavigate: (Any) -> Unit,
     onRunAllTests: () -> Unit,
     modifier: Modifier = Modifier,
+    introduction: HomeIntroductionState = HomeIntroductionState(),
+    onDismissIntroduction: () -> Unit = {},
     onRetryLatestFullCheck: () -> Unit = {},
     currentTime: Instant = Instant.now(),
 ) {
@@ -145,6 +151,17 @@ internal fun HomeContent(
                     onHistory = { onNavigate(History) },
                     onSettings = { onNavigate(Settings) },
                 )
+            }
+        }
+
+        if (introduction.isVisible) {
+            item {
+                Box(modifier = Modifier.padding(bottom = FonecheckTheme.spacing.lg)) {
+                    HomeIntroduction(
+                        state = introduction,
+                        onDismiss = onDismissIntroduction,
+                    )
+                }
             }
         }
 
@@ -181,6 +198,61 @@ internal fun HomeContent(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun HomeIntroduction(
+    state: HomeIntroductionState,
+    onDismiss: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth().testTag("home_introduction"),
+        verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.sm),
+    ) {
+        SectionHeader(stringResource(R.string.home_intro_title))
+        Text(
+            text = stringResource(R.string.home_intro_body),
+            style = FonecheckTheme.type.rowLabel,
+            color = FonecheckTheme.colors.textSecondary,
+        )
+        Text(
+            text = stringResource(R.string.home_intro_free),
+            style = FonecheckTheme.type.rowLabel,
+            color = FonecheckTheme.colors.textSecondary,
+        )
+        Text(
+            text = stringResource(R.string.home_intro_full),
+            style = FonecheckTheme.type.rowLabel,
+            color = FonecheckTheme.colors.textSecondary,
+        )
+        Text(
+            text = stringResource(R.string.home_intro_privacy),
+            style = FonecheckTheme.type.note,
+            color = FonecheckTheme.colors.textMuted,
+        )
+        if (state.dismissFailed) {
+            Text(
+                text = stringResource(R.string.home_intro_dismiss_error),
+                style = FonecheckTheme.type.note,
+                color = FonecheckTheme.colors.fail,
+            )
+        }
+        SecondaryButton(
+            label =
+                stringResource(
+                    if (state.isDismissing) {
+                        R.string.home_intro_dismissing
+                    } else if (state.dismissFailed) {
+                        R.string.home_intro_retry
+                    } else {
+                        R.string.home_intro_dismiss
+                    },
+                ),
+            onClick = onDismiss,
+            enabled = !state.isDismissing,
+            modifier = Modifier.fillMaxWidth().testTag("home_introduction_dismiss"),
+        )
     }
 }
 

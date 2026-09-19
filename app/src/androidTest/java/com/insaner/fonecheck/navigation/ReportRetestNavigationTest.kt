@@ -71,7 +71,7 @@ class ReportRetestNavigationTest {
             activity.setContent {
                 val nav = rememberNavController()
                 FonecheckTheme {
-                    FonecheckNavHost(nav, appPreferences = AppPreferences(onboardingComplete = true))
+                    FonecheckNavHost(nav, appPreferences = AppPreferences(homeIntroductionDismissed = true))
                 }
                 SideEffect { navController = nav }
             }
@@ -111,7 +111,7 @@ class ReportRetestNavigationTest {
                 FonecheckTheme {
                     FonecheckNavHost(
                         nav,
-                        appPreferences = AppPreferences(onboardingComplete = true),
+                        appPreferences = AppPreferences(homeIntroductionDismissed = true),
                         onTopBarActionChange = { action = it },
                     )
                 }
@@ -135,7 +135,7 @@ class ReportRetestNavigationTest {
                 val nav = rememberNavController()
                 val entry by nav.currentBackStackEntryAsState()
                 FonecheckTheme {
-                    FonecheckNavHost(nav, appPreferences = AppPreferences(onboardingComplete = true))
+                    FonecheckNavHost(nav, appPreferences = AppPreferences(homeIntroductionDismissed = true))
                 }
                 val current = entry
                 if (current != null &&

@@ -15,6 +15,7 @@ import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.ui.TopBarAction
 import com.insaner.fonecheck.ui.components.ScreenStateScreen
 import com.insaner.fonecheck.ui.components.ScreenStateType
+import com.insaner.fonecheck.ui.screens.access.FullAccessScreen
 import com.insaner.fonecheck.ui.screens.audio.AudioTestScreen
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestScreen
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestScreen
@@ -27,7 +28,6 @@ import com.insaner.fonecheck.ui.screens.display.DisplayTestScreen
 import com.insaner.fonecheck.ui.screens.export.ReportExportRoute
 import com.insaner.fonecheck.ui.screens.history.HistoryRoute
 import com.insaner.fonecheck.ui.screens.home.HomeScreen
-import com.insaner.fonecheck.ui.screens.onboarding.OnboardingRoute
 import com.insaner.fonecheck.ui.screens.performance.PerformanceInfoScreen
 import com.insaner.fonecheck.ui.screens.report.ReportDetailRoute
 import com.insaner.fonecheck.ui.screens.runall.RunAllTestsScreen
@@ -57,13 +57,15 @@ fun FonecheckNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = initialDestination(appPreferences),
+        startDestination = initialDestination(),
         modifier = modifier,
     ) {
         composable<Home> { backStackEntry ->
             HomeScreen(
                 onNavigate = { route -> navController.navigateFrom(backStackEntry, route) },
-                onRunAllTests = { navController.navigateFrom(backStackEntry, RunAllTests) },
+                onRunAllTests = {
+                    navController.navigateFrom(backStackEntry, FullAccess(FULL_CHECK_FEATURE_ID))
+                },
             )
         }
         composable<DeviceInfo> { backStackEntry ->
@@ -123,27 +125,17 @@ fun FonecheckNavHost(
             SettingsRoute(
                 onOpenLanguage = { navController.navigateFrom(backStackEntry, LanguageSettings) },
                 onOpenLicenses = { navController.navigateFrom(backStackEntry, Licenses) },
-                onOpenOnboarding = { navController.navigateFrom(backStackEntry, Onboarding(reopened = true)) },
+            )
+        }
+        composable<FullAccess> { backStackEntry ->
+            val route = backStackEntry.toRoute<FullAccess>()
+            FullAccessScreen(
+                featureId = route.featureId,
+                onBack = { navController.popBackStackFrom(backStackEntry) },
             )
         }
         composable<LanguageSettings> { LanguageSelectionRoute() }
         composable<Licenses> { LicensesScreen() }
-        composable<Onboarding> { backStackEntry ->
-            val route = backStackEntry.toRoute<Onboarding>()
-            OnboardingRoute(
-                onFinish = {
-                    if (navController.currentBackStackEntry !== backStackEntry) return@OnboardingRoute
-                    if (route.reopened) {
-                        navController.popBackStackFrom(backStackEntry)
-                    } else {
-                        navController.navigate(Home) {
-                            popUpTo(navController.graph.id) { inclusive = true }
-                            launchSingleTop = true
-                        }
-                    }
-                },
-            )
-        }
         composable<Report> { backStackEntry ->
             ReportDetailRoute(
                 onBack = { navController.popBackStackFrom(backStackEntry) },
@@ -212,5 +204,4 @@ private fun NavHostController.openReportRetest(
     }
 }
 
-internal fun initialDestination(preferences: AppPreferences): Any =
-    if (preferences.onboardingComplete) Home else Onboarding()
+internal fun initialDestination(): Any = Home
