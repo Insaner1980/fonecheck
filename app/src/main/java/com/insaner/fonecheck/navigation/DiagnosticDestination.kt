@@ -106,3 +106,12 @@ private val implementedDestinations =
 
 internal val diagnosticDestinations =
     DiagnosticCatalog.categories.map { category -> implementedDestinations.getValue(category) }
+
+internal fun reportRetestDestination(route: CategoryRetest): Any {
+    val destination = diagnosticDestinations.firstOrNull { it.category.stableId == route.categoryId }
+    return if (destination?.access == DiagnosticAccess.FULL) {
+        FullAccess(destination.category.stableId)
+    } else {
+        route
+    }
+}

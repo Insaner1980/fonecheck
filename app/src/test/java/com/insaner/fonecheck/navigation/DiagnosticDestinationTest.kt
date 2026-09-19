@@ -57,6 +57,24 @@ class DiagnosticDestinationTest {
     }
 
     @Test
+    fun reportRetestsApplyTheSameProductBoundary() {
+        diagnosticDestinations.forEach { destination ->
+            val route = CategoryRetest(destination.category.stableId)
+            val expected =
+                if (destination.access == DiagnosticAccess.FULL) {
+                    FullAccess(destination.category.stableId)
+                } else {
+                    route
+                }
+
+            assertEquals(expected, reportRetestDestination(route))
+        }
+
+        val unknown = CategoryRetest("unknown")
+        assertEquals(unknown, reportRetestDestination(unknown))
+    }
+
+    @Test
     fun implementedDestinationsFollowCanonicalOrderAndIncludeThermalAndStorage() {
         assertEquals(DiagnosticCatalog.categories, diagnosticDestinations.map { it.category })
         assertEquals(ThermalTest, diagnosticDestinations.single { it.category == DiagnosticCategoryId.THERMAL }.route)

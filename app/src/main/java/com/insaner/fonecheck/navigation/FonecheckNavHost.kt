@@ -200,7 +200,7 @@ private fun NavHostController.openReportRetest(
     if (route is CategoryRetest && currentBackStackEntry === source &&
         source.lifecycle.currentState == Lifecycle.State.RESUMED
     ) {
-        navigate(route)
+        navigate(reportRetestDestination(route))
     }
 }
 
