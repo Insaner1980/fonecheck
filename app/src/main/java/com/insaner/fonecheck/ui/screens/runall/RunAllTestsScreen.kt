@@ -332,7 +332,7 @@ fun RunAllTestsScreen(
                     performanceViewModel = performanceViewModel,
                     simViewModel = simViewModel,
                     storageViewModel = storageViewModel,
-                    audioState = { audioViewModel.state.value },
+                    recordingResult = audioViewModel::recordingResult,
                     updateHeadphones = audioViewModel::updateHeadphoneState,
                     startRecording = audioViewModel::startRecording,
                     cancelRecording = audioViewModel::cancelRecording,

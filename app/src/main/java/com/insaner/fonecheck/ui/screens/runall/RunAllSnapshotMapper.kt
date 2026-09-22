@@ -514,7 +514,7 @@ object RunAllSnapshotMapper {
                         capturedAt,
                         EvidenceReasonCode.PERMISSION_DENIED,
                     )
-                snapshots.audio.hasRecordedAudio ->
+                automaticIssue == null && snapshots.audio.hasRecordedAudio ->
                     evidence(
                         categoryId = DiagnosticCategoryId.AUDIO,
                         id = "microphone",

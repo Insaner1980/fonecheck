@@ -1,7 +1,6 @@
 package com.insaner.fonecheck.ui.screens.runall
 
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
-import com.insaner.fonecheck.ui.screens.audio.AudioTestState
 import com.insaner.fonecheck.ui.screens.deviceinfo.DeviceInfoViewModel
 import com.insaner.fonecheck.ui.screens.performance.BenchmarkPhase
 import com.insaner.fonecheck.ui.screens.performance.PerformanceInfoViewModel
@@ -37,10 +36,10 @@ internal suspend fun runAutomaticChecks(
     performanceViewModel: PerformanceInfoViewModel,
     simViewModel: SimTelephonyViewModel,
     storageViewModel: StorageTestViewModel,
-    audioState: () -> AudioTestState,
+    recordingResult: (Long) -> Boolean?,
     updateHeadphones: () -> Unit,
-    startRecording: (Long) -> Unit,
-    cancelRecording: () -> Unit,
+    startRecording: (Long) -> Long?,
+    cancelRecording: (Long) -> Unit,
     refreshConnectivity: () -> Unit,
 ) = coroutineScope {
     val entry = sessionViewModel.state.value
@@ -72,7 +71,7 @@ internal suspend fun runAutomaticChecks(
                 runAutomaticAudioCheck(
                     includeMicrophone = entry.selections.includeMicrophone,
                     microphonePermission = entry.permissions.microphone,
-                    audioState = audioState,
+                    recordingResult = recordingResult,
                     updateHeadphones = updateHeadphones,
                     startRecording = startRecording,
                     cancelRecording = cancelRecording,
@@ -111,38 +110,40 @@ internal suspend fun runAutomaticChecks(
 private suspend fun runAutomaticAudioCheck(
     includeMicrophone: Boolean,
     microphonePermission: Boolean,
-    audioState: () -> AudioTestState,
+    recordingResult: (Long) -> Boolean?,
     updateHeadphones: () -> Unit,
-    startRecording: (Long) -> Unit,
-    cancelRecording: () -> Unit,
+    startRecording: (Long) -> Long?,
+    cancelRecording: (Long) -> Unit,
 ): RunAllStageOutcome? {
     var microphoneIssue: RunAllStageOutcome? = null
     try {
         updateHeadphones()
         if (includeMicrophone && microphonePermission) {
+            val attempt = startRecording(AUTOMATIC_MICROPHONE_DURATION_MS) ?: return RunAllStageOutcome.ERROR
             try {
-                startRecording(AUTOMATIC_MICROPHONE_DURATION_MS)
-                val completed =
+                val result =
                     withTimeoutOrNull(AUTOMATIC_MICROPHONE_TIMEOUT_MS) {
-                        while (audioState().isRecording) {
+                        var currentResult = recordingResult(attempt)
+                        while (currentResult == null) {
                             delay(AUTOMATIC_STATE_POLL_INTERVAL_MS)
+                            currentResult = recordingResult(attempt)
                         }
-                    } != null
+                        currentResult
+                    }
                 microphoneIssue =
-                    when {
-                        !completed -> RunAllStageOutcome.TIMED_OUT
-                        !audioState().hasRecordedAudio -> RunAllStageOutcome.ERROR
-                        else -> null
+                    when (result) {
+                        null -> RunAllStageOutcome.TIMED_OUT
+                        false -> RunAllStageOutcome.ERROR
+                        true -> null
                     }
             } finally {
-                cancelRecording()
+                cancelRecording(attempt)
             }
         }
     } catch (error: CancellationException) {
         throw error
     } catch (_: Exception) {
         microphoneIssue = RunAllStageOutcome.ERROR
-        cancelRecording()
     }
     return microphoneIssue
 }
