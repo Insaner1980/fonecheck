@@ -3,6 +3,7 @@ package com.insaner.fonecheck.ui.screens.deviceinfo
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
+import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
@@ -51,16 +52,21 @@ fun DeviceInfoScreen(
     val clipboardLabel = stringResource(R.string.device_clipboard_label)
     val copiedMessage = stringResource(R.string.device_copied_confirmation)
     val shareTitle = stringResource(R.string.device_share_title)
-    val clipboardManager =
-        remember(context) {
-            checkNotNull(context.getSystemService(ClipboardManager::class.java))
-        }
-    val copyValue =
-        remember(clipboardManager, clipboardLabel, copiedMessage, context) {
-            { value: String ->
-                clipboardManager.setPrimaryClip(ClipData.newPlainText(clipboardLabel, value))
-                Toast.makeText(context, copiedMessage, Toast.LENGTH_SHORT).show()
+    // Older Android versions expose the clipboard to background apps; use Export there.
+    val copyValue: ((String) -> Unit)? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val clipboardManager =
+                remember(context) {
+                    checkNotNull(context.getSystemService(ClipboardManager::class.java))
+                }
+            remember(clipboardManager, clipboardLabel, copiedMessage, context) {
+                { value: String ->
+                    clipboardManager.setPrimaryClip(ClipData.newPlainText(clipboardLabel, value))
+                    Toast.makeText(context, copiedMessage, Toast.LENGTH_SHORT).show()
+                }
             }
+        } else {
+            null
         }
     val snapshotText = state.info?.let { buildDeviceSnapshotText(context, it) }
 
@@ -73,7 +79,12 @@ fun DeviceInfoScreen(
     DeviceInfoContent(
         state = state,
         onCopyValue = copyValue,
-        onCopyAll = { snapshotText?.let(copyValue) },
+        onCopyAll =
+            if (copyValue != null) {
+                { snapshotText?.let(copyValue) }
+            } else {
+                null
+            },
         onExport = {
             snapshotText?.let { text ->
                 val intent =
@@ -107,7 +118,7 @@ internal fun DeviceInfoContent(
     state: DeviceInfoState,
     modifier: Modifier = Modifier,
     onCopyValue: ((String) -> Unit)? = null,
-    onCopyAll: () -> Unit = {},
+    onCopyAll: (() -> Unit)? = null,
     onExport: () -> Unit = {},
 ) {
     TestScreenContent(
@@ -137,11 +148,13 @@ internal fun DeviceInfoContent(
         if (state.info != null) {
             item {
                 ButtonRow { buttonModifier ->
-                    SecondaryButton(
-                        label = stringResource(R.string.device_copy_all),
-                        onClick = onCopyAll,
-                        modifier = buttonModifier,
-                    )
+                    if (onCopyAll != null) {
+                        SecondaryButton(
+                            label = stringResource(R.string.device_copy_all),
+                            onClick = onCopyAll,
+                            modifier = buttonModifier,
+                        )
+                    }
                     PrimaryButton(
                         label = stringResource(R.string.device_export),
                         onClick = onExport,
