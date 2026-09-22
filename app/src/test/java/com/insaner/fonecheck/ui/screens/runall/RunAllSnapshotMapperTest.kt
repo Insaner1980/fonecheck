@@ -42,6 +42,9 @@ import com.insaner.fonecheck.ui.screens.biometrics.BiometricCapability
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestState
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestPhase
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestState
+import com.insaner.fonecheck.ui.screens.camera.CameraCapabilities
+import com.insaner.fonecheck.ui.screens.camera.CameraClassCode
+import com.insaner.fonecheck.ui.screens.camera.CameraFacingCode
 import com.insaner.fonecheck.ui.screens.camera.CameraTestState
 import com.insaner.fonecheck.ui.screens.camera.CaptureResult
 import com.insaner.fonecheck.ui.screens.connectivity.BluetoothAccessCode
@@ -81,6 +84,185 @@ import java.time.Instant
 
 @Suppress("LargeClass") // Mirrors the canonical mapper's complete category contract in one suite.
 class RunAllSnapshotMapperTest {
+    @Test
+    fun loadingCameraInventoryNeverPublishesInitialOrRetainedCounts() {
+        listOf(emptyList(), cameraInventory()).forEach { cameras ->
+            val evidence =
+                mappedEvidence(
+                    snapshots =
+                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                            camera = CameraTestState(cameras = cameras),
+                        ),
+                )
+
+            assertUnmeasuredCameraCount(evidence.getValue("camera.inventory"), "measurement_in_progress")
+            assertUnmeasuredCameraCount(evidence.getValue("camera.logical_count"), "measurement_in_progress")
+        }
+    }
+
+    @Test
+    fun completedEmptyCameraInventoryRemainsMeasuredZero() {
+        val evidence =
+            mappedEvidence(
+                snapshots =
+                    diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                        camera = CameraTestState(isLoading = false, error = "camera_no_public_cameras"),
+                    ),
+            )
+
+        assertMeasuredCameraCount(evidence.getValue("camera.inventory"), 0)
+        assertMeasuredCameraCount(evidence.getValue("camera.logical_count"), 0)
+    }
+
+    @Test
+    fun completedCameraInventoryRetainsCountsDespiteCaptureOutcomes() {
+        listOf(RunAllStageOutcome.PASSED, RunAllStageOutcome.ERROR, RunAllStageOutcome.TIMED_OUT).forEach { outcome ->
+            val evidence =
+                mappedEvidence(
+                    snapshots =
+                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                            camera =
+                                CameraTestState(
+                                    isLoading = false,
+                                    cameras = cameraInventory(),
+                                    error = "capture failed".takeIf { outcome == RunAllStageOutcome.ERROR },
+                                ),
+                        ),
+                    manual = ManualCheckResults(outcomes = mapOf(RunAllStage.CAMERA to outcome)),
+                    permissions = RunAllPermissions(camera = true),
+                )
+
+            assertMeasuredCameraCount(evidence.getValue("camera.inventory"), 3)
+            assertMeasuredCameraCount(evidence.getValue("camera.logical_count"), 1)
+        }
+    }
+
+    @Test
+    fun failedCameraInventoryNeverPublishesEmptyOrRetainedCountsEvenWithoutAnErrorMessage() {
+        listOf(emptyList(), cameraInventory()).forEach { cameras ->
+            val evidence =
+                mappedEvidence(
+                    snapshots =
+                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                            camera =
+                                CameraTestState(isLoading = false, capabilitiesLoadFailed = true, cameras = cameras),
+                        ),
+                )
+
+            assertUnmeasuredCameraCount(evidence.getValue("camera.inventory"), "camera_measurement_error")
+            assertUnmeasuredCameraCount(evidence.getValue("camera.logical_count"), "camera_measurement_error")
+        }
+    }
+
+    @Test
+    fun cameraStageTimeoutDoesNotTurnPendingInventoryIntoZero() {
+        val evidence = mappedEvidenceForOutcome(RunAllStageOutcome.TIMED_OUT, RunAllStage.CAMERA)
+
+        assertUnmeasuredCameraCount(evidence.getValue("camera.inventory"), "measurement_in_progress")
+        assertUnmeasuredCameraCount(evidence.getValue("camera.logical_count"), "measurement_in_progress")
+        assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue("camera.capture").status)
+        assertEquals(EvidenceReasonCode("measurement_timeout"), evidence.getValue("camera.capture").reason)
+    }
+
+    @Test
+    fun cameraInventoryReadinessIsIndependentOfCaptureSelectionPermissionAndHardware() {
+        listOf(false, true).forEach { loading ->
+            listOf(false, true).forEach { included ->
+                listOf(false, true).forEach { permission ->
+                    listOf(false, true).forEach { hardware ->
+                        val evidence =
+                            RunAllSnapshotMapper
+                                .map(
+                                    snapshots =
+                                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                                            camera = CameraTestState(isLoading = loading, cameras = cameraInventory()),
+                                        ),
+                                    manual = ManualCheckResults(),
+                                    permissions = RunAllPermissions(camera = permission),
+                                    selections = RunAllSelections(includeCamera = included),
+                                    hardware = RunAllHardwareProfile.ALL_AVAILABLE.copy(cameraAvailable = hardware),
+                                    capturedAt = Instant.EPOCH,
+                                ).flatMap { it.evidence }
+                                .associateBy { it.checkId.value }
+
+                        if (loading) {
+                            assertUnmeasuredCameraCount(
+                                evidence.getValue("camera.inventory"),
+                                "measurement_in_progress",
+                            )
+                            assertUnmeasuredCameraCount(
+                                evidence.getValue("camera.logical_count"),
+                                "measurement_in_progress",
+                            )
+                        } else {
+                            assertMeasuredCameraCount(evidence.getValue("camera.inventory"), 3)
+                            assertMeasuredCameraCount(evidence.getValue("camera.logical_count"), 1)
+                        }
+                        val expectedCaptureReason =
+                            when {
+                                !included -> EvidenceReasonCode("test_skipped")
+                                !hardware -> EvidenceReasonCode.HARDWARE_UNAVAILABLE
+                                !permission -> EvidenceReasonCode.PERMISSION_DENIED
+                                else -> EvidenceReasonCode("test_not_run")
+                            }
+                        assertEquals(expectedCaptureReason, evidence.getValue("camera.capture").reason)
+                        assertEquals(expectedCaptureReason, evidence.getValue("camera.capture_dimensions").reason)
+                        val captureStatus =
+                            if (included && !hardware) DiagnosticStatus.NOT_AVAILABLE else DiagnosticStatus.NOT_TESTED
+                        assertEquals(captureStatus, evidence.getValue("camera.capture").status)
+                        assertEquals(captureStatus, evidence.getValue("camera.capture_dimensions").status)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun cameraInventory(): List<CameraCapabilities> =
+        listOf(CameraClassCode.LOGICAL, CameraClassCode.STANDARD, CameraClassCode.PHYSICAL_SELECTABLE)
+            .mapIndexed { index, cameraClass ->
+                CameraCapabilities(
+                    cameraId = index.toString(),
+                    resolutions = emptyList(),
+                    maxResolution = "",
+                    fpsRanges = emptyList(),
+                    hasOis = false,
+                    hasFlash = false,
+                    focalLengths = emptyList(),
+                    zoomRange = "",
+                    sensorSize = "",
+                    autoFocusModes = emptyList(),
+                    facingCode = CameraFacingCode.REAR,
+                    cameraClass = cameraClass,
+                    physicalCameraIds = emptySet(),
+                )
+            }
+
+    private fun assertUnmeasuredCameraCount(
+        evidence: DiagnosticEvidence,
+        reason: String,
+    ) {
+        assertEquals(DiagnosticStatus.NOT_TESTED, evidence.status)
+        assertEquals(EvidenceReasonCode(reason), evidence.reason)
+        assertEquals(null, evidence.value)
+        assertEquals(null, evidence.unit)
+        assertEquals(Confidence.UNAVAILABLE, evidence.confidence)
+        assertEquals(EvidenceSource.ANDROID_API, evidence.source)
+        assertEquals(Applicability.APPLICABLE, evidence.applicability)
+    }
+
+    private fun assertMeasuredCameraCount(
+        evidence: DiagnosticEvidence,
+        count: Int,
+    ) {
+        assertEquals(DiagnosticStatus.INFO, evidence.status)
+        assertEquals(EvidenceValue.IntValue(count), evidence.value)
+        assertEquals(EvidenceUnitCode("count"), evidence.unit)
+        assertEquals(null, evidence.reason)
+        assertEquals(Confidence.HIGH, evidence.confidence)
+        assertEquals(EvidenceSource.ANDROID_API, evidence.source)
+        assertEquals(Applicability.APPLICABLE, evidence.applicability)
+    }
+
     @Test
     fun cameraAndUserResponseTimesSurviveLaterAssemblyAndLegacyImageCountsRemainHonest() {
         val cameraAt = Instant.ofEpochMilli(400L)

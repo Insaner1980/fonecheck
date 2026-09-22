@@ -65,6 +65,7 @@ data class CameraTestState(
     val selectedCameraId: String? = null,
     val confirmations: Map<String, Boolean> = emptyMap(),
     val isLoading: Boolean = true,
+    val capabilitiesLoadFailed: Boolean = false,
     val isFrontCamera: Boolean = false,
     val isPreviewActive: Boolean = false,
     val isCapturing: Boolean = false,
@@ -120,13 +121,15 @@ class CameraTestViewModel
 
         private fun loadCapabilities() {
             val token = capabilityGate.begin()
-            _state.update { it.copy(isLoading = true, error = null) }
+            _state.update { it.copy(isLoading = true, capabilitiesLoadFailed = false, error = null) }
             viewModelScope.launch(ioDispatcher) {
                 runCameraOperation(
                     action = "load camera capabilities",
                     onFailure = { error ->
                         capabilityGate.complete(token) {
-                            _state.update { it.copy(isLoading = false, error = error.message) }
+                            _state.update {
+                                it.copy(isLoading = false, capabilitiesLoadFailed = true, error = error.message)
+                            }
                         }
                     },
                 ) {
@@ -161,6 +164,7 @@ class CameraTestViewModel
                                         FlashTestResult.NOT_AVAILABLE
                                     },
                                 isLoading = false,
+                                capabilitiesLoadFailed = false,
                                 error = "camera_no_public_cameras".takeIf { cameras.isEmpty() },
                             )
                         }

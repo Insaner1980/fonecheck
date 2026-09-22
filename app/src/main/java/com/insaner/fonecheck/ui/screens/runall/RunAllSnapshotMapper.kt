@@ -638,21 +638,16 @@ object RunAllSnapshotMapper {
                         EvidenceSource.ANDROID_API,
                     )
             },
-            evidence(
-                categoryId = DiagnosticCategoryId.CAMERA,
+            cameraInventoryCountEvidence(
+                state = snapshots.camera,
                 id = "inventory",
-                value = EvidenceValue.IntValue(snapshots.camera.cameras.size),
-                unit = EvidenceUnitCode("count"),
+                count = snapshots.camera.cameras.size,
                 capturedAt = capturedAt,
             ),
-            evidence(
-                categoryId = DiagnosticCategoryId.CAMERA,
+            cameraInventoryCountEvidence(
+                state = snapshots.camera,
                 id = "logical_count",
-                value =
-                    EvidenceValue.IntValue(
-                        snapshots.camera.cameras.count { it.cameraClass == CameraClassCode.LOGICAL },
-                    ),
-                unit = EvidenceUnitCode("count"),
+                count = snapshots.camera.cameras.count { it.cameraClass == CameraClassCode.LOGICAL },
                 capturedAt = capturedAt,
             ),
             cameraCaptureDimensionsEvidence(
@@ -664,6 +659,30 @@ object RunAllSnapshotMapper {
                 permissionGranted = permissions.camera,
                 capturedAt = capturedAt,
             ),
+        )
+    }
+
+    private fun cameraInventoryCountEvidence(
+        state: CameraTestState,
+        id: String,
+        count: Int,
+        capturedAt: Instant,
+    ): DiagnosticEvidence {
+        val outcome =
+            when {
+                state.isLoading -> MeasurementOutcome.IN_PROGRESS
+                state.capabilitiesLoadFailed -> MeasurementOutcome.ERROR
+                else -> MeasurementOutcome.MEASURED
+            }
+        val measured = outcome == MeasurementOutcome.MEASURED
+        return classifiedEvidence(
+            categoryId = DiagnosticCategoryId.CAMERA,
+            id = id,
+            classification = classifyMeasurement(MeasurementKind.CAMERA, outcome),
+            informationalPass = true,
+            value = EvidenceValue.IntValue(count).takeIf { measured },
+            unit = EvidenceUnitCode("count").takeIf { measured },
+            capturedAt = capturedAt,
         )
     }
 
