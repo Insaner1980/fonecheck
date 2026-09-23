@@ -130,6 +130,7 @@ object RunAllSnapshotMapper {
                 DiagnosticCategoryId.CONNECTIVITY to
                     connectivityEvidence(
                         snapshots,
+                        permissions,
                         automaticIssue(DiagnosticCategoryId.CONNECTIVITY),
                         capturedAt,
                     ),
@@ -968,18 +969,23 @@ object RunAllSnapshotMapper {
 
     private fun connectivityEvidence(
         snapshots: DiagnosticSnapshots,
+        permissions: RunAllPermissions,
         automaticIssue: RunAllStageOutcome?,
         capturedAt: Instant,
     ): List<DiagnosticEvidence> {
         automaticIssue?.toFailureReason()?.let { reason ->
             return listOf("wifi", "bluetooth", "nfc", "nfc_hce", "gps", "mobile").map { id ->
-                notTested(
-                    categoryId = DiagnosticCategoryId.CONNECTIVITY,
-                    id = id,
-                    capturedAt = capturedAt,
-                    reason = reason,
-                    source = EvidenceSource.AUTOMATIC_MEASUREMENT,
-                )
+                if (id == "gps" && !permissions.location) {
+                    gpsEvidence(snapshots.connectivity, permissions, capturedAt)
+                } else {
+                    notTested(
+                        categoryId = DiagnosticCategoryId.CONNECTIVITY,
+                        id = id,
+                        capturedAt = capturedAt,
+                        reason = reason,
+                        source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                    )
+                }
             }
         }
         val connectivity = snapshots.connectivity
@@ -1007,7 +1013,7 @@ object RunAllSnapshotMapper {
             } else {
                 unavailable(DiagnosticCategoryId.CONNECTIVITY, "nfc_hce", capturedAt)
             },
-            gpsEvidence(connectivity, capturedAt),
+            gpsEvidence(connectivity, permissions, capturedAt),
             capabilityStateEvidence(
                 id = "mobile",
                 available = connectivity.mobileNetwork.isAvailable,
@@ -1046,9 +1052,18 @@ object RunAllSnapshotMapper {
 
     private fun gpsEvidence(
         connectivity: ConnectivityTestState,
+        permissions: RunAllPermissions,
         capturedAt: Instant,
     ): DiagnosticEvidence {
         val gps = connectivity.gps
+        if (gps.isAvailable && !permissions.location) {
+            return notTested(
+                DiagnosticCategoryId.CONNECTIVITY,
+                "gps",
+                capturedAt,
+                EvidenceReasonCode.PERMISSION_DENIED,
+            )
+        }
         val classification =
             when {
                 !gps.isAvailable ->
