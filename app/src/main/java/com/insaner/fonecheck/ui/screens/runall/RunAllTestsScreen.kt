@@ -45,9 +45,9 @@ import com.insaner.fonecheck.ui.permissions.PermissionController
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
 import com.insaner.fonecheck.ui.screens.audio.AudioTestViewModel
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestViewModel
-import com.insaner.fonecheck.ui.screens.biometrics.AuthResult
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestViewModel
-import com.insaner.fonecheck.ui.screens.biometrics.showBiometricPrompt
+import com.insaner.fonecheck.ui.screens.biometrics.authenticateWithBiometricPrompt
+import com.insaner.fonecheck.ui.screens.biometrics.createBiometricPrompt
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestPhase
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestViewModel
 import com.insaner.fonecheck.ui.screens.camera.CameraTestViewModel
@@ -238,9 +238,10 @@ fun RunAllTestsScreen(
                 stopVibration = vibrationViewModel::cancelVibration,
                 stopButtons = buttonViewModel::stopTest,
                 stopBiometrics = {
-                    biometricViewModel.cancelAuthentication()
-                    biometricPromptState.value?.cancelAuthentication()
+                    val prompt = biometricPromptState.value
                     biometricPromptState.value = null
+                    biometricViewModel.cancelAuthentication()
+                    prompt?.cancelAuthentication()
                 },
                 stopThermal = thermalViewModel::stopMonitoring,
             )
@@ -405,30 +406,48 @@ fun RunAllTestsScreen(
                     biometricState.capability.strongAvailable ||
                         biometricState.capability.weakAvailable
                 val activity = context as? FragmentActivity
+
+                fun handleResult(updateResult: () -> Unit) {
+                    sessionViewModel.handleBiometricCallback(token) {
+                        updateResult()
+                        biometricViewModel.state.value.authResult
+                    }
+                }
                 when {
                     !available -> sessionViewModel.markStageUnavailable(token)
                     activity == null -> {
-                        if (biometricViewModel.startAuthentication()) {
-                            biometricViewModel.onPromptLaunchFailure()
+                        handleResult {
+                            if (biometricViewModel.startAuthentication()) {
+                                biometricViewModel.onPromptLaunchFailure()
+                            }
                         }
                     }
                     biometricViewModel.startAuthentication() -> {
                         runCatching {
-                            showBiometricPrompt(
-                                activity = activity,
-                                onSuccess = {
-                                    biometricViewModel.onAuthSuccess()
-                                    biometricPrompt = null
-                                },
-                                onFailed = biometricViewModel::onAuthFailed,
-                                onError = { errorCode, message ->
-                                    biometricViewModel.onAuthError(errorCode, message)
-                                    biometricPrompt = null
-                                },
-                            )
-                        }.onSuccess { biometricPrompt = it }
-                            .onFailure { biometricViewModel.onPromptLaunchFailure() }
+                            val prompt =
+                                createBiometricPrompt(
+                                    activity = activity,
+                                    onSuccess = {
+                                        handleResult {
+                                            biometricViewModel.onAuthSuccess()
+                                            biometricPrompt = null
+                                        }
+                                    },
+                                    onFailed = { handleResult { biometricViewModel.onAuthFailed() } },
+                                    onError = { errorCode, message ->
+                                        handleResult {
+                                            biometricViewModel.onAuthError(errorCode, message)
+                                            biometricPrompt = null
+                                        }
+                                    },
+                                )
+                            biometricPrompt = prompt
+                            authenticateWithBiometricPrompt(activity, prompt)
+                        }.onFailure {
+                            handleResult { biometricViewModel.onPromptLaunchFailure() }
+                        }
                     }
+                    else -> handleResult {}
                 }
             }
 
@@ -486,27 +505,6 @@ fun RunAllTestsScreen(
         ) {
             sessionViewModel.recordButtons(sessionState.stageToken, true)
         }
-    }
-
-    LaunchedEffect(sessionState.stageToken, biometricState.authResult) {
-        if (sessionState.stage != RunAllStage.BIOMETRICS || !biometricState.authResult.isTerminal) {
-            return@LaunchedEffect
-        }
-        val outcome =
-            when (biometricState.authResult) {
-                AuthResult.SUCCESS -> RunAllStageOutcome.PASSED
-                AuthResult.CANCELLED -> RunAllStageOutcome.SKIPPED
-                AuthResult.UNAVAILABLE,
-                AuthResult.NO_ENROLLMENT,
-                -> RunAllStageOutcome.UNAVAILABLE
-
-                AuthResult.LOCKED_OUT,
-                AuthResult.ERROR,
-                -> RunAllStageOutcome.ERROR
-
-                else -> return@LaunchedEffect
-            }
-        sessionViewModel.recordBiometricOutcome(sessionState.stageToken, outcome)
     }
 
     DisposableEffect(sessionState.stageToken) {
@@ -766,9 +764,8 @@ fun RunAllTestsScreen(
                 state = biometricState,
                 progress = requireNotNull(sessionState.progress),
                 onSkip = {
-                    biometricViewModel.cancelAuthentication()
-                    biometricPrompt?.cancelAuthentication()
                     sessionViewModel.skipStage(sessionState.stageToken)
+                    resourceOwner.stopStage(RunAllStage.BIOMETRICS)
                 },
                 onCancel = cancelRunAndExit,
             )

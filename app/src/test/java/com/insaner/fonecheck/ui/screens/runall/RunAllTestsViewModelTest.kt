@@ -1,5 +1,6 @@
 package com.insaner.fonecheck.ui.screens.runall
 
+import androidx.biometric.BiometricPrompt
 import com.insaner.fonecheck.data.preferences.FakeAppPreferencesRepository
 import com.insaner.fonecheck.data.repository.FakeReportRepository
 import com.insaner.fonecheck.data.repository.ReportLoadResult
@@ -21,6 +22,11 @@ import com.insaner.fonecheck.domain.model.ReportDeviceContext
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.IdProvider
+import com.insaner.fonecheck.ui.screens.biometrics.AuthResult
+import com.insaner.fonecheck.ui.screens.biometrics.BiometricAvailability
+import com.insaner.fonecheck.ui.screens.biometrics.BiometricCapability
+import com.insaner.fonecheck.ui.screens.biometrics.BiometricCapabilityProvider
+import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestViewModel
 import com.insaner.fonecheck.ui.screens.camera.CameraCaptureAttempt
 import com.insaner.fonecheck.ui.screens.camera.CameraCaptureSession
 import com.insaner.fonecheck.ui.screens.camera.CameraTestState
@@ -760,6 +766,108 @@ class RunAllTestsViewModelTest {
                     ),
             )
         }
+
+    @Test
+    fun obsoleteBiometricCallbacksCannotChangeRestartedAttemptOrPromptOwner() {
+        val viewModel = runAllViewModel()
+        val biometric =
+            BiometricTestViewModel(
+                object : BiometricCapabilityProvider {
+                    override fun read() = BiometricCapability(weakStatus = BiometricAvailability.AVAILABLE)
+                },
+            )
+        val oldToken = enterBiometricStage(viewModel)
+        assertTrue(viewModel.claimStage(oldToken))
+        assertTrue(biometric.startAuthentication())
+        biometric.cancelAuthentication()
+        viewModel.interruptRun(RunAllInterruptionReason.BACKGROUND)
+        val token = enterBiometricStage(viewModel)
+        assertTrue(viewModel.claimStage(token))
+        assertTrue(biometric.startAuthentication())
+        val newPrompt = Any()
+        var prompt: Any? = newPrompt
+        val activeState = biometric.state.value
+
+        viewModel.handleBiometricCallback(oldToken) {
+            biometric.onAuthSuccess()
+            prompt = null
+            biometric.state.value.authResult
+        }
+        viewModel.handleBiometricCallback(oldToken) {
+            biometric.onAuthFailed()
+            biometric.state.value.authResult
+        }
+        viewModel.handleBiometricCallback(oldToken) {
+            biometric.onAuthError(BiometricPrompt.ERROR_CANCELED, "old cancellation")
+            prompt = null
+            biometric.state.value.authResult
+        }
+
+        assertEquals(activeState, biometric.state.value)
+        assertSame(newPrompt, prompt)
+        assertFalse(viewModel.state.value.awaitingContinue)
+        assertEquals(null, viewModel.state.value.manualChecks.outcomes[RunAllStage.BIOMETRICS])
+
+        viewModel.handleBiometricCallback(token) {
+            biometric.onAuthFailed()
+            biometric.state.value.authResult
+        }
+        assertEquals(AuthResult.NOT_RECOGNIZED, biometric.state.value.authResult)
+        assertEquals(1, biometric.state.value.failedAttempts)
+        assertFalse(viewModel.state.value.awaitingContinue)
+        viewModel.handleBiometricCallback(token) {
+            biometric.onAuthSuccess()
+            prompt = null
+            biometric.state.value.authResult
+        }
+        assertEquals(AuthResult.SUCCESS, biometric.state.value.authResult)
+        assertEquals(null, prompt)
+        assertEquals(RunAllStageOutcome.PASSED, viewModel.state.value.manualChecks.outcomes[RunAllStage.BIOMETRICS])
+        assertTrue(viewModel.state.value.awaitingContinue)
+    }
+
+    @Test
+    fun biometricCallbacksRequireClaimAndAreInvalidAfterSkipOrInterruption() {
+        val viewModel = runAllViewModel()
+        val token = enterBiometricStage(viewModel)
+        viewModel.handleBiometricCallback(token) { error("Unclaimed callback was accepted") }
+        assertTrue(viewModel.claimStage(token))
+        viewModel.skipStage(token)
+        viewModel.handleBiometricCallback(token) { error("Skipped callback was accepted") }
+        assertEquals(RunAllStageOutcome.SKIPPED, viewModel.state.value.manualChecks.outcomes[RunAllStage.BIOMETRICS])
+        viewModel.interruptRun(RunAllInterruptionReason.BACKGROUND)
+        viewModel.handleBiometricCallback(token) { error("Interrupted callback was accepted") }
+        assertEquals(RunAllStage.PREFLIGHT, viewModel.state.value.stage)
+    }
+
+    @Test
+    fun currentBiometricTerminalResultsKeepTheirOutcomeAndRejectDuplicates() {
+        val outcomes =
+            mapOf(
+                AuthResult.SUCCESS to RunAllStageOutcome.PASSED,
+                AuthResult.CANCELLED to RunAllStageOutcome.SKIPPED,
+                AuthResult.NO_ENROLLMENT to RunAllStageOutcome.UNAVAILABLE,
+                AuthResult.UNAVAILABLE to RunAllStageOutcome.UNAVAILABLE,
+                AuthResult.LOCKED_OUT to RunAllStageOutcome.ERROR,
+                AuthResult.ERROR to RunAllStageOutcome.ERROR,
+            )
+        outcomes.forEach { (result, expected) ->
+            val viewModel = runAllViewModel()
+            val token = enterBiometricStage(viewModel)
+            assertTrue(viewModel.claimStage(token))
+            viewModel.handleBiometricCallback(token) { result }
+            assertEquals(result.name, expected, viewModel.state.value.manualChecks.outcomes[RunAllStage.BIOMETRICS])
+            assertTrue(viewModel.state.value.awaitingContinue)
+            viewModel.handleBiometricCallback(token) { error("Terminal callback was accepted twice") }
+        }
+    }
+
+    private fun enterBiometricStage(viewModel: RunAllTestsViewModel): Long {
+        viewModel.onCategoryRetestRequested(DiagnosticCategoryId.BIOMETRICS, RunAllHardwareProfile.ALL_AVAILABLE)
+        viewModel.onPermissionsResolved(RunAllPermissions())
+        assertEquals(RunAllStage.BIOMETRICS, viewModel.state.value.stage)
+        return viewModel.state.value.stageToken
+    }
 
     private fun deviceContext(model: String = "model") =
         ReportDeviceContext(
