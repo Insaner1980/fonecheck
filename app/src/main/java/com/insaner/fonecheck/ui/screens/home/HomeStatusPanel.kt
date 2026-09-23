@@ -33,7 +33,7 @@ import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.navigation.DiagnosticAccess
 import com.insaner.fonecheck.navigation.DiagnosticDestination
-import com.insaner.fonecheck.navigation.FullAccess
+import com.insaner.fonecheck.navigation.destinationForAccess
 import com.insaner.fonecheck.navigation.diagnosticDestinations
 import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.StatusLamp
@@ -118,13 +118,7 @@ internal fun HomeStatusPanel(
                                 labelStyle = labelStyle,
                                 status = status,
                                 onClick = {
-                                    onNavigate(
-                                        if (destination.access == DiagnosticAccess.FREE) {
-                                            destination.route
-                                        } else {
-                                            FullAccess(destination.category.stableId)
-                                        },
-                                    )
+                                    onNavigate(destination.destinationForAccess())
                                 },
                                 columnLayout = columnLayout,
                                 modifier =

@@ -42,6 +42,9 @@ import com.insaner.fonecheck.ui.screens.biometrics.BiometricCapability
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestState
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestPhase
 import com.insaner.fonecheck.ui.screens.buttons.ButtonTestState
+import com.insaner.fonecheck.ui.screens.camera.CameraCapabilities
+import com.insaner.fonecheck.ui.screens.camera.CameraClassCode
+import com.insaner.fonecheck.ui.screens.camera.CameraFacingCode
 import com.insaner.fonecheck.ui.screens.camera.CameraTestState
 import com.insaner.fonecheck.ui.screens.camera.CaptureResult
 import com.insaner.fonecheck.ui.screens.connectivity.BluetoothAccessCode
@@ -81,6 +84,185 @@ import java.time.Instant
 
 @Suppress("LargeClass") // Mirrors the canonical mapper's complete category contract in one suite.
 class RunAllSnapshotMapperTest {
+    @Test
+    fun loadingCameraInventoryNeverPublishesInitialOrRetainedCounts() {
+        listOf(emptyList(), cameraInventory()).forEach { cameras ->
+            val evidence =
+                mappedEvidence(
+                    snapshots =
+                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                            camera = CameraTestState(cameras = cameras),
+                        ),
+                )
+
+            assertUnmeasuredCameraCount(evidence.getValue("camera.inventory"), "measurement_in_progress")
+            assertUnmeasuredCameraCount(evidence.getValue("camera.logical_count"), "measurement_in_progress")
+        }
+    }
+
+    @Test
+    fun completedEmptyCameraInventoryRemainsMeasuredZero() {
+        val evidence =
+            mappedEvidence(
+                snapshots =
+                    diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                        camera = CameraTestState(isLoading = false, error = "camera_no_public_cameras"),
+                    ),
+            )
+
+        assertMeasuredCameraCount(evidence.getValue("camera.inventory"), 0)
+        assertMeasuredCameraCount(evidence.getValue("camera.logical_count"), 0)
+    }
+
+    @Test
+    fun completedCameraInventoryRetainsCountsDespiteCaptureOutcomes() {
+        listOf(RunAllStageOutcome.PASSED, RunAllStageOutcome.ERROR, RunAllStageOutcome.TIMED_OUT).forEach { outcome ->
+            val evidence =
+                mappedEvidence(
+                    snapshots =
+                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                            camera =
+                                CameraTestState(
+                                    isLoading = false,
+                                    cameras = cameraInventory(),
+                                    error = "capture failed".takeIf { outcome == RunAllStageOutcome.ERROR },
+                                ),
+                        ),
+                    manual = ManualCheckResults(outcomes = mapOf(RunAllStage.CAMERA to outcome)),
+                    permissions = RunAllPermissions(camera = true),
+                )
+
+            assertMeasuredCameraCount(evidence.getValue("camera.inventory"), 3)
+            assertMeasuredCameraCount(evidence.getValue("camera.logical_count"), 1)
+        }
+    }
+
+    @Test
+    fun failedCameraInventoryNeverPublishesEmptyOrRetainedCountsEvenWithoutAnErrorMessage() {
+        listOf(emptyList(), cameraInventory()).forEach { cameras ->
+            val evidence =
+                mappedEvidence(
+                    snapshots =
+                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                            camera =
+                                CameraTestState(isLoading = false, capabilitiesLoadFailed = true, cameras = cameras),
+                        ),
+                )
+
+            assertUnmeasuredCameraCount(evidence.getValue("camera.inventory"), "camera_measurement_error")
+            assertUnmeasuredCameraCount(evidence.getValue("camera.logical_count"), "camera_measurement_error")
+        }
+    }
+
+    @Test
+    fun cameraStageTimeoutDoesNotTurnPendingInventoryIntoZero() {
+        val evidence = mappedEvidenceForOutcome(RunAllStageOutcome.TIMED_OUT, RunAllStage.CAMERA)
+
+        assertUnmeasuredCameraCount(evidence.getValue("camera.inventory"), "measurement_in_progress")
+        assertUnmeasuredCameraCount(evidence.getValue("camera.logical_count"), "measurement_in_progress")
+        assertEquals(DiagnosticStatus.NOT_TESTED, evidence.getValue("camera.capture").status)
+        assertEquals(EvidenceReasonCode("measurement_timeout"), evidence.getValue("camera.capture").reason)
+    }
+
+    @Test
+    fun cameraInventoryReadinessIsIndependentOfCaptureSelectionPermissionAndHardware() {
+        listOf(false, true).forEach { loading ->
+            listOf(false, true).forEach { included ->
+                listOf(false, true).forEach { permission ->
+                    listOf(false, true).forEach { hardware ->
+                        val evidence =
+                            RunAllSnapshotMapper
+                                .map(
+                                    snapshots =
+                                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                                            camera = CameraTestState(isLoading = loading, cameras = cameraInventory()),
+                                        ),
+                                    manual = ManualCheckResults(),
+                                    permissions = RunAllPermissions(camera = permission),
+                                    selections = RunAllSelections(includeCamera = included),
+                                    hardware = RunAllHardwareProfile.ALL_AVAILABLE.copy(cameraAvailable = hardware),
+                                    capturedAt = Instant.EPOCH,
+                                ).flatMap { it.evidence }
+                                .associateBy { it.checkId.value }
+
+                        if (loading) {
+                            assertUnmeasuredCameraCount(
+                                evidence.getValue("camera.inventory"),
+                                "measurement_in_progress",
+                            )
+                            assertUnmeasuredCameraCount(
+                                evidence.getValue("camera.logical_count"),
+                                "measurement_in_progress",
+                            )
+                        } else {
+                            assertMeasuredCameraCount(evidence.getValue("camera.inventory"), 3)
+                            assertMeasuredCameraCount(evidence.getValue("camera.logical_count"), 1)
+                        }
+                        val expectedCaptureReason =
+                            when {
+                                !included -> EvidenceReasonCode("test_skipped")
+                                !hardware -> EvidenceReasonCode.HARDWARE_UNAVAILABLE
+                                !permission -> EvidenceReasonCode.PERMISSION_DENIED
+                                else -> EvidenceReasonCode("test_not_run")
+                            }
+                        assertEquals(expectedCaptureReason, evidence.getValue("camera.capture").reason)
+                        assertEquals(expectedCaptureReason, evidence.getValue("camera.capture_dimensions").reason)
+                        val captureStatus =
+                            if (included && !hardware) DiagnosticStatus.NOT_AVAILABLE else DiagnosticStatus.NOT_TESTED
+                        assertEquals(captureStatus, evidence.getValue("camera.capture").status)
+                        assertEquals(captureStatus, evidence.getValue("camera.capture_dimensions").status)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun cameraInventory(): List<CameraCapabilities> =
+        listOf(CameraClassCode.LOGICAL, CameraClassCode.STANDARD, CameraClassCode.PHYSICAL_SELECTABLE)
+            .mapIndexed { index, cameraClass ->
+                CameraCapabilities(
+                    cameraId = index.toString(),
+                    resolutions = emptyList(),
+                    maxResolution = "",
+                    fpsRanges = emptyList(),
+                    hasOis = false,
+                    hasFlash = false,
+                    focalLengths = emptyList(),
+                    zoomRange = "",
+                    sensorSize = "",
+                    autoFocusModes = emptyList(),
+                    facingCode = CameraFacingCode.REAR,
+                    cameraClass = cameraClass,
+                    physicalCameraIds = emptySet(),
+                )
+            }
+
+    private fun assertUnmeasuredCameraCount(
+        evidence: DiagnosticEvidence,
+        reason: String,
+    ) {
+        assertEquals(DiagnosticStatus.NOT_TESTED, evidence.status)
+        assertEquals(EvidenceReasonCode(reason), evidence.reason)
+        assertEquals(null, evidence.value)
+        assertEquals(null, evidence.unit)
+        assertEquals(Confidence.UNAVAILABLE, evidence.confidence)
+        assertEquals(EvidenceSource.ANDROID_API, evidence.source)
+        assertEquals(Applicability.APPLICABLE, evidence.applicability)
+    }
+
+    private fun assertMeasuredCameraCount(
+        evidence: DiagnosticEvidence,
+        count: Int,
+    ) {
+        assertEquals(DiagnosticStatus.INFO, evidence.status)
+        assertEquals(EvidenceValue.IntValue(count), evidence.value)
+        assertEquals(EvidenceUnitCode("count"), evidence.unit)
+        assertEquals(null, evidence.reason)
+        assertEquals(Confidence.HIGH, evidence.confidence)
+        assertEquals(EvidenceSource.ANDROID_API, evidence.source)
+        assertEquals(Applicability.APPLICABLE, evidence.applicability)
+    }
+
     @Test
     fun cameraAndUserResponseTimesSurviveLaterAssemblyAndLegacyImageCountsRemainHonest() {
         val cameraAt = Instant.ofEpochMilli(400L)
@@ -232,7 +414,7 @@ class RunAllSnapshotMapperTest {
             RunAllSnapshotMapper.map(
                 snapshots = snapshots,
                 manual = ManualCheckResults(),
-                permissions = RunAllPermissions(microphone = true),
+                permissions = RunAllPermissions(microphone = true, location = true),
                 capturedAt = Instant.parse("2026-08-07T12:00:30Z"),
             )
         val evidence = results.flatMap { it.evidence }.associateBy { it.checkId.value }
@@ -279,6 +461,7 @@ class RunAllSnapshotMapperTest {
                     ManualCheckResults(
                         outcomes = mapOf(RunAllStage.AUTOMATIC to RunAllStageOutcome.ERROR),
                     ),
+                permissions = RunAllPermissions(location = true),
             )
 
         assertConnectivityMeasurementError(evidence)
@@ -757,7 +940,7 @@ class RunAllSnapshotMapperTest {
                                 ),
                         ),
                     manual = ManualCheckResults(),
-                    permissions = RunAllPermissions(),
+                    permissions = RunAllPermissions(location = true),
                     capturedAt = Instant.parse("2026-08-08T12:00:00Z"),
                 ).single { it.categoryId == DiagnosticCategoryId.CONNECTIVITY }
                 .evidence
@@ -771,10 +954,77 @@ class RunAllSnapshotMapperTest {
         assertEquals(DiagnosticStatus.PASS, evidence.getValue("connectivity.gps").status)
         assertEquals(EvidenceSource.AUTOMATIC_MEASUREMENT, evidence.getValue("connectivity.gps").source)
         assertEquals(EvidenceValue.LongValue(3_500L), evidence.getValue("connectivity.gps").value)
+        assertEquals(EvidenceUnitCode("milliseconds"), evidence.getValue("connectivity.gps").unit)
         assertEquals(DiagnosticStatus.INFO, evidence.getValue("connectivity.mobile").status)
 
         val rawValues = evidence.values.mapNotNull { (it.value as? EvidenceValue.RawTextValue)?.value }
         assertFalse(rawValues.any { it.contains("private") || it.contains("60.1699") || it.contains("24.9384") })
+    }
+
+    @Test
+    fun deniedLocationCannotReportGpsFixOrProviderState() {
+        val base = diagnosticSnapshotsWithSensitiveConnectivity()
+        val gpsStates =
+            listOf(
+                GpsState(isAvailable = true, isEnabled = true),
+                GpsState(isAvailable = true, isEnabled = true, fixStatus = GpsFixStatus.SEARCHING),
+                GpsState(isAvailable = true, isEnabled = false),
+                GpsState(
+                    isAvailable = true,
+                    isEnabled = true,
+                    fixStatus = GpsFixStatus.FIXED,
+                    latitude = 60.1699,
+                    longitude = 24.9384,
+                    fixTimeMs = 3_500L,
+                ),
+            )
+        val grantedReasons =
+            listOf(
+                EvidenceReasonCode("gps_not_run"),
+                EvidenceReasonCode("gps_in_progress"),
+                EvidenceReasonCode("gps_disabled"),
+                null,
+            )
+        gpsStates.zip(grantedReasons).forEach { (gps, grantedReason) ->
+            val snapshots = base.copy(connectivity = base.connectivity.copy(gps = gps))
+            val granted = mappedEvidence(snapshots, permissions = RunAllPermissions(location = true))
+            val denied = mappedEvidence(snapshots, permissions = RunAllPermissions(location = false))
+            val result = denied.getValue("connectivity.gps")
+
+            assertEquals(grantedReason, granted.getValue("connectivity.gps").reason)
+            assertEquals(DiagnosticStatus.NOT_TESTED, result.status)
+            assertEquals(EvidenceReasonCode.PERMISSION_DENIED, result.reason)
+            assertEquals(Confidence.UNAVAILABLE, result.confidence)
+            assertEquals(Applicability.APPLICABLE, result.applicability)
+            assertEquals(EvidenceSource.ANDROID_API, result.source)
+            assertEquals(null, result.value)
+            assertEquals(null, result.unit)
+            listOf("wifi", "bluetooth", "nfc", "nfc_hce", "mobile").forEach { id ->
+                assertEquals(granted.getValue("connectivity.$id"), denied.getValue("connectivity.$id"))
+            }
+            val mappedValues = denied.values.mapNotNull { it.value }.map { it.testText() }
+            assertFalse(mappedValues.any { it.contains("60.1699") || it.contains("24.9384") })
+        }
+    }
+
+    @Test
+    fun deniedLocationTakesPrecedenceOverConnectivityProbeError() {
+        val base = diagnosticSnapshotsWithSensitiveConnectivity()
+        val snapshots =
+            base.copy(
+                automaticIssues = mapOf(DiagnosticCategoryId.CONNECTIVITY to RunAllStageOutcome.ERROR),
+                connectivity = base.connectivity.copy(gps = GpsState(isAvailable = true, isEnabled = true)),
+            )
+        val denied = mappedEvidence(snapshots)
+        val granted = mappedEvidence(snapshots, permissions = RunAllPermissions(location = true))
+
+        assertEquals(EvidenceReasonCode.PERMISSION_DENIED, denied.getValue("connectivity.gps").reason)
+        assertEquals(null, denied.getValue("connectivity.gps").value)
+        assertEquals(null, denied.getValue("connectivity.gps").unit)
+        assertEquals(EvidenceReasonCode("measurement_error"), granted.getValue("connectivity.gps").reason)
+        listOf("wifi", "bluetooth", "nfc", "nfc_hce", "mobile").forEach { id ->
+            assertEquals(granted.getValue("connectivity.$id"), denied.getValue("connectivity.$id"))
+        }
     }
 
     @Test
@@ -796,7 +1046,7 @@ class RunAllSnapshotMapperTest {
                                 ),
                         ),
                     manual = ManualCheckResults(),
-                    permissions = RunAllPermissions(),
+                    permissions = RunAllPermissions(location = true),
                     capturedAt = Instant.parse("2026-08-08T12:00:00Z"),
                 ).flatMap { it.evidence }
                 .associateBy { it.checkId.value }
@@ -818,8 +1068,11 @@ class RunAllSnapshotMapperTest {
                     ),
             ).getValue("connectivity.gps")
         assertEquals(DiagnosticStatus.NOT_AVAILABLE, unavailable.status)
+        assertEquals(EvidenceReasonCode.HARDWARE_UNAVAILABLE, unavailable.reason)
+        assertEquals(Applicability.NOT_APPLICABLE, unavailable.applicability)
         assertEquals(Confidence.UNAVAILABLE, unavailable.confidence)
         assertEquals(null, unavailable.value)
+        assertEquals(null, unavailable.unit)
 
         val disabled =
             mappedEvidence(
@@ -830,6 +1083,7 @@ class RunAllSnapshotMapperTest {
                                 gps = GpsState(isAvailable = true, isEnabled = false),
                             ),
                     ),
+                permissions = RunAllPermissions(location = true),
             ).getValue("connectivity.gps")
         assertEquals(DiagnosticStatus.NOT_TESTED, disabled.status)
         assertEquals(EvidenceReasonCode("gps_disabled"), disabled.reason)
@@ -850,6 +1104,7 @@ class RunAllSnapshotMapperTest {
                                     ),
                             ),
                     ),
+                permissions = RunAllPermissions(location = true),
             ).getValue("connectivity.gps")
         assertEquals(DiagnosticStatus.NOT_TESTED, startFailed.status)
         assertEquals(EvidenceReasonCode("gps_start_failed"), startFailed.reason)

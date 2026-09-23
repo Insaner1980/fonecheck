@@ -10,6 +10,8 @@ internal enum class DiagnosticAccess {
     FULL,
 }
 
+internal const val FULL_ACCESS_ENABLED = true
+
 internal data class DiagnosticDestination(
     val category: DiagnosticCategoryId,
     val route: Any,
@@ -107,9 +109,23 @@ private val implementedDestinations =
 internal val diagnosticDestinations =
     DiagnosticCatalog.categories.map { category -> implementedDestinations.getValue(category) }
 
+internal fun DiagnosticDestination.destinationForAccess(): Any =
+    if (FULL_ACCESS_ENABLED || access == DiagnosticAccess.FREE) {
+        route
+    } else {
+        FullAccess(category.stableId)
+    }
+
+internal fun fullCheckDestination(): Any =
+    if (FULL_ACCESS_ENABLED) {
+        RunAllTests
+    } else {
+        FullAccess(FULL_CHECK_FEATURE_ID)
+    }
+
 internal fun reportRetestDestination(route: CategoryRetest): Any {
     val destination = diagnosticDestinations.firstOrNull { it.category.stableId == route.categoryId }
-    return if (destination?.access == DiagnosticAccess.FULL) {
+    return if (!FULL_ACCESS_ENABLED && destination?.access == DiagnosticAccess.FULL) {
         FullAccess(destination.category.stableId)
     } else {
         route

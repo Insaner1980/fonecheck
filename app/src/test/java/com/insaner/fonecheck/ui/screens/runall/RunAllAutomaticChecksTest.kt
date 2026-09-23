@@ -6,6 +6,7 @@ import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticCategorySnapshot
 import com.insaner.fonecheck.domain.model.DiagnosticStatus
 import com.insaner.fonecheck.domain.model.EvidenceReasonCode
+import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.NetworkGenerationCode
 import com.insaner.fonecheck.domain.model.PerformanceBenchmarkResult
 import com.insaner.fonecheck.domain.model.PerformanceInfo
@@ -19,6 +20,7 @@ import com.insaner.fonecheck.runtime.IdProvider
 import com.insaner.fonecheck.testing.testDeviceInfo
 import com.insaner.fonecheck.testing.testReport
 import com.insaner.fonecheck.testing.testStorageBenchmarkResult
+import com.insaner.fonecheck.ui.screens.audio.AudioOperationGate
 import com.insaner.fonecheck.ui.screens.audio.AudioTestState
 import com.insaner.fonecheck.ui.screens.battery.BatteryTestState
 import com.insaner.fonecheck.ui.screens.biometrics.BiometricTestState
@@ -377,7 +379,7 @@ class RunAllAutomaticChecksTest {
             val execution = f.startAutomaticMicrophoneRun(this)
             assertFalse(execution.isCompleted)
 
-            f.audio = f.audio.copy(isRecording = false, hasRecordedAudio = true)
+            f.completeRecording(samples = true)
             advanceTimeBy(500L)
             runCurrent()
             assertTrue(execution.isCompleted)
@@ -388,6 +390,15 @@ class RunAllAutomaticChecksTest {
                     .isEmpty(),
             )
             assertMicrophoneFinished(f)
+            assertTrue(f.audio.hasRecordedAudio)
+            val microphone =
+                f
+                    .snapshots()
+                    .single { it.categoryId == DiagnosticCategoryId.AUDIO }
+                    .evidence
+                    .single { it.checkId.value == "audio.microphone" }
+            assertEquals(DiagnosticStatus.INFO, microphone.status)
+            assertEquals(EvidenceValue.BooleanValue(true), microphone.value)
             f.run.continueAfterStage(f.run.state.value.stageToken)
             assertEquals(RunAllStage.AUDIO, f.run.state.value.stage)
             f.run.interruptRun(RunAllInterruptionReason.USER_CANCEL)
@@ -400,7 +411,7 @@ class RunAllAutomaticChecksTest {
             val execution = f.startAutomaticMicrophoneRun(this)
             assertFalse(execution.isCompleted)
 
-            f.audio = f.audio.copy(isRecording = false, hasRecordedAudio = false)
+            f.completeRecording(samples = false)
             advanceTimeBy(500L)
             runCurrent()
             assertTrue(execution.isCompleted)
@@ -435,6 +446,101 @@ class RunAllAutomaticChecksTest {
             )
             assertFalse(f.audio.hasRecordedAudio)
             assertMicrophoneFinished(f)
+            assertFalse(f.completeRecording(samples = true))
+            assertFalse(f.audio.hasRecordedAudio)
+            f.run.interruptRun(RunAllInterruptionReason.USER_CANCEL)
+        }
+
+    @Test
+    fun rejectedAttemptCannotReusePriorSuccessInTheFrozenReport() =
+        runTest(dispatcher.scheduler) {
+            val f = Fixture()
+            val first = f.startAutomaticMicrophoneRun(this)
+            f.completeRecording(samples = true)
+            advanceTimeBy(100L)
+            runCurrent()
+            first.await()
+            f.run.interruptRun(RunAllInterruptionReason.USER_CANCEL)
+            f.recordingAdmitted = false
+            f.enter(DiagnosticCategoryId.AUDIO, permissions = RunAllPermissions(microphone = true))
+            f.execute()
+
+            assertTrue(f.audio.hasRecordedAudio)
+            assertEquals(RunAllStageOutcome.ERROR, f.run.state.value.automaticIssues[DiagnosticCategoryId.AUDIO])
+            f.run.continueAfterStage(f.run.state.value.stageToken)
+            assertTrue(f.run.claimStage(f.run.state.value.stageToken))
+            f.run.skipStage(f.run.state.value.stageToken)
+            continueToResults(f)
+            val source = testReport()
+            f.run.completeReport(f.run.state.value.stageToken, source.device, source.app, f.snapshots())
+            runCurrent()
+            val microphone =
+                requireNotNull(f.run.state.value.report)
+                    .categories
+                    .single()
+                    .evidence
+                    .single { it.checkId.value == "audio.microphone" }
+            assertEquals(DiagnosticStatus.NOT_TESTED, microphone.status)
+            assertEquals(EvidenceReasonCode("measurement_error"), microphone.reason)
+            assertNull(microphone.value)
+        }
+
+    @Test
+    fun sharedSuccessCannotFinishPendingAttemptOrOverrideItsTimeout() =
+        runTest(dispatcher.scheduler) {
+            val f = Fixture()
+            val execution = f.startAutomaticMicrophoneRun(this)
+            f.audio = f.audio.copy(isRecording = false, hasRecordedAudio = true)
+            advanceTimeBy(100L)
+            runCurrent()
+            assertFalse(execution.isCompleted)
+            advanceTimeBy(2_900L)
+            runCurrent()
+            execution.await()
+            assertEquals(RunAllStageOutcome.TIMED_OUT, f.run.state.value.automaticIssues[DiagnosticCategoryId.AUDIO])
+            val microphone =
+                f
+                    .snapshots()
+                    .single { it.categoryId == DiagnosticCategoryId.AUDIO }
+                    .evidence
+                    .single { it.checkId.value == "audio.microphone" }
+            assertEquals(DiagnosticStatus.NOT_TESTED, microphone.status)
+            assertEquals(EvidenceReasonCode("measurement_timeout"), microphone.reason)
+            f.run.interruptRun(RunAllInterruptionReason.USER_CANCEL)
+        }
+
+    @Test
+    fun replacedAttemptRejectsSuccessAndOnlySessionCleanupStopsReplacement() =
+        runTest(dispatcher.scheduler) {
+            val f = Fixture()
+            val execution = f.startAutomaticMicrophoneRun(this)
+            val obsolete = f.recordingToken
+            val replacement = f.beginRecording()
+            assertFalse(f.completeRecording(samples = true, token = obsolete))
+            assertTrue(f.completeRecording(samples = true, token = replacement))
+            f.cancelRecording(obsolete)
+            assertTrue(f.recordingGate.isCurrent(replacement))
+            assertEquals(0, f.recordingCleanupRequests)
+            advanceTimeBy(100L)
+            runCurrent()
+            execution.await()
+            assertEquals(RunAllStageOutcome.ERROR, f.run.state.value.automaticIssues[DiagnosticCategoryId.AUDIO])
+            assertFalse(f.recordingGate.isCurrent(replacement))
+            assertEquals(1, f.recordingCleanupRequests)
+            f.run.interruptRun(RunAllInterruptionReason.USER_CANCEL)
+        }
+
+    @Test
+    fun cancelledAttemptCannotAcceptAlreadyPublishedSuccess() =
+        runTest(dispatcher.scheduler) {
+            val f = Fixture()
+            val execution = f.startAutomaticMicrophoneRun(this)
+            f.completeRecording(samples = true)
+            f.cancelRecording(f.recordingToken)
+            advanceTimeBy(100L)
+            runCurrent()
+            execution.await()
+            assertEquals(RunAllStageOutcome.ERROR, f.run.state.value.automaticIssues[DiagnosticCategoryId.AUDIO])
             f.run.interruptRun(RunAllInterruptionReason.USER_CANCEL)
         }
 
@@ -474,7 +580,7 @@ class RunAllAutomaticChecksTest {
             assertFalse(f.audio.isRecording)
             assertEquals(waitingState, f.run.state.value)
 
-            f.audio = f.audio.copy(isRecording = false, hasRecordedAudio = true)
+            assertFalse(f.completeRecording(samples = true))
             advanceTimeBy(3_000L)
             runCurrent()
             assertEquals(waitingState, f.run.state.value)
@@ -567,7 +673,11 @@ class RunAllAutomaticChecksTest {
     ) {
         val starts = mutableListOf<String>()
         var recordingError = false
+        var recordingAdmitted = true
         var audio = AudioTestState()
+        val recordingGate = AudioOperationGate()
+        var recordingToken = 0L
+        private var recordingHasSamples: Boolean? = null
         var recordingCleanupRequests = 0
         val run =
             RunAllTestsViewModel(
@@ -654,7 +764,9 @@ class RunAllAutomaticChecksTest {
                     performance.cancelBenchmark()
                 },
                 stopSimInfo = sim::cancelCapture,
-                stopMicrophone = {},
+                stopMicrophone = {
+                    if (recordingToken != 0L) cancelRecording(recordingToken)
+                },
                 stopGps = {},
                 stopStorage = {
                     storage.cancelInfoCapture()
@@ -702,17 +814,18 @@ class RunAllAutomaticChecksTest {
                 performance,
                 sim,
                 storage,
-                audioState = { audio },
+                recordingResult = { token ->
+                    var result: Boolean? = false
+                    recordingGate.runIfCurrent(token) { result = recordingHasSamples }
+                    result
+                },
                 updateHeadphones = { starts += "headphones" },
                 startRecording = {
                     starts += "microphone"
                     if (recordingError) error("synthetic unavailable microphone")
-                    audio = audio.copy(isRecording = true, hasRecordedAudio = false)
+                    if (recordingAdmitted) beginRecording() else null
                 },
-                cancelRecording = {
-                    recordingCleanupRequests++
-                    audio = audio.copy(isRecording = false)
-                },
+                cancelRecording = ::cancelRecording,
                 refreshConnectivity = { starts += "connectivity" },
             )
 
@@ -725,7 +838,7 @@ class RunAllAutomaticChecksTest {
                     sim = sim.state.value.info,
                     automaticIssues = state.automaticIssues,
                     display = DisplayTestState(),
-                    audio = AudioTestState(),
+                    audio = audio,
                     camera = CameraTestState(),
                     sensors = SensorTestState(),
                     connectivity = ConnectivityTestState(),
@@ -742,6 +855,30 @@ class RunAllAutomaticChecksTest {
                 state.hardware,
                 Instant.ofEpochMilli(1000L),
             )
+        }
+
+        fun beginRecording(): Long {
+            recordingToken = recordingGate.start()
+            recordingHasSamples = null
+            audio = audio.copy(isRecording = true, hasRecordedAudio = false)
+            return recordingToken
+        }
+
+        fun completeRecording(
+            samples: Boolean,
+            token: Long = recordingToken,
+        ): Boolean =
+            recordingGate.runIfCurrent(token) {
+                audio = audio.copy(isRecording = false, hasRecordedAudio = samples)
+                recordingHasSamples = samples
+            }
+
+        fun cancelRecording(token: Long) {
+            recordingGate.runIfCurrent(token) {
+                recordingGate.cancel()
+                recordingCleanupRequests++
+                audio = audio.copy(isRecording = false)
+            }
         }
     }
 

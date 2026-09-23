@@ -130,6 +130,7 @@ object RunAllSnapshotMapper {
                 DiagnosticCategoryId.CONNECTIVITY to
                     connectivityEvidence(
                         snapshots,
+                        permissions,
                         automaticIssue(DiagnosticCategoryId.CONNECTIVITY),
                         capturedAt,
                     ),
@@ -514,7 +515,7 @@ object RunAllSnapshotMapper {
                         capturedAt,
                         EvidenceReasonCode.PERMISSION_DENIED,
                     )
-                snapshots.audio.hasRecordedAudio ->
+                automaticIssue == null && snapshots.audio.hasRecordedAudio ->
                     evidence(
                         categoryId = DiagnosticCategoryId.AUDIO,
                         id = "microphone",
@@ -638,21 +639,16 @@ object RunAllSnapshotMapper {
                         EvidenceSource.ANDROID_API,
                     )
             },
-            evidence(
-                categoryId = DiagnosticCategoryId.CAMERA,
+            cameraInventoryCountEvidence(
+                state = snapshots.camera,
                 id = "inventory",
-                value = EvidenceValue.IntValue(snapshots.camera.cameras.size),
-                unit = EvidenceUnitCode("count"),
+                count = snapshots.camera.cameras.size,
                 capturedAt = capturedAt,
             ),
-            evidence(
-                categoryId = DiagnosticCategoryId.CAMERA,
+            cameraInventoryCountEvidence(
+                state = snapshots.camera,
                 id = "logical_count",
-                value =
-                    EvidenceValue.IntValue(
-                        snapshots.camera.cameras.count { it.cameraClass == CameraClassCode.LOGICAL },
-                    ),
-                unit = EvidenceUnitCode("count"),
+                count = snapshots.camera.cameras.count { it.cameraClass == CameraClassCode.LOGICAL },
                 capturedAt = capturedAt,
             ),
             cameraCaptureDimensionsEvidence(
@@ -664,6 +660,30 @@ object RunAllSnapshotMapper {
                 permissionGranted = permissions.camera,
                 capturedAt = capturedAt,
             ),
+        )
+    }
+
+    private fun cameraInventoryCountEvidence(
+        state: CameraTestState,
+        id: String,
+        count: Int,
+        capturedAt: Instant,
+    ): DiagnosticEvidence {
+        val outcome =
+            when {
+                state.isLoading -> MeasurementOutcome.IN_PROGRESS
+                state.capabilitiesLoadFailed -> MeasurementOutcome.ERROR
+                else -> MeasurementOutcome.MEASURED
+            }
+        val measured = outcome == MeasurementOutcome.MEASURED
+        return classifiedEvidence(
+            categoryId = DiagnosticCategoryId.CAMERA,
+            id = id,
+            classification = classifyMeasurement(MeasurementKind.CAMERA, outcome),
+            informationalPass = true,
+            value = EvidenceValue.IntValue(count).takeIf { measured },
+            unit = EvidenceUnitCode("count").takeIf { measured },
+            capturedAt = capturedAt,
         )
     }
 
@@ -949,18 +969,23 @@ object RunAllSnapshotMapper {
 
     private fun connectivityEvidence(
         snapshots: DiagnosticSnapshots,
+        permissions: RunAllPermissions,
         automaticIssue: RunAllStageOutcome?,
         capturedAt: Instant,
     ): List<DiagnosticEvidence> {
         automaticIssue?.toFailureReason()?.let { reason ->
             return listOf("wifi", "bluetooth", "nfc", "nfc_hce", "gps", "mobile").map { id ->
-                notTested(
-                    categoryId = DiagnosticCategoryId.CONNECTIVITY,
-                    id = id,
-                    capturedAt = capturedAt,
-                    reason = reason,
-                    source = EvidenceSource.AUTOMATIC_MEASUREMENT,
-                )
+                if (id == "gps" && !permissions.location) {
+                    gpsEvidence(snapshots.connectivity, permissions, capturedAt)
+                } else {
+                    notTested(
+                        categoryId = DiagnosticCategoryId.CONNECTIVITY,
+                        id = id,
+                        capturedAt = capturedAt,
+                        reason = reason,
+                        source = EvidenceSource.AUTOMATIC_MEASUREMENT,
+                    )
+                }
             }
         }
         val connectivity = snapshots.connectivity
@@ -988,7 +1013,7 @@ object RunAllSnapshotMapper {
             } else {
                 unavailable(DiagnosticCategoryId.CONNECTIVITY, "nfc_hce", capturedAt)
             },
-            gpsEvidence(connectivity, capturedAt),
+            gpsEvidence(connectivity, permissions, capturedAt),
             capabilityStateEvidence(
                 id = "mobile",
                 available = connectivity.mobileNetwork.isAvailable,
@@ -1027,9 +1052,18 @@ object RunAllSnapshotMapper {
 
     private fun gpsEvidence(
         connectivity: ConnectivityTestState,
+        permissions: RunAllPermissions,
         capturedAt: Instant,
     ): DiagnosticEvidence {
         val gps = connectivity.gps
+        if (gps.isAvailable && !permissions.location) {
+            return notTested(
+                DiagnosticCategoryId.CONNECTIVITY,
+                "gps",
+                capturedAt,
+                EvidenceReasonCode.PERMISSION_DENIED,
+            )
+        }
         val classification =
             when {
                 !gps.isAvailable ->

@@ -4,6 +4,7 @@ import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.localization.diagnosticCategoryStringRes
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DiagnosticDestinationTest {
@@ -57,17 +58,19 @@ class DiagnosticDestinationTest {
     }
 
     @Test
-    fun reportRetestsApplyTheSameProductBoundary() {
+    fun automaticFullAccessOpensEveryDiagnosticAndFullCheck() {
+        assertTrue(FULL_ACCESS_ENABLED)
+        diagnosticDestinations.forEach { destination ->
+            assertEquals(destination.route, destination.destinationForAccess())
+        }
+        assertEquals(RunAllTests, fullCheckDestination())
+    }
+
+    @Test
+    fun reportRetestsOpenEveryCategoryWhenFullAccessIsAutomatic() {
         diagnosticDestinations.forEach { destination ->
             val route = CategoryRetest(destination.category.stableId)
-            val expected =
-                if (destination.access == DiagnosticAccess.FULL) {
-                    FullAccess(destination.category.stableId)
-                } else {
-                    route
-                }
-
-            assertEquals(expected, reportRetestDestination(route))
+            assertEquals(route, reportRetestDestination(route))
         }
 
         val unknown = CategoryRetest("unknown")

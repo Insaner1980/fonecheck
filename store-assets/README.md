@@ -1,8 +1,8 @@
 # Google Play assets
 
-## Prepared
+## Required before publication
 
-- `feature-graphic.png`: 1024 x 500 px, RGB PNG. Abstract fonecheck diagnostics artwork; it contains no product screenshot, claim, third-party mark or generated text.
+- Prepare a current 1024 x 500 px RGB PNG feature graphic. The previous `feature-graphic.png` was removed as outdated; no replacement is checked in.
 - The launcher icon is generated from the production adaptive icon resources during the Android build.
 
 ## Required from the final signed build

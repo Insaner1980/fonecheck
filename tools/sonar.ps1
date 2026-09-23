@@ -18,20 +18,52 @@ $ErrorActionPreference = "Continue"
 $OutputEncoding = [Console]::OutputEncoding
 
 function Get-RepositoryRoot {
-    param([string]$Start)
+    param([string]$Start, [string]$WrapperPath)
 
-    $dir = (Resolve-Path -LiteralPath $Start).Path
-    while (-not [string]::IsNullOrWhiteSpace($dir)) {
-        if (Test-Path -LiteralPath (Join-Path $dir ".git")) {
-            return $dir
-        }
-
-        $parent = Split-Path -Parent $dir
-        if ([string]::IsNullOrWhiteSpace($parent) -or $parent -eq $dir) {
-            return (Resolve-Path -LiteralPath $Start).Path
-        }
-        $dir = $parent
+    $toolsDir = [IO.Path]::GetFullPath((Resolve-Path -LiteralPath $Start -ErrorAction Stop).ProviderPath)
+    $wrapper = [IO.Path]::GetFullPath((Resolve-Path -LiteralPath $WrapperPath -ErrorAction Stop).ProviderPath)
+    $root = Split-Path -Parent $toolsDir
+    if (
+        -not [string]::Equals((Split-Path -Leaf $toolsDir), "tools", [StringComparison]::OrdinalIgnoreCase) -or
+        -not [string]::Equals($wrapper, (Join-Path $toolsDir "sonar.ps1"), [StringComparison]::OrdinalIgnoreCase) -or
+        -not (Test-Path -LiteralPath (Join-Path $root ".git")) -or
+        -not (Test-Path -LiteralPath (Join-Path $root "settings.gradle.kts") -PathType Leaf) -or
+        -not (Test-Path -LiteralPath (Join-Path $root "gradlew.bat") -PathType Leaf)
+    ) {
+        throw "SONAR_REPOSITORY_INVALID: wrapperin on oltava fonecheckin tools-hakemistossa."
     }
+
+    # Resolve-Path does not resolve junctions or symbolic links on PowerShell 5.1.
+    $path = $wrapper
+    while (-not [string]::IsNullOrWhiteSpace($path)) {
+        if ((Get-Item -LiteralPath $path -Force -ErrorAction Stop).Attributes -band [IO.FileAttributes]::ReparsePoint) {
+            throw "SONAR_REPOSITORY_INVALID: wrapperin polku ei saa kulkea linkin kautta."
+        }
+        $path = Split-Path -Parent $path
+    }
+    return $root
+}
+
+function Get-ValidatedSonarHost {
+    param([string]$ProjectKey, [string]$HostUrl, [string]$EnvironmentHostUrl)
+
+    if (-not [string]::Equals($ProjectKey, "Insaner1980_fonecheck", [StringComparison]::Ordinal)) {
+        throw "SONAR_PROJECT_INVALID: sonar.projectKey ei ole Insaner1980_fonecheck."
+    }
+    $approvedHost = "https://sonarcloud.io"
+    if ([string]::IsNullOrWhiteSpace($HostUrl)) {
+        $HostUrl = $approvedHost
+    }
+    foreach ($candidate in @($HostUrl, $EnvironmentHostUrl)) {
+        if ([string]::IsNullOrEmpty($candidate)) { continue }
+        if (
+            -not [string]::Equals($candidate, $approvedHost, [StringComparison]::OrdinalIgnoreCase) -and
+            -not [string]::Equals($candidate, "$approvedHost/", [StringComparison]::OrdinalIgnoreCase)
+        ) {
+            throw "SONAR_HOST_INVALID: sallittu kohde on https://sonarcloud.io."
+        }
+    }
+    return $approvedHost
 }
 
 function Get-SonarCliPath {
@@ -89,13 +121,15 @@ function Get-SonarProjectProperties {
 }
 
 function Test-GradleSonarTokenConfigured {
+    param([string]$RepoRoot)
+
     if (-not [string]::IsNullOrWhiteSpace($env:SONAR_TOKEN)) {
         return $true
     }
 
     foreach ($path in @(
         (Join-Path $env:USERPROFILE ".gradle\gradle.properties"),
-        (Join-Path (Get-Location).Path "gradle.properties")
+        (Join-Path $RepoRoot "gradle.properties")
     )) {
         if (
             (Test-Path -LiteralPath $path -PathType Leaf) -and
@@ -120,21 +154,13 @@ if ($SonarArgs.Count -gt 0) {
     Invoke-SonarCli -Arguments $SonarArgs
 }
 
-$repoRoot = Get-RepositoryRoot -Start (Get-Location).Path
+$repoRoot = Get-RepositoryRoot -Start $PSScriptRoot -WrapperPath $PSCommandPath
 $sonarProperties = Get-SonarProjectProperties -RepoRoot $repoRoot
 $reportsDir = Join-Path $repoRoot "reports"
 $scanReport = Join-Path $reportsDir "sonar.txt"
 $issuesReport = Join-Path $reportsDir "sonar-issues.json"
 $projectKey = $sonarProperties["sonar.projectKey"]
-$hostUrl = $sonarProperties["sonar.host.url"]
-
-if ([string]::IsNullOrWhiteSpace($projectKey)) {
-    throw "sonar.projectKey puuttuu sonar-project.properties-tiedostosta."
-}
-
-if ([string]::IsNullOrWhiteSpace($hostUrl)) {
-    $hostUrl = "https://sonarcloud.io"
-}
+$hostUrl = Get-ValidatedSonarHost -ProjectKey $projectKey -HostUrl $sonarProperties["sonar.host.url"] -EnvironmentHostUrl $env:SONAR_HOST_URL
 
 if ($PlanOnly) {
     Write-Output @(
@@ -178,9 +204,9 @@ if (Test-Path -LiteralPath $issuesReport) {
 
 Push-Location -LiteralPath $repoRoot
 try {
-    $env:SONAR_HOST_URL = if ($env:SONAR_HOST_URL) { $env:SONAR_HOST_URL } else { $hostUrl }
+    $env:SONAR_HOST_URL = $hostUrl
 
-    if (-not (Test-GradleSonarTokenConfigured)) {
+    if (-not (Test-GradleSonarTokenConfigured -RepoRoot $repoRoot)) {
         Add-Content -LiteralPath $scanReport -Encoding utf8 -Value @(
             "Gradle-skannauksen token puuttuu."
             "SonarQube CLI:n 'sonar auth login' tallentaa tokenin OS Keychainiin CLI:ta varten, mutta Gradle SonarScanner tarvitsee SONAR_TOKEN-ymparistomuuttujan tai systemProp.sonar.token-arvon."
@@ -207,7 +233,7 @@ try {
         Write-Output "Sonar-analyysi kaynnistyi. Gradlen tuloste naytetaan ajon valmistuttua."
         $scanResult = Invoke-ManagedProcess `
             -Executable (Join-Path $repoRoot "gradlew.bat") `
-            -Arguments @("sonar", "--console=plain") `
+            -Arguments @("sonar", "--console=plain", "-Dsonar.projectKey=$projectKey", "-Dsonar.host.url=$hostUrl") `
             -WorkingDirectory $repoRoot `
             -TimeoutSeconds $GradleTimeoutSeconds
         foreach ($streamText in @($scanResult.StandardOutput, $scanResult.StandardError)) {

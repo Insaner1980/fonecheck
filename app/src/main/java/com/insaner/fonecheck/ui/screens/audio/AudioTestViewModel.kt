@@ -115,6 +115,7 @@ class AudioTestViewModel
         private val routeOwner = AudioResourceOwner<AudioRouteSession>(AudioRouteSession::close)
         private val toneGate = AudioOperationGate()
         private val recordGate = AudioOperationGate()
+        private var recordingHasSamples: Boolean? = null
         private val playbackGate = AudioOperationGate()
 
         private val sampleRate = 44100
@@ -308,7 +309,7 @@ class AudioTestViewModel
         }
 
         @Suppress("MissingPermission")
-        fun startRecording(maxDurationMs: Long = DEFAULT_RECORDING_DURATION_MS) {
+        fun startRecording(maxDurationMs: Long = DEFAULT_RECORDING_DURATION_MS): Long? {
             val permissionGranted =
                 ContextCompat.checkSelfPermission(
                     getApplication(),
@@ -318,7 +319,7 @@ class AudioTestViewModel
                 getApplication<Application>()
                     .packageManager
                     .hasSystemFeature(PackageManager.FEATURE_MICROPHONE)
-            if (!AudioRecordingPolicy.canStart(hasMicrophone, permissionGranted, _state.value.isRecording)) return
+            if (!AudioRecordingPolicy.canStart(hasMicrophone, permissionGranted, _state.value.isRecording)) return null
             cancelRecording()
             _state.update {
                 it.copy(
@@ -335,7 +336,7 @@ class AudioTestViewModel
                 )
             if (bufferSize <= 0) {
                 _state.update { it.copy(error = AudioOperationError.RECORDING_UNAVAILABLE) }
-                return
+                return null
             }
 
             val record =
@@ -349,17 +350,18 @@ class AudioTestViewModel
                     )
                 } catch (_: RuntimeException) {
                     _state.update { it.copy(error = AudioOperationError.RECORDING_UNAVAILABLE) }
-                    return
+                    return null
                 }
 
             if (record.state != AudioRecord.STATE_INITIALIZED) {
                 record.release()
                 _state.update { it.copy(error = AudioOperationError.RECORDING_UNAVAILABLE) }
-                return
+                return null
             }
 
             recordOwner.replace(record)
             val operationToken = recordGate.start()
+            recordGate.runIfCurrent(operationToken) { recordingHasSamples = null }
             _state.update { it.copy(isRecording = true, relativeInputLevel = 0f) }
 
             val maxRecordSamples =
@@ -371,6 +373,18 @@ class AudioTestViewModel
                 viewModelScope.launch(ioDispatcher) {
                     captureRecording(record, bufferSize, maxRecordSamples, operationToken)
                 }
+            return operationToken
+        }
+
+        /** Null while pending; false for an obsolete attempt or a completion without samples. */
+        fun recordingResult(operationToken: Long): Boolean? {
+            var result: Boolean? = false
+            recordGate.runIfCurrent(operationToken) { result = recordingHasSamples }
+            return result
+        }
+
+        fun cancelRecording(operationToken: Long) {
+            recordGate.runIfCurrent(operationToken) { cancelRecording() }
         }
 
         private fun CoroutineScope.captureRecording(
@@ -420,6 +434,7 @@ class AudioTestViewModel
                             error = AudioOperationError.RECORDING_UNAVAILABLE.takeIf { failed },
                         )
                     }
+                    recordingHasSamples = totalSamples > 0
                 }
                 buffer.fill(0)
                 allSamples.fill(0)

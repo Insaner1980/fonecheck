@@ -15,6 +15,7 @@ import com.insaner.fonecheck.domain.model.ReportDeviceContext
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.runtime.EpochMillisClock
 import com.insaner.fonecheck.runtime.IdProvider
+import com.insaner.fonecheck.ui.screens.biometrics.AuthResult
 import com.insaner.fonecheck.ui.screens.camera.CaptureResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -375,6 +376,29 @@ class RunAllTestsViewModel
             outcome: RunAllStageOutcome,
         ) {
             finishStage(token, RunAllStage.BIOMETRICS, outcome)
+        }
+
+        internal fun handleBiometricCallback(
+            token: Long,
+            updateResult: () -> AuthResult,
+        ) {
+            // Reject obsolete callbacks before they can change the result or prompt owner.
+            if (!isCurrentStage(token, RunAllStage.BIOMETRICS) || claimedStageToken != token) return
+            val outcome =
+                when (updateResult()) {
+                    AuthResult.SUCCESS -> RunAllStageOutcome.PASSED
+                    AuthResult.CANCELLED -> RunAllStageOutcome.SKIPPED
+                    AuthResult.UNAVAILABLE,
+                    AuthResult.NO_ENROLLMENT,
+                    -> RunAllStageOutcome.UNAVAILABLE
+
+                    AuthResult.LOCKED_OUT,
+                    AuthResult.ERROR,
+                    -> RunAllStageOutcome.ERROR
+
+                    else -> return
+                }
+            recordBiometricOutcome(token, outcome)
         }
 
         fun skipStage(token: Long) {

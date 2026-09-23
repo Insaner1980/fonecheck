@@ -111,7 +111,7 @@ Finnish full description:
 - Complete the IARC content-rating questionnaire from the real app behavior.
 - Complete Data safety using the reviewed answers above, then compare the Play preview with the published privacy policy.
 - Add `contact@finnvek.com` as the required support email and the confirmed Finnvek website URL.
-- Upload the production app icon and the prepared 1024 x 500 RGB feature graphic (`store-assets/feature-graphic.png`). Capture the required phone screenshots from the final signed Play build on a real device; do not use generated screenshots as evidence of functionality.
+- Upload the production app icon and a current 1024 x 500 RGB feature graphic after it has been prepared. Capture the required phone screenshots from the final signed Play build on a real device; do not use generated screenshots as evidence of functionality.
 - Create the closed testing track and add its actual testers.
 - Upload the signed AAB, resolve every Play policy warning, and review the pre-launch report.
 - Verify clean install, update, backup-disabled behavior, report deletion, permissions, Full Check, History, Comparison, PDF/JSON sharing, Settings, Onboarding and both locales from a Play-delivered build.
@@ -129,7 +129,7 @@ Finnish full description:
 - [x] Open-source component inventory and Apache 2.0 terms are readable in-app.
 - [x] Gradle distribution is pinned to the official SHA-256.
 - [x] Dependency-Check analyzed 259 dependencies on 2026-08-08 with 0 vulnerable dependencies, 0 vulnerabilities and 0 analysis exceptions (`reports/dependency-check-report.html` and `.json`). All 91 POM checksums added for the analysis were independently matched against the official Google Maven or Maven Central bytes.
-- [x] Google Play feature graphic is prepared as a 1024 x 500 RGB PNG; real product screenshots remain a signed-device gate.
+- [ ] Prepare and review a current 1024 x 500 RGB Google Play feature graphic; real product screenshots remain a signed-device gate.
 - [ ] Signed AAB is created with the owner-controlled upload key.
 - [ ] Play test-track install and update pass.
 - [ ] Physical-device and accessibility matrix passes on the required device/API profiles.

@@ -285,6 +285,36 @@ class DeviceInfoContentTest {
     }
 
     @Test
+    fun unavailableCopyActionsLeaveExportAvailable() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        var exported = false
+
+        composeRule.setContent {
+            FonecheckTheme {
+                DeviceInfoContent(
+                    state = DeviceInfoState(info = deviceInfo(rootArtifactDetected = false)),
+                    onCopyValue = null,
+                    onCopyAll = null,
+                    onExport = { exported = true },
+                )
+            }
+        }
+
+        listOf(
+            "Pixel 10",
+            "2026-08-01",
+            "radio-one\nradio-two",
+            context.getString(R.string.status_enabled),
+            context.getString(R.string.status_disabled),
+        ).forEach { value ->
+            scrollToText(value).assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnLongClick))
+        }
+        scrollToText(context.getString(R.string.device_export)).performClick()
+        assertTrue(exported)
+        composeRule.onNodeWithText(context.getString(R.string.device_copy_all)).assertDoesNotExist()
+    }
+
+    @Test
     fun duplicateBasebandIsDisplayedAndCopiedOnce() {
         var copiedValue: String? = null
 

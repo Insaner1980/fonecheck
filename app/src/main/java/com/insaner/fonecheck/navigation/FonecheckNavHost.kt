@@ -64,7 +64,7 @@ fun FonecheckNavHost(
             HomeScreen(
                 onNavigate = { route -> navController.navigateFrom(backStackEntry, route) },
                 onRunAllTests = {
-                    navController.navigateFrom(backStackEntry, FullAccess(FULL_CHECK_FEATURE_ID))
+                    navController.navigateFrom(backStackEntry, fullCheckDestination())
                 },
             )
         }

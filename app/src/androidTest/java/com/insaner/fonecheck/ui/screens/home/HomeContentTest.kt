@@ -67,7 +67,6 @@ import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
 import com.insaner.fonecheck.navigation.DeviceInfo
 import com.insaner.fonecheck.navigation.DiagnosticAccess
-import com.insaner.fonecheck.navigation.FullAccess
 import com.insaner.fonecheck.navigation.History
 import com.insaner.fonecheck.navigation.Report
 import com.insaner.fonecheck.navigation.Settings
@@ -565,13 +564,7 @@ class HomeContentTest {
                 .performScrollTo()
                 .assertHeightIsAtLeast(48.dp)
                 .performClick()
-            val expectedRoute =
-                if (destination.access == DiagnosticAccess.FREE) {
-                    destination.route
-                } else {
-                    FullAccess(destination.category.stableId)
-                }
-            assertEquals(expectedRoute, route)
+            assertEquals(destination.route, route)
         }
         composeRule
             .onNodeWithTag("home_category_performance")
