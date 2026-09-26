@@ -2,7 +2,7 @@
 agp = "9.4.1"
 kotlin = "2.4.10"
 ksp = "2.3.12"
-composeStabilityAnalyzer = "0.13.0"
+composeStabilityAnalyzer = "0.15.0"
 ktlintGradle = "14.2.0"
 ktlintEngine = "1.8.0"
 logback = "1.6.3"
