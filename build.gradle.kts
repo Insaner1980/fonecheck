@@ -15,7 +15,7 @@ buildscript {
                 "com.fasterxml.jackson.module:jackson-module-blackbird:$jacksonVersion",
                 "com.google.protobuf:protobuf-java:$protobufVersion",
                 "com.google.protobuf:protobuf-java-util:$protobufVersion",
-                "org.bitbucket.b_c:jose4j:0.9.6",
+                "org.bitbucket.b_c:jose4j:0.9.7",
                 "org.bouncycastle:bcpkix-jdk18on:$bouncyCastleVersion",
                 "org.bouncycastle:bcprov-jdk18on:$bouncyCastleVersion",
                 "org.bouncycastle:bcutil-jdk18on:$bouncyCastleVersion",
