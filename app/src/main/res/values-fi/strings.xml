@@ -134,11 +134,9 @@
     <string name="sim_slot_title">SIM-paikka %1$s</string>
     <string name="label_phone_type">Puhelintyyppi</string>
     <string name="label_active_modem_count">Aktiiviset modeemit</string>
-    <string name="label_data_network">Dataverkko</string>
     <string name="label_sim_status">Tila</string>
     <string name="label_operator">Operaattori</string>
     <string name="label_country">Maa</string>
-    <string name="label_network_type">Verkkotyyppi</string>
     <string name="sim_inventory_label">SIM-kokoonpano</string>
     <string name="sim_inventory_no_telephony">Ei puhelinlaitteistoa</string>
     <string name="sim_inventory_no_sim">SIM-korttia ei havaittu</string>
@@ -466,7 +464,6 @@
     <string name="conn_mobile_operator">Operaattori</string>
     <string name="conn_mobile_sim_operator">SIM-operaattori</string>
     <string name="conn_mobile_phone_type">Puhelintyyppi</string>
-    <string name="conn_mobile_network_type">Verkkotyyppi</string>
     <string name="conn_mobile_signal">Signaali</string>
     <string name="conn_mobile_signal_level">Signaalitaso</string>
     <string name="conn_mobile_roaming">Verkkovierailu</string>
@@ -883,7 +880,6 @@
     <string name="pdf_confidence">Luottamustaso</string>
     <string name="pdf_reason">Syy</string>
     <string name="pdf_captured">Tallennettu</string>
-    <string name="pdf_disclaimer">Erot ja mittaukset eivät todista laitteen fyysistä kuntoa.</string>
     <string name="pdf_unit_samples">näytettä</string>
     <string name="pdf_counts_value">Havainnot — valmistuneet: %1$d, ei mitattu: %2$d, pois rajatut: %3$d. Varoitukset: %4$d, ongelmat: %5$d.</string>
     <string name="pdf_page">Sivu %1$d / %2$d</string>
@@ -1231,4 +1227,14 @@
     <string name="perf_gpu_renderer_name">GPU-renderöijä</string>
     <string name="perf_ram_reading_available">RAM-tiedot luettu</string>
     <string name="perf_gpu_reading_available">GPU-tiedot luettu</string>
+    <string name="network_base_label">Datan perusverkko</string>
+    <string name="network_display_label">Androidin verkkonäyttö</string>
+    <string name="network_generation_label">Perusverkon sukupolvi</string>
+    <string name="network_display_base_label">Näyttötiedon perusverkko</string>
+    <string name="network_override_label">Näyttötiedon lisäkoodi</string>
+    <string name="network_base_note">Androidin ilmoittama perusverkko. LTE ei sulje pois 5G NSA:ta. Tämä ei mittaa radion käyttöä.</string>
+    <string name="network_display_note">Android antaa tämän näyttötiedon; se ei varmista aktiivista 5G-tiedonsiirtoa. Luku- ja vastaanottoajat ovat erillisiä havaintoja, eivät modeemin tilan muutosaikoja.</string>
+    <string name="network_no_subscription">Aktiivista dataliittymää ei ollut saatavilla.</string>
+    <string name="network_stale_note">Liittymä tai verkkohavainnot muuttuivat keruun aikana. Lukemia ei voi pitää yhtenä nykyisen yhteyden kuvauksena.</string>
+    <string name="network_unknown_note">Android palautti tuntemattoman verkkonäyttötiedon. Siitä ei päätelty 4G- tai 5G-yhteyttä.</string>
 </resources>

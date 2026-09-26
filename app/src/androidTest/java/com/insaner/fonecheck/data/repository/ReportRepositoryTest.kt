@@ -115,7 +115,7 @@ class ReportRepositoryTest {
             assertEquals(categories, ReportDetailPresenter.present(saved).categories)
             val labels = PdfReportLabels.english()
             assertEquals(
-                categoryIds.map { "${labels.categoryName(it)} — pass" },
+                categoryIds.map { "${labels.categoryName(it)}: pass" },
                 ReportPdfContentBuilder
                     .build(saved, labels)
                     .filter { it.style == PdfTextStyle.CATEGORY }

@@ -5,14 +5,18 @@ import com.insaner.fonecheck.domain.model.PhoneTypeCode
 import com.insaner.fonecheck.domain.model.SimInventoryCode
 import com.insaner.fonecheck.domain.model.SimTelephonyInfo
 import com.insaner.fonecheck.domain.model.TelephonyHardwareCode
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -38,10 +42,10 @@ class SimTelephonyViewModelTest {
     @Test
     fun obsoleteCaptureFailureCannotFinishReplacementCapture() {
         val ioScheduler = TestCoroutineScheduler()
+        val ioDispatcher = StandardTestDispatcher(ioScheduler)
         val viewModel =
             SimTelephonyViewModel(
-                provider = SimTelephonyProvider { error("capture failed") },
-                ioDispatcher = StandardTestDispatcher(ioScheduler),
+                provider = SimTelephonyProvider { withContext(ioDispatcher) { error("capture failed") } },
             )
         dispatcher.scheduler.runCurrent()
         ioScheduler.runCurrent()
@@ -69,7 +73,6 @@ class SimTelephonyViewModelTest {
                             if (shouldFail) error("capture failed")
                             simInfo()
                         },
-                    ioDispatcher = dispatcher,
                 )
 
             assertEquals(0, captureCount)
@@ -98,6 +101,36 @@ class SimTelephonyViewModelTest {
         }
 
     @Test
+    fun cancelledSuccessfulCaptureCannotOverwriteReplacementSnapshot() =
+        runTest(dispatcher.scheduler) {
+            val releaseOld = CompletableDeferred<Unit>()
+            var captures = 0
+            val replacement = simInfo().copy(phoneCount = 2)
+            val viewModel =
+                SimTelephonyViewModel(
+                    provider =
+                        SimTelephonyProvider {
+                            captures += 1
+                            if (captures == 1) {
+                                withContext(NonCancellable) { releaseOld.await() }
+                                simInfo()
+                            } else {
+                                replacement
+                            }
+                        },
+                )
+            runCurrent()
+            viewModel.refresh()
+            runCurrent()
+            assertEquals(replacement, viewModel.state.value.info)
+            releaseOld.complete(Unit)
+            advanceUntilIdle()
+            assertEquals(replacement, viewModel.state.value.info)
+            assertFalse(viewModel.state.value.isLoading)
+            viewModel.cancelCapture()
+        }
+
+    @Test
     fun queuedCaptureCanBeCancelledBeforeItStarts() =
         runTest(dispatcher.scheduler) {
             var captureCount = 0
@@ -108,7 +141,6 @@ class SimTelephonyViewModelTest {
                             captureCount += 1
                             simInfo()
                         },
-                    ioDispatcher = dispatcher,
                 )
 
             viewModel.cancelCapture()

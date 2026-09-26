@@ -324,7 +324,6 @@ class JourneyConfigurationChangeTest {
                                             false,
                                         )
                                     },
-                                    Dispatchers.IO,
                                 )
                             else -> error("Unexpected ViewModel: $modelClass")
                         }

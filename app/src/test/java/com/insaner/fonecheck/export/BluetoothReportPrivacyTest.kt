@@ -102,12 +102,12 @@ class BluetoothReportPrivacyTest {
     @Test
     fun pdfContentKeepsEnabledBluetoothWithoutAdapterName() {
         val blocks = ReportPdfContentBuilder.build(bluetoothReport(), PdfReportLabels.english())
-        val bluetoothIndex = blocks.indexOfFirst { it.text.startsWith("$BLUETOOTH_CHECK_ID — ") }
+        val bluetoothIndex = blocks.indexOfFirst { it.text == BLUETOOTH_CHECK_ID && it.group != null }
 
         assertTrue(blocks.any { it.text == "Report ID: $REPORT_ID" })
         assertTrue("Bluetooth observation must appear in PDF content", bluetoothIndex >= 0)
-        assertFalse("Adapter name leaked into PDF text", blocks.any { ADAPTER_NAME in it.text })
-        assertEquals(PdfTextBlock("yes", PdfTextStyle.MONO), blocks[bluetoothIndex + 1])
+        assertFalse("Adapter name leaked into PDF text", blocks.any { ADAPTER_NAME in it.allText })
+        assertEquals("yes", blocks[bluetoothIndex].columns.first())
     }
 
     private fun bluetoothReport(): DiagnosticReport {

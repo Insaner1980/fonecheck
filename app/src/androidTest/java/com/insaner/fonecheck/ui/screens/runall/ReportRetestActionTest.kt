@@ -1,5 +1,6 @@
 package com.insaner.fonecheck.ui.screens.runall
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -136,22 +137,15 @@ class ReportRetestActionTest {
     fun localizedActionWrapsAtDoubleFontScale() {
         var language by mutableStateOf("en")
         composeRule.setContent {
-            DeviceConfigurationOverride(
-                DeviceConfigurationOverride
-                    .Locales(LocaleList(language))
-                    .then(DeviceConfigurationOverride.FontScale(2f))
-                    .then(DeviceConfigurationOverride.ForcedSize(DpSize(320.dp, 800.dp))),
-            ) {
-                FonecheckTheme {
-                    RunAllResultsScreen(
-                        retestFixture("large", ReportKind.CATEGORY_ONLY),
-                        ReportSaveStatus.SAVED,
-                        {},
-                        {},
-                        {},
-                        modifier = Modifier,
-                    )
-                }
+            LargeTextTestContent(language) {
+                RunAllResultsScreen(
+                    retestFixture("large", ReportKind.CATEGORY_ONLY),
+                    ReportSaveStatus.SAVED,
+                    {},
+                    {},
+                    {},
+                    modifier = Modifier,
+                )
             }
         }
         for ((locale, label) in listOf("en" to "Retest and save", "fi" to "Testaa uudelleen ja tallenna")) {
@@ -177,6 +171,21 @@ class ReportRetestActionTest {
             assertEquals(label.length, layout.getLineEnd(layout.lineCount - 1, visibleEnd = true))
             if (locale == "fi") assertTrue(layouts.single().lineCount > 1)
         }
+    }
+}
+
+@Composable
+internal fun LargeTextTestContent(
+    language: String,
+    content: @Composable () -> Unit,
+) {
+    DeviceConfigurationOverride(
+        DeviceConfigurationOverride
+            .Locales(LocaleList(language))
+            .then(DeviceConfigurationOverride.FontScale(2f))
+            .then(DeviceConfigurationOverride.ForcedSize(DpSize(320.dp, 800.dp))),
+    ) {
+        FonecheckTheme { content() }
     }
 }
 

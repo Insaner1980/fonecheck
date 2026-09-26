@@ -137,17 +137,19 @@ class RunAllAutomaticChecksTest {
             val execution = async { f.execute() }
             runCurrent()
             execution.await()
+            // Independent reads may enter their providers in any dispatcher order.
+            assertEquals(
+                listOf("device", "performance-info", "sim"),
+                f.starts.take(3).sorted(),
+            )
             assertEquals(
                 listOf(
-                    "device",
-                    "performance-info",
-                    "sim",
                     "performance-benchmark",
                     "storage-info",
                     "headphones",
                     "connectivity",
                 ),
-                f.starts,
+                f.starts.drop(3),
             )
             assertEquals(StorageBenchmarkPhase.SKIPPED, f.storage.state.value.benchmarkPhase)
             assertTrue(f.run.state.value.awaitingContinue)
@@ -742,7 +744,6 @@ class RunAllAutomaticChecksTest {
                         false,
                     )
                 },
-                dispatcher,
             )
         val storage =
             StorageTestViewModel(

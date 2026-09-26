@@ -278,8 +278,10 @@ class ReportRetestNavigationTest {
         val report = awaitSaved(session)
         assertEquals(ReportKind.CATEGORY_ONLY, report.kind)
         assertEquals(listOf(DiagnosticCategoryId.BATTERY), report.categories.map { it.categoryId })
-        assertTrue(report.categories.single().evidence.isNotEmpty())
-        if (report.categories.single().aggregateStatus !in setOf(DiagnosticStatus.FAIL, DiagnosticStatus.WARNING)) {
+        val category = report.categories.single()
+        assertTrue(category.evidence.isNotEmpty())
+        val aggregateStatus = category.aggregateStatus
+        if (aggregateStatus !in setOf(DiagnosticStatus.FAIL, DiagnosticStatus.WARNING)) {
             expandBatteryResult()
         }
         return report

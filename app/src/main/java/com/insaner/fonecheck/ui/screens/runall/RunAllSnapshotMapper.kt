@@ -20,6 +20,7 @@ import com.insaner.fonecheck.domain.model.PerformanceInfo
 import com.insaner.fonecheck.domain.model.SimInventoryCode
 import com.insaner.fonecheck.domain.model.SimTelephonyInfo
 import com.insaner.fonecheck.domain.model.ThermalStatusCode
+import com.insaner.fonecheck.domain.model.toNetworkEvidence
 import com.insaner.fonecheck.domain.observation.BatteryHealthCode
 import com.insaner.fonecheck.domain.observation.DeviceObservation
 import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
@@ -426,7 +427,11 @@ object RunAllSnapshotMapper {
                     capturedAt = capturedAt,
                 )
             }
-        return listOf(inventory, network) + slotEvidence
+        val timedNetwork =
+            info.networkObservation?.let {
+                network.copy(capturedAt = it.baseReadAt ?: it.completedAt)
+            } ?: network
+        return listOf(inventory, timedNetwork) + info.networkObservation?.toNetworkEvidence().orEmpty() + slotEvidence
     }
 
     private val SimInventoryCode.stableCode: String

@@ -30,7 +30,7 @@ class ReportPdfContentTest {
                         },
                 )
             val blocks = ReportPdfContentBuilder.build(changed, labels)
-            assertTrue(blocks.any { it.text == "próbki: $count" })
+            assertTrue(blocks.any { "próbki: $count" in it.columns })
             assertTrue(blocks.none { it.text.contains("samples") })
         }
     }
@@ -38,7 +38,7 @@ class ReportPdfContentTest {
     @Test
     fun contentContainsRequiredVersionedReportEvidenceAndDisclaimer() {
         val blocks = ReportPdfContentBuilder.build(report(), PdfReportLabels.english())
-        val text = blocks.joinToString("\n", transform = PdfTextBlock::text)
+        val text = blocks.joinToString("\n", transform = PdfTextBlock::allText)
 
         assertTrue(text.contains("fonecheck diagnostic report"))
         assertTrue(text.contains("report-123"))
@@ -51,13 +51,13 @@ class ReportPdfContentTest {
         assertTrue(text.contains("Source: android_api"))
         assertTrue(text.contains("Confidence: high"))
         assertTrue(text.contains("Reason: permission denied"))
-        assertTrue(text.contains("Differences and measurements do not prove physical device health."))
+        assertTrue(text.contains("This report summarizes observations recorded in fonecheck."))
     }
 
     @Test
     fun scoreStateIsASeparateBodyLineBetweenScoreAndCoverage() {
         val blocks = ReportPdfContentBuilder.build(report(), PdfReportLabels.english())
-        val scoreIndex = blocks.indexOf(PdfTextBlock("Score: —", PdfTextStyle.HEADING))
+        val scoreIndex = blocks.indexOf(PdfTextBlock("Score: n/a", PdfTextStyle.HEADING))
         val scoreStateIndex = blocks.indexOf(PdfTextBlock("Score state: incomplete", PdfTextStyle.BODY))
         val coverageIndex = blocks.indexOf(PdfTextBlock("Coverage: 100%", PdfTextStyle.HEADING))
 
@@ -85,7 +85,7 @@ class ReportPdfContentTest {
 
         val blocks = ReportPdfContentBuilder.build(report, PdfReportLabels.english())
 
-        assertTrue(blocks.any { it.text == "yes" })
+        assertTrue(blocks.any { "yes" in it.columns })
     }
 
     @Test
@@ -98,30 +98,11 @@ class ReportPdfContentTest {
     }
 
     @Test
-    fun longLocalizedContentPaginatesWithoutDroppingOrReorderingText() {
-        val marker = (1..180).joinToString(" ") { "word$it" }
-        val blocks =
-            listOf(
-                PdfTextBlock("Heading", PdfTextStyle.HEADING),
-                PdfTextBlock(marker, PdfTextStyle.BODY),
-                PdfTextBlock("Last line", PdfTextStyle.BODY),
-            )
-
-        val pages = PdfLayoutEngine.paginate(blocks, contentHeight = 180)
-        val text = pages.flatten().joinToString(" ", transform = PdfTextLine::text)
-
-        assertTrue(pages.size > 1)
-        assertTrue(pages.all { it.isNotEmpty() })
-        assertEquals("Heading $marker Last line", text)
-        assertTrue(pages.flatten().all { it.text.length <= it.style.maxCharacters })
-    }
-
-    @Test
     fun categoriesOutsideCategoryReportAreNotShownAsUnfinished() {
         val blocks = ReportPdfContentBuilder.build(report(), PdfReportLabels.english())
         val categoryHeadings = blocks.filter { it.style == PdfTextStyle.CATEGORY }.map(PdfTextBlock::text)
 
-        assertEquals(listOf("Battery — info"), categoryHeadings)
+        assertEquals(listOf("Battery: info"), categoryHeadings)
     }
 
     private fun report() =

@@ -8,27 +8,39 @@ import android.telephony.SubscriptionInfo
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import androidx.core.content.ContextCompat
+import com.insaner.fonecheck.di.IoDispatcher
+import com.insaner.fonecheck.domain.model.DataNetworkObservation
+import com.insaner.fonecheck.domain.model.NetworkReadState
 import com.insaner.fonecheck.domain.model.SimTelephonyInfo
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 fun interface SimTelephonyProvider {
-    fun capture(): SimTelephonyInfo
+    suspend fun capture(): SimTelephonyInfo
 }
 
 class AndroidSimTelephonyProvider
     @Inject
     constructor(
         @ApplicationContext private val context: Context,
+        private val networkProvider: AndroidDataNetworkProvider,
+        @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : SimTelephonyProvider {
-        override fun capture(): SimTelephonyInfo {
+        override suspend fun capture(): SimTelephonyInfo {
+            val networkObservation = networkProvider.capture()
+            return withContext(ioDispatcher) { readSimInfo(networkObservation) }
+        }
+
+        private fun readSimInfo(networkObservation: DataNetworkObservation): SimTelephonyInfo {
             val hasHardware = context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)
             val hasPermission =
                 ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) ==
                     PackageManager.PERMISSION_GRANTED
             val telephonyManager = context.getSystemService(TelephonyManager::class.java)
             if (!hasHardware || telephonyManager == null) {
-                return SimTelephonyProbe.fromSnapshot(
+                val snapshot =
                     SimTelephonySnapshot(
                         hasTelephonyHardware = hasHardware,
                         phoneStatePermissionGranted = hasPermission,
@@ -37,8 +49,8 @@ class AndroidSimTelephonyProvider
                         dataNetworkTypeCode = null,
                         slots = emptyList(),
                         sdkInt = Build.VERSION.SDK_INT,
-                    ),
-                )
+                    )
+                return SimTelephonyProbe.fromSnapshot(snapshot).copy(networkObservation = networkObservation)
             }
 
             val phoneCount =
@@ -87,17 +99,20 @@ class AndroidSimTelephonyProvider
                     )
                 }
 
-            return SimTelephonyProbe.fromSnapshot(
+            val snapshot =
                 SimTelephonySnapshot(
                     hasTelephonyHardware = true,
                     phoneStatePermissionGranted = hasPermission,
                     phoneCount = phoneCount,
                     phoneTypeCode = runCatching { telephonyManager.phoneType }.getOrDefault(-1),
-                    dataNetworkTypeCode = if (hasPermission) telephonyManager.readDataNetworkType() else null,
+                    dataNetworkTypeCode =
+                        networkObservation.baseType.takeIf {
+                            networkObservation.baseState == NetworkReadState.RECEIVED
+                        },
                     slots = slots,
                     sdkInt = Build.VERSION.SDK_INT,
-                ),
-            )
+                )
+            return SimTelephonyProbe.fromSnapshot(snapshot).copy(networkObservation = networkObservation)
         }
 
         @Suppress("MissingPermission")

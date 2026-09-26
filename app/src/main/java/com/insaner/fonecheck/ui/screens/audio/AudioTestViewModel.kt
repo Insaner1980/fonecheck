@@ -349,12 +349,11 @@ class AudioTestViewModel
                         bufferSize,
                     )
                 } catch (_: RuntimeException) {
-                    _state.update { it.copy(error = AudioOperationError.RECORDING_UNAVAILABLE) }
-                    return null
+                    null
                 }
 
-            if (record.state != AudioRecord.STATE_INITIALIZED) {
-                record.release()
+            if (record == null || record.state != AudioRecord.STATE_INITIALIZED) {
+                record?.release()
                 _state.update { it.copy(error = AudioOperationError.RECORDING_UNAVAILABLE) }
                 return null
             }

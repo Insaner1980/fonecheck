@@ -125,11 +125,9 @@
     <string name="sim_slot_title">Gniazdo SIM %1$s</string>
     <string name="label_phone_type">Typ telefonii</string>
     <string name="label_active_modem_count">Aktywne modemy</string>
-    <string name="label_data_network">Sieć transmisji danych</string>
     <string name="label_sim_status">Stan</string>
     <string name="label_operator">Operator</string>
     <string name="label_country">Kraj</string>
-    <string name="label_network_type">Typ sieci</string>
     <string name="sim_inventory_label">Konfiguracja SIM</string>
     <string name="sim_inventory_no_telephony">Brak modułu telefonii</string>
     <string name="sim_inventory_no_sim">Nie wykryto karty SIM</string>
@@ -426,7 +424,6 @@
     <string name="conn_mobile_operator">Operator</string>
     <string name="conn_mobile_sim_operator">Operator SIM</string>
     <string name="conn_mobile_phone_type">Typ telefonii</string>
-    <string name="conn_mobile_network_type">Typ sieci</string>
     <string name="conn_mobile_signal">Sygnał</string>
     <string name="conn_mobile_signal_level">Poziom sygnału</string>
     <string name="conn_mobile_roaming">Roaming</string>
@@ -817,7 +814,6 @@
     <string name="pdf_confidence">Wiarygodność</string>
     <string name="pdf_reason">Przyczyna</string>
     <string name="pdf_captured">Zarejestrowano</string>
-    <string name="pdf_disclaimer">Różnice i pomiary nie dowodzą fizycznej sprawności urządzenia.</string>
     <string name="pdf_unit_samples">próbek</string>
     <string name="pdf_counts_value">Obserwacje: ukończone %1$d, nie zmierzono %2$d, wykluczone %3$d. Ostrzeżenia: %4$d, wyniki negatywne: %5$d.</string>
     <string name="pdf_page">Strona %1$d / %2$d</string>
@@ -1179,4 +1175,14 @@
     <string name="perf_gpu_renderer_name">Renderer GPU</string>
     <string name="perf_ram_reading_available">Odczytano dane RAM</string>
     <string name="perf_gpu_reading_available">Odczytano dane GPU</string>
+    <string name="network_base_label">Bazowa sieć danych</string>
+    <string name="network_display_label">Wskazanie sieci Androida</string>
+    <string name="network_generation_label">Generacja sieci bazowej</string>
+    <string name="network_display_base_label">Sieć bazowa wskazania</string>
+    <string name="network_override_label">Kod wskazania sieci</string>
+    <string name="network_base_note">Sieć bazowa zgłoszona przez Androida. LTE nie wyklucza 5G NSA. To nie jest test użycia radia.</string>
+    <string name="network_display_note">Android podaje to wskazanie; nie potwierdza ono aktywnego przesyłania danych 5G. Czasy odczytu i odbioru są osobnymi obserwacjami, nie czasami zmian modemu.</string>
+    <string name="network_no_subscription">Brak dostępnej aktywnej subskrypcji danych.</string>
+    <string name="network_stale_note">Subskrypcja lub obserwacje sieci zmieniły się podczas odczytu. Wyniki nie opisują jednego bieżącego połączenia.</string>
+    <string name="network_unknown_note">Android zwrócił nieznane wskazanie sieci. Nie wywnioskowano połączenia 4G ani 5G.</string>
 </resources>

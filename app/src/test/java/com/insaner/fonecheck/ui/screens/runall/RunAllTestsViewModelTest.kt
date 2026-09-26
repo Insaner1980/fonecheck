@@ -52,6 +52,7 @@ import org.junit.Test
 import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@Suppress("LargeClass") // One fixture covers the full run lifecycle and shares its staged transition helpers.
 class RunAllTestsViewModelTest {
     private val dispatcher = StandardTestDispatcher()
 

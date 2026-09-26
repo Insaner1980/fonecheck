@@ -97,7 +97,10 @@ object ReportAssembler {
         }
 
     private fun aggregate(evidence: List<DiagnosticEvidence>): DiagnosticStatus {
-        val applicableEvidence = evidence.filter { it.applicability == Applicability.APPLICABLE }
+        val applicableEvidence =
+            evidence.filter {
+                it.applicability == Applicability.APPLICABLE && !it.isNetworkMetadata
+            }
         return when {
             applicableEvidence.any { it.status == DiagnosticStatus.FAIL } -> DiagnosticStatus.FAIL
             applicableEvidence.any { it.status == DiagnosticStatus.WARNING } -> DiagnosticStatus.WARNING

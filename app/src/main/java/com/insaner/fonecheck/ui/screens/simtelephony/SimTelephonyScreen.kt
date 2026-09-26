@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -17,13 +18,15 @@ import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.insaner.fonecheck.R
-import com.insaner.fonecheck.domain.model.NetworkGenerationCode
 import com.insaner.fonecheck.domain.model.PhoneTypeCode
 import com.insaner.fonecheck.domain.model.SimActivityCode
 import com.insaner.fonecheck.domain.model.SimFormFactorCode
 import com.insaner.fonecheck.domain.model.SimInventoryCode
 import com.insaner.fonecheck.domain.model.SimSlotInfo
 import com.insaner.fonecheck.domain.model.SimSlotStateCode
+import com.insaner.fonecheck.domain.model.baseNetworkName
+import com.insaner.fonecheck.domain.model.networkPresentation
+import com.insaner.fonecheck.domain.model.toNetworkEvidence
 import com.insaner.fonecheck.domain.observation.DeviceObservation
 import com.insaner.fonecheck.domain.observation.DeviceObservationClassifier
 import com.insaner.fonecheck.domain.observation.isUnusedSimSlot
@@ -40,6 +43,7 @@ import com.insaner.fonecheck.ui.components.SectionHeader
 import com.insaner.fonecheck.ui.components.TestScreenContent
 import com.insaner.fonecheck.ui.format.uiNumber
 import com.insaner.fonecheck.ui.permissions.rememberPermissionController
+import com.insaner.fonecheck.ui.screens.runall.StageCompletionEvidenceRow
 import com.insaner.fonecheck.ui.theme.SemanticTone
 import com.insaner.fonecheck.ui.theme.toSemanticTone
 
@@ -73,6 +77,9 @@ fun SimTelephonyScreen(
     LaunchedEffect(phonePermission.state) {
         viewModel.refresh()
     }
+    DisposableEffect(viewModel) {
+        onDispose { viewModel.cancelCapture() }
+    }
     RegisterRefreshTopBarAction(
         contentDescriptionResId = R.string.sim_refresh,
         enabled = !state.isLoading,
@@ -80,11 +87,13 @@ fun SimTelephonyScreen(
         onTopBarActionChange = onTopBarActionChange,
     )
 
-    val liveStateUpdatedAtEpochMillis = remember(state.info) { System.currentTimeMillis() }
-
     TestScreenContent(
         modifier = modifier,
-        liveStateUpdatedAtEpochMillis = state.info?.let { liveStateUpdatedAtEpochMillis },
+        liveStateUpdatedAtEpochMillis =
+            state.info
+                ?.networkObservation
+                ?.completedAt
+                ?.toEpochMilli(),
     ) {
         item {
             PermissionStatusCard(
@@ -119,11 +128,9 @@ fun SimTelephonyScreen(
                         label = stringResource(R.string.label_active_modem_count),
                         value = uiNumber(info.phoneCount),
                     )
-                    DataRow(
-                        label = stringResource(R.string.label_data_network),
-                        value = networkLabel(info.dataNetworkType),
-                        showDivider = info.phoneStatePermissionGranted || !hasTelephony,
-                    )
+                    info.networkObservation?.toNetworkEvidence()?.networkPresentation()?.forEach {
+                        StageCompletionEvidenceRow(it)
+                    }
                     if (!info.phoneStatePermissionGranted && hasTelephony) {
                         Note(stringResource(R.string.sim_limited_mode))
                         HairlineRule()
@@ -196,9 +203,10 @@ private fun SimSlotSection(
                 value = slot.countryIso?.takeIf(String::isNotBlank),
             )
             DataRow(
-                label = stringResource(R.string.label_network_type),
-                value = networkLabel(slot.networkType),
+                label = stringResource(R.string.network_base_label),
+                value = baseNetworkName(slot.rawNetworkType),
             )
+            Note(stringResource(R.string.network_base_note))
         }
     }
 }
@@ -278,17 +286,5 @@ private fun phoneTypeLabel(value: PhoneTypeCode): String =
             PhoneTypeCode.SIP -> R.string.sim_phone_type_sip
             PhoneTypeCode.NONE -> R.string.sim_phone_type_none
             PhoneTypeCode.UNKNOWN -> R.string.sim_value_unknown
-        },
-    )
-
-@Composable
-private fun networkLabel(value: NetworkGenerationCode): String =
-    stringResource(
-        when (value) {
-            NetworkGenerationCode.SECOND_GENERATION -> R.string.sim_network_2g
-            NetworkGenerationCode.THIRD_GENERATION -> R.string.sim_network_3g
-            NetworkGenerationCode.FOURTH_GENERATION -> R.string.sim_network_4g
-            NetworkGenerationCode.FIFTH_GENERATION -> R.string.sim_network_5g
-            NetworkGenerationCode.UNKNOWN -> R.string.sim_value_unknown
         },
     )

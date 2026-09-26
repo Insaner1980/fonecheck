@@ -125,11 +125,9 @@
     <string name="sim_slot_title">SIM yuvası %1$s</string>
     <string name="label_phone_type">Telefon türü</string>
     <string name="label_active_modem_count">Etkin modemler</string>
-    <string name="label_data_network">Veri ağı</string>
     <string name="label_sim_status">Durum</string>
     <string name="label_operator">Operatör</string>
     <string name="label_country">Ülke</string>
-    <string name="label_network_type">Ağ türü</string>
     <string name="sim_inventory_label">SIM yapılandırması</string>
     <string name="sim_inventory_no_telephony">Telefon şebekesi donanımı yok</string>
     <string name="sim_inventory_no_sim">SIM algılanmadı</string>
@@ -434,7 +432,6 @@
     <string name="conn_mobile_operator">Operatör</string>
     <string name="conn_mobile_sim_operator">SIM operatörü</string>
     <string name="conn_mobile_phone_type">Telefon türü</string>
-    <string name="conn_mobile_network_type">Ağ türü</string>
     <string name="conn_mobile_signal">Sinyal</string>
     <string name="conn_mobile_signal_level">Sinyal düzeyi</string>
     <string name="conn_mobile_roaming">Dolaşım</string>
@@ -833,7 +830,6 @@
     <string name="pdf_confidence">Güvenilirlik</string>
     <string name="pdf_reason">Neden</string>
     <string name="pdf_captured">Kayıt zamanı</string>
-    <string name="pdf_disclaimer">Farklar ve ölçümler cihazın fiziksel sağlığını kanıtlamaz.</string>
     <string name="pdf_unit_samples">örnek</string>
     <string name="pdf_counts_value">Gözlemler: tamamlanan %1$d, ölçülmeyen %2$d, hariç tutulan %3$d. Uyarı: %4$d, başarısız sonuç: %5$d.</string>
     <string name="pdf_page">Sayfa %1$d / %2$d</string>
@@ -1167,4 +1163,14 @@
     <string name="perf_gpu_renderer_name">GPU oluşturucusu</string>
     <string name="perf_ram_reading_available">RAM bilgileri okundu</string>
     <string name="perf_gpu_reading_available">GPU bilgileri okundu</string>
+    <string name="network_base_label">Temel veri ağı</string>
+    <string name="network_display_label">Android ağ göstergesi</string>
+    <string name="network_generation_label">Temel ağ nesli</string>
+    <string name="network_display_base_label">Göstergenin temel ağı</string>
+    <string name="network_override_label">Gösterge kodu</string>
+    <string name="network_base_note">Android tarafından bildirilen temel ağ. LTE, 5G NSA olasılığını dışlamaz. Bu bir radyo kullanım testi değildir.</string>
+    <string name="network_display_note">Bu göstergeyi Android sağlar; etkin 5G veri aktarımını doğrulamaz. Okuma ve alım zamanları ayrı gözlemlerdir, modem değişim zamanları değildir.</string>
+    <string name="network_no_subscription">Etkin bir veri aboneliği yoktu.</string>
+    <string name="network_stale_note">Kayıt sırasında abonelik veya ağ gözlemleri değişti. Okumalar tek bir güncel bağlantı olarak değerlendirilemez.</string>
+    <string name="network_unknown_note">Android bilinmeyen bir ağ göstergesi döndürdü. 4G veya 5G bağlantısı olduğu çıkarılmadı.</string>
 </resources>

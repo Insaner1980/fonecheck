@@ -3,6 +3,7 @@ package com.insaner.fonecheck.ui.screens.runall
 import android.os.BatteryManager
 import com.insaner.fonecheck.domain.model.Applicability
 import com.insaner.fonecheck.domain.model.Confidence
+import com.insaner.fonecheck.domain.model.DataNetworkObservation
 import com.insaner.fonecheck.domain.model.DiagnosticCatalog
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticCheckId
@@ -13,7 +14,9 @@ import com.insaner.fonecheck.domain.model.EvidenceReasonCode
 import com.insaner.fonecheck.domain.model.EvidenceSource
 import com.insaner.fonecheck.domain.model.EvidenceUnitCode
 import com.insaner.fonecheck.domain.model.EvidenceValue
+import com.insaner.fonecheck.domain.model.NetworkDisplayObservation
 import com.insaner.fonecheck.domain.model.NetworkGenerationCode
+import com.insaner.fonecheck.domain.model.NetworkReadState
 import com.insaner.fonecheck.domain.model.PerformanceBenchmarkResult
 import com.insaner.fonecheck.domain.model.PerformanceInfo
 import com.insaner.fonecheck.domain.model.PhoneTypeCode
@@ -84,6 +87,40 @@ import java.time.Instant
 
 @Suppress("LargeClass") // Mirrors the canonical mapper's complete category contract in one suite.
 class RunAllSnapshotMapperTest {
+    @Test
+    fun networkReadAndReceiptTimesSurviveLaterReviewAndReportMapping() {
+        val read = Instant.parse("2026-09-23T18:00:00Z")
+        val receipt = read.minusMillis(20)
+        val network =
+            DataNetworkObservation(
+                13,
+                read,
+                NetworkReadState.RECEIVED,
+                NetworkDisplayObservation(NetworkReadState.RECEIVED, 13, 3, receipt),
+                read.plusMillis(1),
+            )
+        val snapshots =
+            diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                sim =
+                    simInfo(SimInventoryCode.SINGLE_SIM).copy(
+                        phoneStatePermissionGranted = true,
+                        dataNetworkType = NetworkGenerationCode.FOURTH_GENERATION,
+                        networkObservation = network,
+                    ),
+            )
+        val review =
+            mappedEvidence(snapshots, permissions = RunAllPermissions(phone = true), capturedAt = read.plusSeconds(30))
+        val report =
+            mappedEvidence(snapshots, permissions = RunAllPermissions(phone = true), capturedAt = read.plusSeconds(90))
+        for (id in listOf("sim.network", "sim.base_network", "sim.network_display", "sim.display_override")) {
+            assertEquals(review.getValue(id), report.getValue(id))
+        }
+        assertEquals(read, report.getValue("sim.base_network").capturedAt)
+        assertEquals(receipt, report.getValue("sim.network_display").capturedAt)
+        assertEquals(EvidenceValue.StableTextCodeValue("fourth_generation"), report.getValue("sim.network").value)
+        assertEquals(EvidenceValue.RawTextValue("5G"), report.getValue("sim.network_display").value)
+    }
+
     @Test
     fun loadingCameraInventoryNeverPublishesInitialOrRetainedCounts() {
         listOf(emptyList(), cameraInventory()).forEach { cameras ->
@@ -166,54 +203,53 @@ class RunAllSnapshotMapperTest {
 
     @Test
     fun cameraInventoryReadinessIsIndependentOfCaptureSelectionPermissionAndHardware() {
-        listOf(false, true).forEach { loading ->
-            listOf(false, true).forEach { included ->
-                listOf(false, true).forEach { permission ->
-                    listOf(false, true).forEach { hardware ->
-                        val evidence =
-                            RunAllSnapshotMapper
-                                .map(
-                                    snapshots =
-                                        diagnosticSnapshotsWithSensitiveConnectivity().copy(
-                                            camera = CameraTestState(isLoading = loading, cameras = cameraInventory()),
-                                        ),
-                                    manual = ManualCheckResults(),
-                                    permissions = RunAllPermissions(camera = permission),
-                                    selections = RunAllSelections(includeCamera = included),
-                                    hardware = RunAllHardwareProfile.ALL_AVAILABLE.copy(cameraAvailable = hardware),
-                                    capturedAt = Instant.EPOCH,
-                                ).flatMap { it.evidence }
-                                .associateBy { it.checkId.value }
+        // Four independent binary inputs cover all 16 combinations.
+        repeat(16) { scenario ->
+            val loading = (scenario and 1) != 0
+            val included = (scenario and 2) != 0
+            val permission = (scenario and 4) != 0
+            val hardware = (scenario and 8) != 0
+            val evidence =
+                RunAllSnapshotMapper
+                    .map(
+                        snapshots =
+                            diagnosticSnapshotsWithSensitiveConnectivity().copy(
+                                camera = CameraTestState(isLoading = loading, cameras = cameraInventory()),
+                            ),
+                        manual = ManualCheckResults(),
+                        permissions = RunAllPermissions(camera = permission),
+                        selections = RunAllSelections(includeCamera = included),
+                        hardware = RunAllHardwareProfile.ALL_AVAILABLE.copy(cameraAvailable = hardware),
+                        capturedAt = Instant.EPOCH,
+                    ).flatMap { it.evidence }
+                    .associateBy { it.checkId.value }
 
-                        if (loading) {
-                            assertUnmeasuredCameraCount(
-                                evidence.getValue("camera.inventory"),
-                                "measurement_in_progress",
-                            )
-                            assertUnmeasuredCameraCount(
-                                evidence.getValue("camera.logical_count"),
-                                "measurement_in_progress",
-                            )
-                        } else {
-                            assertMeasuredCameraCount(evidence.getValue("camera.inventory"), 3)
-                            assertMeasuredCameraCount(evidence.getValue("camera.logical_count"), 1)
-                        }
-                        val expectedCaptureReason =
-                            when {
-                                !included -> EvidenceReasonCode("test_skipped")
-                                !hardware -> EvidenceReasonCode.HARDWARE_UNAVAILABLE
-                                !permission -> EvidenceReasonCode.PERMISSION_DENIED
-                                else -> EvidenceReasonCode("test_not_run")
-                            }
-                        assertEquals(expectedCaptureReason, evidence.getValue("camera.capture").reason)
-                        assertEquals(expectedCaptureReason, evidence.getValue("camera.capture_dimensions").reason)
-                        val captureStatus =
-                            if (included && !hardware) DiagnosticStatus.NOT_AVAILABLE else DiagnosticStatus.NOT_TESTED
-                        assertEquals(captureStatus, evidence.getValue("camera.capture").status)
-                        assertEquals(captureStatus, evidence.getValue("camera.capture_dimensions").status)
-                    }
-                }
+            if (loading) {
+                assertUnmeasuredCameraCount(
+                    evidence.getValue("camera.inventory"),
+                    "measurement_in_progress",
+                )
+                assertUnmeasuredCameraCount(
+                    evidence.getValue("camera.logical_count"),
+                    "measurement_in_progress",
+                )
+            } else {
+                assertMeasuredCameraCount(evidence.getValue("camera.inventory"), 3)
+                assertMeasuredCameraCount(evidence.getValue("camera.logical_count"), 1)
             }
+            val expectedCaptureReason =
+                when {
+                    !included -> EvidenceReasonCode("test_skipped")
+                    !hardware -> EvidenceReasonCode.HARDWARE_UNAVAILABLE
+                    !permission -> EvidenceReasonCode.PERMISSION_DENIED
+                    else -> EvidenceReasonCode("test_not_run")
+                }
+            assertEquals(expectedCaptureReason, evidence.getValue("camera.capture").reason)
+            assertEquals(expectedCaptureReason, evidence.getValue("camera.capture_dimensions").reason)
+            val captureStatus =
+                if (included && !hardware) DiagnosticStatus.NOT_AVAILABLE else DiagnosticStatus.NOT_TESTED
+            assertEquals(captureStatus, evidence.getValue("camera.capture").status)
+            assertEquals(captureStatus, evidence.getValue("camera.capture_dimensions").status)
         }
     }
 
@@ -999,9 +1035,7 @@ class RunAllSnapshotMapperTest {
             assertEquals(EvidenceSource.ANDROID_API, result.source)
             assertEquals(null, result.value)
             assertEquals(null, result.unit)
-            listOf("wifi", "bluetooth", "nfc", "nfc_hce", "mobile").forEach { id ->
-                assertEquals(granted.getValue("connectivity.$id"), denied.getValue("connectivity.$id"))
-            }
+            assertNonGpsConnectivityEqual(granted, denied)
             val mappedValues = denied.values.mapNotNull { it.value }.map { it.testText() }
             assertFalse(mappedValues.any { it.contains("60.1699") || it.contains("24.9384") })
         }
@@ -1022,9 +1056,7 @@ class RunAllSnapshotMapperTest {
         assertEquals(null, denied.getValue("connectivity.gps").value)
         assertEquals(null, denied.getValue("connectivity.gps").unit)
         assertEquals(EvidenceReasonCode("measurement_error"), granted.getValue("connectivity.gps").reason)
-        listOf("wifi", "bluetooth", "nfc", "nfc_hce", "mobile").forEach { id ->
-            assertEquals(granted.getValue("connectivity.$id"), denied.getValue("connectivity.$id"))
-        }
+        assertNonGpsConnectivityEqual(granted, denied)
     }
 
     @Test
@@ -2018,6 +2050,15 @@ class RunAllSnapshotMapperTest {
         capturedAt: Instant,
         error: StorageBenchmarkErrorCode? = null,
     ) = testStorageBenchmarkResult(120.0, 240.0, 128L * MEBIBYTE, capturedAt, error)
+
+    private fun assertNonGpsConnectivityEqual(
+        granted: Map<String, DiagnosticEvidence>,
+        denied: Map<String, DiagnosticEvidence>,
+    ) {
+        listOf("wifi", "bluetooth", "nfc", "nfc_hce", "mobile").forEach { id ->
+            assertEquals(granted.getValue("connectivity.$id"), denied.getValue("connectivity.$id"))
+        }
+    }
 
     private fun mappedEvidence(
         snapshots: DiagnosticSnapshots,

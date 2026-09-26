@@ -33,6 +33,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.location.LocationListenerCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.insaner.fonecheck.domain.model.baseNetworkName
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -788,7 +789,7 @@ class ConnectivityTestViewModel
                 val fallbackMnc = operatorCodes?.drop(3)
 
                 @Suppress("DEPRECATION")
-                val networkType = getNetworkTypeName(telephonyManager.dataNetworkType)
+                val networkType = baseNetworkName(telephonyManager.dataNetworkType)
                 ProtectedMobileState(
                     operatorName = telephonyManager.networkOperatorName?.takeIf(String::isNotBlank),
                     simOperatorName = telephonyManager.simOperatorName?.takeIf(String::isNotBlank),
@@ -901,28 +902,6 @@ class ConnectivityTestViewModel
 
             return (currentCodes?.first ?: fallbackMcc) to (currentCodes?.second ?: fallbackMnc)
         }
-
-        @Suppress("DEPRECATION")
-        private fun getNetworkTypeName(type: Int): String? =
-            when (type) {
-                TelephonyManager.NETWORK_TYPE_GPRS -> "GPRS"
-                TelephonyManager.NETWORK_TYPE_EDGE -> "EDGE"
-                TelephonyManager.NETWORK_TYPE_UMTS -> "UMTS"
-                TelephonyManager.NETWORK_TYPE_CDMA -> "CDMA"
-                TelephonyManager.NETWORK_TYPE_EVDO_0 -> "EVDO Rev.0"
-                TelephonyManager.NETWORK_TYPE_EVDO_A -> "EVDO Rev.A"
-                TelephonyManager.NETWORK_TYPE_1xRTT -> "1xRTT"
-                TelephonyManager.NETWORK_TYPE_HSDPA -> "HSDPA"
-                TelephonyManager.NETWORK_TYPE_HSUPA -> "HSUPA"
-                TelephonyManager.NETWORK_TYPE_HSPA -> "HSPA"
-                TelephonyManager.NETWORK_TYPE_IDEN -> "iDen"
-                TelephonyManager.NETWORK_TYPE_EVDO_B -> "EVDO Rev.B"
-                TelephonyManager.NETWORK_TYPE_LTE -> "LTE"
-                TelephonyManager.NETWORK_TYPE_EHRPD -> "eHRPD"
-                TelephonyManager.NETWORK_TYPE_HSPAP -> "HSPA+"
-                TelephonyManager.NETWORK_TYPE_NR -> "5G NR"
-                else -> null
-            }
 
         companion object {
             private const val IPV4_ADDRESS_BYTES = 4

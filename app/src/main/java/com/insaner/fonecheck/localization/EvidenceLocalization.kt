@@ -192,6 +192,11 @@ fun observationStatusStringRes(classification: ObservationClassification): Int =
 @StringRes
 private fun legacyEvidenceReasonStringRes(reason: EvidenceReasonCode): Int? =
     when (reason) {
+        EvidenceReasonCode("network_base_only") -> R.string.network_base_note
+        EvidenceReasonCode("network_display_indication") -> R.string.network_display_note
+        EvidenceReasonCode("network_no_subscription") -> R.string.network_no_subscription
+        EvidenceReasonCode("network_observations_differ") -> R.string.network_stale_note
+        EvidenceReasonCode("network_display_unknown") -> R.string.network_unknown_note
         EvidenceReasonCode("sensor_response_only") -> R.string.sensor_response_only
         EvidenceReasonCode("sensor_response_unreliable") -> R.string.sensor_response_unreliable
         EvidenceReasonCode("sensor_response_limited_accuracy") -> R.string.sensor_response_limited_accuracy
@@ -284,7 +289,11 @@ private val EVIDENCE_LABEL_RESOURCES =
         "performance.cpu_benchmark" to R.string.perf_benchmark_cpu_rate,
         "performance.memory_benchmark" to R.string.perf_benchmark_memory_rate,
         "sim.inventory" to R.string.sim_telephony_title,
-        "sim.network" to R.string.conn_mobile_network_type,
+        "sim.network" to R.string.network_generation_label,
+        "sim.base_network" to R.string.network_base_label,
+        "sim.network_display" to R.string.network_display_label,
+        "sim.display_base_network" to R.string.network_display_base_label,
+        "sim.display_override" to R.string.network_override_label,
         "display.info" to R.string.display_info_title,
         "display.visual" to R.string.run_all_check_visual_display,
         "audio.speaker" to R.string.run_all_check_speaker,

@@ -582,7 +582,8 @@ private fun MobileNetworkDetails(
         LongValueRow(label = stringResource(R.string.conn_mobile_operator), value = mobile.operatorName)
         LongValueRow(label = stringResource(R.string.conn_mobile_sim_operator), value = mobile.simOperatorName)
         LongValueRow(label = stringResource(R.string.conn_mobile_phone_type), value = mobile.phoneType)
-        LongValueRow(label = stringResource(R.string.conn_mobile_network_type), value = mobile.networkType)
+        LongValueRow(label = stringResource(R.string.network_base_label), value = mobile.networkType)
+        Note(stringResource(R.string.network_base_note))
         DataRow(
             label = stringResource(R.string.conn_mobile_signal),
             value = mobile.signalStrengthDbm?.let { stringResource(R.string.conn_dbm_format, uiNumber(it)) },

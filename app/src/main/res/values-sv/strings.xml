@@ -131,11 +131,9 @@
     <string name="sim_slot_title">SIM-plats %1$s</string>
     <string name="label_phone_type">Telefontyp</string>
     <string name="label_active_modem_count">Aktiva modem</string>
-    <string name="label_data_network">Datanät</string>
     <string name="label_sim_status">Status</string>
     <string name="label_operator">Operatör</string>
     <string name="label_country">Land</string>
-    <string name="label_network_type">Nättyp</string>
     <string name="sim_inventory_label">SIM-konfiguration</string>
     <string name="sim_inventory_no_telephony">Ingen telefonimaskinvara</string>
     <string name="sim_inventory_no_sim">Inget SIM-kort upptäckt</string>
@@ -432,7 +430,6 @@
     <string name="conn_mobile_operator">Operatör</string>
     <string name="conn_mobile_sim_operator">SIM-operatör</string>
     <string name="conn_mobile_phone_type">Telefontyp</string>
-    <string name="conn_mobile_network_type">Nättyp</string>
     <string name="conn_mobile_signal">Signal</string>
     <string name="conn_mobile_signal_level">Signalnivå</string>
     <string name="conn_mobile_roaming">Roaming</string>
@@ -827,7 +824,6 @@
     <string name="pdf_confidence">Tillförlitlighet</string>
     <string name="pdf_reason">Orsak</string>
     <string name="pdf_captured">Registrerat</string>
-    <string name="pdf_disclaimer">Skillnader och mätningar bevisar inte enhetens fysiska skick.</string>
     <string name="pdf_unit_samples">mätvärden</string>
     <string name="pdf_counts_value">Observationer: slutförda: %1$d, inte mätta: %2$d, undantagna: %3$d. Varningar: %4$d, fel: %5$d.</string>
     <string name="pdf_page">Sida %1$d / %2$d</string>
@@ -1173,4 +1169,14 @@
     <string name="perf_gpu_renderer_name">GPU-renderare</string>
     <string name="perf_ram_reading_available">RAM-information avläst</string>
     <string name="perf_gpu_reading_available">GPU-information avläst</string>
+    <string name="network_base_label">Basnät för data</string>
+    <string name="network_display_label">Androids nätindikering</string>
+    <string name="network_generation_label">Basnätets generation</string>
+    <string name="network_display_base_label">Indikeringens basnät</string>
+    <string name="network_override_label">Kod för nätindikering</string>
+    <string name="network_base_note">Basnät rapporterat av Android. LTE utesluter inte 5G NSA. Detta testar inte radioanvändning.</string>
+    <string name="network_display_note">Android ger denna indikering; den bekräftar inte aktiv 5G-dataöverföring. Läs- och mottagningstider är separata observationer, inte tider för modemändringar.</string>
+    <string name="network_no_subscription">Inget aktivt dataabonnemang var tillgängligt.</string>
+    <string name="network_stale_note">Abonnemanget eller nätobservationerna ändrades under avläsningen. Värdena beskriver inte en och samma aktuella anslutning.</string>
+    <string name="network_unknown_note">Android gav en okänd nätindikering. Ingen slutsats om 4G eller 5G drogs.</string>
 </resources>

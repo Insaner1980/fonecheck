@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import com.insaner.fonecheck.R
 import com.insaner.fonecheck.domain.model.CategoryTestResult
+import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryResult
 import com.insaner.fonecheck.domain.model.DiagnosticEvidence
@@ -40,6 +41,9 @@ import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.TestResult
+import com.insaner.fonecheck.domain.model.isNetworkMetadata
+import com.insaner.fonecheck.domain.model.networkPresentation
+import com.insaner.fonecheck.domain.model.networkValueText
 import com.insaner.fonecheck.domain.model.presentationConfidence
 import com.insaner.fonecheck.domain.model.presentationReason
 import com.insaner.fonecheck.localization.evidenceLabelResource
@@ -89,7 +93,7 @@ internal fun StageCompletionEvidence(evidence: List<DiagnosticEvidence>) {
     if (evidence.isEmpty()) return
     val ordered =
         remember(evidence) {
-            evidence.sortedBy {
+            evidence.networkPresentation().sortedBy {
                 when (it.status) {
                     DiagnosticStatus.FAIL -> 0
                     DiagnosticStatus.WARNING -> 1
@@ -129,7 +133,7 @@ private fun StageCompletionEvidenceHeader(
 }
 
 @Composable
-private fun StageCompletionEvidenceRow(observation: DiagnosticEvidence) {
+internal fun StageCompletionEvidenceRow(observation: DiagnosticEvidence) {
     val detail = evidenceDetail(observation)
     Column {
         LongValueRow(
@@ -147,6 +151,12 @@ private fun StageCompletionEvidenceRow(observation: DiagnosticEvidence) {
             .presentationReason()
             ?.takeIf { shouldShowEvidenceReason(observation.status, it) }
             ?.let { Note(reasonLabel(it)) }
+        if (observation.isNetworkMetadata && observation.value != null) {
+            LongValueRow(
+                label = stringResource(R.string.report_read_at),
+                value = formatUiDateTime(observation.capturedAt, LocalLocale.current.platformLocale),
+            )
+        }
     }
 }
 
@@ -629,7 +639,9 @@ private fun ResultDetail(
         result.reason?.takeIf { showReason }?.let { reason ->
             Note(text = stringResource(R.string.report_evidence_reason, reason))
         }
-        if (result.id.startsWith("thermal.")) {
+        if (result.id.startsWith("thermal.") ||
+            (result.id in setOf("sim.base_network", "sim.network_display") && result.confidence == Confidence.HIGH)
+        ) {
             val locale = uiLanguageLocale(LocalLocale.current.platformLocale)
             LongValueRow(
                 label = stringResource(R.string.report_read_at),
@@ -645,7 +657,7 @@ private fun DiagnosticCategoryResult.toUiResult(): CategoryTestResult =
         category = categoryId,
         status = aggregateStatus,
         summary = categorySummary(aggregateStatus),
-        results = evidence.map { it.toUiResult() },
+        results = evidence.networkPresentation().map { it.toUiResult() },
     )
 
 @Composable
@@ -694,7 +706,13 @@ private fun evidenceLabel(evidence: DiagnosticEvidence): String =
 
 @Composable
 internal fun evidenceDetail(evidence: DiagnosticEvidence): String? =
-    evidence.value?.let { evidenceValueLabel(it, evidence.unit) }
+    if (evidence.checkId.value == "sim.base_network" || evidence.checkId.value == "sim.display_base_network") {
+        evidence.networkValueText() ?: stringResource(R.string.status_not_available)
+    } else if (evidence.isNetworkMetadata && evidence.value == null) {
+        stringResource(R.string.status_not_available)
+    } else {
+        evidence.value?.let { evidenceValueLabel(it, evidence.unit) }
+    }
 
 @Composable
 private fun evidenceValueLabel(
