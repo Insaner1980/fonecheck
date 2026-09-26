@@ -115,7 +115,7 @@ class ReportPdfExporterTest {
             com.insaner.fonecheck.data.repository.ReportPayloadCodec
                 .encode(original)
         val blocks = ReportPdfContentBuilder.build(original, labels)
-        val text = PdfLayoutEngine.paginate(blocks).flatten().joinToString(" ") { it.text }
+        val text = blocks.joinToString(" ") { it.allText }
         assertTrue(text.contains("Informe de diagnóstico de fonecheck"))
         assertTrue(text.contains("Puntuación"))
         assertTrue(text.contains(labels.timeSemantics))
@@ -199,9 +199,9 @@ class ReportPdfExporterTest {
             com.insaner.fonecheck.data.repository.ReportPayloadCodec
                 .encode(original)
         val blocks = ReportPdfContentBuilder.build(original, labels)
-        val pages = PdfLayoutEngine.paginate(blocks)
-        val text = pages.flatten().joinToString(" ") { it.text }
-        assertEquals(blocks.joinToString(" ") { it.text.trim() }, text)
+        val pages = AndroidPdfLayout(context, labels).paginate(blocks)
+        val text = blocks.joinToString(" ") { it.allText }
+        assertTrue(pages.flatten().all { it.top + it.row.height <= AndroidPdfLayout.CONTENT_HEIGHT })
         expectedText.forEach { expected -> assertTrue(text.contains(expected)) }
         assertTrue(text.contains(sample))
         assertTrue(text.contains(labels.timeSemantics))

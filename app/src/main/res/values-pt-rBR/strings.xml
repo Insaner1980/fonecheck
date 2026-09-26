@@ -131,11 +131,9 @@
     <string name="sim_slot_title">Slot SIM %1$s</string>
     <string name="label_phone_type">Tipo de telefonia</string>
     <string name="label_active_modem_count">Modems ativos</string>
-    <string name="label_data_network">Rede de dados</string>
     <string name="label_sim_status">Estado</string>
     <string name="label_operator">Operadora</string>
     <string name="label_country">País</string>
-    <string name="label_network_type">Tipo de rede</string>
     <string name="sim_inventory_label">Configuração dos chips SIM</string>
     <string name="sim_inventory_no_telephony">Sem hardware de telefonia</string>
     <string name="sim_inventory_no_sim">Nenhum chip SIM detectado</string>
@@ -449,7 +447,6 @@
     <string name="conn_mobile_operator">Operadora</string>
     <string name="conn_mobile_sim_operator">Operadora do chip SIM</string>
     <string name="conn_mobile_phone_type">Tipo de telefonia</string>
-    <string name="conn_mobile_network_type">Tipo de rede</string>
     <string name="conn_mobile_signal">Sinal</string>
     <string name="conn_mobile_signal_level">Nível do sinal</string>
     <string name="conn_mobile_roaming">Roaming</string>
@@ -865,7 +862,6 @@
     <string name="pdf_confidence">Confiança</string>
     <string name="pdf_reason">Motivo</string>
     <string name="pdf_captured">Registrado em</string>
-    <string name="pdf_disclaimer">Diferenças e medições não comprovam a saúde física do dispositivo.</string>
     <string name="pdf_unit_samples">amostras</string>
     <string name="pdf_counts_value">Observações: concluídas: %1$d, não medidas: %2$d, excluídas: %3$d. Avisos: %4$d, falhas: %5$d.</string>
     <string name="pdf_page">Página %1$d / %2$d</string>
@@ -1215,4 +1211,14 @@
     <string name="perf_gpu_renderer_name">Renderizador da GPU</string>
     <string name="perf_ram_reading_available">Dados de RAM lidos</string>
     <string name="perf_gpu_reading_available">Dados de GPU lidos</string>
+    <string name="network_base_label">Rede de dados base</string>
+    <string name="network_display_label">Indicação de rede Android</string>
+    <string name="network_generation_label">Geração da rede base</string>
+    <string name="network_display_base_label">Rede base da indicação</string>
+    <string name="network_override_label">Código da indicação</string>
+    <string name="network_base_note">Rede base informada pelo Android. LTE não exclui 5G NSA. Isto não testa o uso do rádio.</string>
+    <string name="network_display_note">O Android fornece esta indicação; ela não confirma transferência 5G ativa. Os horários de leitura e recebimento são observações separadas, não horários de alterações do modem.</string>
+    <string name="network_no_subscription">Nenhuma assinatura de dados ativa disponível.</string>
+    <string name="network_stale_note">A assinatura ou as observações de rede mudaram durante a captura. As leituras não representam uma única conexão atual.</string>
+    <string name="network_unknown_note">O Android retornou uma indicação de rede desconhecida. Não foi deduzida uma conexão 4G ou 5G.</string>
 </resources>

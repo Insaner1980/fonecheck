@@ -63,6 +63,7 @@ data class SimSlotInfo(
     val operatorName: String?,
     val countryIso: String?,
     val networkType: NetworkGenerationCode,
+    val rawNetworkType: Int? = null,
 )
 
 data class SimTelephonyInfo(
@@ -73,6 +74,7 @@ data class SimTelephonyInfo(
     val phoneCount: Int,
     val dataNetworkType: NetworkGenerationCode,
     val phoneStatePermissionGranted: Boolean,
+    val networkObservation: DataNetworkObservation? = null,
 ) {
     val isDualSim: Boolean
         get() = inventory == SimInventoryCode.MULTIPLE_SIM

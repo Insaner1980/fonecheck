@@ -138,11 +138,9 @@
     <string name="sim_slot_title">Slot SIM %1$s</string>
     <string name="label_phone_type">Jenis telepon</string>
     <string name="label_active_modem_count">Modem aktif</string>
-    <string name="label_data_network">Jaringan data</string>
     <string name="label_sim_status">Status</string>
     <string name="label_operator">Operator</string>
     <string name="label_country">Negara</string>
-    <string name="label_network_type">Jenis jaringan</string>
     <string name="sim_inventory_label">Konfigurasi SIM</string>
     <string name="sim_inventory_no_telephony">Tidak ada perangkat keras telepon seluler</string>
     <string name="sim_inventory_no_sim">SIM tidak terdeteksi</string>
@@ -468,7 +466,6 @@
     <string name="conn_mobile_operator">Operator</string>
     <string name="conn_mobile_sim_operator">Operator SIM</string>
     <string name="conn_mobile_phone_type">Jenis telepon</string>
-    <string name="conn_mobile_network_type">Jenis jaringan</string>
     <string name="conn_mobile_signal">Sinyal</string>
     <string name="conn_mobile_signal_level">Kekuatan sinyal</string>
     <string name="conn_mobile_roaming">Roaming</string>
@@ -883,7 +880,6 @@
     <string name="pdf_confidence">Tingkat keyakinan</string>
     <string name="pdf_reason">Alasan</string>
     <string name="pdf_captured">Dicatat</string>
-    <string name="pdf_disclaimer">Perbedaan dan pengukuran tidak membuktikan kesehatan fisik perangkat.</string>
     <string name="pdf_unit_samples">sampel</string>
     <string name="pdf_counts_value">Pengamatan: selesai: %1$d, belum diukur: %2$d, dikecualikan: %3$d. Peringatan: %4$d, kegagalan: %5$d.</string>
     <string name="pdf_page">Halaman %1$d / %2$d</string>
@@ -1229,4 +1225,14 @@
     <string name="perf_gpu_renderer_name">Perender GPU</string>
     <string name="perf_ram_reading_available">Informasi RAM terbaca</string>
     <string name="perf_gpu_reading_available">Informasi GPU terbaca</string>
+    <string name="network_base_label">Jaringan data dasar</string>
+    <string name="network_display_label">Indikasi jaringan Android</string>
+    <string name="network_generation_label">Generasi jaringan dasar</string>
+    <string name="network_display_base_label">Jaringan dasar indikasi</string>
+    <string name="network_override_label">Kode indikasi</string>
+    <string name="network_base_note">Jaringan dasar yang dilaporkan Android. LTE tidak meniadakan 5G NSA. Ini bukan pengujian penggunaan radio.</string>
+    <string name="network_display_note">Android menyediakan indikasi ini; indikasi ini tidak memastikan transfer data 5G aktif. Waktu baca dan penerimaan adalah pengamatan terpisah, bukan waktu perubahan modem.</string>
+    <string name="network_no_subscription">Tidak ada langganan data aktif yang tersedia.</string>
+    <string name="network_stale_note">Langganan atau pengamatan jaringan berubah selama pembacaan. Hasilnya tidak dapat dianggap sebagai satu koneksi saat ini.</string>
+    <string name="network_unknown_note">Android memberikan indikasi jaringan yang tidak dikenal. Tidak disimpulkan adanya koneksi 4G atau 5G.</string>
 </resources>

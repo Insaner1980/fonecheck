@@ -1,5 +1,6 @@
 package com.insaner.fonecheck.export
 
+import com.insaner.fonecheck.domain.model.Applicability
 import com.insaner.fonecheck.domain.model.Confidence
 import com.insaner.fonecheck.domain.model.CoverageSummary
 import com.insaner.fonecheck.domain.model.DiagnosticCategoryId
@@ -13,86 +14,70 @@ import com.insaner.fonecheck.domain.model.EvidenceUnitCode
 import com.insaner.fonecheck.domain.model.EvidenceValue
 import com.insaner.fonecheck.domain.model.ReportKind
 import com.insaner.fonecheck.domain.model.ScoreState
+import com.insaner.fonecheck.domain.model.isNetworkMetadata
+import com.insaner.fonecheck.domain.model.networkValueText
 import com.insaner.fonecheck.domain.model.presentationConfidence
 import com.insaner.fonecheck.domain.model.presentationReason
 import com.insaner.fonecheck.localization.shouldShowEvidenceReason
 import java.time.Duration
 import java.time.Instant
 
+/** Paper-only roles, independent of the app theme. */
 enum class PdfTextStyle(
-    val maxCharacters: Int,
-    val lineHeight: Int,
+    val size: Float,
 ) {
-    TITLE(42, 34),
-    HEADING(60, 25),
-    CATEGORY(66, 23),
-    BODY(86, 18),
-    MONO(78, 17),
+    TITLE(24f),
+    HEADING(14f),
+    CATEGORY(13f),
+    BODY(11f),
+    MONO(11f),
+    META(9.5f),
 }
 
+/** Adjacent blocks with the same group form one observation. Columns share a baseline. */
 data class PdfTextBlock(
     val text: String,
     val style: PdfTextStyle,
-)
-
-data class PdfTextLine(
-    val text: String,
-    val style: PdfTextStyle,
-)
-
-object PdfLayoutEngine {
-    fun paginate(
-        blocks: List<PdfTextBlock>,
-        contentHeight: Int = 700,
-    ): List<List<PdfTextLine>> {
-        require(contentHeight >= PdfTextStyle.TITLE.lineHeight)
-        val pages = mutableListOf<MutableList<PdfTextLine>>()
-        var page = mutableListOf<PdfTextLine>()
-        var usedHeight = 0
-        blocks.forEach { block ->
-            wrap(block.text, block.style.maxCharacters).forEach { text ->
-                if (page.isNotEmpty() && usedHeight + block.style.lineHeight > contentHeight) {
-                    pages += page
-                    page = mutableListOf()
-                    usedHeight = 0
-                }
-                page += PdfTextLine(text, block.style)
-                usedHeight += block.style.lineHeight
-            }
-        }
-        if (page.isNotEmpty()) pages += page
-        return pages.ifEmpty { listOf(emptyList()) }
-    }
-
-    private fun wrap(
-        text: String,
-        maxCharacters: Int,
-    ): List<String> {
-        if (text.isBlank()) return listOf("")
-        val lines = mutableListOf<String>()
-        var current = ""
-        text.trim().split(Regex("\\s+")).forEach { word ->
-            val pieces = word.chunked(maxCharacters)
-            pieces.forEachIndexed { index, piece ->
-                val candidate = if (current.isEmpty()) piece else "$current $piece"
-                if (candidate.length <= maxCharacters) {
-                    current = candidate
-                } else {
-                    lines += current
-                    current = piece
-                }
-                if (index < pieces.lastIndex) {
-                    lines += current
-                    current = ""
-                }
-            }
-        }
-        if (current.isNotEmpty()) lines += current
-        return lines
-    }
+    val columns: List<String> = emptyList(),
+    val group: String? = null,
+    val keepWithNext: Boolean = false,
+    val category: String? = null,
+    val startsCategory: Boolean = false,
+    val endsCategories: Boolean = false,
+    val finding: Boolean = false,
+) {
+    val allText: String get() = (listOf(text) + columns).joinToString(" ")
 }
 
 data class PdfReportLabels(
+    val findings: String = "Key findings",
+    val details: String = "Detailed results",
+    val notes: String = "Interpretation and technical notes",
+    val observation: String = "Observation",
+    val result: String = "Value / result",
+    val status: String = "Status",
+    val completedApplicable: String = "Completed / applicable",
+    val excluded: String = "Excluded from coverage",
+    val notMeasured: String = "Not measured",
+    val warnings: String = "Warnings",
+    val failures: String = "Failures",
+    val noFailures: String = "No failed observations recorded.",
+    val findingsReference: String =
+        "Selected findings are shown here. " +
+            "All recorded observations and limitations follow in Detailed results.",
+    val completedNote: String = "Completed observations include information, not only passed functional tests.",
+    val interpretation: String =
+        "Pass means a recorded criterion was met; fail means it was not; warning marks a recorded concern. " +
+            "Info is descriptive. " +
+            "Not measured has no completed result; not available is excluded. " +
+            "Source describes how an observation was obtained; confidence describes its reliability. " +
+            "The report ID identifies a report, not an authenticated handset. " +
+            "This file is not signed or independently verified.",
+    val continued: String = "Continued",
+    val securityPatch: String = "Security patch",
+    val absentValue: String = "n/a",
+    val emptyEvidence: String = "No evidence was saved for this category.",
+    val fileSizeValue: (Long) -> String = { "$it B" },
     val title: String,
     val reportId: String,
     val reportFormat: String,
@@ -156,7 +141,9 @@ data class PdfReportLabels(
                 reason = "Reason",
                 captured = "Captured",
                 readAt = "Read or received",
-                disclaimer = "Differences and measurements do not prove physical device health.",
+                disclaimer =
+                    "This report summarizes observations recorded in fonecheck. " +
+                        "It does not independently certify the device’s overall condition.",
                 scope = { report ->
                     if (report.kind == ReportKind.FULL_CHECK) {
                         "Scope: saved Full Check observations."
@@ -180,7 +167,13 @@ data class PdfReportLabels(
                 scoreStateName = { it.name.lowercase() },
                 sourceName = { it.name.lowercase() },
                 confidenceName = { it.name.lowercase() },
-                reasonName = { it.value.replace('_', ' ') },
+                reasonName = {
+                    if (it.value == "user_confirmed_vibration_failure") {
+                        "The user reported that vibration was not felt during the test."
+                    } else {
+                        it.value.replace('_', ' ')
+                    }
+                },
                 stableTextName = { it.replace('_', ' ') },
                 booleanValue = { if (it) "yes" else "no" },
                 numberValue = Number::toString,
@@ -195,119 +188,191 @@ data class PdfReportLabels(
     }
 }
 
+/** Display-only counts follow the saved-evidence coverage rules, never recalculate scores. */
+data class PdfCategoryCounts(
+    val completed: Int,
+    val applicable: Int,
+    val notMeasured: Int,
+)
+
+fun pdfCategoryCounts(category: DiagnosticCategoryResult): PdfCategoryCounts {
+    val applicable =
+        category.evidence.filter {
+            !it.isNetworkMetadata && it.applicability == Applicability.APPLICABLE &&
+                it.status != DiagnosticStatus.NOT_AVAILABLE
+        }
+    return PdfCategoryCounts(
+        applicable.count { it.status != DiagnosticStatus.NOT_TESTED },
+        applicable.size,
+        applicable.count { it.status == DiagnosticStatus.NOT_TESTED },
+    )
+}
+
 object ReportPdfContentBuilder {
     fun build(
         report: DiagnosticReport,
         labels: PdfReportLabels,
-    ): List<PdfTextBlock> {
-        val evidence = report.categories.flatMap { it.evidence }
-        val duration = Duration.between(report.startedAt, report.completedAt).coerceAtLeast(Duration.ZERO)
-        return buildList {
-            add(PdfTextBlock(labels.title, PdfTextStyle.TITLE))
-            add(PdfTextBlock("${labels.reportId}: ${report.stableId}", PdfTextStyle.MONO))
-            add(PdfTextBlock("${labels.reportFormat}: ${report.schemaVersion.value}", PdfTextStyle.BODY))
-            add(PdfTextBlock("${labels.scoreVersion}: ${report.score.version.value}", PdfTextStyle.BODY))
-            add(
-                PdfTextBlock(
-                    "${labels.app}: ${report.app.versionName} (${report.app.versionCode})",
-                    PdfTextStyle.BODY,
-                ),
+    ): List<PdfTextBlock> =
+        buildList {
+            val evidence = report.categories.flatMap { it.evidence }
+            val failures = evidence.filter { it.status == DiagnosticStatus.FAIL }
+            val warnings = evidence.filter { it.status == DiagnosticStatus.WARNING }
+
+            fun line(
+                text: String,
+                style: PdfTextStyle = PdfTextStyle.BODY,
+                finding: Boolean = false,
+            ) = add(PdfTextBlock(text, style, finding = finding))
+
+            fun number(value: Number) = labels.numberValue(value)
+            line(labels.title, PdfTextStyle.TITLE)
+            line(labels.scope(report))
+            line("${labels.device}: ${report.device.manufacturer} ${report.device.model}")
+            line("${labels.android}: ${report.device.androidRelease} (API ${number(report.device.apiLevel)})")
+            report.device.securityPatch?.let { line("${labels.securityPatch}: $it", PdfTextStyle.META) }
+            line("${labels.completed}: ${labels.completedValue(report.completedAt)}")
+            val duration = Duration.between(report.startedAt, report.completedAt).coerceAtLeast(Duration.ZERO)
+            line("${labels.duration}: ${labels.durationValue(duration)}", PdfTextStyle.META)
+            val scoreValue = report.score.value?.let { "${number(it)} / ${number(100)}" } ?: labels.absentValue
+            line("${labels.score}: $scoreValue", PdfTextStyle.HEADING)
+            line("${labels.scoreState}: ${labels.scoreStateName(report.score.state)}")
+            line("${labels.coverage}: ${number(report.coverage.percentage)}%", PdfTextStyle.HEADING)
+            line(
+                "${labels.completedApplicable}: " +
+                    "${number(report.coverage.completedCount)}/${number(report.coverage.applicableCount)}",
+                PdfTextStyle.META,
             )
-            add(
-                PdfTextBlock(
-                    "${labels.device}: ${report.device.manufacturer} ${report.device.model}",
-                    PdfTextStyle.BODY,
-                ),
+            line(
+                "${labels.notMeasured}: ${number(report.coverage.notTestedCount)}, " +
+                    "${labels.excluded}: ${number(report.coverage.unavailableCount)}",
+                PdfTextStyle.META,
             )
-            add(
-                PdfTextBlock(
-                    "${labels.android}: ${report.device.androidRelease} (API ${report.device.apiLevel})",
-                    PdfTextStyle.BODY,
-                ),
+            line(
+                "${labels.warnings}: ${number(warnings.size)}, ${labels.failures}: ${number(failures.size)}",
+                PdfTextStyle.META,
             )
-            add(PdfTextBlock("${labels.completed}: ${labels.completedValue(report.completedAt)}", PdfTextStyle.BODY))
-            add(PdfTextBlock("${labels.duration}: ${labels.durationValue(duration)}", PdfTextStyle.BODY))
-            add(PdfTextBlock(labels.scope(report), PdfTextStyle.BODY))
-            add(PdfTextBlock(labels.scoreScopeNote, PdfTextStyle.BODY))
-            add(PdfTextBlock(labels.timeSemantics, PdfTextStyle.BODY))
-            add(
-                PdfTextBlock(
-                    "${labels.score}: ${report.score.value ?: "—"}",
-                    PdfTextStyle.HEADING,
-                ),
-            )
-            add(
-                PdfTextBlock(
-                    "${labels.scoreState}: ${labels.scoreStateName(report.score.state)}",
-                    PdfTextStyle.BODY,
-                ),
-            )
-            add(PdfTextBlock("${labels.coverage}: ${report.coverage.percentage}%", PdfTextStyle.HEADING))
-            add(
-                PdfTextBlock(
-                    "${labels.counts}: " +
-                        labels.countsValue(
-                            report.coverage,
-                            evidence.count { it.status == DiagnosticStatus.WARNING },
-                            evidence.count { it.status == DiagnosticStatus.FAIL },
-                        ),
-                    PdfTextStyle.BODY,
-                ),
-            )
-            add(PdfTextBlock(labels.disclaimer, PdfTextStyle.BODY))
-            add(PdfTextBlock(labels.categories, PdfTextStyle.HEADING))
-            report.categories.forEach { category ->
-                addCategory(category, labels)
+            line(labels.completedNote, PdfTextStyle.META)
+            add(PdfTextBlock(labels.findings, PdfTextStyle.HEADING, keepWithNext = true))
+            if (failures.isEmpty()) line(labels.noFailures)
+            // The measured layout bounds this selection as well as this deterministic item limit.
+            (failures + warnings).take(3).forEach { item ->
+                val reason = item.presentationReason()?.let(labels.reasonName)
+                line(
+                    "${labels.statusName(item.status)}: ${labels.checkName(item)}. " +
+                        "${labels.source}: ${labels.sourceName(item.source)}." + reason?.let { " $it" }.orEmpty(),
+                    finding = true,
+                )
             }
+            report.categories.filter { pdfCategoryCounts(it).notMeasured > 0 }.take(3).forEach { category ->
+                val counts = pdfCategoryCounts(category)
+                line(
+                    "${labels.categoryName(category.categoryId)}: ${labels.completedApplicable} " +
+                        "${number(counts.completed)}/${number(counts.applicable)}, " +
+                        "${labels.notMeasured}: ${number(counts.notMeasured)}",
+                    PdfTextStyle.META,
+                    finding = true,
+                )
+            }
+            line(labels.findingsReference, PdfTextStyle.META)
+            line(labels.disclaimer, PdfTextStyle.META)
+            add(PdfTextBlock(labels.categories, PdfTextStyle.HEADING, keepWithNext = true))
+            add(
+                PdfTextBlock(
+                    labels.categories,
+                    PdfTextStyle.META,
+                    columns = listOf(labels.status, labels.completedApplicable),
+                    keepWithNext = true,
+                ),
+            )
+            report.categories.forEach { category ->
+                val counts = pdfCategoryCounts(category)
+                add(
+                    PdfTextBlock(
+                        labels.categoryName(category.categoryId),
+                        PdfTextStyle.BODY,
+                        columns =
+                            listOf(
+                                labels.statusName(category.aggregateStatus),
+                                "${number(counts.completed)}/${number(counts.applicable)}",
+                            ),
+                    ),
+                )
+            }
+            add(PdfTextBlock(labels.details, PdfTextStyle.HEADING, keepWithNext = true))
+            report.categories.forEach { category -> addCategory(category, labels) }
+            add(PdfTextBlock(labels.notes, PdfTextStyle.HEADING, keepWithNext = true, endsCategories = true))
+            line(labels.scoreScopeNote, PdfTextStyle.META)
+            line(labels.interpretation, PdfTextStyle.META)
+            line(
+                DiagnosticStatus.entries.joinToString(", ") { "${it.name}: ${labels.statusName(it)}" },
+                PdfTextStyle.META,
+            )
+            line(labels.timeSemantics, PdfTextStyle.META)
+            line(labels.disclaimer, PdfTextStyle.META)
+            line("${labels.reportId}: ${report.stableId}", PdfTextStyle.MONO)
+            line(
+                "${labels.reportFormat}: ${number(report.schemaVersion.value)}, " +
+                    "${labels.scoreVersion}: ${number(report.score.version.value)}",
+                PdfTextStyle.META,
+            )
+            line("${labels.app}: ${report.app.versionName} (${number(report.app.versionCode)})", PdfTextStyle.META)
         }
-    }
 
     private fun MutableList<PdfTextBlock>.addCategory(
         category: DiagnosticCategoryResult,
         labels: PdfReportLabels,
     ) {
+        val counts = pdfCategoryCounts(category)
+        val key = category.categoryId.name
+        val heading = "${labels.categoryName(category.categoryId)}: ${labels.statusName(category.aggregateStatus)}"
+        add(PdfTextBlock(heading, PdfTextStyle.CATEGORY, category = key, startsCategory = true, keepWithNext = true))
         add(
             PdfTextBlock(
-                "${labels.categoryName(category.categoryId)} — ${labels.statusName(category.aggregateStatus)}",
-                PdfTextStyle.CATEGORY,
+                "${labels.completedApplicable}: " +
+                    "${labels.numberValue(counts.completed)}/${labels.numberValue(counts.applicable)}",
+                PdfTextStyle.META,
+                category = key,
+                keepWithNext = true,
             ),
         )
-        category.evidence.forEach { item ->
+        add(
+            PdfTextBlock(
+                labels.observation,
+                PdfTextStyle.META,
+                columns = listOf(labels.result, labels.status),
+                category = key,
+                keepWithNext = true,
+            ),
+        )
+        if (category.evidence.isEmpty()) {
+            add(PdfTextBlock(labels.emptyEvidence, PdfTextStyle.BODY))
+        }
+        // Preserve every saved entry, including raw network metadata, in its historical order.
+        category.evidence.forEachIndexed { index, item ->
+            val group = "$key/$index"
+            val value = evidenceValue(item, labels)
             add(
                 PdfTextBlock(
-                    "${labels.checkName(item)} — ${labels.statusName(item.status)}",
-                    PdfTextStyle.MONO,
-                ),
-            )
-            item.value?.let {
-                add(
-                    PdfTextBlock(
-                        if (item.unit?.value == "samples" && it is EvidenceValue.IntValue) {
-                            labels.sampleCountValue(it.value)
-                        } else {
-                            "${valueText(it, labels)}" +
-                                item.unit
-                                    ?.let(labels.unitName)
-                                    ?.takeIf(String::isNotBlank)
-                                    ?.let { unit -> " $unit" }
-                                    .orEmpty()
-                        },
-                        PdfTextStyle.MONO,
-                    ),
-                )
-            }
-            add(PdfTextBlock("${labels.source}: ${labels.sourceName(item.source)}", PdfTextStyle.BODY))
-            add(
-                PdfTextBlock(
-                    "${labels.confidence}: ${labels.confidenceName(item.presentationConfidence())}",
+                    labels.checkName(item),
                     PdfTextStyle.BODY,
+                    columns = listOf(value, labels.statusName(item.status)),
+                    group = group,
+                    category = key,
                 ),
             )
-            item.presentationReason()?.takeIf { shouldShowEvidenceReason(item.status, it) }?.let {
-                add(PdfTextBlock("${labels.reason}: ${labels.reasonName(it)}", PdfTextStyle.BODY))
-            }
+            add(
+                PdfTextBlock(
+                    "${labels.source}: ${labels.sourceName(item.source)}, " +
+                        "${labels.confidence}: ${labels.confidenceName(item.presentationConfidence())}",
+                    PdfTextStyle.META,
+                    group = group,
+                    category = key,
+                ),
+            )
             val timeLabel =
-                if (item.categoryId == DiagnosticCategoryId.THERMAL) {
+                if (item.categoryId == DiagnosticCategoryId.THERMAL ||
+                    (item.isNetworkMetadata && item.value != null)
+                ) {
                     labels.readAt
                 } else {
                     labels.captured
@@ -315,10 +380,60 @@ object ReportPdfContentBuilder {
             add(
                 PdfTextBlock(
                     "$timeLabel: ${labels.completedValue(item.capturedAt)}",
-                    PdfTextStyle.BODY,
+                    PdfTextStyle.META,
+                    group = group,
+                    category = key,
                 ),
             )
+            if (item.applicability == Applicability.NOT_APPLICABLE) {
+                add(
+                    PdfTextBlock(
+                        labels.excluded + " (NOT_APPLICABLE)",
+                        PdfTextStyle.META,
+                        group = group,
+                        category = key,
+                    ),
+                )
+            }
+            val bytes = (item.value as? EvidenceValue.LongValue)?.value?.takeIf { item.unit?.value == "bytes" }
+            bytes?.let {
+                add(
+                    PdfTextBlock("${labels.numberValue(it)} B", PdfTextStyle.META, group = group, category = key),
+                )
+            }
+            item.presentationReason()?.takeIf { shouldShowEvidenceReason(item.status, it) }?.let {
+                add(
+                    PdfTextBlock(
+                        "${labels.reason}: ${labels.reasonName(it)}",
+                        PdfTextStyle.META,
+                        group = group,
+                        category = key,
+                    ),
+                )
+            }
         }
+    }
+
+    internal fun evidenceValue(
+        item: DiagnosticEvidence,
+        labels: PdfReportLabels,
+    ): String {
+        val value = item.value ?: return labels.absentValue
+        if (item.checkId.value == "sim.base_network") {
+            return item.networkValueText() ?: valueText(value, labels)
+        }
+        if (item.unit?.value == "bytes" && value is EvidenceValue.LongValue) return labels.fileSizeValue(value.value)
+        if (item.unit?.value == "samples" &&
+            value is EvidenceValue.IntValue
+        ) {
+            return labels.sampleCountValue(value.value)
+        }
+        return valueText(value, labels) +
+            item.unit
+                ?.let(labels.unitName)
+                ?.takeIf(String::isNotBlank)
+                ?.let { " $it" }
+                .orEmpty()
     }
 
     private fun valueText(

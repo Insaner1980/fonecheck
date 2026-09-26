@@ -138,11 +138,9 @@
     <string name="sim_slot_title">SIM slot %1$s</string>
     <string name="label_phone_type">Phone type</string>
     <string name="label_active_modem_count">Active modems</string>
-    <string name="label_data_network">Data network</string>
     <string name="label_sim_status">Status</string>
     <string name="label_operator">Operator</string>
     <string name="label_country">Country</string>
-    <string name="label_network_type">Network type</string>
     <string name="sim_inventory_label">SIM configuration</string>
     <string name="sim_inventory_no_telephony">No telephony hardware</string>
     <string name="sim_inventory_no_sim">No SIM detected</string>
@@ -470,7 +468,6 @@
     <string name="conn_mobile_operator">Operator</string>
     <string name="conn_mobile_sim_operator">SIM operator</string>
     <string name="conn_mobile_phone_type">Phone type</string>
-    <string name="conn_mobile_network_type">Network type</string>
     <string name="conn_mobile_signal">Signal</string>
     <string name="conn_mobile_signal_level">Signal level</string>
     <string name="conn_mobile_roaming">Roaming</string>
@@ -887,7 +884,6 @@
     <string name="pdf_confidence">Confidence</string>
     <string name="pdf_reason">Reason</string>
     <string name="pdf_captured">Captured</string>
-    <string name="pdf_disclaimer">Differences and measurements do not prove physical device health.</string>
     <string name="pdf_unit_samples">samples</string>
     <string name="pdf_counts_value">Observations — completed: %1$d, not measured: %2$d, excluded: %3$d. Warnings: %4$d, failures: %5$d.</string>
     <string name="pdf_page">Page %1$d / %2$d</string>
@@ -1235,4 +1231,14 @@
     <string name="perf_gpu_renderer_name">GPU renderer</string>
     <string name="perf_ram_reading_available">RAM information read</string>
     <string name="perf_gpu_reading_available">GPU information read</string>
+    <string name="network_base_label">Base data network</string>
+    <string name="network_display_label">Android network indication</string>
+    <string name="network_generation_label">Base network generation</string>
+    <string name="network_display_base_label">Display base network</string>
+    <string name="network_override_label">Display override code</string>
+    <string name="network_base_note">Android-reported base network. LTE does not rule out 5G NSA. This is not a radio-usage test.</string>
+    <string name="network_display_note">Android supplies this indication; it does not verify active 5G data transfer. Read and callback receipt times are separate observations, not modem change times.</string>
+    <string name="network_no_subscription">No active data subscription was available.</string>
+    <string name="network_stale_note">The subscription or network observations changed during capture. The readings cannot be treated as one current connection.</string>
+    <string name="network_unknown_note">Android returned an unrecognized network indication. No 4G or 5G conclusion was made.</string>
 </resources>

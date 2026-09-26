@@ -7,7 +7,7 @@ data class ScoreCalculation(
 
 object ScoreCalculator {
     fun calculate(categories: List<DiagnosticCategoryResult>): ScoreCalculation {
-        val evidence = categories.flatMap(DiagnosticCategoryResult::evidence)
+        val evidence = categories.flatMap(DiagnosticCategoryResult::evidence).filterNot { it.isNetworkMetadata }
         val unavailableCount =
             evidence.count {
                 it.status == DiagnosticStatus.NOT_AVAILABLE || it.applicability == Applicability.NOT_APPLICABLE
@@ -53,6 +53,7 @@ object ScoreCalculator {
 
     private fun scoreCategory(category: DiagnosticCategoryResult): Int? =
         category.evidence
+            .filterNot { it.isNetworkMetadata }
             .filter { it.applicability == Applicability.APPLICABLE }
             .mapNotNull { SCORE_POINTS[it.status] }
             .takeIf { it.isNotEmpty() }

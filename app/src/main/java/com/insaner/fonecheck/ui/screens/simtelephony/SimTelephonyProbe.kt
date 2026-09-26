@@ -59,6 +59,7 @@ object SimTelephonyProbe {
                         } else {
                             NetworkGenerationCode.UNKNOWN
                         },
+                    rawNetworkType = slot.networkTypeCode.takeIf { mayReadProtectedDetails },
                 )
             }
         return SimTelephonyInfo(

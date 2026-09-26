@@ -272,7 +272,6 @@ class JourneyAutomaticStageTest {
                                 false,
                             )
                         },
-                        Dispatchers.IO,
                     )
                 listOf(run, storage, device, performance, sim).forEachIndexed {
                     index,

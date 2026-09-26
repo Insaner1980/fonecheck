@@ -139,9 +139,11 @@ fun DiagnosticEvidence.presentationConfidence(): Confidence =
         confidence
     }
 
-// Presentation only: older reports did not save response accuracy. Do not infer it from PASS.
+// Presentation only: preserve historical network scope and unknown sensor response accuracy.
 fun DiagnosticEvidence.presentationReason(): EvidenceReasonCode? =
-    reason ?: if (categoryId == DiagnosticCategoryId.SENSORS && status == DiagnosticStatus.PASS) {
+    reason ?: if (checkId.value == "sim.network" && value != null) {
+        EvidenceReasonCode("network_base_only")
+    } else if (categoryId == DiagnosticCategoryId.SENSORS && status == DiagnosticStatus.PASS) {
         EvidenceReasonCode("sensor_response_accuracy_unknown")
     } else {
         null
