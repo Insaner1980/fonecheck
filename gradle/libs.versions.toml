@@ -1,4 +1,11 @@
 [versions]
+jackson = "2.22.3"
+protobuf = "4.36.2"
+bouncyCastle = "1.85"
+jsoup = "1.23.2"
+jose4j = "0.9.7"
+jdom = "2.0.6.1"
+commonsLang = "3.20.0"
 agp = "9.4.1"
 kotlin = "2.4.20"
 ksp = "2.3.12"
