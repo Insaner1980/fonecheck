@@ -6,11 +6,15 @@ Replaces `com.github.skydoves:compose-stability-compiler:0.13.0` and the
 build version `0.13.0-fonecheck-patch1`. Runtime dependencies stay at upstream 0.13.0.
 The application version catalog supplies the Kotlin, AGP and library versions.
 
-Five upstream source files are maintained locally: `StabilityAnalyzerTransformer`,
-`StabilityInfoCollector`, `StabilityDumpTask`, `StabilityCheckTask` and
-`StabilityComparison`. Their Apache 2.0 notices are retained. All other analyzer
-source files are extracted at build time from the pinned Maven source artifacts.
+Six upstream source files are maintained locally: `StabilityAnalyzerTransformer`,
+`StabilityInfoCollector`, `StabilityDumpTask`, `StabilityCheckTask`,
+`StabilityComparison` and `StabilityAnalyzerPluginRegistrar`. Their Apache 2.0
+notices are retained. All other analyzer source files are extracted at build time from the pinned Maven source artifacts.
 No artifact/cache is modified, published, or installed into Maven local.
+
+The registrar opts in to Kotlin 2.4.20 message-collector access only where the
+upstream IR extension needs the collector instance. Diagnostic forwarding and the
+analyzer behavior are unchanged.
 
 The transformer selects `IrParameterKind.ExtensionReceiver` explicitly and records
 its rendered type (including type annotations), name, inferred stability and reason
