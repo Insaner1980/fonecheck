@@ -16,9 +16,9 @@
 ## Key Dependencies
 - Compose BOM 2026.09.00
 - Material 3 (+ explicit material-icons-core)
-- Hilt 2.60.1 (KSP 2.3.11)
-- Room 2.8.4 (room-ktx merged into room-runtime)
-- Navigation Compose 2.9.8
+- Hilt 2.60.1 (KSP 2.3.12)
+- Room 2.8.5 (room-ktx merged into room-runtime)
+- Navigation Compose 2.10.2
 - CameraX 1.6.2
 - Lifecycle 2.11.0
 

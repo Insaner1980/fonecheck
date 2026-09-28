@@ -4,10 +4,12 @@ This reference is grounded in the live Android/Kotlin source, resources, Room sc
 
 ## Snapshot and evidence boundary
 
+The source inventories below retain their 2026-09-26 snapshot. The 2026-09-28 dependency/tooling update refreshes versions, locks, verification metadata, checker configuration and dependency documentation. It does not re-establish device-runtime or release readiness.
+
 | Item | Value |
 |---|---|
 | Verified source snapshot | 2026-09-26 (Europe/Helsinki); tracked source including the PDF redesign and network observations, before this documentation-only correction |
-| Verified Git baseline | `7f3fef44d2bc45bce31d829765bfd525d4c2c40f` on `codex/fonecheck-architecture-follow-up`, matching PR #67's head when inspected. This correction changes no implementation files, so the source/resource inventories also describe its resulting tree. Release status is not established. |
+| Verified Git baseline | `7f3fef44d2bc45bce31d829765bfd525d4c2c40f` on `codex/fonecheck-architecture-follow-up`, matching PR #67's head when inspected. That documentation correction changed no implementation files; these are historical source/resource inventories, not the scope of the subsequent dependency update. Release status is not established. |
 | Initial Git/worktree state | 512 tracked paths with no staged or unstaged changes; 16 non-ignored untracked runtime-evidence files under `tmp/triage-004-runtime/` (528 tracked-plus-untracked paths). Local runtime evidence is preserved but excluded from implementation inventories. |
 | Application ID / namespace | com.insaner.fonecheck |
 | Android module | :app |
@@ -17,10 +19,10 @@ This reference is grounded in the live Android/Kotlin source, resources, Room sc
 | UI/navigation inventory | 25 `*Screen.kt` files, 25 serializable route declarations, 31 shared component files, no diagnostic category artwork files |
 | Durable/config inventory | 14 catalog categories, 81 currently emitted fixed evidence IDs, 82 fixed localization mappings including one compatibility-only ID, plus the parameterized SIM-slot family, 70 stable observation reasons, 14 manifest permissions, 13 optional manifest features |
 | Localization inventory | Thirteen shipped language sets: English, Finnish, Spanish, Brazilian Portuguese, German, French, Indonesian, Swedish, Norwegian Bokmål, Danish, Italian, Polish, and Turkish. Each has 1,207 translatable strings + 6 plurals (1,213 names), including `pdf_strings.xml`; no string arrays. English additionally contains the non-translatable `app_name`. |
-| This update | Recounted tracked source/test files, literal test annotations, resource names and evidence mappings against the PR head; inspected existing GitHub review/check results. All six reported checks succeeded for that head. No local Gradle task, Sonar upload, new external-AI scan, emulator, or physical-device test was run. |
-| Ownership | This update changes only `PROJECT.md`; no source, resource, test, schema, build, CI, checker, or generated file is changed. |
+| Dependency update (2026-09-28) | Refreshed compatible dependency/tooling versions and their lock/verification data. Local build, JVM tests and lint passed earlier in this round; GitHub checks must pass again on the final PR commit. Device-runtime testing was not performed. |
+| Update scope | Build configuration, dependency locks and verification metadata, checker/CI tooling and current dependency documentation, including `AGENTS.md`. Historical runtime evidence is preserved. |
 
-The current code is authoritative if it differs from this file. Some project guidance describes older states: for example a shared top-edge fade, 4 dp control radius, incomplete Room functionality or an older DeepSec version. Current source has no such fade/radius, implements Room reports, and pins DeepSec 2.3.10. Those instruction documents were not edited by this task. FONECHECK_COMPLETE_PRODUCT_SPEC.md is a planning/specification artifact, not proof of implemented functionality.
+The current code is authoritative if it differs from this file. Some project guidance describes older states: for example a shared top-edge fade, 4 dp control radius, incomplete Room functionality or an older DeepSec version. Current source has no such fade/radius, implements Room reports, and pins DeepSec 2.3.10. The dependency entries in `AGENTS.md` were refreshed during the 2026-09-28 update; unrelated historical guidance has not been re-audited. FONECHECK_COMPLETE_PRODUCT_SPEC.md is a planning/specification artifact, not proof of implemented functionality.
 
 ### Local formatting implementation and prior benchmark evidence
 
