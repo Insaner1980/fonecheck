@@ -14,12 +14,12 @@
 - Kotlin 2.4.20, AGP 9.4.1, Gradle 9.7.1
 
 ## Key Dependencies
-- Compose BOM 2026.08.00
+- Compose BOM 2026.09.00
 - Material 3 (+ explicit material-icons-core)
-- Hilt 2.60.1 (KSP 2.3.11)
-- Room 2.8.4 (room-ktx merged into room-runtime)
-- Navigation Compose 2.9.8
-- CameraX 1.6.1
+- Hilt 2.60.1 (KSP 2.3.12)
+- Room 2.8.5 (room-ktx merged into room-runtime)
+- Navigation Compose 2.10.2
+- CameraX 1.6.2
 - Lifecycle 2.11.0
 
 ## Architecture
@@ -346,7 +346,7 @@ for text; `attention` is its text-safe form.
 
 ## Security tooling
 
-- Project-local DeepSec 2.2.9 lives under `.deepsec/`.
+- Project-local DeepSec 2.3.10 lives under `.deepsec/`.
 - The shared `ds` command is separate from combined security checks and requires
   explicit per-run external-AI provider, data-scope, cost, and retention approval.
 
