@@ -13,9 +13,13 @@
     <string name="pdf_failures">Failures</string>
     <string name="pdf_no_failures">No failed observations recorded.</string>
     <string name="pdf_findings_reference">Selected findings are shown here. All recorded observations and limitations follow in Detailed results.</string>
-    <string name="pdf_completed_note">Completed observations include information, not only passed functional tests.</string>
     <string name="pdf_interpretation">Pass means a recorded criterion was met; fail means it was not; warning marks a recorded concern. Info is descriptive. Not measured has no completed result; not available is excluded. Source describes how an observation was obtained; confidence describes its reliability. The report ID identifies a report, not an authenticated handset. This file is not signed or independently verified.</string>
     <string name="pdf_continued">Continued</string>
+    <string name="pdf_group_tests">Hardware tests</string>
+    <string name="pdf_group_info">Device information</string>
+    <string name="pdf_confirmed_working">Confirmed working</string>
+    <string name="pdf_problem_reported">Problem reported</string>
+    <string name="pdf_confidence_note">Confidence is shown only where it is not high.</string>
     <string name="pdf_limitation">This report summarizes observations recorded in fonecheck. It does not independently certify the device’s overall condition.</string>
     <string name="pdf_user_display">The user reported a visible display problem during the test.</string>
     <string name="pdf_user_audio">The user reported an audio problem during the test.</string>

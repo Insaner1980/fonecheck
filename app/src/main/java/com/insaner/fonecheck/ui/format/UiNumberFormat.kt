@@ -39,6 +39,14 @@ internal fun createUiNumberFormat(
             isGroupingUsed = grouping
         }
 
+/** Fraction digits a measured value is shown with, on screen and on paper. Null keeps the stored precision. */
+fun evidenceFractionDigits(unit: String?): Int? =
+    when (unit) {
+        "celsius", "milliamperes", "mebibytes_per_second", "percent" -> 1
+        "ratio" -> 2
+        else -> null
+    }
+
 fun formatUiScientificNumber(
     value: Number,
     locale: Locale,

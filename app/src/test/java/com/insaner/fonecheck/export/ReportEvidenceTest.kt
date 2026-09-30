@@ -48,7 +48,7 @@ class ReportEvidenceTest {
         val decoded = ReportPayloadCodec.decode(ReportPayloadCodec.encode(report))
         assertEquals(report, decoded)
         val text = ReportPdfContentBuilder.build(decoded, PdfReportLabels.english()).joinToString("\n") { it.text }
-        assertTrue(text.contains("Confidence: low"))
+        assertTrue(text.contains("automatic_measurement, low, Captured:"))
         assertTrue(text.contains("Reason: sensor response unreliable"))
         val legacy = evidence.copy(reason = null, confidence = Confidence.HIGH)
         assertEquals("sensor_response_accuracy_unknown", legacy.presentationReason()?.value)
@@ -60,7 +60,7 @@ class ReportEvidenceTest {
                     legacyReport,
                     PdfReportLabels.english(),
                 ).joinToString("\n") { it.text }
-        assertTrue(legacyText.contains("Confidence: low"))
+        assertTrue(legacyText.contains("automatic_measurement, low, Captured:"))
         assertTrue(legacyText.contains("Reason: sensor response accuracy unknown"))
         assertEquals(
             Confidence.HIGH,
@@ -97,7 +97,7 @@ class ReportEvidenceTest {
         val decoded = ReportPayloadCodec.decode(ReportPayloadCodec.encode(report))
         assertEquals(report, decoded)
         val blocks = ReportPdfContentBuilder.build(decoded, PdfReportLabels.english())
-        assertEquals(2, blocks.count { it.text == "Read or received: 1970-01-01T00:00:01Z" })
-        assertEquals(1, blocks.count { it.text == "Read or received: 1970-01-01T00:00:05Z" })
+        assertEquals(2, blocks.count { it.text == "android_api, Read or received: 1970-01-01T00:00:01Z" })
+        assertEquals(1, blocks.count { it.text == "android_api, Read or received: 1970-01-01T00:00:05Z" })
     }
 }

@@ -58,7 +58,6 @@ class IndonesianResourcesTest {
             assertEquals("Waktu habis", labels.reasonName(EvidenceReasonCode.TIMEOUT))
             assertEquals("Pemeriksaan belum diselesaikan", labels.reasonName(EvidenceReasonCode.NOT_RUN))
             assertEquals("Cakupan pemeriksaan", labels.coverage)
-            assertEquals("Tingkat keyakinan", labels.confidence)
             assertEquals(
                 EvidenceSource.entries.size,
                 EvidenceSource.entries

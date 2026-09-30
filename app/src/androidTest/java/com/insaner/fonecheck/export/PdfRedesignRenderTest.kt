@@ -30,6 +30,7 @@ import com.insaner.fonecheck.domain.model.ReportSchemaVersion
 import com.insaner.fonecheck.domain.model.ScoreState
 import com.insaner.fonecheck.domain.model.ScoreSummary
 import com.insaner.fonecheck.domain.model.ScoreVersion
+import com.insaner.fonecheck.domain.model.networkPresentation
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -217,7 +218,10 @@ class PdfRedesignRenderTest {
         val content = ReportPdfContentBuilder.build(report, labels)
         val layout = AndroidPdfLayout(context, labels)
         val pages = layout.paginate(content)
-        assertEquals(report.categories.sumOf { it.evidence.size }, layout.observationRows.size)
+        assertEquals(
+            report.categories.sumOf { it.evidence.networkPresentation().size },
+            layout.observationRows.size,
+        )
         val drawn = pages.flatten().groupingBy { it.row.token }.eachCount()
         layout.observationRows.values
             .flatten()

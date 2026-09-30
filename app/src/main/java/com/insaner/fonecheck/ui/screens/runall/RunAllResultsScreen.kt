@@ -71,6 +71,7 @@ import com.insaner.fonecheck.ui.components.TestScreenContent
 import com.insaner.fonecheck.ui.components.WindowLabel
 import com.insaner.fonecheck.ui.components.WindowReading
 import com.insaner.fonecheck.ui.components.statusLabel
+import com.insaner.fonecheck.ui.format.evidenceFractionDigits
 import com.insaner.fonecheck.ui.format.formatUiDateTime
 import com.insaner.fonecheck.ui.format.reportScopeLabel
 import com.insaner.fonecheck.ui.format.uiFileSize
@@ -748,16 +749,18 @@ private fun evidenceValueLabel(
                 else -> localizedNumber(value.value)
             }
         is EvidenceValue.DecimalValue -> localizedNumber(value.value)
-        is EvidenceValue.DoubleValue ->
+        is EvidenceValue.DoubleValue -> {
+            val digits = evidenceFractionDigits(unit?.value)
+            val number = if (digits != null) uiNumber(value.value, digits, digits) else localizedNumber(value.value)
             when (unit?.value) {
-                "celsius" -> stringResource(R.string.run_all_detail_temperature, uiNumber(value.value, 1, 1))
-                "milliamperes" -> stringResource(R.string.batt_value_milliamps, uiNumber(value.value, 1, 1))
-                "ratio" -> stringResource(R.string.thermal_headroom_value, uiNumber(value.value, 2, 2))
-                "percent" -> stringResource(R.string.storage_percent_value, localizedNumber(value.value))
-                "mebibytes_per_second" ->
-                    stringResource(R.string.storage_rate_value, uiNumber(value.value, 1, 1))
-                else -> localizedNumber(value.value)
+                "celsius" -> stringResource(R.string.run_all_detail_temperature, number)
+                "milliamperes" -> stringResource(R.string.batt_value_milliamps, number)
+                "ratio" -> stringResource(R.string.thermal_headroom_value, number)
+                "percent" -> stringResource(R.string.storage_percent_value, number)
+                "mebibytes_per_second" -> stringResource(R.string.storage_rate_value, number)
+                else -> number
             }
+        }
 
         is EvidenceValue.RawTextValue -> value.value
         is EvidenceValue.StableTextCodeValue -> stableTextLabel(value.value)

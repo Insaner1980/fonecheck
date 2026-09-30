@@ -13,9 +13,13 @@
     <string name="pdf_failures">Échecs</string>
     <string name="pdf_no_failures">Aucune observation en échec enregistrée.</string>
     <string name="pdf_findings_reference">Une sélection est présentée ici. Toutes les observations et limites enregistrées figurent dans Résultats détaillés.</string>
-    <string name="pdf_completed_note">Les observations terminées incluent des informations, pas uniquement des tests fonctionnels réussis.</string>
     <string name="pdf_interpretation">Réussite signifie qu’un critère enregistré a été satisfait\u00a0; échec signifie le contraire\u00a0; avertissement signale un point d’attention enregistré. Information est descriptif. Non mesuré signifie sans résultat terminé\u00a0; non disponible est exclu. La source indique comment une observation a été obtenue\u00a0; la confiance indique sa fiabilité. L’identifiant désigne un rapport, pas un téléphone authentifié. Ce fichier n’est ni signé ni vérifié de manière indépendante.</string>
     <string name="pdf_continued">Suite</string>
+    <string name="pdf_group_tests">Tests matériels</string>
+    <string name="pdf_group_info">Informations sur l’appareil</string>
+    <string name="pdf_confirmed_working">Fonctionnement confirmé</string>
+    <string name="pdf_problem_reported">Problème signalé</string>
+    <string name="pdf_confidence_note">La confiance n’est indiquée que lorsqu’elle n’est pas élevée.</string>
     <string name="pdf_limitation">Ce rapport résume les observations enregistrées dans fonecheck. Il ne certifie pas de manière indépendante l’état général de l’appareil.</string>
     <string name="pdf_user_display">L’utilisateur a signalé un problème visible sur l’écran pendant le test.</string>
     <string name="pdf_user_audio">L’utilisateur a signalé un problème audio pendant le test.</string>

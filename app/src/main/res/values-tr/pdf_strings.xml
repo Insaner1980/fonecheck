@@ -13,9 +13,13 @@
     <string name="pdf_failures">Başarısız sonuçlar</string>
     <string name="pdf_no_failures">Başarısız gözlem kaydedilmedi.</string>
     <string name="pdf_findings_reference">Burada seçili gözlemler gösterilir. Kaydedilen tüm gözlemler ve sınırlamalar Ayrıntılı sonuçlar bölümündedir.</string>
-    <string name="pdf_completed_note">Tamamlanan gözlemler yalnızca başarılı işlev testlerini değil, bilgileri de içerir.</string>
     <string name="pdf_interpretation">Başarılı, kaydedilen bir ölçütün karşılandığını; başarısız, karşılanmadığını; uyarı ise kaydedilen bir dikkat noktasını belirtir. Bilgi açıklayıcıdır. Ölçülmedi, tamamlanmış sonuç olmadığını belirtir; kullanılamayanlar kapsam dışındadır. Kaynak gözlemin nasıl elde edildiğini, güven ise güvenilirliğini açıklar. Rapor kimliği bir raporu tanımlar, doğrulanmış bir telefonu değil. Bu dosya imzalanmamış ve bağımsız olarak doğrulanmamıştır.</string>
     <string name="pdf_continued">Devamı</string>
+    <string name="pdf_group_tests">Donanım testleri</string>
+    <string name="pdf_group_info">Cihaz bilgileri</string>
+    <string name="pdf_confirmed_working">Çalıştığı onaylandı</string>
+    <string name="pdf_problem_reported">Sorun bildirildi</string>
+    <string name="pdf_confidence_note">Güvenilirlik yalnızca yüksek olmadığında gösterilir.</string>
     <string name="pdf_limitation">Bu rapor fonecheck içinde kaydedilen gözlemleri özetler. Cihazın genel durumunu bağımsız olarak belgelendirmez.</string>
     <string name="pdf_user_display">Kullanıcı test sırasında görünür bir ekran sorunu bildirdi.</string>
     <string name="pdf_user_audio">Kullanıcı test sırasında bir ses sorunu bildirdi.</string>

@@ -13,9 +13,13 @@
     <string name="pdf_failures">Esiti negativi</string>
     <string name="pdf_no_failures">Nessuna osservazione con esito negativo registrata.</string>
     <string name="pdf_findings_reference">Qui è presentata una selezione. Tutte le osservazioni e le limitazioni registrate sono in Risultati dettagliati.</string>
-    <string name="pdf_completed_note">Le osservazioni completate includono informazioni, non solo prove funzionali superate.</string>
     <string name="pdf_interpretation">Superato indica che un criterio registrato è stato soddisfatto; esito negativo indica il contrario; avviso segnala un punto di attenzione registrato. Info è descrittivo. Non misurato indica che manca un risultato completo; non disponibile è escluso. La fonte descrive come è stata ottenuta l’osservazione; l’affidabilità indica quanto è attendibile. L’ID identifica un rapporto, non un telefono autenticato. Il file non è firmato né verificato in modo indipendente.</string>
     <string name="pdf_continued">Segue</string>
+    <string name="pdf_group_tests">Test hardware</string>
+    <string name="pdf_group_info">Informazioni sul dispositivo</string>
+    <string name="pdf_confirmed_working">Funzionamento confermato</string>
+    <string name="pdf_problem_reported">Problema segnalato</string>
+    <string name="pdf_confidence_note">L’affidabilità è indicata solo quando non è alta.</string>
     <string name="pdf_limitation">Questo rapporto riassume le osservazioni registrate in fonecheck. Non certifica in modo indipendente le condizioni generali del dispositivo.</string>
     <string name="pdf_user_display">L’utente ha segnalato un problema visibile sullo schermo durante la prova.</string>
     <string name="pdf_user_audio">L’utente ha segnalato un problema audio durante la prova.</string>

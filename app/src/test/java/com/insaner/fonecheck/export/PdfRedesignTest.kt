@@ -62,13 +62,13 @@ class PdfRedesignTest {
         val before = ReportPayloadCodec.encode(report)
         val blocks = ReportPdfContentBuilder.build(report, labels)
         val summary = blocks.takeWhile { it.text != labels.categories }.joinToString("\n") { it.allText }
-        assertTrue(summary.contains("Score: 88 / 100"))
-        assertTrue(summary.contains("Score state: partial"))
-        assertTrue(summary.contains("Coverage: 88%"))
-        assertTrue(summary.contains("Completed / applicable: 69/78"))
-        assertTrue(summary.contains("Not measured: 9, Excluded from coverage: 1"))
-        assertTrue(summary.contains("Warnings: 0, Failures: 1"))
+        assertTrue(summary.contains("Score: 88 / 100\npartial"))
+        assertTrue(summary.contains("Coverage: 88%, Completed / applicable: 69/78"))
+        assertTrue(summary.contains("Failures: 1, Warnings: 0, Not measured: 9, Excluded from coverage: 1"))
         assertTrue(summary.contains("The user reported that vibration was not felt"))
+        // The findings name what was not measured instead of only counting it.
+        assertTrue(summary.contains("Sensors — Not measured: sensors.item_3, sensors.item_4"))
+        assertTrue(summary.contains("Connectivity — Not measured: connectivity.item_0"))
         assertFalse(summary.contains("Confidence: user_confirmation"))
         assertEquals(PdfCategoryCounts(3, 11, 8), pdfCategoryCounts(sensors))
         assertEquals(PdfCategoryCounts(0, 1, 1), pdfCategoryCounts(gps))
@@ -127,7 +127,7 @@ class PdfRedesignTest {
                 ).joinToString("\n") {
                     it.allText
                 }
-        assertTrue(text.contains("Warnings: 0, Failures: 0"))
+        assertTrue(text.contains("Failures: 0, Warnings: 0"))
         assertTrue(text.contains(labels.noFailures))
     }
 
@@ -137,7 +137,8 @@ class PdfRedesignTest {
             val battery = category(DiagnosticCategoryId.BATTERY, listOf(DiagnosticStatus.PASS))
             val report = testReport(categories = listOf(sim, battery))
             val blocks = ReportPdfContentBuilder.build(report, labels)
-            assertEquals(listOf("SIM", "BATTERY"), blocks.filter { it.startsCategory }.map { it.category })
+            // Hardware tests come before device information; each keeps its saved order.
+            assertEquals(listOf("BATTERY", "SIM"), blocks.filter { it.startsCategory }.map { it.category })
             assertEquals(slots + 1, blocks.count { it.group != null && it.columns.isNotEmpty() })
             val single =
                 ReportPdfContentBuilder.build(
@@ -175,7 +176,60 @@ class PdfRedesignTest {
             )
         val blocks = ReportPdfContentBuilder.build(report, labels.copy(fileSizeValue = { "12.35 GB" }))
         assertTrue(blocks.any { "12.35 GB" in it.columns })
-        assertTrue(blocks.any { it.text == "12345678901 B" })
+        // Exact bytes stay in the JSON export; the page carries the rounded size only.
+        assertFalse(blocks.any { it.allText.contains("12345678901") })
+    }
+
+    @Test fun partlyMeasuredCategoryIsPartialAndInformationalRowsCarryNoVerdict() {
+        val sensors =
+            category(DiagnosticCategoryId.SENSORS, listOf(DiagnosticStatus.PASS, DiagnosticStatus.NOT_TESTED))
+                .copy(aggregateStatus = DiagnosticStatus.NOT_TESTED)
+        val device =
+            category(DiagnosticCategoryId.DEVICE, listOf(DiagnosticStatus.INFO, DiagnosticStatus.NOT_AVAILABLE)).let {
+                val unread = it.evidence.last().copy(value = null)
+                it.copy(evidence = listOf(it.evidence.first(), unread))
+            }
+        val blocks = ReportPdfContentBuilder.build(testReport(categories = listOf(sensors, device)), labels)
+        // Nothing was read from an unavailable observation, so it prints no confidence and no time.
+        val unavailableDetail = blocks[blocks.indexOfFirst { it.text == "device.item_1" && it.group != null } + 1]
+        assertEquals("android_api", unavailableDetail.text)
+
+        val heading = blocks.single { it.startsCategory && it.category == "SENSORS" }
+        assertEquals(PdfMark.PARTIAL, heading.mark)
+        assertEquals(labels.partial, heading.columns.last())
+        val tableRow = blocks.single { it.text == "Sensors" && it.style == PdfTextStyle.BODY }
+        assertEquals(listOf("1/2", labels.partial), tableRow.columns)
+
+        val rows = blocks.filter { it.group != null && it.columns.size == 2 }.associateBy { it.text }
+        assertEquals(PdfMark.PASS, rows.getValue("sensors.item_0").mark)
+        assertEquals(PdfMark.NOT_MEASURED, rows.getValue("sensors.item_1").mark)
+        assertEquals(null, rows.getValue("device.item_0").mark)
+        assertEquals("", rows.getValue("device.item_0").columns.last())
+        assertTrue(blocks.any { it.legend.map { entry -> entry.first }.containsAll(PdfMark.entries) })
+    }
+
+    @Test fun measuredValuesUseScreenPrecisionAndManualAnswersReadAsAnswers() {
+        val base = category(DiagnosticCategoryId.BATTERY, listOf(DiagnosticStatus.INFO)).evidence.single()
+
+        fun value(
+            value: EvidenceValue,
+            unit: String,
+        ) = ReportPdfContentBuilder.evidenceValue(base.copy(value = value, unit = EvidenceUnitCode(unit)), labels)
+        assertEquals("31.3%", value(EvidenceValue.DoubleValue(31.339), "percent"))
+        assertEquals("70%", value(EvidenceValue.IntValue(70), "percent"))
+        assertEquals("0.52", value(EvidenceValue.DoubleValue(0.516), "ratio"))
+        assertEquals("29.7 °C", value(EvidenceValue.DoubleValue(29.74), "celsius"))
+        assertEquals("679.7 mA", value(EvidenceValue.DoubleValue(679.687), "milliamperes"))
+        val manual = base.copy(source = EvidenceSource.USER_CONFIRMATION)
+        assertEquals(
+            "problem reported",
+            ReportPdfContentBuilder.evidenceValue(manual.copy(value = EvidenceValue.BooleanValue(false)), labels),
+        )
+        assertEquals(
+            "confirmed working",
+            ReportPdfContentBuilder.evidenceValue(manual.copy(value = EvidenceValue.BooleanValue(true)), labels),
+        )
+        assertEquals("no", ReportPdfContentBuilder.evidenceValue(base, labels))
     }
 
     private fun category(

@@ -533,7 +533,8 @@
     <string name="storage_volume_primary">Primär delad lagring</string>
     <string name="storage_volume_number">Delad volym %1$d</string>
     <string name="storage_mounted_state">Tillstånd</string>
-    <string name="storage_removable">Flyttbar</string>
+    <string name="storage_removable">Flyttbara volymer</string>
+    <string name="storage_mounted_volume_count">Monterade volymer</string>
     <string name="storage_removable_storage">Flyttbar lagring</string>
     <string name="storage_state_mounted">Monterad</string>
     <string name="storage_state_read_only">Monterad skrivskyddad</string>
@@ -816,16 +817,12 @@
     <string name="pdf_completed">Slutförd</string>
     <string name="pdf_duration">Tidsåtgång</string>
     <string name="pdf_score">Poäng</string>
-    <string name="pdf_score_state">Poängstatus</string>
     <string name="pdf_coverage">Andel genomförda kontroller</string>
-    <string name="pdf_counts">Antal</string>
     <string name="pdf_categories">Diagnostikkategorier</string>
     <string name="pdf_source">Källa</string>
-    <string name="pdf_confidence">Tillförlitlighet</string>
     <string name="pdf_reason">Orsak</string>
     <string name="pdf_captured">Registrerat</string>
     <string name="pdf_unit_samples">mätvärden</string>
-    <string name="pdf_counts_value">Observationer: slutförda: %1$d, inte mätta: %2$d, undantagna: %3$d. Varningar: %4$d, fel: %5$d.</string>
     <string name="pdf_page">Sida %1$d / %2$d</string>
     <string name="export_title">Exportera rapport</string>
     <string name="export_description">Skapa en lokal kopia av den här oföränderliga sparade rapporten.</string>
@@ -918,6 +915,7 @@
     <string name="display_touch_desc">Rita på rutnätet för att kontrollera pekresponsen över hela skärmen.</string>
     <string name="display_touch_reset">Nollställ rutnät</string>
     <string name="display_info_title">Skärminformation</string>
+    <string name="display_pixel_count">Antal pixlar på skärmen</string>
     <string name="display_resolution">Upplösning</string>
     <string name="display_density">Pixeltäthet</string>
     <string name="display_refresh_rate">Uppdateringsfrekvens</string>

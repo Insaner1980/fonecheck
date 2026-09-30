@@ -13,9 +13,13 @@
     <string name="pdf_failures">Kegagalan</string>
     <string name="pdf_no_failures">Tidak ada pengamatan gagal yang tercatat.</string>
     <string name="pdf_findings_reference">Pilihan pengamatan ditampilkan di sini. Semua pengamatan dan batasan yang tercatat ada di Hasil terperinci.</string>
-    <string name="pdf_completed_note">Pengamatan selesai mencakup informasi, bukan hanya uji fungsi yang lulus.</string>
     <string name="pdf_interpretation">Lulus berarti kriteria yang tercatat terpenuhi; gagal berarti tidak terpenuhi; peringatan menandai hal yang perlu diperhatikan dalam catatan. Info bersifat deskriptif. Belum diukur berarti belum ada hasil lengkap; tidak tersedia dikecualikan. Sumber menjelaskan cara pengamatan diperoleh; keyakinan menjelaskan keandalannya. ID mengidentifikasi laporan, bukan ponsel yang diautentikasi. Berkas ini tidak ditandatangani atau diverifikasi secara independen.</string>
     <string name="pdf_continued">Lanjutan</string>
+    <string name="pdf_group_tests">Pengujian perangkat keras</string>
+    <string name="pdf_group_info">Informasi perangkat</string>
+    <string name="pdf_confirmed_working">Dikonfirmasi berfungsi</string>
+    <string name="pdf_problem_reported">Masalah dilaporkan</string>
+    <string name="pdf_confidence_note">Keyakinan hanya ditampilkan jika tidak tinggi.</string>
     <string name="pdf_limitation">Laporan ini merangkum pengamatan yang tercatat di fonecheck. Laporan ini tidak secara independen menjamin kondisi keseluruhan perangkat.</string>
     <string name="pdf_user_display">Pengguna melaporkan masalah layar yang terlihat selama pengujian.</string>
     <string name="pdf_user_audio">Pengguna melaporkan masalah audio selama pengujian.</string>

@@ -279,7 +279,7 @@ fun stableCodeDisplayText(code: String): String =
 
 private val EVIDENCE_LABEL_RESOURCES =
     mapOf(
-        "device.identity" to R.string.device_info_title,
+        "device.identity" to R.string.label_api_level,
         "device.security" to R.string.label_root_artifact,
         "device.developer_options" to R.string.label_developer_options,
         "device.usb_debugging" to R.string.label_usb_debugging,
@@ -294,7 +294,7 @@ private val EVIDENCE_LABEL_RESOURCES =
         "sim.network_display" to R.string.network_display_label,
         "sim.display_base_network" to R.string.network_display_base_label,
         "sim.display_override" to R.string.network_override_label,
-        "display.info" to R.string.display_info_title,
+        "display.info" to R.string.display_pixel_count,
         "display.visual" to R.string.run_all_check_visual_display,
         "audio.speaker" to R.string.run_all_check_speaker,
         "audio.microphone" to R.string.run_all_check_microphone,
@@ -321,7 +321,7 @@ private val EVIDENCE_LABEL_RESOURCES =
         "connectivity.nfc" to R.string.conn_nfc_title,
         "connectivity.nfc_hce" to R.string.conn_nfc_hce,
         "connectivity.gps" to R.string.conn_gps_title,
-        "connectivity.mobile" to R.string.conn_mobile_title,
+        "connectivity.mobile" to R.string.conn_mobile_summary_connected,
         "battery.health" to R.string.batt_health_title,
         "battery.temperature" to R.string.batt_temperature,
         "battery.level" to R.string.batt_level,
@@ -340,7 +340,7 @@ private val EVIDENCE_LABEL_RESOURCES =
         "storage.usage" to R.string.storage_usage,
         "storage.internal_access" to R.string.storage_internal_access,
         "storage.volume_count" to R.string.storage_volumes_title,
-        "storage.mounted_volume_count" to R.string.storage_mounted_state,
+        "storage.mounted_volume_count" to R.string.storage_mounted_volume_count,
         "storage.removable_volume_count" to R.string.storage_removable,
         "storage.sequential_write" to R.string.storage_benchmark_write_rate,
         "storage.sequential_read" to R.string.storage_benchmark_read_rate,

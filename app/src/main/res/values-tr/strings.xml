@@ -535,7 +535,8 @@
     <string name="storage_volume_primary">Birincil paylaşılan depolama</string>
     <string name="storage_volume_number">Paylaşılan birim %1$d</string>
     <string name="storage_mounted_state">Durum</string>
-    <string name="storage_removable">Çıkarılabilir</string>
+    <string name="storage_removable">Çıkarılabilir birimler</string>
+    <string name="storage_mounted_volume_count">Bağlı birimler</string>
     <string name="storage_removable_storage">Çıkarılabilir depolama</string>
     <string name="storage_state_mounted">Bağlandı</string>
     <string name="storage_state_read_only">Salt okunur bağlandı</string>
@@ -822,16 +823,12 @@
     <string name="pdf_completed">Tamamlanma</string>
     <string name="pdf_duration">Süre</string>
     <string name="pdf_score">Puan</string>
-    <string name="pdf_score_state">Puan durumu</string>
     <string name="pdf_coverage">Tamamlanma oranı</string>
-    <string name="pdf_counts">Sayılar</string>
     <string name="pdf_categories">Tanılama kategorileri</string>
     <string name="pdf_source">Kaynak</string>
-    <string name="pdf_confidence">Güvenilirlik</string>
     <string name="pdf_reason">Neden</string>
     <string name="pdf_captured">Kayıt zamanı</string>
     <string name="pdf_unit_samples">örnek</string>
-    <string name="pdf_counts_value">Gözlemler: tamamlanan %1$d, ölçülmeyen %2$d, hariç tutulan %3$d. Uyarı: %4$d, başarısız sonuç: %5$d.</string>
     <string name="pdf_page">Sayfa %1$d / %2$d</string>
     <string name="export_title">Raporu dışa aktar</string>
     <string name="export_description">Bu değiştirilemez kayıtlı raporun yerel bir kopyasını oluşturun.</string>
@@ -928,6 +925,7 @@
     <string name="display_touch_desc">Ekranın tamamındaki dokunma tepkisini doğrulamak için ızgara üzerinde çizin.</string>
     <string name="display_touch_reset">Izgarayı sıfırla</string>
     <string name="display_info_title">Ekran bilgileri</string>
+    <string name="display_pixel_count">Ekran piksel sayısı</string>
     <string name="display_resolution">Çözünürlük</string>
     <string name="display_density">Yoğunluk</string>
     <string name="display_refresh_rate">Yenileme hızı</string>

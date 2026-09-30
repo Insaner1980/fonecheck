@@ -59,7 +59,6 @@ class ItalianResourcesTest {
             ).forEach { (status, expected) -> assertEquals(expected, labels.statusName(status)) }
             assertEquals("Rapporto diagnostico fonecheck", labels.title)
             assertEquals("Completezza dei controlli", labels.coverage)
-            assertEquals("Affidabilità", labels.confidence)
             mapOf(
                 Confidence.HIGH to "Affidabilità alta",
                 Confidence.LOW to "Affidabilità bassa",

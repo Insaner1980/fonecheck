@@ -58,7 +58,6 @@ class DanishResourcesTest {
             statuses.forEach { (status, expected) -> assertEquals(expected, labels.statusName(status)) }
             assertEquals("Testrapport fra fonecheck", labels.title)
             assertEquals("Gennemførelsesgrad", labels.coverage)
-            assertEquals("Pålidelighed", labels.confidence)
             mapOf(
                 Confidence.HIGH to "Høj pålidelighed",
                 Confidence.LOW to "Lav pålidelighed",

@@ -556,7 +556,8 @@
     <string name="storage_volume_primary">Armazenamento compartilhado principal</string>
     <string name="storage_volume_number">Volume compartilhado %1$d</string>
     <string name="storage_mounted_state">Estado</string>
-    <string name="storage_removable">Removível</string>
+    <string name="storage_removable">Volumes removíveis</string>
+    <string name="storage_mounted_volume_count">Volumes montados</string>
     <string name="storage_removable_storage">Armazenamento removível</string>
     <string name="storage_state_mounted">Montado</string>
     <string name="storage_state_read_only">Montado somente para leitura</string>
@@ -854,16 +855,12 @@
     <string name="pdf_completed">Concluído em</string>
     <string name="pdf_duration">Duração</string>
     <string name="pdf_score">Pontuação</string>
-    <string name="pdf_score_state">Estado da pontuação</string>
     <string name="pdf_coverage">Cobertura</string>
-    <string name="pdf_counts">Contagens</string>
     <string name="pdf_categories">Categorias de diagnóstico</string>
     <string name="pdf_source">Fonte</string>
-    <string name="pdf_confidence">Confiança</string>
     <string name="pdf_reason">Motivo</string>
     <string name="pdf_captured">Registrado em</string>
     <string name="pdf_unit_samples">amostras</string>
-    <string name="pdf_counts_value">Observações: concluídas: %1$d, não medidas: %2$d, excluídas: %3$d. Avisos: %4$d, falhas: %5$d.</string>
     <string name="pdf_page">Página %1$d / %2$d</string>
     <string name="export_title">Exportar relatório</string>
     <string name="export_description">Crie uma cópia local deste relatório salvo e imutável.</string>
@@ -965,6 +962,7 @@
     <string name="display_touch_desc">Desenhe na grade para verificar a resposta ao toque em toda a tela.</string>
     <string name="display_touch_reset">Redefinir grade</string>
     <string name="display_info_title">Informações da tela</string>
+    <string name="display_pixel_count">Número de pixels da tela</string>
     <string name="display_resolution">Resolução</string>
     <string name="display_density">Densidade</string>
     <string name="display_refresh_rate">Taxa de atualização</string>

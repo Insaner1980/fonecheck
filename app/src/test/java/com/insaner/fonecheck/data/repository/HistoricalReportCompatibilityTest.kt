@@ -114,12 +114,12 @@ class HistoricalReportCompatibilityTest {
         val blocks = ReportPdfContentBuilder.build(report, PdfReportLabels.english())
 
         assertEquals(
-            listOf("Camera: pass", "Battery: pass"),
-            blocks.filter { it.style == PdfTextStyle.CATEGORY }.map { it.text },
+            listOf("Camera" to "pass", "Battery" to "pass"),
+            blocks.filter { it.style == PdfTextStyle.CATEGORY }.map { it.text to it.columns.last() },
         )
         assertTrue(blocks.any { it.text.contains("Score version: 1") })
         assertTrue(blocks.any { it.text == "Score: 100 / 100" })
-        assertTrue(blocks.any { it.text == "Coverage: 100%" })
+        assertTrue(blocks.any { it.text.startsWith("Coverage: 100%") })
         report.categories.flatMap { it.evidence }.forEach { item ->
             assertTrue(blocks.any { it.text.startsWith(item.checkId.value) })
         }

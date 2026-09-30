@@ -535,7 +535,8 @@
     <string name="storage_volume_primary">Primärer gemeinsamer Speicher</string>
     <string name="storage_volume_number">Gemeinsamer Speicher %1$d</string>
     <string name="storage_mounted_state">Status</string>
-    <string name="storage_removable">Wechselbar</string>
+    <string name="storage_removable">Wechselspeicher</string>
+    <string name="storage_mounted_volume_count">Eingebundene Speicher</string>
     <string name="storage_removable_storage">Wechselspeicher</string>
     <string name="storage_state_mounted">Eingebunden</string>
     <string name="storage_state_read_only">Schreibgeschützt eingebunden</string>
@@ -822,16 +823,12 @@
     <string name="pdf_completed">Abgeschlossen</string>
     <string name="pdf_duration">Dauer</string>
     <string name="pdf_score">Punktwert</string>
-    <string name="pdf_score_state">Bewertungsstatus</string>
     <string name="pdf_coverage">Prüfumfang</string>
-    <string name="pdf_counts">Anzahl</string>
     <string name="pdf_categories">Diagnosekategorien</string>
     <string name="pdf_source">Quelle</string>
-    <string name="pdf_confidence">Vertrauensgrad</string>
     <string name="pdf_reason">Grund</string>
     <string name="pdf_captured">Erfasst</string>
     <string name="pdf_unit_samples">Messwerte</string>
-    <string name="pdf_counts_value">Beobachtungen: abgeschlossen: %1$d, nicht gemessen: %2$d, ausgeschlossen: %3$d. Warnungen: %4$d, nicht bestanden: %5$d.</string>
     <string name="pdf_page">Seite %1$d / %2$d</string>
     <string name="export_title">Bericht exportieren</string>
     <string name="export_description">Erstelle eine lokale Kopie dieses unveränderlichen gespeicherten Berichts.</string>
@@ -928,6 +925,7 @@
     <string name="display_touch_desc">Zeichne auf dem Raster, um die Berührungsreaktion auf dem gesamten Bildschirm zu prüfen.</string>
     <string name="display_touch_reset">Raster zurücksetzen</string>
     <string name="display_info_title">Displayinformationen</string>
+    <string name="display_pixel_count">Pixelanzahl des Displays</string>
     <string name="display_resolution">Auflösung</string>
     <string name="display_density">Pixeldichte</string>
     <string name="display_refresh_rate">Bildwiederholrate</string>

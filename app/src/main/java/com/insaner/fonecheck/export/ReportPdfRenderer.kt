@@ -16,6 +16,7 @@ import com.insaner.fonecheck.localization.scoreStateStringRes
 import com.insaner.fonecheck.localization.stableCodeDisplayText
 import com.insaner.fonecheck.localization.stableTextStringRes
 import com.insaner.fonecheck.ui.format.formatPdfDateTime
+import com.insaner.fonecheck.ui.format.formatPdfObservedTime
 import com.insaner.fonecheck.ui.format.formatUiNumber
 import com.insaner.fonecheck.ui.format.uiLanguageLocale
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -51,7 +52,7 @@ class ReportPdfRenderer
                         if (index == 0) {
                             layout.drawLogo(canvas)
                         } else {
-                            layout.drawMarginText(canvas, "fonecheck / ${labels.title}", 42f, 27f, 511)
+                            layout.drawMarginText(canvas, labels.title, 42f, 27f, 511)
                         }
                         rows.forEach { layout.drawRow(canvas, it, 42f, AndroidPdfLayout.CONTENT_TOP) }
                         layout.drawMarginText(canvas, "${labels.reportId}: ${report.stableId.take(8)}…", 42f, 800f, 330)
@@ -91,9 +92,12 @@ class ReportPdfRenderer
                 failures = context.getString(R.string.pdf_failures),
                 noFailures = context.getString(R.string.pdf_no_failures),
                 findingsReference = context.getString(R.string.pdf_findings_reference),
-                completedNote = context.getString(R.string.pdf_completed_note),
                 interpretation = context.getString(R.string.pdf_interpretation),
+                confidenceNote = context.getString(R.string.pdf_confidence_note),
                 continued = context.getString(R.string.pdf_continued),
+                partial = context.getString(R.string.history_status_partial),
+                testsGroup = context.getString(R.string.pdf_group_tests),
+                infoGroup = context.getString(R.string.pdf_group_info),
                 securityPatch = context.getString(R.string.label_security_patch),
                 emptyEvidence = context.getString(R.string.report_no_saved_evidence),
                 fileSizeValue = {
@@ -110,12 +114,9 @@ class ReportPdfRenderer
                 completed = context.getString(R.string.pdf_completed),
                 duration = context.getString(R.string.pdf_duration),
                 score = context.getString(R.string.pdf_score),
-                scoreState = context.getString(R.string.pdf_score_state),
                 coverage = context.getString(R.string.pdf_coverage),
-                counts = context.getString(R.string.pdf_counts),
                 categories = context.getString(R.string.pdf_categories),
                 source = context.getString(R.string.pdf_source),
-                confidence = context.getString(R.string.pdf_confidence),
                 reason = context.getString(R.string.pdf_reason),
                 captured = context.getString(R.string.pdf_captured),
                 readAt = context.getString(R.string.report_read_at),
@@ -145,6 +146,9 @@ class ReportPdfRenderer
                 booleanValue = { value ->
                     context.getString(if (value) R.string.status_yes else R.string.status_no)
                 },
+                userConfirmedValue = { value ->
+                    context.getString(if (value) R.string.pdf_confirmed_working else R.string.pdf_problem_reported)
+                },
                 numberValue = { value ->
                     val precision = if (value is java.math.BigDecimal) value.scale().coerceAtLeast(0) else 3
                     formatUiNumber(
@@ -155,6 +159,8 @@ class ReportPdfRenderer
                         grouping = true,
                     )
                 },
+                fixedNumberValue = { value, digits -> formatUiNumber(value, locale, digits, digits, grouping = true) },
+                percentValue = { value -> context.getString(R.string.report_coverage_value, value) },
                 unitName = { unit -> localizedUnitName(context, unit) },
                 sampleCountValue = { count ->
                     context.resources.getQuantityString(
@@ -163,17 +169,8 @@ class ReportPdfRenderer
                         formatUiNumber(count, locale, grouping = true),
                     )
                 },
-                countsValue = { coverage, warnings, failures ->
-                    context.getString(
-                        R.string.pdf_counts_value,
-                        coverage.completedCount,
-                        coverage.notTestedCount,
-                        coverage.unavailableCount,
-                        warnings,
-                        failures,
-                    )
-                },
                 completedValue = { value -> formatPdfDateTime(value, locale, zone) },
+                observedAtValue = { value, completed -> formatPdfObservedTime(value, completed, locale, zone) },
                 durationValue = { value -> pdfDurationValue(context, locale, value) },
             )
         }
@@ -225,7 +222,6 @@ private fun localizedUnitName(
         "milliamperes" -> "mA"
         "milliseconds" -> "ms"
         "operations_per_second" -> "ops/s"
-        "percent" -> "%"
         "pixels" -> "px"
         "samples" -> context.getString(R.string.pdf_unit_samples)
         else -> stableCodeDisplayText(unit.value)

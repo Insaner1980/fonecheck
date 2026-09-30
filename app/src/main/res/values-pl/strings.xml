@@ -527,7 +527,8 @@
     <string name="storage_volume_primary">Główna pamięć współdzielona</string>
     <string name="storage_volume_number">Wolumin współdzielony %1$d</string>
     <string name="storage_mounted_state">Stan</string>
-    <string name="storage_removable">Wymienna</string>
+    <string name="storage_removable">Woluminy wymienne</string>
+    <string name="storage_mounted_volume_count">Zamontowane woluminy</string>
     <string name="storage_removable_storage">Pamięć wymienna</string>
     <string name="storage_state_mounted">Zamontowana</string>
     <string name="storage_state_read_only">Zamontowana tylko do odczytu</string>
@@ -806,16 +807,12 @@
     <string name="pdf_completed">Ukończono</string>
     <string name="pdf_duration">Czas trwania</string>
     <string name="pdf_score">Ocena</string>
-    <string name="pdf_score_state">Stan oceny</string>
     <string name="pdf_coverage">Stopień ukończenia</string>
-    <string name="pdf_counts">Liczby obserwacji</string>
     <string name="pdf_categories">Kategorie diagnostyczne</string>
     <string name="pdf_source">Źródło</string>
-    <string name="pdf_confidence">Wiarygodność</string>
     <string name="pdf_reason">Przyczyna</string>
     <string name="pdf_captured">Zarejestrowano</string>
     <string name="pdf_unit_samples">próbek</string>
-    <string name="pdf_counts_value">Obserwacje: ukończone %1$d, nie zmierzono %2$d, wykluczone %3$d. Ostrzeżenia: %4$d, wyniki negatywne: %5$d.</string>
     <string name="pdf_page">Strona %1$d / %2$d</string>
     <string name="export_title">Eksport raportu</string>
     <string name="export_description">Utwórz lokalną kopię tego niezmiennego zapisanego raportu.</string>
@@ -908,6 +905,7 @@
     <string name="display_touch_desc">Rysuj po siatce, aby sprawdzić reakcję na dotyk na całym ekranie.</string>
     <string name="display_touch_reset">Wyzeruj siatkę</string>
     <string name="display_info_title">Informacje o ekranie</string>
+    <string name="display_pixel_count">Liczba pikseli ekranu</string>
     <string name="display_resolution">Rozdzielczość</string>
     <string name="display_density">Gęstość pikseli</string>
     <string name="display_refresh_rate">Częstotliwość odświeżania</string>

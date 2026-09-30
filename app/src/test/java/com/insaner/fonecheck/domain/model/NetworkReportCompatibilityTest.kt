@@ -118,9 +118,10 @@ class NetworkReportCompatibilityTest {
         assertTrue(texts.contains("LTE"))
         assertTrue(texts.contains("5G"))
         assertTrue(texts.any { it.contains("network display indication") })
-        assertTrue(texts.any { it.contains("fourth generation") })
-        assertTrue(texts.contains("sim.display_override"))
-        assertTrue(texts.any { it.contains("Confidence: high") })
+        // Paper shows the two scoped readings; raw callback fields and the superseded generation stay in JSON.
+        assertFalse(texts.any { it.contains("fourth generation") })
+        assertFalse(texts.contains("sim.display_override"))
+        assertFalse(texts.contains("sim.display_base_network"))
         val unavailable = assemble(listOf(old) + observation(NetworkReadState.UNSUPPORTED).toNetworkEvidence())
         assertTrue(
             ReportPdfContentBuilder.build(unavailable, PdfReportLabels.english()).any {

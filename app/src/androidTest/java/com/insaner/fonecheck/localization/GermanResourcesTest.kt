@@ -53,7 +53,6 @@ class GermanResourcesTest {
             assertEquals("Zeitlimit erreicht", labels.reasonName(EvidenceReasonCode.TIMEOUT))
             assertEquals("Prüfung wurde nicht abgeschlossen", labels.reasonName(EvidenceReasonCode.NOT_RUN))
             assertEquals("Prüfumfang", labels.coverage)
-            assertEquals("Vertrauensgrad", labels.confidence)
             assertPdfDecimalFormatting(context, labels, "Seite 1 / 2")
             assertEquals(
                 "Android meldet eine Überspannung des Akkus. Beende das Laden und lass Akku und Ladesystem überprüfen.",

@@ -13,9 +13,13 @@
     <string name="pdf_failures">Fehlgeschlagen</string>
     <string name="pdf_no_failures">Keine fehlgeschlagenen Beobachtungen aufgezeichnet.</string>
     <string name="pdf_findings_reference">Hier wird eine Auswahl gezeigt. Alle aufgezeichneten Beobachtungen und Einschränkungen stehen unter Detaillierte Ergebnisse.</string>
-    <string name="pdf_completed_note">Abgeschlossene Beobachtungen umfassen Informationen, nicht nur bestandene Funktionstests.</string>
     <string name="pdf_interpretation">Bestanden bedeutet, dass ein aufgezeichnetes Kriterium erfüllt wurde; fehlgeschlagen, dass es nicht erfüllt wurde; Warnung kennzeichnet einen aufgezeichneten Hinweis auf ein Problem. Info ist beschreibend. Nicht gemessen bedeutet, dass kein abgeschlossenes Ergebnis vorliegt; nicht verfügbar wird ausgeschlossen. Die Quelle beschreibt die Herkunft, die Zuverlässigkeit die Verlässlichkeit einer Beobachtung. Die Berichts-ID kennzeichnet einen Bericht, kein authentifiziertes Telefon. Diese Datei ist weder signiert noch unabhängig verifiziert.</string>
     <string name="pdf_continued">Fortsetzung</string>
+    <string name="pdf_group_tests">Hardwaretests</string>
+    <string name="pdf_group_info">Geräteinformationen</string>
+    <string name="pdf_confirmed_working">Als funktionierend bestätigt</string>
+    <string name="pdf_problem_reported">Problem gemeldet</string>
+    <string name="pdf_confidence_note">Der Vertrauensgrad wird nur angegeben, wenn er nicht hoch ist.</string>
     <string name="pdf_limitation">Dieser Bericht fasst in fonecheck aufgezeichnete Beobachtungen zusammen. Er bescheinigt den Gesamtzustand des Geräts nicht unabhängig.</string>
     <string name="pdf_user_display">Der Nutzer meldete während des Tests ein sichtbares Displayproblem.</string>
     <string name="pdf_user_audio">Der Nutzer meldete während des Tests ein Audioproblem.</string>

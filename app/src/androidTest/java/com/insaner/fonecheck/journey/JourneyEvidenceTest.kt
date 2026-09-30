@@ -277,12 +277,13 @@ class JourneyEvidenceTest {
                 assertTrue(text.contains(labels.completedValue(retest.completedAt)))
                 assertTrue(
                     text.contains(
-                        labels.completedValue(
+                        labels.observedAtValue(
                             retest.categories
                                 .single()
                                 .evidence
                                 .single()
                                 .capturedAt,
+                            retest.completedAt,
                         ),
                     ),
                 )
