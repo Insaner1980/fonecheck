@@ -3,6 +3,11 @@ buildscript {
     val protobufVersion = "4.36.1"
     val bouncyCastleVersion = "1.85"
     val jsoupVersion = "1.23.2"
+    // The version catalog is not yet available inside buildscript; read the one Kotlin version from it.
+    val kotlinVersion =
+        Regex("(?m)^kotlin = \"([^\"]+)\"")
+            .find(file("gradle/libs.versions.toml").readText())!!
+            .groupValues[1]
 
     configurations.classpath {
         resolutionStrategy {
@@ -21,6 +26,9 @@ buildscript {
                 "org.bouncycastle:bcutil-jdk18on:$bouncyCastleVersion",
                 "org.jdom:jdom2:2.0.6.1",
                 "org.jsoup:jsoup:$jsoupVersion",
+                // AGP requests its own built-in Kotlin plugin version (CVE-2026-53914); pin the catalog version
+                // so the older plugin is not resolved or verified at all.
+                "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion",
             )
             activateDependencyLocking()
         }

@@ -12,6 +12,10 @@ Five upstream source files are maintained locally: `StabilityAnalyzerTransformer
 source files are extracted at build time from the pinned Maven source artifacts.
 No artifact/cache is modified, published, or installed into Maven local.
 
+Kotlin 2.4.20 made reading `MESSAGE_COLLECTOR_KEY` opt-in. The upstream
+`StabilityAnalyzerPluginRegistrar` still does, so `compose-stability-compiler` opts in to
+`org.jetbrains.kotlin.config.MessageCollectorAccess` rather than patching a sixth file.
+
 The transformer selects `IrParameterKind.ExtensionReceiver` explicitly and records
 its rendered type (including type annotations), name, inferred stability and reason
 in an optional `receiver` object. Dispatch receivers identify the enclosing instance
