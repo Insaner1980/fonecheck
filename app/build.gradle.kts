@@ -104,10 +104,10 @@ configurations.configureEach {
         // AGP's sdklib still requests vulnerable HttpClient 4.5.6 for the lint tool process.
         resolutionStrategy.force(
             "org.apache.httpcomponents:httpclient:${libs.versions.apacheHttpClient.get()}",
-            "org.apache.commons:commons-lang3:3.20.0",
-            "org.bouncycastle:bcpkix-jdk18on:1.85",
-            "org.bouncycastle:bcprov-jdk18on:1.85",
-            "org.bouncycastle:bcutil-jdk18on:1.85",
+            "org.apache.commons:commons-lang3:${libs.versions.commonsLang.get()}",
+            "org.bouncycastle:bcpkix-jdk18on:${libs.versions.bouncyCastle.get()}",
+            "org.bouncycastle:bcprov-jdk18on:${libs.versions.bouncyCastle.get()}",
+            "org.bouncycastle:bcutil-jdk18on:${libs.versions.bouncyCastle.get()}",
         )
     }
 }
