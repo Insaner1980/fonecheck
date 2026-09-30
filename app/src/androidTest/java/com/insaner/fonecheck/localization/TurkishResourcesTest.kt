@@ -62,7 +62,6 @@ class TurkishResourcesTest {
             val labels = ReportPdfRenderer(context).labels(context)
             assertEquals("fonecheck tanılama raporu", labels.title)
             assertEquals("Tamamlanma oranı", labels.coverage)
-            assertEquals("Güvenilirlik", labels.confidence)
             assertEquals("Yüksek güvenilirlik", labels.confidenceName(Confidence.HIGH))
             assertEquals("Düşük güvenilirlik", labels.confidenceName(Confidence.LOW))
             mapOf(

@@ -13,9 +13,13 @@
     <string name="pdf_failures">Falhas</string>
     <string name="pdf_no_failures">Nenhuma observação com falha foi registrada.</string>
     <string name="pdf_findings_reference">Uma seleção de observações é mostrada aqui. Todas as observações e limitações registradas estão em Resultados detalhados.</string>
-    <string name="pdf_completed_note">As observações concluídas incluem informações, não apenas testes funcionais aprovados.</string>
     <string name="pdf_interpretation">Aprovado indica que um critério registrado foi atendido; falha, que não foi; aviso indica um ponto de atenção registrado. Informação é descritiva. Não medido indica que não há resultado concluído; não disponível é excluído. A fonte indica como a observação foi obtida; a confiança indica sua confiabilidade. O ID identifica um relatório, não um aparelho autenticado. Este arquivo não é assinado nem verificado de forma independente.</string>
     <string name="pdf_continued">Continuação</string>
+    <string name="pdf_group_tests">Testes de hardware</string>
+    <string name="pdf_group_info">Informações do dispositivo</string>
+    <string name="pdf_confirmed_working">Funcionamento confirmado</string>
+    <string name="pdf_problem_reported">Problema relatado</string>
+    <string name="pdf_confidence_note">A confiança só é indicada quando não é alta.</string>
     <string name="pdf_limitation">Este relatório resume observações registradas no fonecheck. Ele não certifica de forma independente a condição geral do dispositivo.</string>
     <string name="pdf_user_display">O usuário relatou um problema visível na tela durante o teste.</string>
     <string name="pdf_user_audio">O usuário relatou um problema de áudio durante o teste.</string>

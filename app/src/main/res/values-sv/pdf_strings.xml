@@ -13,9 +13,13 @@
     <string name="pdf_failures">Misslyckade</string>
     <string name="pdf_no_failures">Inga misslyckade observationer registrerades.</string>
     <string name="pdf_findings_reference">Ett urval visas här. Alla registrerade observationer och begränsningar finns under Detaljerade resultat.</string>
-    <string name="pdf_completed_note">Slutförda observationer omfattar information, inte bara godkända funktionstester.</string>
     <string name="pdf_interpretation">Godkänd innebär att ett registrerat kriterium uppfylldes; misslyckad att det inte uppfylldes; varning markerar en registrerad anmärkning. Info är beskrivande. Inte uppmätt saknar slutfört resultat; inte tillgänglig undantas. Källa beskriver hur observationen erhölls; tillförlitlighet beskriver hur säker den är. Rapport-ID identifierar en rapport, inte en autentiserad telefon. Filen är inte signerad eller oberoende verifierad.</string>
     <string name="pdf_continued">Fortsättning</string>
+    <string name="pdf_group_tests">Maskinvarutester</string>
+    <string name="pdf_group_info">Enhetsinformation</string>
+    <string name="pdf_confirmed_working">Bekräftat fungerande</string>
+    <string name="pdf_problem_reported">Problem rapporterat</string>
+    <string name="pdf_confidence_note">Tillförlitlighet visas bara när den inte är hög.</string>
     <string name="pdf_limitation">Den här rapporten sammanfattar observationer registrerade i fonecheck. Den intygar inte oberoende enhetens allmänna skick.</string>
     <string name="pdf_user_display">Användaren rapporterade ett synligt skärmproblem under testet.</string>
     <string name="pdf_user_audio">Användaren rapporterade ett ljudproblem under testet.</string>

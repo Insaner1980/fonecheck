@@ -60,7 +60,6 @@ class SwedishResourcesTest {
             assertEquals("Tidsgränsen nådd", labels.reasonName(EvidenceReasonCode.TIMEOUT))
             assertEquals("Kontrollen slutfördes inte", labels.reasonName(EvidenceReasonCode.NOT_RUN))
             assertEquals("Andel genomförda kontroller", labels.coverage)
-            assertEquals("Tillförlitlighet", labels.confidence)
             assertEquals("Hög tillförlitlighet", labels.confidenceName(Confidence.HIGH))
             assertEquals("Låg tillförlitlighet", labels.confidenceName(Confidence.LOW))
             assertEquals("Inte tillgängligt", labels.confidenceName(Confidence.UNAVAILABLE))

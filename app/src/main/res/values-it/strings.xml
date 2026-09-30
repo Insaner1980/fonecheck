@@ -537,7 +537,8 @@
     <string name="storage_volume_primary">Archiviazione condivisa principale</string>
     <string name="storage_volume_number">Volume condiviso %1$d</string>
     <string name="storage_mounted_state">Stato</string>
-    <string name="storage_removable">Rimovibile</string>
+    <string name="storage_removable">Volumi rimovibili</string>
+    <string name="storage_mounted_volume_count">Volumi montati</string>
     <string name="storage_removable_storage">Archiviazione rimovibile</string>
     <string name="storage_state_mounted">Montato</string>
     <string name="storage_state_read_only">Montato in sola lettura</string>
@@ -826,16 +827,12 @@
     <string name="pdf_completed">Completato</string>
     <string name="pdf_duration">Durata</string>
     <string name="pdf_score">Punteggio</string>
-    <string name="pdf_score_state">Stato del punteggio</string>
     <string name="pdf_coverage">Completezza dei controlli</string>
-    <string name="pdf_counts">Conteggi</string>
     <string name="pdf_categories">Categorie diagnostiche</string>
     <string name="pdf_source">Fonte</string>
-    <string name="pdf_confidence">Affidabilità</string>
     <string name="pdf_reason">Motivo</string>
     <string name="pdf_captured">Acquisizione</string>
     <string name="pdf_unit_samples">campioni</string>
-    <string name="pdf_counts_value">Osservazioni: completate %1$d, non misurate %2$d, escluse %3$d. Avvisi: %4$d, esiti negativi: %5$d.</string>
     <string name="pdf_page">Pagina %1$d / %2$d</string>
     <string name="export_title">Esporta rapporto</string>
     <string name="export_description">Crea una copia locale di questo rapporto salvato e immutabile.</string>
@@ -933,6 +930,7 @@
     <string name="display_touch_desc">Disegna sulla griglia per verificare la risposta al tocco su tutto lo schermo.</string>
     <string name="display_touch_reset">Azzera griglia</string>
     <string name="display_info_title">Informazioni schermo</string>
+    <string name="display_pixel_count">Numero di pixel dello schermo</string>
     <string name="display_resolution">Risoluzione</string>
     <string name="display_density">Densità</string>
     <string name="display_refresh_rate">Frequenza di aggiornamento</string>

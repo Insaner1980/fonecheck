@@ -53,7 +53,6 @@ class FrenchResourcesTest {
             assertEquals("Délai dépassé", labels.reasonName(EvidenceReasonCode.TIMEOUT))
             assertEquals("La vérification n’a pas été terminée", labels.reasonName(EvidenceReasonCode.NOT_RUN))
             assertEquals("Étendue des vérifications", labels.coverage)
-            assertEquals("Niveau de confiance", labels.confidence)
             mapOf(
                 "battery.health" to "État de la batterie selon Android",
                 "battery.level" to "Niveau de charge",

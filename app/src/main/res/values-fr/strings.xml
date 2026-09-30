@@ -537,7 +537,8 @@
     <string name="storage_volume_primary">Stockage partagé principal</string>
     <string name="storage_volume_number">Volume partagé %1$d</string>
     <string name="storage_mounted_state">État</string>
-    <string name="storage_removable">Amovible</string>
+    <string name="storage_removable">Volumes amovibles</string>
+    <string name="storage_mounted_volume_count">Volumes montés</string>
     <string name="storage_removable_storage">Stockage amovible</string>
     <string name="storage_state_mounted">Monté</string>
     <string name="storage_state_read_only">Monté en lecture seule</string>
@@ -826,16 +827,12 @@
     <string name="pdf_completed">Terminé le</string>
     <string name="pdf_duration">Durée</string>
     <string name="pdf_score">Score</string>
-    <string name="pdf_score_state">État du score</string>
     <string name="pdf_coverage">Étendue des vérifications</string>
-    <string name="pdf_counts">Décompte</string>
     <string name="pdf_categories">Catégories de diagnostic</string>
     <string name="pdf_source">Source</string>
-    <string name="pdf_confidence">Niveau de confiance</string>
     <string name="pdf_reason">Motif</string>
     <string name="pdf_captured">Relevé le</string>
     <string name="pdf_unit_samples">échantillons</string>
-    <string name="pdf_counts_value">Observations\u00a0: effectuées\u00a0: %1$d, non mesurées\u00a0: %2$d, exclues\u00a0: %3$d. Avertissements\u00a0: %4$d, échecs\u00a0: %5$d.</string>
     <string name="pdf_page">Page %1$d / %2$d</string>
     <string name="export_title">Exporter le rapport</string>
     <string name="export_description">Créez une copie locale de ce rapport enregistré immuable.</string>
@@ -933,6 +930,7 @@
     <string name="display_touch_desc">Dessinez sur la grille pour vérifier la réponse tactile sur tout l’écran.</string>
     <string name="display_touch_reset">Réinitialiser la grille</string>
     <string name="display_info_title">Informations de l’écran</string>
+    <string name="display_pixel_count">Nombre de pixels de l’écran</string>
     <string name="display_resolution">Résolution</string>
     <string name="display_density">Densité</string>
     <string name="display_refresh_rate">Fréquence de rafraîchissement</string>

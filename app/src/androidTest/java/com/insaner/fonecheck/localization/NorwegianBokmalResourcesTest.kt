@@ -64,7 +64,6 @@ class NorwegianBokmalResourcesTest {
             assertEquals("Tidsavbrudd", labels.reasonName(EvidenceReasonCode.TIMEOUT))
             assertEquals("Sjekken ble ikke fullført", labels.reasonName(EvidenceReasonCode.NOT_RUN))
             assertEquals("Fullføringsgrad", labels.coverage)
-            assertEquals("Pålitelighet", labels.confidence)
             assertEquals("Høy pålitelighet", labels.confidenceName(Confidence.HIGH))
             assertEquals("Lav pålitelighet", labels.confidenceName(Confidence.LOW))
             assertEquals("Utilgjengelig", labels.confidenceName(Confidence.UNAVAILABLE))

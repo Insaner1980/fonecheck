@@ -7,6 +7,7 @@ import com.insaner.fonecheck.testing.batteryReport
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Instant
 
 class ReportPdfContentTest {
     @Test
@@ -48,8 +49,8 @@ class ReportPdfContentTest {
         assertTrue(text.contains("Device: Finnvek Test Device"))
         assertTrue(text.contains("Coverage: 100%"))
         assertTrue(text.contains("battery.level"))
-        assertTrue(text.contains("Source: android_api"))
-        assertTrue(text.contains("Confidence: high"))
+        // High confidence is the unmarked case; only a lower confidence is printed.
+        assertTrue(blocks.any { it.text == "android_api, Captured: 2026-08-08T10:00:30Z" })
         assertTrue(text.contains("Reason: permission denied"))
         assertTrue(text.contains("This report summarizes observations recorded in fonecheck."))
     }
@@ -58,8 +59,9 @@ class ReportPdfContentTest {
     fun scoreStateIsASeparateBodyLineBetweenScoreAndCoverage() {
         val blocks = ReportPdfContentBuilder.build(report(), PdfReportLabels.english())
         val scoreIndex = blocks.indexOf(PdfTextBlock("Score: n/a", PdfTextStyle.HEADING))
-        val scoreStateIndex = blocks.indexOf(PdfTextBlock("Score state: incomplete", PdfTextStyle.BODY))
-        val coverageIndex = blocks.indexOf(PdfTextBlock("Coverage: 100%", PdfTextStyle.HEADING))
+        val scoreStateIndex = blocks.indexOf(PdfTextBlock("incomplete", PdfTextStyle.BODY))
+        val coverageIndex =
+            blocks.indexOf(PdfTextBlock("Coverage: 100%, Completed / applicable: 1/1", PdfTextStyle.BODY))
 
         assertTrue(scoreIndex >= 0)
         assertEquals(scoreIndex + 1, scoreStateIndex)
@@ -89,20 +91,32 @@ class ReportPdfContentTest {
     }
 
     @Test
-    fun completedAndCapturedTimestampsUseTheLocalizedDateFormatter() {
-        val labels = PdfReportLabels.english().copy(completedValue = { "localized date" })
+    fun completedAndCapturedTimestampsUseTheLocalizedFormatters() {
+        val report = report()
+        var reference: Instant? = null
+        val labels =
+            PdfReportLabels.english().copy(
+                completedValue = { "localized date" },
+                observedAtValue = { _, completed ->
+                    reference = completed
+                    "localized time"
+                },
+            )
 
-        val blocks = ReportPdfContentBuilder.build(report(), labels)
+        val blocks = ReportPdfContentBuilder.build(report, labels)
 
-        assertEquals(2, blocks.count { it.text.endsWith("localized date") })
+        assertEquals(1, blocks.count { it.text.startsWith("Completed: localized date") })
+        assertEquals(1, blocks.count { it.text.endsWith("Captured: localized time") })
+        assertEquals(report.completedAt, reference)
     }
 
     @Test
     fun categoriesOutsideCategoryReportAreNotShownAsUnfinished() {
         val blocks = ReportPdfContentBuilder.build(report(), PdfReportLabels.english())
-        val categoryHeadings = blocks.filter { it.style == PdfTextStyle.CATEGORY }.map(PdfTextBlock::text)
+        val categoryHeadings = blocks.filter { it.style == PdfTextStyle.CATEGORY }
 
-        assertEquals(listOf("Battery: info"), categoryHeadings)
+        assertEquals(listOf("Battery"), categoryHeadings.map(PdfTextBlock::text))
+        assertEquals(listOf("info"), categoryHeadings.map { it.columns.last() })
     }
 
     private fun report() =

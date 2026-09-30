@@ -583,7 +583,8 @@
     <string name="storage_volume_primary">Ensisijainen jaettu tallennustila</string>
     <string name="storage_volume_number">Jaettu taltio %1$d</string>
     <string name="storage_mounted_state">Tila</string>
-    <string name="storage_removable">Irrotettava</string>
+    <string name="storage_removable">Irrotettavat taltiot</string>
+    <string name="storage_mounted_volume_count">Liitetyt taltiot</string>
     <string name="storage_removable_storage">Irrotettava tallennustila</string>
     <string name="storage_state_mounted">Liitetty</string>
     <string name="storage_state_read_only">Liitetty vain luku -tilassa</string>
@@ -872,16 +873,12 @@
     <string name="pdf_completed">Valmistunut</string>
     <string name="pdf_duration">Kesto</string>
     <string name="pdf_score">Pisteet</string>
-    <string name="pdf_score_state">Pisteiden tila</string>
     <string name="pdf_coverage">Kattavuus</string>
-    <string name="pdf_counts">Lukumäärät</string>
     <string name="pdf_categories">Diagnostiikkakategoriat</string>
     <string name="pdf_source">Lähde</string>
-    <string name="pdf_confidence">Luottamustaso</string>
     <string name="pdf_reason">Syy</string>
     <string name="pdf_captured">Tallennettu</string>
     <string name="pdf_unit_samples">näytettä</string>
-    <string name="pdf_counts_value">Havainnot — valmistuneet: %1$d, ei mitattu: %2$d, pois rajatut: %3$d. Varoitukset: %4$d, ongelmat: %5$d.</string>
     <string name="pdf_page">Sivu %1$d / %2$d</string>
     <string name="export_title">Vie raportti</string>
     <string name="export_description">Luo paikallinen kopio tästä muuttumattomasta tallennetusta raportista.</string>
@@ -981,6 +978,7 @@
     <string name="display_touch_desc">Piirrä ruudukkoon varmistaaksesi kosketusvasteen koko näytöllä.</string>
     <string name="display_touch_reset">Tyhjennä ruudukko</string>
     <string name="display_info_title">Näytön tiedot</string>
+    <string name="display_pixel_count">Näytön pikselimäärä</string>
     <string name="display_resolution">Resoluutio</string>
     <string name="display_density">Tiheys</string>
     <string name="display_refresh_rate">Virkistystaajuus</string>

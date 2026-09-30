@@ -13,9 +13,13 @@
     <string name="pdf_failures">Fejl</string>
     <string name="pdf_no_failures">Ingen mislykkede observationer blev registreret.</string>
     <string name="pdf_findings_reference">Et udvalg vises her. Alle registrerede observationer og begrænsninger findes under Detaljerede resultater.</string>
-    <string name="pdf_completed_note">Gennemførte observationer omfatter oplysninger, ikke kun beståede funktionstest.</string>
     <string name="pdf_interpretation">Bestået betyder, at et registreret kriterium blev opfyldt; fejl at det ikke blev opfyldt; advarsel markerer et registreret forhold, der kræver opmærksomhed. Info er beskrivende. Ikke målt mangler et gennemført resultat; ikke tilgængelig udelades. Kilden beskriver, hvordan observationen blev indhentet; pålidelighed beskriver dens sikkerhed. Rapport-ID identificerer en rapport, ikke en godkendt telefons identitet. Filen er ikke signeret eller uafhængigt verificeret.</string>
     <string name="pdf_continued">Fortsat</string>
+    <string name="pdf_group_tests">Hardwaretest</string>
+    <string name="pdf_group_info">Enhedsoplysninger</string>
+    <string name="pdf_confirmed_working">Bekræftet fungerende</string>
+    <string name="pdf_problem_reported">Problem rapporteret</string>
+    <string name="pdf_confidence_note">Pålidelighed vises kun, når den ikke er høj.</string>
     <string name="pdf_limitation">Denne rapport sammenfatter observationer registreret i fonecheck. Den bekræfter ikke uafhængigt enhedens generelle tilstand.</string>
     <string name="pdf_user_display">Brugeren rapporterede et synligt skærmproblem under testen.</string>
     <string name="pdf_user_audio">Brugeren rapporterede et lydproblem under testen.</string>

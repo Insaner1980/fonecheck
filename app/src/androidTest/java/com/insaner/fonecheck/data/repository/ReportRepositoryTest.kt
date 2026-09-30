@@ -114,8 +114,17 @@ class ReportRepositoryTest {
             val saved = (loaded as ReportLoadResult.Available).report
             assertEquals(categories, ReportDetailPresenter.present(saved).categories)
             val labels = PdfReportLabels.english()
+            // The PDF sets hardware tests before device information and keeps the saved order within each.
+            val information =
+                setOf(
+                    DiagnosticCategoryId.DEVICE,
+                    DiagnosticCategoryId.PERFORMANCE,
+                    DiagnosticCategoryId.SIM,
+                    DiagnosticCategoryId.STORAGE,
+                )
+            val (informationIds, testIds) = categoryIds.partition { it in information }
             assertEquals(
-                categoryIds.map { "${labels.categoryName(it)}: pass" },
+                (testIds + informationIds).map(labels.categoryName),
                 ReportPdfContentBuilder
                     .build(saved, labels)
                     .filter { it.style == PdfTextStyle.CATEGORY }

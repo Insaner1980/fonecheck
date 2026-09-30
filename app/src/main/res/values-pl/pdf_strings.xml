@@ -13,9 +13,13 @@
     <string name="pdf_failures">Niepowodzenia</string>
     <string name="pdf_no_failures">Nie zapisano obserwacji zakończonych niepowodzeniem.</string>
     <string name="pdf_findings_reference">Tutaj przedstawiono wybrane obserwacje. Wszystkie zapisane obserwacje i ograniczenia znajdują się w części Szczegółowe wyniki.</string>
-    <string name="pdf_completed_note">Ukończone obserwacje obejmują informacje, nie tylko zaliczone testy funkcjonalne.</string>
     <string name="pdf_interpretation">Zaliczono oznacza spełnienie zapisanego kryterium, niepowodzenie jego niespełnienie, a ostrzeżenie wskazuje zapisaną kwestię wymagającą uwagi. Informacja ma charakter opisowy. Nie zmierzono oznacza brak ukończonego wyniku; niedostępne jest wyłączone. Źródło opisuje sposób uzyskania obserwacji, a wiarygodność jej rzetelność. ID identyfikuje raport, nie uwierzytelniony telefon. Plik nie jest podpisany ani niezależnie zweryfikowany.</string>
     <string name="pdf_continued">Ciąg dalszy</string>
+    <string name="pdf_group_tests">Testy sprzętu</string>
+    <string name="pdf_group_info">Informacje o urządzeniu</string>
+    <string name="pdf_confirmed_working">Potwierdzono działanie</string>
+    <string name="pdf_problem_reported">Zgłoszono problem</string>
+    <string name="pdf_confidence_note">Wiarygodność jest podawana tylko wtedy, gdy nie jest wysoka.</string>
     <string name="pdf_limitation">Ten raport podsumowuje obserwacje zapisane w fonecheck. Nie stanowi niezależnego potwierdzenia ogólnego stanu urządzenia.</string>
     <string name="pdf_user_display">Użytkownik zgłosił widoczny problem z ekranem podczas testu.</string>
     <string name="pdf_user_audio">Użytkownik zgłosił problem z dźwiękiem podczas testu.</string>

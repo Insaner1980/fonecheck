@@ -585,7 +585,8 @@
     <string name="storage_volume_primary">Penyimpanan bersama utama</string>
     <string name="storage_volume_number">Volume bersama %1$d</string>
     <string name="storage_mounted_state">Status</string>
-    <string name="storage_removable">Dapat dilepas</string>
+    <string name="storage_removable">Volume yang dapat dilepas</string>
+    <string name="storage_mounted_volume_count">Volume terpasang</string>
     <string name="storage_removable_storage">Penyimpanan lepas-pasang</string>
     <string name="storage_state_mounted">Terpasang</string>
     <string name="storage_state_read_only">Terpasang hanya-baca</string>
@@ -872,16 +873,12 @@
     <string name="pdf_completed">Selesai</string>
     <string name="pdf_duration">Durasi</string>
     <string name="pdf_score">Skor</string>
-    <string name="pdf_score_state">Status skor</string>
     <string name="pdf_coverage">Cakupan pemeriksaan</string>
-    <string name="pdf_counts">Jumlah</string>
     <string name="pdf_categories">Kategori diagnostik</string>
     <string name="pdf_source">Sumber</string>
-    <string name="pdf_confidence">Tingkat keyakinan</string>
     <string name="pdf_reason">Alasan</string>
     <string name="pdf_captured">Dicatat</string>
     <string name="pdf_unit_samples">sampel</string>
-    <string name="pdf_counts_value">Pengamatan: selesai: %1$d, belum diukur: %2$d, dikecualikan: %3$d. Peringatan: %4$d, kegagalan: %5$d.</string>
     <string name="pdf_page">Halaman %1$d / %2$d</string>
     <string name="export_title">Ekspor laporan</string>
     <string name="export_description">Buat salinan lokal laporan tersimpan yang tetap ini.</string>
@@ -980,6 +977,7 @@
     <string name="display_touch_desc">Gambar pada kisi untuk memeriksa respons sentuh di seluruh layar.</string>
     <string name="display_touch_reset">Reset kisi</string>
     <string name="display_info_title">Info layar</string>
+    <string name="display_pixel_count">Jumlah piksel layar</string>
     <string name="display_resolution">Resolusi</string>
     <string name="display_density">Kerapatan</string>
     <string name="display_refresh_rate">Laju penyegaran</string>

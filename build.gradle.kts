@@ -21,6 +21,9 @@ buildscript {
                 "org.bouncycastle:bcutil-jdk18on:$bouncyCastleVersion",
                 "org.jdom:jdom2:${libs.versions.jdom.get()}",
                 "org.jsoup:jsoup:$jsoupVersion",
+                // AGP requests its own built-in Kotlin plugin version (CVE-2026-53914); pin the catalog version
+                // so the older plugin is not resolved or verified at all.
+                "org.jetbrains.kotlin:kotlin-gradle-plugin:${libs.versions.kotlin.get()}",
             )
             activateDependencyLocking()
         }

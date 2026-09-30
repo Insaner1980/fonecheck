@@ -61,7 +61,6 @@ class PolishResourcesTest {
             ).forEach { (status, expected) -> assertEquals(expected, labels.statusName(status)) }
             assertEquals("Raport diagnostyczny fonecheck", labels.title)
             assertEquals("Stopień ukończenia", labels.coverage)
-            assertEquals("Wiarygodność", labels.confidence)
             mapOf(
                 Confidence.HIGH to "Wysoka wiarygodność",
                 Confidence.LOW to "Niska wiarygodność",
