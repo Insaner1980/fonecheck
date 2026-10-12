@@ -111,6 +111,18 @@ class A06aUiShellTest {
                 .put("appLanguageSelection", cell.locale)
                 .put("renderedScreen", "Settings")
         val capture = A06aUiCapture(composeRule, cell, "actual-shell", inputs)
+
+        // Back from a settings subpage must land on Settings with the row that opened it still shown.
+        fun returnToSettings(entryTag: String) {
+            back()
+            waitForTitle(R.string.settings_title)
+            inputs
+                .put("renderedScreen", "Settings")
+                .put("actualTitle", cell.localizedContext().getString(R.string.settings_title))
+            capture.bring(hasTestTag(entryTag)).assertIsDisplayed()
+            capture.checkpoint("back_to_settings")
+        }
+
         capture.guard {
             when (cell.state) {
                 "A1" -> {
@@ -130,13 +142,7 @@ class A06aUiShellTest {
                     capture.shellChrome(cell.localizedContext().getString(R.string.settings_language))
                     a06aInspectLanguages(capture, if (cell.locale == "fi") AppLanguage.FINNISH else AppLanguage.ENGLISH)
                     capture.sweep()
-                    back()
-                    waitForTitle(R.string.settings_title)
-                    inputs
-                        .put("renderedScreen", "Settings")
-                        .put("actualTitle", cell.localizedContext().getString(R.string.settings_title))
-                    capture.bring(hasTestTag("settings_language")).assertIsDisplayed()
-                    capture.checkpoint("back_to_settings")
+                    returnToSettings("settings_language")
                 }
                 "A3" -> {
                     capture.bring(hasTestTag("settings_licenses")).performClick()
@@ -144,13 +150,7 @@ class A06aUiShellTest {
                     inputs.put("renderedScreen", "Licenses")
                     a06aInspectLicenses(capture)
                     capture.shellChrome(cell.localizedContext().getString(R.string.licenses_title))
-                    back()
-                    waitForTitle(R.string.settings_title)
-                    inputs
-                        .put("renderedScreen", "Settings")
-                        .put("actualTitle", cell.localizedContext().getString(R.string.settings_title))
-                    capture.bring(hasTestTag("settings_licenses")).assertIsDisplayed()
-                    capture.checkpoint("back_to_settings")
+                    returnToSettings("settings_licenses")
                 }
             }
         }

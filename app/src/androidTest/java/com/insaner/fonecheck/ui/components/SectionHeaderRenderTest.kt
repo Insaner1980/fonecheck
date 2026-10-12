@@ -4,17 +4,10 @@ import android.content.res.Configuration
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
-import androidx.compose.ui.test.DeviceConfigurationOverride
-import androidx.compose.ui.test.FontScale
-import androidx.compose.ui.test.ForcedSize
-import androidx.compose.ui.test.Locales
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
@@ -23,9 +16,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performSemanticsAction
-import androidx.compose.ui.test.then
 import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -42,7 +33,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import java.util.Locale
-import kotlin.math.ceil
 
 @RunWith(Parameterized::class)
 class SectionHeaderRenderTest(
@@ -71,44 +61,31 @@ class SectionHeaderRenderTest(
             } else {
                 null
             }
-        var density = 0f
-        var actualFontScale = 0f
-        var resourceLanguage = ""
-        var textLanguage = ""
+        val environment = RenderEnvironment()
 
         composeRule.setContent {
-            DeviceConfigurationOverride(
-                DeviceConfigurationOverride
-                    .Locales(LocaleList(language))
-                    .then(DeviceConfigurationOverride.FontScale(fontScale))
-                    .then(DeviceConfigurationOverride.ForcedSize(DpSize(contentWidthDp.dp, 200.dp))),
-            ) {
-                density = LocalDensity.current.density
-                actualFontScale = LocalDensity.current.fontScale
-                resourceLanguage = LocalConfiguration.current.locales[0].language
-                textLanguage = LocalLocale.current.platformLocale.language
-                FonecheckTheme(darkTheme = dark) {
-                    // No housing inset or side padding: this width is the effective content width.
-                    SectionHeader(
-                        label = label,
-                        trailing = trailing,
-                        modifier = Modifier.background(FonecheckTheme.colors.panel).testTag("section-header-fixture"),
-                    )
-                }
+            ThemedRenderFixture(language, fontScale, DpSize(contentWidthDp.dp, 200.dp), dark, environment) {
+                // No housing inset or side padding: this width is the effective content width.
+                SectionHeader(
+                    label = label,
+                    trailing = trailing,
+                    modifier = Modifier.background(FonecheckTheme.colors.panel).testTag("section-header-fixture"),
+                )
             }
         }
 
+        val density = environment.density
         val root = composeRule.onNodeWithTag("section-header-fixture").fetchSemanticsNode().boundsInRoot
         Log.i(
             "A06aSectionHeader",
-            "contentWidthDp=${root.width / density} requestedDp=$contentWidthDp fontScale=$actualFontScale " +
-                "density=$density resourceLanguage=$resourceLanguage textLanguage=$textLanguage " +
-                "dark=$dark withTrailing=$withTrailing bounds=$root",
+            "contentWidthDp=${root.width / density} requestedDp=$contentWidthDp fontScale=${environment.fontScale} " +
+                "density=$density resourceLanguage=${environment.resourceLanguage} " +
+                "textLanguage=${environment.textLanguage} dark=$dark withTrailing=$withTrailing bounds=$root",
         )
         assertEquals(contentWidthDp.toFloat(), root.width / density, 0.5f)
-        assertEquals(fontScale, actualFontScale, 0.001f)
-        assertEquals(language, resourceLanguage)
-        assertEquals(language, textLanguage)
+        assertEquals(fontScale, environment.fontScale, 0.001f)
+        assertEquals(language, environment.resourceLanguage)
+        assertEquals(language, environment.textLanguage)
         assertEquals(
             if (withTrailing) 2 else 1,
             composeRule
@@ -161,40 +138,15 @@ class SectionHeaderRenderTest(
             if (dark) DarkFonecheckColors.textMuted else LightFonecheckColors.textMuted,
             layout.layoutInput.style.color,
         )
-        assertEquals(ceil(paragraph.width).toInt(), layout.size.width)
-        assertEquals(ceil(paragraph.height).toInt(), layout.size.height)
-        assertFalse(layout.didOverflowWidth)
-        assertFalse(layout.didOverflowHeight)
-        assertFalse(layout.hasVisualOverflow)
-        assertFalse(paragraph.didExceedMaxLines)
-        assertTrue(layout.lineCount > 0)
-        assertEquals(0, layout.getLineStart(0))
-        for (line in 0 until layout.lineCount) {
-            assertFalse(layout.isLineEllipsized(line))
-            assertTrue(layout.getLineLeft(line) >= -1f)
-            assertTrue(layout.getLineRight(line) <= layout.size.width + 1f)
-            if (line > 0) assertEquals(layout.getLineEnd(line - 1), layout.getLineStart(line))
-        }
-        assertEquals(text.length, layout.getLineEnd(layout.lineCount - 1, visibleEnd = true))
-        for (offset in text.indices) {
-            val bounds = layout.getBoundingBox(offset)
-            assertTrue("Character $offset outside layout: $bounds", bounds.left >= -1f)
-            assertTrue("Character $offset outside layout: $bounds", bounds.right <= layout.size.width + 1f)
-            assertTrue("Character $offset outside layout: $bounds", bounds.top >= -1f)
-            assertTrue("Character $offset outside layout: $bounds", bounds.bottom <= layout.size.height + 1f)
-        }
+        assertTextFitsLayout(layout, text)
     }
 
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}dp scale={1} dark={2} locale={3} trailing={4}")
         fun configurations(): List<Array<Any>> =
-            listOf(276 to 1f, 320 to 1f, 276 to 2f, 320 to 2f).flatMap { (width, scale) ->
-                listOf(false, true).flatMap { dark ->
-                    listOf("en", "fi").flatMap { language ->
-                        listOf(false, true).map { trailing -> arrayOf<Any>(width, scale, dark, language, trailing) }
-                    }
-                }
+            renderConfigurations(276 to 1f, 320 to 1f, 276 to 2f, 320 to 2f).flatMap { base ->
+                listOf(false, true).map { trailing -> arrayOf<Any>(*base, trailing) }
             }
     }
 }

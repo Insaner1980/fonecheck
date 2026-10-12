@@ -318,24 +318,8 @@ class JourneyAutomaticStageTest {
             click(R.string.run_all_permissions_continue)
         }
 
-        fun continueAutomaticReviews() {
-            val categories =
-                run.state.value.plan.categories
-                    .filter { it.stage == RunAllStage.AUTOMATIC }
-            assertTrue(categories.isNotEmpty())
-            categories.forEach { category ->
-                compose.waitUntil(10_000L) {
-                    val state = run.state.value
-                    state.stage == RunAllStage.AUTOMATIC && state.awaitingContinue && state.reviewCategory == category
-                }
-                compose.waitForIdle()
-                val state = run.state.value
-                assertEquals(RunAllStage.AUTOMATIC, state.stage)
-                assertNull(state.report)
-                assertEquals(ReportSaveStatus.IDLE, state.saveStatus)
-                click(R.string.run_all_buttons_continue)
-            }
-        }
+        fun continueAutomaticReviews() =
+            continueAutomaticStageReviews(compose, run) { click(R.string.run_all_buttons_continue) }
 
         fun assertStarted() {
             compose.waitUntil(10_000L) { started.count == 0L }

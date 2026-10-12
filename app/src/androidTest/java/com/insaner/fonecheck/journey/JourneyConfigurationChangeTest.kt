@@ -428,25 +428,11 @@ class JourneyConfigurationChangeTest {
             }
         }
 
-        fun continueAutomaticReviews() {
-            val categories =
-                run.state.value.plan.categories
-                    .filter { it.stage == RunAllStage.AUTOMATIC }
-            assertTrue(categories.isNotEmpty())
-            categories.forEach { category ->
-                compose.waitUntil(10_000L) {
-                    val state = run.state.value
-                    state.stage == RunAllStage.AUTOMATIC && state.awaitingContinue && state.reviewCategory == category
-                }
-                compose.waitForIdle()
-                val state = run.state.value
-                assertEquals(RunAllStage.AUTOMATIC, state.stage)
-                assertNull(state.report)
-                assertEquals(ReportSaveStatus.IDLE, state.saveStatus)
+        fun continueAutomaticReviews() =
+            continueAutomaticStageReviews(compose, run) {
                 assertNoSavedReports()
                 click(R.string.run_all_buttons_continue)
             }
-        }
 
         fun assertPending(expectedStarts: Int) {
             compose.waitUntil(10_000L) { starts.get() == expectedStarts }

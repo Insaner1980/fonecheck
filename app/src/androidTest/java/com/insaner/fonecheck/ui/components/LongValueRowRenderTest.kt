@@ -120,11 +120,6 @@ class LongValueRowRenderTest(
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}dp scale={1} dark={2} locale={3}")
-        fun configurations(): List<Array<Any>> =
-            listOf(380 to 1f, 320 to 1f, 380 to 2f, 320 to 2f).flatMap { (width, scale) ->
-                listOf(false, true).flatMap { dark ->
-                    listOf("en", "fi").map { language -> arrayOf<Any>(width, scale, dark, language) }
-                }
-            }
+        fun configurations(): List<Array<Any>> = renderConfigurations(380 to 1f, 320 to 1f, 380 to 2f, 320 to 2f)
     }
 }

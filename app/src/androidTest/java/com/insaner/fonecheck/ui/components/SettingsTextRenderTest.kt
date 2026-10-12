@@ -14,19 +14,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.state.ToggleableState
-import androidx.compose.ui.test.DeviceConfigurationOverride
-import androidx.compose.ui.test.FontScale
-import androidx.compose.ui.test.ForcedSize
-import androidx.compose.ui.test.Locales
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
@@ -46,10 +40,8 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.then
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -73,7 +65,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import java.util.Locale
-import kotlin.math.ceil
 
 /** Exercises the production Text calls without adding onTextLayout or changing their constraints. */
 @RunWith(Parameterized::class)
@@ -272,40 +263,27 @@ class SettingsTextRenderTest(
         // Settings owns 16dp per side; the direct DataRow fixture owns no horizontal padding.
         val forcedWidth = contentWidthDp + if (screenPadding) 32 else 0
         var fixtureWidth = forcedWidth.dp
-        var density = 0f
-        var actualFontScale = 0f
-        var resourceLanguage = ""
-        var textLanguage = ""
+        val environment = RenderEnvironment()
         composeRule.setContent {
-            DeviceConfigurationOverride(
-                DeviceConfigurationOverride
-                    .Locales(LocaleList(language))
-                    .then(DeviceConfigurationOverride.FontScale(fontScale))
-                    .then(DeviceConfigurationOverride.ForcedSize(DpSize(forcedWidth.dp, 640.dp))),
-            ) {
-                density = LocalDensity.current.density
-                actualFontScale = LocalDensity.current.fontScale
-                resourceLanguage = LocalConfiguration.current.locales[0].language
-                textLanguage = LocalLocale.current.platformLocale.language
-                FonecheckTheme(darkTheme = dark) {
-                    // ForcedSize rounds the total width; production padding rounds each side separately.
-                    fixtureWidth =
-                        with(LocalDensity.current) {
-                            val paddingPx = if (screenPadding) FonecheckTheme.spacing.md.roundToPx() else 0
-                            (contentWidthDp.dp.roundToPx() + 2 * paddingPx).toDp()
-                        }
-                    Box(
-                        Modifier
-                            .requiredWidth(fixtureWidth)
-                            .fillMaxSize()
-                            .background(FonecheckTheme.colors.panel)
-                            .testTag("settings-text-fixture"),
-                    ) {
-                        content()
+            ThemedRenderFixture(language, fontScale, DpSize(forcedWidth.dp, 640.dp), dark, environment) {
+                // ForcedSize rounds the total width; production padding rounds each side separately.
+                fixtureWidth =
+                    with(LocalDensity.current) {
+                        val paddingPx = if (screenPadding) FonecheckTheme.spacing.md.roundToPx() else 0
+                        (contentWidthDp.dp.roundToPx() + 2 * paddingPx).toDp()
                     }
+                Box(
+                    Modifier
+                        .requiredWidth(fixtureWidth)
+                        .fillMaxSize()
+                        .background(FonecheckTheme.colors.panel)
+                        .testTag("settings-text-fixture"),
+                ) {
+                    content()
                 }
             }
         }
+        val density = environment.density
         val root = composeRule.onNodeWithTag("settings-text-fixture").fetchSemanticsNode().boundsInRoot
         val contentBounds =
             if (screenPadding) {
@@ -315,14 +293,15 @@ class SettingsTextRenderTest(
             }
         Log.i(
             "A06aSettingsText",
-            "contentDp=${contentBounds.width / density} requestedDp=$contentWidthDp scale=$actualFontScale " +
-                "density=$density resourceLanguage=$resourceLanguage textLanguage=$textLanguage dark=$dark bounds=$contentBounds",
+            "contentDp=${contentBounds.width / density} requestedDp=$contentWidthDp scale=${environment.fontScale} " +
+                "density=$density resourceLanguage=${environment.resourceLanguage} " +
+                "textLanguage=${environment.textLanguage} dark=$dark bounds=$contentBounds",
         )
         assertEquals(fixtureWidth.value, root.width / density, 0.5f)
         assertEquals(contentWidthDp.toFloat(), contentBounds.width / density, 0.5f)
-        assertEquals(fontScale, actualFontScale, 0.001f)
-        assertEquals(language, resourceLanguage)
-        assertEquals(language, textLanguage)
+        assertEquals(fontScale, environment.fontScale, 0.001f)
+        assertEquals(language, environment.resourceLanguage)
+        assertEquals(language, environment.textLanguage)
     }
 
     private fun settingsNode(tag: String): SemanticsNodeInteraction {
@@ -417,40 +396,14 @@ class SettingsTextRenderTest(
         assertEquals(style.lineHeight, layout.layoutInput.style.lineHeight)
         assertEquals(style.fontFeatureSettings, layout.layoutInput.style.fontFeatureSettings)
         assertEquals(color, layout.layoutInput.style.color)
-        assertEquals(ceil(paragraph.width).toInt(), layout.size.width)
-        assertEquals(ceil(paragraph.height).toInt(), layout.size.height)
         assertEquals(layout.size.width.toFloat(), nodeBounds.width, 1f)
         assertEquals(layout.size.height.toFloat(), nodeBounds.height, 1f)
-        assertFalse(layout.didOverflowWidth)
-        assertFalse(layout.didOverflowHeight)
-        assertFalse(layout.hasVisualOverflow)
-        assertFalse(paragraph.didExceedMaxLines)
-        assertTrue(layout.lineCount > 0)
-        assertEquals(0, layout.getLineStart(0))
-        for (line in 0 until layout.lineCount) {
-            assertFalse(layout.isLineEllipsized(line))
-            assertTrue(layout.getLineLeft(line) >= -1f)
-            assertTrue(layout.getLineRight(line) <= layout.size.width + 1f)
-            if (line > 0) assertEquals(layout.getLineEnd(line - 1), layout.getLineStart(line))
-        }
-        assertEquals(text.length, layout.getLineEnd(layout.lineCount - 1, visibleEnd = true))
-        for (offset in text.indices) {
-            val bounds = layout.getBoundingBox(offset)
-            assertTrue("Character $offset outside layout: $bounds", bounds.left >= -1f)
-            assertTrue("Character $offset outside layout: $bounds", bounds.right <= layout.size.width + 1f)
-            assertTrue("Character $offset outside layout: $bounds", bounds.top >= -1f)
-            assertTrue("Character $offset outside layout: $bounds", bounds.bottom <= layout.size.height + 1f)
-        }
+        assertTextFitsLayout(layout, text)
     }
 
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}dp scale={1} dark={2} locale={3}")
-        fun configurations(): List<Array<Any>> =
-            listOf(276 to 1f, 320 to 1f, 276 to 2f, 320 to 2f).flatMap { (width, scale) ->
-                listOf(false, true).flatMap { dark ->
-                    listOf("en", "fi").map { language -> arrayOf<Any>(width, scale, dark, language) }
-                }
-            }
+        fun configurations(): List<Array<Any>> = renderConfigurations(276 to 1f, 320 to 1f, 276 to 2f, 320 to 2f)
     }
 }
