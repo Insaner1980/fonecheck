@@ -1,63 +1,72 @@
 # fonecheck application test inventory
 
-Scope updated: **2026-10-12**.
+Scope updated: **2026-10-12** (second revision, same day).
 
-This inventory maps application behavior to existing tests. The active order is in [testing-plan.md](<C:/Dev/fonecheck/docs/testing-plan.md>): real Full Check → save → restart/history → PDF/JSON first, then relevant cancellation, permission, retest, UI/accessibility and physical-device cases.
+What has been tested, what it proves, and what is still open. The order of work is in [testing-plan.md](<C:/Dev/fonecheck/docs/testing-plan.md>), section 0.
 
-The tables identify coverage sources; they do not claim a fresh current-checkout pass. Fixture, emulator, physical-device and actual user-journey results stay separate.
+Fixture, emulator, physical-device and real user-journey results are kept apart. A row here identifies where coverage comes from; it is not a claim that the current checkout passes.
 
-## Application coverage map
-| Risk / flow | JVM coverage | Android coverage | Evidence limit |
+## Open observations
+
+Things noticed in testing or in the source that need a decision or a check on the phone. None is a confirmed defect until the named case runs.
+
+| ID | Observation | Source | How to settle it |
 |---|---|---|---|
-| Canonical catalog and navigation | `DiagnosticDestinationTest`, `NavigationChromeTest`, `OnboardingNavigationTest` | Home and onboarding Compose tests | Historical source/test mapping; current execution must be evidenced |
-| Permission policy and recovery UI | `PermissionPolicyTest` | `PermissionStatusCardTest`, Settings permission UI | Historical source/test mapping; current execution must be evidenced |
-| Full Check planning, lifecycle, snapshots, save/retry | `RunAllStagePlannerTest`, `RunAllTestsViewModelTest`, `RunAllResourceOwnerTest`, `RunAllSnapshotMapperTest` | `FullCheckPreflightScreenTest`, `RunAllResultsScreenTest` | Historical source/test mapping; current execution must be evidenced |
-| Room schema, DAO, immutable persistence, restart readback | Entity/codec tests | `FonecheckDatabaseSchemaTest`, `ReportDaoTest`, `ReportRepositoryTest` | Historical source/test mapping; current execution must be evidenced |
-| History, delete, detail and category retest | History/detail/retest ViewModel and presenter tests | History and report-detail Compose tests | Historical source/test mapping; current execution must be evidenced |
-| Comparison | Comparison engine and ViewModel tests | `ReportComparisonScreenTest` | Historical source/test mapping; current execution must be evidenced |
-| PDF and JSON export/share contract | PDF content, JSON schema/round-trip and export ViewModel tests | FileProvider/MIME/readback and export Compose tests | Historical source/test mapping; current execution must be evidenced |
-| Settings and persistent preferences | DataStore and Settings ViewModel tests | `SettingsScreenTest` | Historical source/test mapping; current execution must be evidenced |
-| First-run onboarding | Start-destination and Onboarding ViewModel tests | `OnboardingScreenTest` including 200% font scale | Historical source/test mapping; current execution must be evidenced |
-| Accessibility, theme and locale | Resource parity, semantic color and formatter tests | Shared semantics, state matrix, theme and 200% font tests | Historical source/test mapping; current execution must be evidenced |
-| Hardware runtime policies | Category-specific probe/reducer/policy tests | Touch-grid and PDF/provider framework tests | Historical source/test mapping; physical hardware requires its own run |
+| O1 | After a successful save, the Full Check results screen shows nothing that says the report was saved. The "saving" card disappears, and the "Report saved on this device" note is shown only for category-only reports. A user cannot tell from the results screen that the Full Check was kept. | J03 emulator run 2026-10-12; `RunAllResultsScreen.kt`, the `ReportSaveSection` and `CATEGORY_ONLY` branches. | Product decision: should a Full Check also show the confirmation? Check during J03 on the phone. |
+| O2 | The Home introduction says Full is "a one-time €6.99 purchase", but `FULL_ACCESS_ENABLED` is hard-coded `true`, everything is unlocked, and the app has no purchase flow. | `strings.xml` `home_intro_full`; `navigation/DiagnosticDestination.kt`. | Product decision before release; check the text during J01. |
+| O3 | **Likely defect.** Full Check discards the running session on `ON_STOP`, and no screen keeps the display on. The automatic stage can last up to 70 s without user input, so with a 30 s screen timeout the screen sleeps and the run is lost. Not seen on the emulator because its screen does not sleep. | `RunAllTestsScreen.kt` lifecycle observer; `AUTOMATIC_TIMEOUT_MS = 70_000L`; no `keepScreenOn` or `FLAG_KEEP_SCREEN_ON` anywhere in `app/src/main`. | Plan case E01 on the phone. |
+| O4 | The audio-focus change listener is empty, so a call, an alarm or another app's audio does not stop or flag the speaker and microphone tests. | `AndroidAudioRouteController.kt`. | Plan case E02. |
 
-## Retained application evidence
+## Real-app results
 
-These are scoped historical results for different recorded dirty-input fingerprints/APK pairs. They are not one fresh all-suite run. The original failed attempts, skips and limits remain in their reports.
+| Date | Target | Cases | Result | Report |
+|---|---|---|---|---|
+| 2026-10-12 | Emulator API 36, EN, light, font 1.0 | J03 | PARTIAL. Full Check through the normal UI with all preflight options; real permission dialogs; all automatic reviews needed Continue; emulated camera capture worked. Manual hardware stages skipped (emulator). Report `ecf70fac-cda7-42b2-b4ae-9159dc06518c` saved: 14 categories, 82 evidence rows, coverage 75%, score 91 partial; visible in History with the same ID. | [J03-J06-J10-20261012-162409](<C:/Dev/fonecheck/reports/validation/J03-J06-J10-20261012-162409/report.md>) |
+| 2026-10-12 | same | J06, J10 | NOT RUN. Stopped by the user before restart and export. | same |
 
-| Area | Retained result | Limit / source |
+## Earlier test campaigns (fixtures and controlled integration)
+
+These are scoped historical results for specific builds. They are regression evidence, not real user journeys.
+
+| Area | Result | Limit |
 |---|---|---|
-| User-run application baseline and Room/shell | Historical 601 app JVM PASS; A01 18 unique Android PASS. | Recorded October candidate; no present build/device pass is inferred. [Baseline/A01](<C:/Dev/fonecheck/reports/validation/20261006-093505-cd5355d/T2/report.md>). |
-| Controlled Full Check integration | A02 12 accepted cases: 7 fresh + 5 historical. | Synthetic probes/reports; not a real hardware Full Check. Original failures retained. [A02](<C:/Dev/fonecheck/reports/validation/20261006-093505-cd5355d/T2-retest/report.md>). |
-| Reports/navigation | A03 48 accepted: 26 fresh + 22 historical. | Component/navigation evidence; not the full real save/restart/export journey. [A03](<C:/Dev/fonecheck/reports/validation/20261006-093505-cd5355d/A03-retest3/report.md>). |
-| Guided states | A04 24 fresh PASS, including 13-language network fixtures at 320dp/200%. | Controlled state rendering; not system permission or whole-app coverage. [A04](<C:/Dev/fonecheck/reports/validation/20261006-093505-cd5355d/A04/report.md>). |
-| Components and diagnostic UI | Accepted A05 component/render and diagnostic cases, with reuse and static image limits. | Check exact candidate and native large-font/scroll gaps in the [A05 closure](<C:/Dev/fonecheck/reports/validation/A05-final-method-retest-20261007-114221-cd5355d/report.md>). |
-| Language/settings/UI | A06a functional/render and partial matrix evidence retained. The later run was stopped by the user. | No completed whole-matrix, application-journey or campaign acceptance. [Earlier reconciliation](<C:/Dev/fonecheck/reports/validation/A06a-final-reconciliation-20261009-3ddf977a/report.md>), [later partial run](<C:/Dev/fonecheck/reports/validation/A06a-completion-20261012>). |
+| JVM baseline, Room and app shell | 601 JVM tests PASS; A01 18 Android tests PASS. | October build; [report](<C:/Dev/fonecheck/reports/validation/20261006-093505-cd5355d/T2/report.md>). |
+| Controlled Full Check integration | A02: 12 cases accepted. | Synthetic probes and reports; [report](<C:/Dev/fonecheck/reports/validation/20261006-093505-cd5355d/T2-retest/report.md>). |
+| Reports and navigation | A03: 48 cases accepted. | Component and navigation level; [report](<C:/Dev/fonecheck/reports/validation/20261006-093505-cd5355d/A03-retest3/report.md>). |
+| Guided states | A04: 24 PASS, including 13-language network fixtures at 320dp and 200%. | Controlled rendering; [report](<C:/Dev/fonecheck/reports/validation/20261006-093505-cd5355d/A04/report.md>). |
+| Components and diagnostic UI | A05 component and render cases accepted. | Static images; [closure](<C:/Dev/fonecheck/reports/validation/A05-final-method-retest-20261007-114221-cd5355d/report.md>). |
+| Language, settings and UI matrix | A06a partial; the run was stopped by the user and the matrix is no longer a goal. | One retained large-font layout failure (S8) and the Settings version-label path, see [focused report](<C:/Dev/fonecheck/reports/validation/A06a-completion-20261012/coverage/updater-v4-report.md>). Recheck those screens in plan section 6, not by restarting A06a. |
 
-## Application questions still requiring evidence
+## Automated tests by question
 
-Start with the highest-priority question; select the smallest relevant checks from the plan.
+Run the existing test that answers the question instead of reproducing it by hand. Sources: [JVM tests](<C:/Dev/fonecheck/app/src/test>) and [Android tests](<C:/Dev/fonecheck/app/src/androidTest>).
 
-| Priority | What still needs proof | Application case |
+| Question | JVM tests | Android tests |
 |---|---|---|
-| 1 | Real normal-app Full Check completion and truthful skipped/unavailable/manual outcomes. | J03–J04 with production wiring. |
-| 1 | Real save confirmation, same report after process restart/history retrieval, and complete readable PDF/JSON handoff. | J06 → J10; compare report identity and values. Empty-history 0→0 preservation does not prove a saved report survives. |
-| 1 | Cancellation/background interruption/restart and resource cleanup in actual app operations. | J05 plus relevant permission/lifecycle cases. |
-| 2 | Category-only retest leaves original reports unchanged; comparison, deletion and settings behave correctly. | J07–J09, J11–J13; disposable deletion data. |
-| 2 | Essential app controls/results at 320dp, 200% and their combination; EN/FI, themes and real assistive services. | Targeted critical layouts and TalkBack/Switch Access from section 4. Partial fixture matrix results do not close this scope. |
-| 2 | Resolve the retained large-font layout failure and check related app layouts. | S8's observed runner/layout failure and the source-related Settings version-label path remain in the [focused report](<C:/Dev/fonecheck/reports/validation/A06a-completion-20261012/coverage/updater-v4-report.md>). Source-blocked cases are not executed failures; test only affected layouts after a confirmed correction. |
-| 2 | Android PDF/export and shipped-locale gaps. | Relevant A06b/A07 application tests and representative real exports; no full-suite rerun by default. |
-| 3 | Physical diagnostic capabilities, relevant supported API/OEM differences and release behavior. | Category protocols and [hardware QA matrix](<C:/Dev/fonecheck/docs/hardware-qa-matrix.md>); record unavailable profiles as gaps. |
-| As needed | Observed application privacy, IO failure or responsiveness/resource issue. | Existing focused fixtures and the matching real-app case. |
+| Report, category and score truthfulness | `ScoreCalculatorTest`, `ReportAssemblerTest`, `ResultModelTest`, `DiagnosticEvidenceStructureTest`, category policy tests | — |
+| Full Check planning, interruption, callbacks, save retry | `RunAllTestsViewModelTest`, `RunAllStagePlannerTest`, `RunAllResourceOwnerTest`, `RunAllSnapshotMapperTest` | `FullCheckPreflightScreenTest`, `RunAllResultsScreenTest`, journey tests |
+| Camera, audio and sensor ownership | `CameraCaptureSessionTest`, `AudioOperationGateTest`, runtime policy and category ViewModel tests | — |
+| Persistence and preferences | `RoomReportRepositoryTest`, `ReportRepositoryTest`, `HistoricalReportCompatibilityTest`, `DataStoreAppPreferencesRepositoryTest` | `FonecheckDatabaseSchemaTest`, `ReportDaoTest`, `ReportRepositoryTest` |
+| History, retest, comparison, export | History/detail/retest ViewModel tests, `ReportComparisonEngineTest`, `ReportJsonExportTest`, `ReportPdfContentTest`, `ReportPdfExporterTest` | `ReportRetestNavigationTest`, `ReportComparisonScreenTest`, `PdfRedesignRenderTest`, export Compose tests |
+| Navigation and Home | `DiagnosticDestinationTest`, `NavigationChromeTest` | `HomeContentTest` |
+| Permissions, language, layout, Android handoff | `PermissionPolicyTest`, resource parity, formatter and semantic colour tests | `PermissionStatusCardTest`, `MainActivityLanguageTest`, `SettingsScreenTest`, `ExternalActivityLauncherTest`, render tests |
 
-This is an evidence queue, not authorization to run devices, build or change code. Close a row only with the stated application evidence; fixtures and historical reuse retain their limits.
+A fixture test proves only its own inputs: a Settings callback test does not prove Room deletion, a camera render does not prove capture, a synthetic journey does not prove a real Full Check.
 
-## Removed work and archive
+## Still open, in priority order
 
-Emulator boot/clone/cache-marker causation, framework identity research, transport/collector/finalizer self-validation, checker/analyzer development and archive-wide preservation campaigns have been removed from the active application-test queue. Required target selection, APK identification, user-data protection and owned cleanup remain basic setup for a named app test.
+| Priority | Question | Plan cases |
+|---|---|---|
+| 1 | Can a normal user finish a Full Check on a real phone without the screen timing out? | E01 |
+| 1 | Real Full Check with every manual stage answered; truthful skipped, unavailable and manual outcomes. | J03 (physical), J04 |
+| 1 | Same report after restart; complete, readable PDF and JSON. | J06, J10 |
+| 1 | Cancel, background and restart stop all work and save nothing partial. | J05, L01 |
+| 2 | Calls, alarms, silent mode, vibration off and display filters do not turn into false hardware failures. | E02 to E05, E09 |
+| 2 | Retest leaves the original unchanged; compare, delete and settings work. | J07, J09, J11, J12 |
+| 2 | Critical screens at 320dp and 200%, EN and FI, light and dark, TalkBack. | Plan section 6; include the retained A06a S8 layout |
+| 3 | Physical behaviour of every category. | Plan section 5 |
+| 3 | Other API levels and devices; release build and upgrade. | Plan sections 7 and 8 |
 
-Original reports remain under [reports/validation](<C:/Dev/fonecheck/reports/validation>). The marker recovery evidence is in the [existing recovery report](<C:/Dev/fonecheck/reports/validation/A06a-marker-recovery-20261012-030710/report.md>); remaining historical causation uncertainty is not an app-test blocker by itself.
+## Removed work
 
-The complete former inventory, including historical August results and detailed campaign receipts, is preserved in the [pre-cleanup copy](<C:/Dev/fonecheck/reports/validation/application-test-scope-20261012-154934/docs__test-inventory.md.before.md>). The wider [historical evidence inventory](<C:/Dev/fonecheck/reports/test-inventory.md>) is unchanged.
-
-This edit executes no application tests and grants no new A06a or release acceptance.
+Emulator boot, clone and cache-marker investigations, framework identity research, transport and collector self-validation, checker and analyzer development, and archive-wide preservation campaigns are no longer part of testing. Their reports stay under [reports/validation](<C:/Dev/fonecheck/reports/validation>) as history. The full former inventory is kept in the [pre-cleanup copy](<C:/Dev/fonecheck/reports/validation/application-test-scope-20261012-154934/docs__test-inventory.md.before.md>).
