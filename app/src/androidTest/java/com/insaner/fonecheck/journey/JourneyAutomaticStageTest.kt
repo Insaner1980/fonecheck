@@ -1,5 +1,7 @@
 package com.insaner.fonecheck.journey
 
+import android.view.View
+import android.view.ViewGroup
 import androidx.activity.compose.setContent
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -79,6 +81,7 @@ class JourneyAutomaticStageTest {
         withHost { host ->
             host.startFullCheckThroughUi()
             host.assertStarted()
+            assertTrue(host.keepsScreenOn())
             host.release.complete(Unit)
             host.continueAutomaticReviews()
             compose.waitUntil(10_000L) { host.run.state.value.stage == RunAllStage.DISPLAY }
@@ -102,6 +105,7 @@ class JourneyAutomaticStageTest {
             host.scenario.moveToState(Lifecycle.State.RESUMED)
             compose.waitForIdle()
             assertEquals(RunAllStage.PREFLIGHT, host.run.state.value.stage)
+            assertFalse(host.keepsScreenOn())
             assertTrue(
                 host.run.state.value.automaticIssues
                     .isEmpty(),
@@ -138,6 +142,7 @@ class JourneyAutomaticStageTest {
             host.scenario.moveToState(Lifecycle.State.RESUMED)
             compose.waitForIdle()
             assertSame(report, host.run.state.value.report)
+            assertFalse(host.keepsScreenOn())
         }
 
     private fun withHost(
@@ -330,6 +335,12 @@ class JourneyAutomaticStageTest {
             scenario.onActivity { assertFalse(run.claimStage(run.state.value.stageToken)) }
         }
 
+        fun keepsScreenOn(): Boolean {
+            var keepsScreenOn = false
+            scenario.onActivity { keepsScreenOn = it.window.decorView.keepsScreenOnInTree() }
+            return keepsScreenOn
+        }
+
         fun close() {
             release.complete(Unit)
             scenario.close()
@@ -338,3 +349,6 @@ class JourneyAutomaticStageTest {
         }
     }
 }
+
+private fun View.keepsScreenOnInTree(): Boolean =
+    keepScreenOn || (this is ViewGroup && (0 until childCount).any { getChildAt(it).keepsScreenOnInTree() })
