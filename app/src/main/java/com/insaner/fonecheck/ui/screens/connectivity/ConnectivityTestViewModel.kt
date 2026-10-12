@@ -780,9 +780,8 @@ class ConnectivityTestViewModel
         @SuppressLint("MissingPermission")
         private fun readProtectedMobileState(): ProtectedMobileState? =
             try {
-                val networkOperator = telephonyManager.networkOperator?.takeIf { it.isNotBlank() }
                 val operatorCodes =
-                    networkOperator?.takeIf { operator ->
+                    telephonyManager.networkOperator?.takeIf { operator ->
                         operator.length in 5..6 && operator.all(Char::isDigit)
                     }
                 val fallbackMcc = operatorCodes?.take(3)
