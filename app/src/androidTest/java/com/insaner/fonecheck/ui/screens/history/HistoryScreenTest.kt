@@ -3,15 +3,22 @@ package com.insaner.fonecheck.ui.screens.history
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasScrollToIndexAction
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.insaner.fonecheck.R
@@ -75,19 +82,30 @@ class HistoryScreenTest {
         composeRule.onNodeWithTag("history_open_newer").performClick()
         assertEquals("newer", opened)
         composeRule.onNodeWithTag("history_compare_newer").performClick()
-        composeRule.onNodeWithTag("history_compare_older").performScrollTo().performClick()
+        scrollToHistoryNode(hasTestTag("history_compare_older")).performClick()
         assertEquals("newer" to "older", compared)
-        composeRule.onNodeWithTag("history_export_older").performClick()
+        scrollToHistoryNode(hasTestTag("history_export_older")).performClick()
         assertEquals("older", exported)
-        composeRule.onNodeWithTag("history_delete_older").performClick()
+        scrollToHistoryNode(hasTestTag("history_delete_older")).performClick()
         composeRule.onNodeWithTag("history_confirm_delete").performClick()
         assertEquals("older", deleted)
+        val olderAction = composeRule.onNodeWithTag("history_open_older").fetchSemanticsNode()
+        val olderIdentity = composeRule.onNodeWithText("older").fetchSemanticsNode()
+        val olderSection =
+            generateSequence(olderIdentity.layoutInfo.parentInfo) {
+                it.parentInfo
+            }.first { parent ->
+                generateSequence(olderAction.layoutInfo.parentInfo) { it.parentInfo }.any { it === parent }
+            }
         composeRule
-            .onNodeWithText(context.getString(R.string.history_status))
+            .onNode(
+                hasText(context.getString(R.string.history_status)) and
+                    SemanticsMatcher("status in the older report section") { node ->
+                        generateSequence(node.layoutInfo.parentInfo) { it.parentInfo }.any { it === olderSection }
+                    },
+            ).performScrollTo()
             .assertIsDisplayed()
-        composeRule
-            .onNodeWithText(context.getString(R.string.history_status_partial))
-            .performScrollTo()
+        scrollToHistoryNode(hasText(context.getString(R.string.history_status_partial)))
             .assertIsDisplayed()
         composeRule
             .onNodeWithText(
@@ -97,17 +115,26 @@ class HistoryScreenTest {
                     ZoneId.systemDefault(),
                 ),
             ).assertIsDisplayed()
-        composeRule
-            .onNodeWithContentDescription(
-                context.getString(R.string.history_category_retest),
-            ).performScrollTo()
+        scrollToHistoryNode(hasContentDescription(context.getString(R.string.history_category_retest)))
             .assertIsDisplayed()
         composeRule
             .onNodeWithText(context.getString(R.string.home_cat_storage))
             .assertIsDisplayed()
+        val storageAction = composeRule.onNodeWithTag("history_open_storage-retest").fetchSemanticsNode()
+        val storageIdentity = composeRule.onNodeWithText("storage-retest").fetchSemanticsNode()
+        val storageSection =
+            generateSequence(storageIdentity.layoutInfo.parentInfo) {
+                it.parentInfo
+            }.first { parent ->
+                generateSequence(storageAction.layoutInfo.parentInfo) { it.parentInfo }.any { it === parent }
+            }
         composeRule
-            .onNodeWithText(context.getString(R.string.history_status_complete))
-            .assertIsDisplayed()
+            .onNode(
+                hasText(context.getString(R.string.history_status_complete)) and
+                    SemanticsMatcher("complete status in the storage-retest report section") { node ->
+                        generateSequence(node.layoutInfo.parentInfo) { it.parentInfo }.any { it === storageSection }
+                    },
+            ).assertIsDisplayed()
     }
 
     @Test
@@ -176,9 +203,7 @@ class HistoryScreenTest {
         composeRule
             .onNodeWithContentDescription(context.getString(R.string.history_full_check))
             .assertIsDisplayed()
-        composeRule
-            .onNodeWithContentDescription(context.getString(R.string.history_unavailable_report))
-            .performScrollTo()
+        scrollToHistoryNode(hasContentDescription(context.getString(R.string.history_unavailable_report)))
             .assertIsDisplayed()
         composeRule
             .onNodeWithText(context.getString(R.string.home_cat_storage))
@@ -242,7 +267,27 @@ class HistoryScreenTest {
             .onNodeWithContentDescription(context.getString(R.string.history_unavailable_report))
             .assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.history_status_unavailable)).assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.value_unavailable_short)).assertIsDisplayed()
+        for (labelRes in listOf(
+            R.string.history_score,
+            R.string.history_coverage,
+            R.string.history_warnings,
+            R.string.history_issues,
+        )) {
+            val label = context.getString(labelRes)
+            composeRule.onNodeWithText(label).performScrollTo().assertIsDisplayed()
+            val row =
+                composeRule
+                    .onNodeWithText(label)
+                    .fetchSemanticsNode()
+                    .layoutInfo.parentInfo
+            composeRule
+                .onNode(
+                    hasText(context.getString(R.string.value_unavailable_short)) and
+                        SemanticsMatcher("value in the '$label' row") { node ->
+                            generateSequence(node.layoutInfo.parentInfo) { it.parentInfo }.any { it === row }
+                        },
+                ).assertIsDisplayed()
+        }
         composeRule.onNodeWithText("99").assertDoesNotExist()
         composeRule.onNodeWithText("98").assertDoesNotExist()
         composeRule.onNodeWithText("97").assertDoesNotExist()
@@ -290,7 +335,7 @@ class HistoryScreenTest {
                     ),
             )
         composeRule.waitForIdle()
-        composeRule.onNodeWithTag("history_compare_second").performScrollTo().performClick()
+        scrollToHistoryNode(hasTestTag("history_compare_second")).performClick()
 
         assertEquals(null, compared)
     }
@@ -329,13 +374,13 @@ class HistoryScreenTest {
         )
 
         composeRule.onNodeWithTag("history_compare_full").performClick()
-        composeRule.onNodeWithTag("history_compare_battery-new").performScrollTo().assertIsNotEnabled()
+        scrollToHistoryNode(hasTestTag("history_compare_battery-new")).assertIsNotEnabled()
 
-        composeRule.onNodeWithTag("history_compare_full").performScrollTo().performClick()
-        composeRule.onNodeWithTag("history_compare_battery-new").performScrollTo().performClick()
-        composeRule.onNodeWithTag("history_compare_battery-old").performScrollTo().assertIsEnabled()
-        composeRule.onNodeWithTag("history_compare_storage").performScrollTo().assertIsNotEnabled()
-        composeRule.onNodeWithTag("history_compare_full").performScrollTo().assertIsNotEnabled()
+        scrollToHistoryNode(hasTestTag("history_compare_full")).performClick()
+        scrollToHistoryNode(hasTestTag("history_compare_battery-new")).performClick()
+        scrollToHistoryNode(hasTestTag("history_compare_battery-old")).assertIsEnabled()
+        scrollToHistoryNode(hasTestTag("history_compare_storage")).assertIsNotEnabled()
+        scrollToHistoryNode(hasTestTag("history_compare_full")).assertIsNotEnabled()
     }
 
     @Test
@@ -351,6 +396,11 @@ class HistoryScreenTest {
 
         composeRule.onNodeWithText(context.getString(R.string.history_delete_error)).assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.history_retry)).assertDoesNotExist()
+    }
+
+    private fun scrollToHistoryNode(matcher: SemanticsMatcher): SemanticsNodeInteraction {
+        composeRule.onNode(hasScrollToIndexAction()).performScrollToNode(matcher)
+        return composeRule.onNode(matcher).performScrollTo()
     }
 
     private fun setHistoryContent(state: HistoryState) {

@@ -2,6 +2,7 @@ package com.insaner.fonecheck.ui.screens.storage
 
 import android.content.Context
 import android.content.res.Configuration
+import android.text.format.Formatter
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -142,17 +143,25 @@ class StoragePresentationTest {
         composeRule
             .onNodeWithContentDescription(context.getString(R.string.storage_volume_number, 2))
             .assertExists()
-        composeRule.onNodeWithText(context.getString(R.string.storage_mounted_state)).assertExists()
+        composeRule.onAllNodesWithText(context.getString(R.string.storage_mounted_state)).assertCountEquals(2)
         composeRule.onNodeWithText(context.getString(R.string.storage_state_mounted)).assertExists()
         composeRule.onNodeWithText(context.getString(R.string.storage_state_read_only)).assertExists()
-        composeRule.onNodeWithText(context.getString(R.string.storage_removable_storage)).assertExists()
+        composeRule.onAllNodesWithText(context.getString(R.string.storage_removable_storage)).assertCountEquals(2)
         composeRule.onNodeWithText(context.getString(R.string.status_yes)).assertExists()
         composeRule.onNodeWithText(context.getString(R.string.status_no)).assertExists()
-        composeRule.onNodeWithText(context.getString(R.string.storage_total)).assertExists()
-        composeRule.onNodeWithText(context.getString(R.string.storage_available)).assertExists()
+        composeRule.onAllNodesWithText(context.getString(R.string.storage_total)).assertCountEquals(2)
+        composeRule.onAllNodesWithText(context.getString(R.string.storage_available)).assertCountEquals(2)
         composeRule.onNodeWithText("128 GB", useUnmergedTree = true).assertExists()
-        composeRule.onNodeWithText("64 GB", useUnmergedTree = true).assertExists()
-        composeRule.onNodeWithText("32 GB", useUnmergedTree = true).assertExists()
+        composeRule
+            .onAllNodesWithText(
+                Formatter.formatFileSize(context, REMOVABLE_PRIMARY_AVAILABLE_BYTES),
+                useUnmergedTree = true,
+            ).assertCountEquals(2)
+        composeRule
+            .onNodeWithText(
+                Formatter.formatFileSize(context, ADDITIONAL_AVAILABLE_BYTES),
+                useUnmergedTree = true,
+            ).assertExists()
     }
 
     @Test
@@ -173,7 +182,7 @@ class StoragePresentationTest {
         assertStorageLabels(
             finnish,
             usageUnit = "% käytetty",
-            accessTitle = "Tallennustilan käyttö",
+            accessTitle = "Pääsy tallennustilaan",
             privateStorage = "Sovelluksen yksityinen tallennustila",
             primaryStorage = "Ensisijainen jaettu tallennustila",
             removableStorage = "Irrotettava tallennustila",

@@ -31,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.net.toUri
@@ -325,7 +326,7 @@ private fun SettingToggleRow(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(R.string.settings_test_warnings),
+                    text = AnnotatedString(stringResource(R.string.settings_test_warnings)),
                     style = FonecheckTheme.type.rowLabel,
                     color = FonecheckTheme.colors.textSecondary,
                 )

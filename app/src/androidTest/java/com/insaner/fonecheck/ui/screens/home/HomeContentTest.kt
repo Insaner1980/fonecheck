@@ -2,16 +2,23 @@ package com.insaner.fonecheck.ui.screens.home
 
 import android.content.Context
 import android.content.res.Configuration
+import android.util.Log
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.DeviceConfigurationOverride
@@ -25,6 +32,7 @@ import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -35,14 +43,18 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.then
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.intl.LocaleList
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.insaner.fonecheck.R
@@ -71,6 +83,7 @@ import com.insaner.fonecheck.navigation.History
 import com.insaner.fonecheck.navigation.Report
 import com.insaner.fonecheck.navigation.Settings
 import com.insaner.fonecheck.navigation.diagnosticDestinations
+import com.insaner.fonecheck.ui.components.StatusLampSize
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -152,6 +165,7 @@ class HomeContentTest {
         var context by mutableStateOf(contexts.first())
         var screenWidth by mutableStateOf(412.dp)
         var fontScale by mutableFloatStateOf(1.15f)
+        lateinit var columnMeasurement: HomeColumnMeasurement
         composeRule.setContent {
             val locales =
                 LocaleList(
@@ -165,45 +179,97 @@ class HomeContentTest {
                     .then(DeviceConfigurationOverride.ForcedSize(DpSize(screenWidth, 800.dp))),
             ) {
                 FonecheckTheme {
-                    HomeContent(
-                        latestFullCheck = LatestFullCheckState.Available(savedReport),
-                        onNavigate = {},
-                        onRunAllTests = {},
-                        // Include the existing MainActivity housing inset as well as Home's own padding.
-                        modifier = Modifier.padding(horizontal = 6.dp),
-                        currentTime = Instant.parse("2026-08-11T10:30:00Z"),
-                    )
+                    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                        val density = LocalDensity.current
+                        val spacing = FonecheckTheme.spacing
+                        val textMeasurer = rememberTextMeasurer()
+                        val names = diagnosticDestinations.map { stringResource(it.labelResId) }
+                        val longestName =
+                            names
+                                .map { name ->
+                                    name to
+                                        textMeasurer
+                                            .measure(
+                                                text = AnnotatedString(name),
+                                                style = FonecheckTheme.type.rowLabel,
+                                                maxLines = 1,
+                                                softWrap = false,
+                                            ).size.width
+                                }.maxBy { it.second }
+                        // Derive the candidate name space from the viewport and rounded insets,
+                        // independently of the rendered grid and the production column decision.
+                        val panelWidth =
+                            constraints.maxWidth -
+                                with(density) { 2 * 6.dp.roundToPx() + 2 * spacing.md.roundToPx() }
+                        val nameWidth =
+                            with(density) {
+                                (panelWidth - spacing.xs.roundToPx()) / 2 -
+                                    2 * spacing.sm.roundToPx() - (StatusLampSize + spacing.sm).roundToPx()
+                            }
+                        SideEffect {
+                            columnMeasurement =
+                                HomeColumnMeasurement(
+                                    longestName.first,
+                                    longestName.second,
+                                    nameWidth,
+                                    panelWidth,
+                                    density,
+                                )
+                        }
+                        HomeContent(
+                            latestFullCheck = LatestFullCheckState.Available(savedReport),
+                            onNavigate = {},
+                            onRunAllTests = {},
+                            // Include the existing MainActivity housing inset as well as Home's own padding.
+                            modifier = Modifier.padding(horizontal = 6.dp),
+                            currentTime = Instant.parse("2026-08-11T10:30:00Z"),
+                        )
+                    }
                 }
             }
         }
 
         contexts.forEach { localizedContext ->
             listOf(
-                Triple(412, 1.15f, 2),
-                Triple(412, 2f, 1),
-                Triple(320, 1.15f, 1),
-                Triple(320, 2f, 1),
-            ).forEach { (width, scale, columns) ->
+                412 to 1.15f,
+                412 to 2f,
+                320 to 1.15f,
+                320 to 2f,
+            ).forEach { (width, scale) ->
                 composeRule.runOnIdle {
                     context = localizedContext
                     screenWidth = width.dp
                     fontScale = scale
                 }
                 val locale = context.resources.configuration.locales[0]
-                val case = "${locale.language}, $width dp, font scale $scale"
                 composeRule.onNodeWithTag("home_category_device").performScrollTo()
-                val deviceBounds = composeRule.onNodeWithTag("home_category_device").fetchSemanticsNode().boundsInRoot
-                val performanceBounds =
-                    composeRule.onNodeWithTag("home_category_performance").fetchSemanticsNode().boundsInRoot
+                val measured = columnMeasurement
+                val columns = if (measured.longestNameWidthPx <= measured.twoColumnNameWidthPx) 2 else 1
+                val case =
+                    "${locale.toLanguageTag()}, $width x 800 dp, font scale $scale, columns $columns, measurement=$measured"
+                val deviceNode = composeRule.onNodeWithTag("home_category_device").fetchSemanticsNode()
+                val performanceNode = composeRule.onNodeWithTag("home_category_performance").fetchSemanticsNode()
+                val deviceBounds = deviceNode.unclippedBoundsInRoot()
+                val performanceBounds = performanceNode.unclippedBoundsInRoot()
+                val gridDetails = geometryDetails(case, deviceNode, performanceNode)
+                Log.i("HomeColumnContract", gridDetails)
                 if (columns == 2) {
-                    assertEquals(case, deviceBounds.top, performanceBounds.top, 0.5f)
-                    assertTrue(case, deviceBounds.right < performanceBounds.left)
+                    assertEquals(gridDetails, deviceBounds.top, performanceBounds.top, 0.5f)
+                    assertTrue(gridDetails, deviceBounds.right < performanceBounds.left)
+                    assertEquals(
+                        gridDetails,
+                        measured.panelWidthPx.toFloat(),
+                        performanceBounds.right - deviceBounds.left,
+                        0.5f,
+                    )
                 } else {
-                    assertEquals(case, deviceBounds.left, performanceBounds.left, 0.5f)
-                    assertTrue(case, deviceBounds.bottom < performanceBounds.top)
+                    assertEquals(gridDetails, deviceBounds.left, performanceBounds.left, 0.5f)
+                    assertTrue(gridDetails, deviceBounds.bottom < performanceBounds.top)
+                    assertEquals(gridDetails, measured.panelWidthPx.toFloat(), deviceBounds.width, 0.5f)
                 }
 
                 val cellHeights = mutableListOf<Float>()
+                val cellGeometry = mutableListOf<String>()
                 diagnosticDestinations.forEach { destination ->
                     val id = destination.category.stableId
                     composeRule.onNodeWithTag("home_reading_$id").assertDoesNotExist()
@@ -216,32 +282,38 @@ class HomeContentTest {
                             .onNode(
                                 hasAnyAncestor(hasTestTag("home_category_$id")) and hasText(label),
                                 useUnmergedTree = true,
-                            )
+                            ).assertIsDisplayed()
                     val nameLayouts = mutableListOf<TextLayoutResult>()
                     labelNode.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(nameLayouts) }
-                    if (columns == 2) {
-                        assertEquals("$case: $label must stay on one line.", 1, nameLayouts.single().lineCount)
-                    }
-                    assertFalse("$case: $label must fit its cell.", nameLayouts.single().didOverflowWidth)
-                    assertFalse("$case: $label must not be ellipsised.", nameLayouts.single().isLineEllipsized(0))
-                    cellHeights += cell.fetchSemanticsNode().boundsInRoot.height
+                    val cellNode = cell.fetchSemanticsNode()
+                    val details = geometryDetails(case, cellNode, labelNode.fetchSemanticsNode())
+                    assertFullTextFits(nameLayouts.single(), label, details, singleLine = columns == 2)
+                    cellHeights += cellNode.unclippedBoundsInRoot().height
+                    cellGeometry += details
                 }
                 if (columns == 2) {
-                    cellHeights.forEach { assertEquals(cellHeights.first(), it, 0.5f) }
+                    cellHeights.forEach {
+                        assertEquals("$case: heights=$cellHeights, cells=$cellGeometry", cellHeights.first(), it, 0.5f)
+                    }
                 }
 
                 val passLabel = context.getString(R.string.run_all_status_pass).uppercase(locale)
                 val failLabel = context.getString(R.string.run_all_status_fail).uppercase(locale)
-                composeRule.onNodeWithText(passLabel).performScrollTo()
-                val passBounds = composeRule.onNodeWithText(passLabel).fetchSemanticsNode().boundsInRoot
-                val failBounds = composeRule.onNodeWithText(failLabel).fetchSemanticsNode().boundsInRoot
+                composeRule.onNodeWithText(passLabel).performScrollTo().assertIsDisplayed()
+                val passNode = composeRule.onNodeWithText(passLabel).fetchSemanticsNode()
+                val failNode = composeRule.onNodeWithText(failLabel).fetchSemanticsNode()
+                val passBounds = passNode.unclippedBoundsInRoot()
+                val failBounds = failNode.unclippedBoundsInRoot()
+                val legendDetails = geometryDetails("$case: the legend must match the grid.", passNode, failNode)
                 if (columns == 2) {
-                    assertEquals("$case: the legend must match the grid.", passBounds.top, failBounds.top, 0.5f)
-                    assertTrue(case, passBounds.right < failBounds.left)
+                    assertEquals(legendDetails, passBounds.top, failBounds.top, 0.5f)
+                    assertTrue(legendDetails, passBounds.right < failBounds.left)
                 } else {
-                    assertEquals("$case: the legend must match the grid.", passBounds.left, failBounds.left, 0.5f)
-                    assertTrue(case, passBounds.bottom < failBounds.top)
+                    assertEquals(legendDetails, passBounds.left, failBounds.left, 0.5f)
+                    assertTrue(legendDetails, passBounds.bottom < failBounds.top)
                 }
+                composeRule.onNodeWithText(failLabel).performScrollTo().assertIsDisplayed()
+                Log.i("HomeColumnContract", "COMPLETE: $gridDetails; $legendDetails")
             }
         }
     }
@@ -277,8 +349,10 @@ class HomeContentTest {
             val layouts = mutableListOf<TextLayoutResult>()
             composeRule
                 .onNode(hasAnyAncestor(hasTestTag(tag)) and hasText(label), useUnmergedTree = true)
+                .assertIsDisplayed()
                 .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
-            assertFalse(label, layouts.single().hasVisualOverflow)
+            val case = "es, 240 x 800 dp, font scale 2.0, columns 1"
+            assertFullTextFits(layouts.single(), label, case)
             if (destination.category == DiagnosticCategoryId.BUTTONS) {
                 assertTrue("The long volume-button label must wrap.", layouts.single().lineCount > 1)
             }
@@ -294,10 +368,11 @@ class HomeContentTest {
             val label = localizedContext.getString(labelRes).uppercase(Locale.forLanguageTag("es"))
             val layouts = mutableListOf<TextLayoutResult>()
             composeRule
-                .onNodeWithText(label)
+                .onNodeWithText(label, useUnmergedTree = true)
                 .performScrollTo()
+                .assertIsDisplayed()
                 .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
-            assertFalse(label, layouts.single().hasVisualOverflow)
+            assertFullTextFits(layouts.single(), label, "es, 240 x 800 dp, font scale 2.0, columns 1")
         }
     }
 
@@ -449,7 +524,7 @@ class HomeContentTest {
             .onNodeWithContentDescription(context.getString(R.string.home_latest_title))
             .assertIsDisplayed()
         composeRule
-            .onNodeWithContentDescription(context.getString(R.string.home_latest_past_title))
+            .onNodeWithText(context.resources.getQuantityString(R.plurals.home_latest_days_ago, 0, 0))
             .assertDoesNotExist()
         composeRule
             .onNodeWithText(
@@ -716,7 +791,8 @@ class HomeContentTest {
             }
         }
 
-        val wordmarkNode = composeRule.onNodeWithText(context.getString(R.string.app_name)).assertIsDisplayed()
+        val wordmarkNode =
+            composeRule.onNodeWithText(context.getString(R.string.app_name), useUnmergedTree = true).assertIsDisplayed()
         val historyNode =
             composeRule
                 .onNodeWithContentDescription(context.getString(R.string.home_history_content_description))
@@ -740,9 +816,11 @@ class HomeContentTest {
         val elapsedValue = context.resources.getQuantityString(R.plurals.home_latest_days_ago, 13, 13)
         val latestLabelNode =
             composeRule
-                .onNodeWithContentDescription(context.getString(R.string.home_latest_past_title))
-                .assertIsDisplayed()
-        val elapsedNode = composeRule.onNodeWithText(elapsedValue).assertIsDisplayed()
+                .onNodeWithContentDescription(
+                    context.getString(R.string.home_latest_past_title),
+                    useUnmergedTree = true,
+                ).assertIsDisplayed()
+        val elapsedNode = composeRule.onNodeWithText(elapsedValue, useUnmergedTree = true).assertIsDisplayed()
         val latestLabelBounds = latestLabelNode.fetchSemanticsNode().boundsInRoot
         val elapsedBounds = elapsedNode.fetchSemanticsNode().boundsInRoot
         assertTrue(
@@ -761,8 +839,18 @@ class HomeContentTest {
                 2,
                 2,
             )
-        val coverageNode = composeRule.onNodeWithContentDescription(coverage).assertIsDisplayed()
-        val attentionNode = composeRule.onNodeWithContentDescription(attention).assertIsDisplayed()
+        val coverageNode =
+            composeRule
+                .onNodeWithContentDescription(
+                    coverage,
+                    useUnmergedTree = true,
+                ).assertIsDisplayed()
+        val attentionNode =
+            composeRule
+                .onNodeWithContentDescription(
+                    attention,
+                    useUnmergedTree = true,
+                ).assertIsDisplayed()
         val rootBounds = composeRule.onRoot().fetchSemanticsNode().boundsInRoot
         val coverageBounds = coverageNode.fetchSemanticsNode().boundsInRoot
         val attentionBounds = attentionNode.fetchSemanticsNode().boundsInRoot
@@ -788,21 +876,38 @@ class HomeContentTest {
                 R.string.status_not_available,
                 R.string.status_not_measured,
             ).map { context.getString(it).uppercase(locale) }
-        composeRule.onNodeWithText(legendLabels.last()).performScrollTo()
-        val legendBounds =
+        composeRule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(legendLabels.last()))
+        composeRule.onNodeWithText(legendLabels.last(), useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        val legendNodes =
             legendLabels.map { label ->
-                composeRule.onNodeWithText(label).fetchSemanticsNode().boundsInRoot
+                composeRule.onNodeWithText(label, useUnmergedTree = true).fetchSemanticsNode()
             }
+        val legendBounds = legendNodes.map { it.unclippedBoundsInRoot() }
+        val legendDensity =
+            legendNodes
+                .first()
+                .layoutInfo
+                .density
+                .density
+        val legendDetails =
+            geometryDetails(
+                "dark, ${locale.toLanguageTag()}, " +
+                    "${rootBounds.width / legendDensity} dp wide, font scale 2.0",
+                *legendNodes.toTypedArray(),
+            )
         legendBounds.zipWithNext().forEach { (first, second) ->
             assertTrue(
-                "The 200% legend entries must form six separate rows.",
+                "$legendDetails: the 200% legend entries must form six separate rows.",
                 first.bottom <= second.top,
             )
         }
         assertTrue(
-            "The longest legend label must remain on one line at 200%.",
+            "$legendDetails: the longest legend label must remain on one line at 200%.",
             legendBounds.last().height <= legendBounds.first().height * 1.25f,
         )
+        legendLabels.forEach { label ->
+            composeRule.onNodeWithText(label, useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        }
         composeRule
             .onNodeWithTag("home_category_biometrics")
             .performScrollTo()
@@ -832,6 +937,69 @@ class HomeContentTest {
             .onNodeWithContentDescription(context.getString(R.string.home_settings_content_description))
             .assertIsDisplayed()
         composeRule.onNodeWithTag("home_latest_report_card").assertIsDisplayed()
+    }
+
+    private data class HomeColumnMeasurement(
+        val longestName: String,
+        val longestNameWidthPx: Int,
+        val twoColumnNameWidthPx: Int,
+        val panelWidthPx: Int,
+        val density: Density,
+    )
+
+    // SemanticsNode geometry is in pixels; getUnclippedBoundsInRoot() returns DpRect instead.
+    private fun SemanticsNode.unclippedBoundsInRoot(): Rect = Rect(positionInRoot, size.toSize())
+
+    private fun geometryDetails(
+        configuration: String,
+        vararg nodes: SemanticsNode,
+    ): String {
+        val scrollNode = composeRule.onNode(hasScrollToIndexAction()).fetchSemanticsNode()
+        val scrollRange = scrollNode.config.getOrNull(SemanticsProperties.VerticalScrollAxisRange)
+        val bounds =
+            nodes.joinToString { node ->
+                val identity =
+                    node.config.getOrNull(SemanticsProperties.TestTag)
+                        ?: node.config.getOrNull(SemanticsProperties.Text)
+                "$identity: clippedPx=${node.boundsInRoot}, unclippedPx=${node.unclippedBoundsInRoot()}, " +
+                    "density=${node.layoutInfo.density}"
+            }
+        return "$configuration: nodes=[$bounds], viewportPx=${scrollNode.boundsInRoot}, scroll=$scrollRange"
+    }
+
+    private fun assertFullTextFits(
+        layout: TextLayoutResult,
+        label: String,
+        configuration: String,
+        singleLine: Boolean = false,
+    ) {
+        val lines =
+            (0 until layout.lineCount).joinToString { line ->
+                "$line: left=${layout.getLineLeft(line)}, right=${layout.getLineRight(line)}, " +
+                    "top=${layout.getLineTop(line)}, bottom=${layout.getLineBottom(line)}, " +
+                    "end=${layout.getLineEnd(line)}, visibleEnd=${layout.getLineEnd(line, visibleEnd = true)}"
+            }
+        val details =
+            "$configuration: '$label', layoutSize=${layout.size}, paragraphWidth=${layout.multiParagraph.width}, " +
+                "paragraphHeight=${layout.multiParagraph.height}, textLength=${label.length}, lines=[$lines]"
+        assertEquals("$details: the full text must be laid out.", label, layout.layoutInput.text.text)
+        assertFalse("$details: text must fit vertically.", layout.didOverflowHeight)
+        if (singleLine) assertEquals("$details: text must stay on one line.", 1, layout.lineCount)
+        // As in ReportRetestActionTest, allow only the half-pixel rounding of the measured IntSize.
+        // Paragraph width can exceed measured width even when every visible line fits.
+        for (line in 0 until layout.lineCount) {
+            assertFalse("$details: line $line must not be ellipsised.", layout.isLineEllipsized(line))
+            assertTrue("$details: line $line must fit on the left.", layout.getLineLeft(line) >= -0.5f)
+            assertTrue(
+                "$details: line $line must fit on the right.",
+                layout.getLineRight(line) <= layout.size.width + 0.5f,
+            )
+        }
+        assertEquals(
+            "$details: the final character must be visible.",
+            label.length,
+            layout.getLineEnd(layout.lineCount - 1, visibleEnd = true),
+        )
     }
 
     /** The figures are drawn as one run of styled text, so the counts are read back spoken. */

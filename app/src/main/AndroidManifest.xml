@@ -48,7 +48,7 @@
 
         <activity
             android:name=".ui.MainActivity"
-            android:configChanges="locale|layoutDirection"
+            android:configChanges="locale|layoutDirection|screenLayout"
             android:exported="true"
             android:theme="@style/Theme.Fonecheck.Starting">
             <intent-filter>

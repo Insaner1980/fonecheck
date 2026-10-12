@@ -2,14 +2,18 @@ package com.insaner.fonecheck.ui.screens.settings
 
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasScrollToIndexAction
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.insaner.fonecheck.R
@@ -63,6 +67,11 @@ class SettingsScreenTest {
             }
         }
 
+        fun scrollToSettingsNode(matcher: SemanticsMatcher): SemanticsNodeInteraction {
+            composeRule.onNode(hasScrollToIndexAction()).performScrollToNode(matcher)
+            return composeRule.onNode(matcher).performScrollTo()
+        }
+
         composeRule
             .onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.SelectableGroup))
             .assertCountEquals(1)
@@ -77,18 +86,16 @@ class SettingsScreenTest {
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, false))
         composeRule.onNodeWithTag("settings_theme_dark").performClick()
         composeRule.onNodeWithTag("settings_language").performClick()
-        composeRule.onNodeWithTag("settings_test_warnings").performScrollTo().performClick()
+        scrollToSettingsNode(hasTestTag("settings_test_warnings")).performClick()
         assertEquals(AppThemeMode.DARK, theme)
         assertEquals(false, warnings)
-        composeRule
-            .onNodeWithText(context.getString(R.string.settings_permission_granted))
-            .performScrollTo()
+        scrollToSettingsNode(hasText(context.getString(R.string.settings_permission_granted)))
             .assertIsDisplayed()
-        composeRule.onNodeWithTag("settings_open_app_settings").performScrollTo().performClick()
-        composeRule.onNodeWithTag("settings_privacy").performScrollTo().performClick()
-        composeRule.onNodeWithTag("settings_support").performScrollTo().performClick()
-        composeRule.onNodeWithTag("settings_licenses").performScrollTo().performClick()
-        composeRule.onNodeWithText(context.getString(R.string.full_access_offer)).performScrollTo().assertIsDisplayed()
+        scrollToSettingsNode(hasTestTag("settings_open_app_settings")).performClick()
+        scrollToSettingsNode(hasTestTag("settings_privacy")).performClick()
+        scrollToSettingsNode(hasTestTag("settings_support")).performClick()
+        scrollToSettingsNode(hasTestTag("settings_licenses")).performClick()
+        scrollToSettingsNode(hasText(context.getString(R.string.full_access_offer))).assertIsDisplayed()
         assertTrue(openedLanguage && openedSettings && openedPrivacy && openedSupport && openedLicenses)
     }
 
@@ -113,6 +120,7 @@ class SettingsScreenTest {
             }
         }
 
+        composeRule.onNode(hasScrollToIndexAction()).performScrollToNode(hasTestTag("settings_delete_all"))
         composeRule.onNodeWithTag("settings_delete_all").performScrollTo().performClick()
         assertEquals(false, deleted)
         composeRule.onNodeWithTag("settings_confirm_delete_all").performClick()

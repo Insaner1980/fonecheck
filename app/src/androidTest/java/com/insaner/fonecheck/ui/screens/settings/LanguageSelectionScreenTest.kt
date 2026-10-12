@@ -7,9 +7,11 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.insaner.fonecheck.localization.AppLanguage
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
@@ -42,7 +44,11 @@ class LanguageSelectionScreenTest {
             .onNodeWithTag("settings_language_system")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, true))
 
-        composeRule.onNodeWithTag("settings_language_german").performClick()
+        composeRule
+            .onNodeWithTag("settings_language_german")
+            .performScrollTo()
+            .assertIsDisplayed()
+            .performClick()
 
         composeRule.runOnIdle { assertEquals(AppLanguage.GERMAN, selectedLanguage) }
         AppLanguage.entries.forEach { language ->
@@ -55,7 +61,11 @@ class LanguageSelectionScreenTest {
                     ),
                 )
         }
-        composeRule.onNodeWithTag("settings_language_french").performClick()
+        composeRule
+            .onNodeWithTag("settings_language_french")
+            .performScrollTo()
+            .assertIsDisplayed()
+            .performClick()
         composeRule.runOnIdle { assertEquals(AppLanguage.FRENCH, selectedLanguage) }
         composeRule
             .onNodeWithTag("settings_language_french")
@@ -63,7 +73,11 @@ class LanguageSelectionScreenTest {
         composeRule
             .onNodeWithTag("settings_language_german")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, false))
-        composeRule.onNodeWithTag("settings_language_indonesian").performClick()
+        composeRule
+            .onNodeWithTag("settings_language_indonesian")
+            .performScrollTo()
+            .assertIsDisplayed()
+            .performClick()
         composeRule.runOnIdle { assertEquals(AppLanguage.INDONESIAN, selectedLanguage) }
         composeRule
             .onNodeWithTag("settings_language_indonesian")
@@ -71,7 +85,11 @@ class LanguageSelectionScreenTest {
         composeRule
             .onNodeWithTag("settings_language_french")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, false))
-        composeRule.onNodeWithTag("settings_language_swedish").performClick()
+        composeRule
+            .onNodeWithTag("settings_language_swedish")
+            .performScrollTo()
+            .assertIsDisplayed()
+            .performClick()
         composeRule.runOnIdle { assertEquals(AppLanguage.SWEDISH, selectedLanguage) }
         composeRule
             .onNodeWithTag("settings_language_swedish")
@@ -79,7 +97,11 @@ class LanguageSelectionScreenTest {
         composeRule
             .onNodeWithTag("settings_language_indonesian")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, false))
-        composeRule.onNodeWithTag("settings_language_norwegian_bokmal").performClick()
+        composeRule
+            .onNodeWithTag("settings_language_norwegian_bokmal")
+            .performScrollTo()
+            .assertIsDisplayed()
+            .performClick()
         composeRule.runOnIdle { assertEquals(AppLanguage.NORWEGIAN_BOKMAL, selectedLanguage) }
         composeRule
             .onNodeWithTag("settings_language_norwegian_bokmal")
@@ -87,7 +109,11 @@ class LanguageSelectionScreenTest {
         composeRule
             .onNodeWithTag("settings_language_swedish")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, false))
-        composeRule.onNodeWithTag("settings_language_danish").performClick()
+        composeRule
+            .onNodeWithTag("settings_language_danish")
+            .performScrollTo()
+            .assertIsDisplayed()
+            .performClick()
         composeRule.runOnIdle { assertEquals(AppLanguage.DANISH, selectedLanguage) }
         composeRule
             .onNodeWithTag("settings_language_danish")
@@ -95,7 +121,11 @@ class LanguageSelectionScreenTest {
         composeRule
             .onNodeWithTag("settings_language_norwegian_bokmal")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, false))
-        composeRule.onNodeWithTag("settings_language_italian").performClick()
+        composeRule
+            .onNodeWithTag("settings_language_italian")
+            .performScrollTo()
+            .assertIsDisplayed()
+            .performClick()
         composeRule.runOnIdle { assertEquals(AppLanguage.ITALIAN, selectedLanguage) }
         composeRule
             .onNodeWithTag("settings_language_italian")
@@ -103,7 +133,11 @@ class LanguageSelectionScreenTest {
         composeRule
             .onNodeWithTag("settings_language_danish")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, false))
-        composeRule.onNodeWithTag("settings_language_polish").performClick()
+        composeRule
+            .onNodeWithTag("settings_language_polish")
+            .performScrollTo()
+            .assertIsDisplayed()
+            .performClick()
         composeRule.runOnIdle { assertEquals(AppLanguage.POLISH, selectedLanguage) }
         composeRule
             .onNodeWithTag("settings_language_polish")
@@ -111,7 +145,11 @@ class LanguageSelectionScreenTest {
         composeRule
             .onNodeWithTag("settings_language_italian")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, false))
-        composeRule.onNodeWithTag("settings_language_turkish").performClick()
+        composeRule
+            .onNodeWithTag("settings_language_turkish")
+            .performScrollTo()
+            .assertIsDisplayed()
+            .performClick()
         composeRule.runOnIdle { assertEquals(AppLanguage.TURKISH, selectedLanguage) }
         composeRule
             .onNodeWithTag("settings_language_turkish")

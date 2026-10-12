@@ -112,6 +112,7 @@ class JourneyConfigurationChangeTest {
                     .isEmpty(),
             )
             host.releaseNew.complete(Unit)
+            host.continueAutomaticReviews()
             compose.waitUntil(10_000L) { host.run.state.value.stage == RunAllStage.DISPLAY }
             assertEquals(host.newResult, host.storage.state.value.benchmarkResult)
             assertEquals(RunAllStageOutcome.COMPLETED, host.run.state.value.stageOutcomes[RunAllStage.AUTOMATIC])
@@ -129,6 +130,7 @@ class JourneyConfigurationChangeTest {
             host.startThroughUi()
             host.assertPending(2)
             host.releaseNew.complete(Unit)
+            host.continueAutomaticReviews()
             compose.waitUntil(10_000L) { host.run.state.value.saveStatus == ReportSaveStatus.SAVED }
             val frozen = requireNotNull(host.run.state.value.report)
             assertEquals(listOf(DiagnosticCategoryId.STORAGE), frozen.categories.map { it.categoryId })
@@ -423,6 +425,26 @@ class JourneyConfigurationChangeTest {
                 click(R.string.run_all_permissions_continue)
             } else {
                 click(R.string.report_retest_start)
+            }
+        }
+
+        fun continueAutomaticReviews() {
+            val categories =
+                run.state.value.plan.categories
+                    .filter { it.stage == RunAllStage.AUTOMATIC }
+            assertTrue(categories.isNotEmpty())
+            categories.forEach { category ->
+                compose.waitUntil(10_000L) {
+                    val state = run.state.value
+                    state.stage == RunAllStage.AUTOMATIC && state.awaitingContinue && state.reviewCategory == category
+                }
+                compose.waitForIdle()
+                val state = run.state.value
+                assertEquals(RunAllStage.AUTOMATIC, state.stage)
+                assertNull(state.report)
+                assertEquals(ReportSaveStatus.IDLE, state.saveStatus)
+                assertNoSavedReports()
+                click(R.string.run_all_buttons_continue)
             }
         }
 

@@ -219,7 +219,9 @@ class CameraPresentationTest {
             )
         }
 
-        composeRule.onNodeWithText(context.getString(R.string.permission_status_denied)).assertIsDisplayed()
+        composeRule
+            .onNodeWithContentDescription(context.getString(R.string.permission_status_denied))
+            .assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.permission_action_retry)).performClick()
         assertEquals(1, retryCount)
     }

@@ -307,7 +307,16 @@ class DeviceInfoContentTest {
             context.getString(R.string.status_enabled),
             context.getString(R.string.status_disabled),
         ).forEach { value ->
-            scrollToText(value).assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnLongClick))
+            val node =
+                if (value == "radio-one\nradio-two") {
+                    composeRule
+                        .onNode(hasScrollToIndexAction())
+                        .performScrollToNode(hasContentDescription(value))
+                    composeRule.onNodeWithContentDescription(value).performScrollTo()
+                } else {
+                    scrollToText(value)
+                }
+            node.assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnLongClick))
         }
         scrollToText(context.getString(R.string.device_export)).performClick()
         assertTrue(exported)

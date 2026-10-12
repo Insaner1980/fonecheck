@@ -80,6 +80,7 @@ class JourneyAutomaticStageTest {
             host.startFullCheckThroughUi()
             host.assertStarted()
             host.release.complete(Unit)
+            host.continueAutomaticReviews()
             compose.waitUntil(10_000L) { host.run.state.value.stage == RunAllStage.DISPLAY }
             assertEquals(RunAllStageOutcome.COMPLETED, host.run.state.value.stageOutcomes[RunAllStage.AUTOMATIC])
             assertEquals(1, host.starts.get())
@@ -120,6 +121,7 @@ class JourneyAutomaticStageTest {
             host.click(R.string.report_retest_start)
             host.assertStarted()
             host.release.complete(Unit)
+            host.continueAutomaticReviews()
             compose.waitUntil(10_000L) { host.run.state.value.saveStatus == ReportSaveStatus.SAVED }
             val report = requireNotNull(host.run.state.value.report)
             assertEquals(ReportKind.CATEGORY_ONLY, report.kind)
@@ -314,6 +316,25 @@ class JourneyAutomaticStageTest {
             assertEquals(0, starts.get())
             // The real permission review's continue path accepts current permissions without granting any.
             click(R.string.run_all_permissions_continue)
+        }
+
+        fun continueAutomaticReviews() {
+            val categories =
+                run.state.value.plan.categories
+                    .filter { it.stage == RunAllStage.AUTOMATIC }
+            assertTrue(categories.isNotEmpty())
+            categories.forEach { category ->
+                compose.waitUntil(10_000L) {
+                    val state = run.state.value
+                    state.stage == RunAllStage.AUTOMATIC && state.awaitingContinue && state.reviewCategory == category
+                }
+                compose.waitForIdle()
+                val state = run.state.value
+                assertEquals(RunAllStage.AUTOMATIC, state.stage)
+                assertNull(state.report)
+                assertEquals(ReportSaveStatus.IDLE, state.saveStatus)
+                click(R.string.run_all_buttons_continue)
+            }
         }
 
         fun assertStarted() {

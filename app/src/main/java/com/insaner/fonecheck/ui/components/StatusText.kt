@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 import com.insaner.fonecheck.ui.theme.SemanticTone
 import com.insaner.fonecheck.ui.theme.contentColor
@@ -24,7 +25,7 @@ fun StatusText(
     modifier: Modifier = Modifier,
 ) {
     Text(
-        text = text.uppercase(LocalLocale.current.platformLocale),
+        text = AnnotatedString(text.uppercase(LocalLocale.current.platformLocale)),
         style = FonecheckTheme.type.sectionLabel,
         color = tone.contentColor(),
         modifier = modifier.semantics { contentDescription = text },

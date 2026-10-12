@@ -28,7 +28,7 @@ import com.insaner.fonecheck.ui.theme.contentColor
 /**
  * A measured value that may be too long for one line: build fingerprints, identifiers, serial
  * numbers. The component keeps values that fit in the regular [DataRow] layout and changes to the
- * two-line form only when measurement proves that the value needs more width. Null placeholders
+ * long form when the value contains a line break or measurement proves it needs more width. Null placeholders
  * always use [DataRow]. Call sites must represent other unavailable placeholder states as null.
  *
  * The value wraps only after a hyphen, dot or comma, so a token is never cut in the middle, and it
@@ -54,7 +54,7 @@ fun LongValueRow(
     // CPD-ON
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val availableValueWidth = (maxWidth - FonecheckTheme.spacing.md).coerceAtLeast(0.dp)
-        val useLongLayout = valueExceedsRowValueWidth(value, availableValueWidth)
+        val useLongLayout = value?.contains('\n') == true || valueExceedsRowValueWidth(value, availableValueWidth)
         Column(modifier = Modifier.fillMaxWidth()) {
             if (useLongLayout && value != null) {
                 LongValueLayout(
