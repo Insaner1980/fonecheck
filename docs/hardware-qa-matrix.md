@@ -1,42 +1,44 @@
-# fonecheck hardware QA matrix
+# fonecheck application hardware QA matrix
 
-Updated: 2026-08-08
+Scope updated: **2026-10-12**.
 
-No device or emulator is currently available. Every row below is intentionally recorded as **NOT RUN** until a real result exists. Do not infer hardware support from JVM fakes or successful Android-test compilation.
+Each row tests fonecheck on Android or actual hardware. Select rows needed by the application question and available target; do not require every device/configuration cross-product before the core app journey.
 
-## API-level matrix
+The old August environment observations are historical and do not establish current device availability. No fresh hardware/API test ran during this scope edit. Retained scoped evidence is in [test-inventory.md](<C:/Dev/fonecheck/docs/test-inventory.md>); the rows below identify remaining coverage and are not blanket PASS claims.
 
-| Android API | Primary boundary | Required run | Status |
-|---|---|---|---|
-| 26 | minSdk, legacy permissions and display metrics | Install, launch, standalone checks, Full Check, save/restart | NOT RUN |
-| 29 | telephony and network compatibility | Permission denial/recovery, SIM/network checks | NOT RUN |
-| 31 | Bluetooth runtime permission and splash behavior | Nearby devices, reduced motion, background/resume | NOT RUN |
-| 33 | notification-era platform behavior and media changes | Full navigation/export/share smoke | NOT RUN |
-| 34 | battery cycle/thermal guards | Battery, thermal and lifecycle smoke | NOT RUN |
-| 36 | current targetSdk behavior | Full release-candidate regression | NOT RUN |
-| 37 (target 36) | Android 17 changes affecting all apps | Install the current target-36 release candidate; run all flows with emphasis on lifecycle, audio backgrounding, memory pressure, configuration changes and restricted non-SDK access | NOT RUN |
-| 37 (target 37 gate) | Android 17 target-dependent behavior | Enable applicable compatibility changes, then validate an actual target-37 build before changing targetSdk or removing the OldTargetApi suppression | NOT RUN |
+## API cases for the existing app
 
-## Hardware and workflow matrix
+Current source declares minSdk 26 and targetSdk 36. Use the existing target-36 build on newer operating systems.
 
-| Profile / capability | Required evidence | Status |
+| Android API | Application boundary | Focused app case |
 |---|---|---|
-| No-telephony tablet | SIM unavailable semantics; remaining categories usable | NOT RUN |
-| Single- and dual-SIM phones | Slot-safe summaries without identifiers | NOT RUN |
-| Single- and multi-camera devices | Capability enumeration, preview, flash and cancellation | NOT RUN |
-| Missing and partial sensor sets | Not available vs not tested semantics | NOT RUN |
-| BLE and NFC variants | Supported/enabled/permission-limited distinctions | NOT RUN |
-| Biometrics absent, unenrolled and enrolled | Capability states and system prompt lifecycle | NOT RUN |
-| Speaker, wired and Bluetooth audio | Routing, recording/playback cleanup and manual confirmation | NOT RUN |
-| Low free storage | Benchmark refusal/error without data loss | NOT RUN |
-| Unsupported and throttled thermal devices | Unsupported state and live monitoring cleanup | NOT RUN |
-| Accessibility | TalkBack, Switch Access, 200% font, light/dark and fullscreen exit | NOT RUN |
-| Lifecycle | Full Check cancel, rotation, background/return and process restart | NOT RUN |
-| Reports and sharing | Save/restart, immutable detail, comparison, PDF/JSON provider grant | NOT RUN |
+| 26 | Minimum-supported API and legacy services | Install/launch, standalone unavailable states, Full Check, save/restart and export. |
+| 29/30 | Activity Recognition; one-time grants and pre-31 Bluetooth | Applicable permissions, sensors, microphone/camera revocation, interruption and recovery. |
+| 31/32 | Bluetooth permission, approximate location, privacy switches; pre-33 locale ownership | Denied/off/unavailable distinctions, app settings return and language persistence. |
+| 33 | Framework per-app language ownership | Explicit/System language change, restart, report/export and permission smoke. |
+| 34/35 | Restricted readings, battery/thermal and window behavior | Unsupported values, live monitor cleanup, gestures/system bars and fullscreen recreation. |
+| 36 | Current target baseline | Core Full Check → save → restart/history → export, cancellation and relevant category actions. |
+| 37, target 36 | Existing app on a newer OS | Core journey and relevant permission, media lifecycle, persistence/export and configuration cases. |
 
-## Current environment evidence
+Missing or unusable targets block their named app case; they do not schedule emulator research or an SDK migration. A runner failure before execution is not an application failure/pass. Preserve the receipt and use a supported existing interaction method if one is available within the task's scope.
 
-- `adb devices -l` returned an empty device list.
-- The Android SDK emulator executable exists, but `-list-avds` returned no AVDs.
-- No installed SDK system image was found, so an emulator cannot be created without a separate download and environment setup.
-- `:app:connectedDebugAndroidTest` built the app and test APKs, then failed before execution with `No connected devices!`.
+## Physical capability and workflow cases
+
+| Profile / capability | Required application evidence |
+|---|---|
+| No telephony or partial sensors | Honest unavailable states; other categories remain usable. |
+| Single/dual SIM where available | Correct slot summaries and permission-limited states without retained sensitive identifiers. |
+| Single/multiple exposed cameras | Enumeration, preview/capture, flash, current-attempt ownership and cancellation cleanup. |
+| Built-in/wired/USB/Bluetooth audio where available | Correct route, user-confirmed playback, microphone recording/playback and release after stop/cancel. |
+| Physical display, vibration and buttons | Actual pattern inspection, touch/button events and user-confirmed vibration; reachable stop/fullscreen exit. |
+| Biometrics absent, unenrolled or enrolled | Correct capability/enrollment states; explicit current prompt success/cancel/error and no stale callback. |
+| Bluetooth/NFC/GNSS capabilities | Supported/enabled/permission-limited distinctions; real GNSS action/cancel when available, without retained coordinates. |
+| Low free storage / IO fault | Bounded benchmark refusal/failure and cleanup; disposable fixture only. |
+| Unsupported/ordinary thermal and battery states | Truthful readings/limitations, refresh and listener shutdown; severe thresholds use existing fixtures. |
+| Accessibility | TalkBack/Switch Access, light/dark, 320dp, 200% font and **320dp + 200%**, plus fullscreen escape. |
+| Lifecycle and data | Full Check cancel/background/rotation, fresh restart, non-empty saved history, immutable retest and readable PDF/JSON sharing. |
+| Different OEM | Focused cases for observed API/capability differences; primary-device success is not all-OEM proof. |
+
+Record case, APK/build, target/API/capability, steps, observed outcome and limit. Synthetic/emulated sensor input proves the corresponding app policy or integration only; physical performance/quality requires actual hardware observations.
+
+The full former matrix is preserved in its [pre-cleanup copy](<C:/Dev/fonecheck/reports/validation/application-test-scope-20261012-154934/docs__hardware-qa-matrix.md.before.md>).
