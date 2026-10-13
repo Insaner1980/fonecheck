@@ -1,5 +1,5 @@
 diff --git a/dist/cli.mjs b/dist/cli.mjs
-index 6245781287e188a088b157764e3b450923c4d1bf..6f499e9ebb6045f66c7a666e795646367fe6a1b3 100644
+index 6245781287e188a088b157764e3b450923c4d1bf..beda0631f7e063bfda13d5f2a5e768575dc842a0 100644
 --- a/dist/cli.mjs
 +++ b/dist/cli.mjs
 @@ -69024,6 +69024,17 @@ function resolveCodexPaths() {

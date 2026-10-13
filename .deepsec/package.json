@@ -18,7 +18,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "0.125.0",
     "@modelcontextprotocol/sdk": "1.32.1",
-    "deepsec": "2.3.9"
+    "deepsec": "2.3.10"
   },
   "pnpm": {
     "overrides": {
@@ -30,7 +30,7 @@
       "undici@8.5.0": "8.11.2"
     },
     "patchedDependencies": {
-      "deepsec@2.3.9": "patches/deepsec@2.3.9.patch"
+      "deepsec@2.3.10": "patches/deepsec@2.3.10.patch"
     }
   }
 }

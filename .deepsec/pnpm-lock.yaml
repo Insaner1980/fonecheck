@@ -13,9 +13,9 @@ overrides:
   undici@8.5.0: 8.11.2
 
 patchedDependencies:
-  deepsec@2.3.9:
-    hash: tloe263qckiuvpkyyvitcou3su
-    path: patches/deepsec@2.3.9.patch
+  deepsec@2.3.10:
+    hash: cey3ej6ai5csfp3r2kbjj35mye
+    path: patches/deepsec@2.3.10.patch
 
 importers:
 
@@ -28,8 +28,8 @@ importers:
         specifier: 1.32.1
         version: 1.32.1(zod@4.6.5)
       deepsec:
-        specifier: 2.3.9
-        version: 2.3.9(patch_hash=tloe263qckiuvpkyyvitcou3su)(@anthropic-ai/sdk@0.125.0(zod@4.6.5))(@modelcontextprotocol/sdk@1.32.1(zod@4.6.5))(ws@8.22.0)(zod@4.6.5)
+        specifier: 2.3.10
+        version: 2.3.10(patch_hash=cey3ej6ai5csfp3r2kbjj35mye)(@anthropic-ai/sdk@0.125.0(zod@4.6.5))(@modelcontextprotocol/sdk@1.32.1(zod@4.6.5))(ws@8.22.0)(zod@4.6.5)
 
 packages:
 
@@ -322,8 +322,8 @@ packages:
       '@cfworker/json-schema':
         optional: true
 
-  '@openai/codex-sdk@0.153.4':
-    resolution: {integrity: sha512-z0rN8WMQxwEHYHpDJyKHZwNNUtM/1pdnxmKopIJ3qMCZyyDestaIhSGDZ0v0RSjm+REujcFyNd95oWs78zWgRg==}
+  '@openai/codex-sdk@0.156.1':
+    resolution: {integrity: sha512-t1GNPYrSIjHGfBKZ+9pbjOS/by0tMwVe+27fHsMO3RHl9QLIc7dB8XYR954iZ6HpF4EAjZs0melT0mPXF03jVg==}
     engines: {node: '>=18'}
 
   '@openai/codex@0.161.0':
@@ -634,8 +634,8 @@ packages:
       supports-color:
         optional: true
 
-  deepsec@2.3.9:
-    resolution: {integrity: sha512-A+UeBkY6PKf96d00tYoJheRqQPRP0DlTf598ElURZVTb2Fa3yhzcW5o4jhm+8hOzI+VTmTv4fJl0DkOj7RWWGQ==}
+  deepsec@2.3.10:
+    resolution: {integrity: sha512-JybqShqRHJWdgqQKV6xwtf3p+QMW7wlmgoBtT1QISfns5A5JCO5r9E8b4mXgu7HEoY5HK+izdxI4con+ROLWdA==}
     hasBin: true
 
   depd@2.0.0:
@@ -1772,7 +1772,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@openai/codex-sdk@0.153.4':
+  '@openai/codex-sdk@0.156.1':
     dependencies:
       '@openai/codex': 0.161.0
 
@@ -2049,12 +2049,12 @@ snapshots:
     dependencies:
       ms: 2.1.3
 
-  deepsec@2.3.9(patch_hash=tloe263qckiuvpkyyvitcou3su)(@anthropic-ai/sdk@0.125.0(zod@4.6.5))(@modelcontextprotocol/sdk@1.32.1(zod@4.6.5))(ws@8.22.0)(zod@4.6.5):
+  deepsec@2.3.10(patch_hash=cey3ej6ai5csfp3r2kbjj35mye)(@anthropic-ai/sdk@0.125.0(zod@4.6.5))(@modelcontextprotocol/sdk@1.32.1(zod@4.6.5))(ws@8.22.0)(zod@4.6.5):
     dependencies:
       '@anthropic-ai/claude-agent-sdk': 0.3.283(@anthropic-ai/sdk@0.125.0(zod@4.6.5))(@modelcontextprotocol/sdk@1.32.1(zod@4.6.5))(zod@4.6.5)
       '@earendil-works/pi-coding-agent': 0.81.1(@modelcontextprotocol/sdk@1.32.1(zod@4.6.5))(ws@8.22.0)(zod@4.6.5)
       '@openai/codex': 0.161.0
-      '@openai/codex-sdk': 0.153.4
+      '@openai/codex-sdk': 0.156.1
       '@vercel/oidc': 3.8.9
       '@vercel/sandbox': 1.10.2
       ink: 7.1.1(react@19.3.0)

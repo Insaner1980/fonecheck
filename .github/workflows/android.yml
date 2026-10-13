@@ -33,6 +33,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
+      # CodeQL reads its own workflow run; a private repository's token needs this explicitly.
+      actions: read
       contents: read
       security-events: write
     steps:
