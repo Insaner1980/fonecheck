@@ -91,7 +91,7 @@ fonecheck is a local, single-activity phone diagnostics app. It provides fourtee
 
 | Concern | Current implementation |
 |---|---|
-| Build | Kotlin DSL, version catalog, Gradle wrapper 9.7.1 with SHA-256 |
+| Build | Kotlin DSL, version catalog, Gradle wrapper 9.8.0 with SHA-256 |
 | Kotlin / AGP | Kotlin 2.4.20; Android Gradle Plugin 9.4.1; JVM 17 |
 | UI | Jetpack Compose, Material 3 plus explicit `material-icons-core`, Compose BOM 2026.09.00 |
 | AndroidX shell/lifecycle | Core KTX 1.19.1; Core SplashScreen 1.2.0; Startup Runtime 1.2.0; Lifecycle Runtime Compose 2.11.0; Activity Compose 1.13.0; AppCompat 1.8.0 |
@@ -106,7 +106,7 @@ fonecheck is a local, single-activity phone diagnostics app. It provides fourtee
 
 `settings.gradle.kts` names the root project `fonecheck` and includes only `:app` as an application module; `tools/stability-analyzer` is a separate included composite build. Plugin resolution uses Google's repository with Android/Google/AndroidX content filters, Maven Central, and the Gradle Plugin Portal. Normal dependency resolution is centralized to Google and Maven Central with `RepositoriesMode.FAIL_ON_PROJECT_REPOS`, so a module-level repository declaration is a build-policy violation rather than a supported extension point.
 
-The wrapper pins Gradle 9.7.1 with `distributionSha256Sum`, validates the distribution URL, disables retries, and uses a 10-second network timeout. `gradle.properties` disables Gradle build caching and Kotlin task caching, enables AndroidX, official Kotlin style, and non-transitive R classes, and gives Gradle a 2 GiB heap. These are build-behavior facts, not performance recommendations.
+The wrapper pins Gradle 9.8.0 with `distributionSha256Sum`, validates the distribution URL, disables retries, and uses a 10-second network timeout. `gradle.properties` disables Gradle build caching and Kotlin task caching, enables AndroidX, official Kotlin style, and non-transitive R classes, and gives Gradle a 2 GiB heap. These are build-behavior facts, not performance recommendations.
 
 `gradle/gradle-daemon-jvm.properties` requires Java toolchain version 17 and records an Adoptium Temurin 17.0.20+8 Windows x64 provisioning URL. The app's Java source/target compatibility is also 17, and CI selects Temurin 17 explicitly. These three owners should remain aligned; the platform-specific provisioning URL is build input, not evidence that every developer machine currently uses that exact downloaded JDK.
 
