@@ -369,7 +369,7 @@ object ReportPdfContentBuilder {
             if (missing.isNotEmpty()) {
                 line(
                     "${labels.categoryName(category.categoryId)} — ${labels.notMeasured}: " +
-                        missing.joinToString(", ") { labels.checkName(it) },
+                        missing.joinToString(PDF_SEPARATOR) { labels.checkName(it) },
                     PdfTextStyle.META,
                     finding = true,
                     mark = PdfMark.NOT_MEASURED,
