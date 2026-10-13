@@ -23,6 +23,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.core.content.pm.PackageInfoCompat
@@ -278,6 +279,14 @@ fun RunAllTestsScreen(
             resourceOwner.stopAll()
             sessionViewModel.interruptRun(RunAllInterruptionReason.SCREEN_DISPOSED)
         }
+    }
+
+    // ON_STOP discards a running check, so a screen timeout during an unattended stage would lose it.
+    val view = LocalView.current
+    val keepScreenOn = sessionState.runStatus == RunAllRunStatus.RUNNING
+    DisposableEffect(view, keepScreenOn) {
+        view.keepScreenOn = keepScreenOn
+        onDispose { view.keepScreenOn = false }
     }
 
     val isDisplayFullscreen = sessionState.stage == RunAllStage.DISPLAY && !sessionState.awaitingContinue

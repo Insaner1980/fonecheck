@@ -50,6 +50,11 @@ class LongValueRowTest {
     }
 
     @Test
+    fun `explicit line breaks survive token break hints`() {
+        assertEquals("radio-${ZWSP}one\nradio-${ZWSP}two", withTokenBreakOpportunities("radio-one\nradio-two"))
+    }
+
+    @Test
     fun `a trailing separator gains no break opportunity`() {
         assertEquals("release-${ZWSP}keys.", withTokenBreakOpportunities("release-keys."))
     }

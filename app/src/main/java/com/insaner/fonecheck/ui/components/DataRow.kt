@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -102,7 +103,7 @@ fun DataRow(
                         modifier = Modifier.widthIn(max = FonecheckTheme.spacing.rowValueMaxWidth),
                     ) {
                         Text(
-                            text = value ?: unavailableLabel,
+                            text = AnnotatedString(value ?: unavailableLabel),
                             style = FonecheckTheme.type.rowValue,
                             color = if (value == null) FonecheckTheme.colors.textMuted else tone.contentColor(),
                             textAlign = TextAlign.End,
@@ -149,12 +150,12 @@ private fun StackedDataRow(
         verticalArrangement = Arrangement.spacedBy(FonecheckTheme.spacing.xs),
     ) {
         Text(
-            text = label,
+            text = AnnotatedString(label),
             style = FonecheckTheme.type.rowLabel,
             color = FonecheckTheme.colors.textSecondary,
         )
         Text(
-            text = value ?: unavailableLabel,
+            text = AnnotatedString(value ?: unavailableLabel),
             style = FonecheckTheme.type.rowValue,
             color = if (value == null) FonecheckTheme.colors.textMuted else tone.contentColor(),
         )

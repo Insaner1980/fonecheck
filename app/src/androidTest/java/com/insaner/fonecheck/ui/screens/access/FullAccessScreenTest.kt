@@ -2,6 +2,7 @@ package com.insaner.fonecheck.ui.screens.access
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -33,7 +34,7 @@ class FullAccessScreenTest {
             }
         }
 
-        composeRule.onNodeWithText(context.getString(R.string.home_cat_camera)).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(context.getString(R.string.home_cat_camera)).assertIsDisplayed()
         composeRule
             .onNodeWithText(context.getString(R.string.full_access_camera_description))
             .assertIsDisplayed()

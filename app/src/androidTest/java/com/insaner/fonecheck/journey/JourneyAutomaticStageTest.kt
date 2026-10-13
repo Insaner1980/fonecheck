@@ -1,5 +1,7 @@
 package com.insaner.fonecheck.journey
 
+import android.view.View
+import android.view.ViewGroup
 import androidx.activity.compose.setContent
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -79,7 +81,9 @@ class JourneyAutomaticStageTest {
         withHost { host ->
             host.startFullCheckThroughUi()
             host.assertStarted()
+            assertTrue(host.keepsScreenOn())
             host.release.complete(Unit)
+            host.continueAutomaticReviews()
             compose.waitUntil(10_000L) { host.run.state.value.stage == RunAllStage.DISPLAY }
             assertEquals(RunAllStageOutcome.COMPLETED, host.run.state.value.stageOutcomes[RunAllStage.AUTOMATIC])
             assertEquals(1, host.starts.get())
@@ -101,6 +105,7 @@ class JourneyAutomaticStageTest {
             host.scenario.moveToState(Lifecycle.State.RESUMED)
             compose.waitForIdle()
             assertEquals(RunAllStage.PREFLIGHT, host.run.state.value.stage)
+            assertFalse(host.keepsScreenOn())
             assertTrue(
                 host.run.state.value.automaticIssues
                     .isEmpty(),
@@ -120,6 +125,7 @@ class JourneyAutomaticStageTest {
             host.click(R.string.report_retest_start)
             host.assertStarted()
             host.release.complete(Unit)
+            host.continueAutomaticReviews()
             compose.waitUntil(10_000L) { host.run.state.value.saveStatus == ReportSaveStatus.SAVED }
             val report = requireNotNull(host.run.state.value.report)
             assertEquals(ReportKind.CATEGORY_ONLY, report.kind)
@@ -136,6 +142,7 @@ class JourneyAutomaticStageTest {
             host.scenario.moveToState(Lifecycle.State.RESUMED)
             compose.waitForIdle()
             assertSame(report, host.run.state.value.report)
+            assertFalse(host.keepsScreenOn())
         }
 
     private fun withHost(
@@ -316,6 +323,9 @@ class JourneyAutomaticStageTest {
             click(R.string.run_all_permissions_continue)
         }
 
+        fun continueAutomaticReviews() =
+            continueAutomaticStageReviews(compose, run) { click(R.string.run_all_buttons_continue) }
+
         fun assertStarted() {
             compose.waitUntil(10_000L) { started.count == 0L }
             compose.waitForIdle()
@@ -323,6 +333,12 @@ class JourneyAutomaticStageTest {
             assertEquals(StorageBenchmarkPhase.RUNNING, storage.state.value.benchmarkPhase)
             assertEquals(1, starts.get())
             scenario.onActivity { assertFalse(run.claimStage(run.state.value.stageToken)) }
+        }
+
+        fun keepsScreenOn(): Boolean {
+            var keepsScreenOn = false
+            scenario.onActivity { keepsScreenOn = it.window.decorView.keepsScreenOnInTree() }
+            return keepsScreenOn
         }
 
         fun close() {
@@ -333,3 +349,6 @@ class JourneyAutomaticStageTest {
         }
     }
 }
+
+private fun View.keepsScreenOnInTree(): Boolean =
+    keepScreenOn || (this is ViewGroup && (0 until childCount).any { getChildAt(it).keepsScreenOnInTree() })

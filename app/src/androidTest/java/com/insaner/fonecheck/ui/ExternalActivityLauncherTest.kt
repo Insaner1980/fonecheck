@@ -24,7 +24,10 @@ class ExternalActivityLauncherTest {
 
     @Test
     fun activityContextPreservesNormalActivityLaunchBehavior() {
-        val activity = RecordingActivity()
+        lateinit var activity: RecordingActivity
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            activity = RecordingActivity()
+        }
 
         assertTrue(activity.startExternalActivity(Intent(Intent.ACTION_VIEW)))
         assertTrue(activity.started)

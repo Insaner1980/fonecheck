@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
 
@@ -46,13 +47,13 @@ fun NavigationRow(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = label,
+                    text = AnnotatedString(label),
                     style = FonecheckTheme.type.rowLabel,
                     color = FonecheckTheme.colors.textSecondary,
                 )
                 if (stacked) {
                     Text(
-                        text = value,
+                        text = AnnotatedString(value),
                         style = FonecheckTheme.type.rowValue,
                         color = FonecheckTheme.colors.textPrimary,
                         modifier = Modifier.padding(top = FonecheckTheme.spacing.xs),
@@ -61,7 +62,7 @@ fun NavigationRow(
             }
             if (!stacked) {
                 Text(
-                    text = value,
+                    text = AnnotatedString(value),
                     style = FonecheckTheme.type.rowValue,
                     color = FonecheckTheme.colors.textPrimary,
                     textAlign = TextAlign.End,

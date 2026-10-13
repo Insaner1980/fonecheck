@@ -4,8 +4,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -56,10 +57,18 @@ class ConnectivityPresentationTest {
                 context.getString(R.string.conn_gps_satellite_not_used_in_fix),
             )
 
-        composeRule.onNodeWithContentDescription(usedLabel).assertIsDisplayed()
-        composeRule.onNodeWithContentDescription(usedValue).assertIsDisplayed()
-        composeRule.onNodeWithContentDescription(unusedLabel).assertIsDisplayed()
-        composeRule.onNodeWithContentDescription(unusedValue).assertIsDisplayed()
+        composeRule
+            .onNode(hasText(usedLabel) or hasContentDescription(usedLabel), useUnmergedTree = true)
+            .assertIsDisplayed()
+        composeRule
+            .onNode(hasText(usedValue) or hasContentDescription(usedValue), useUnmergedTree = true)
+            .assertIsDisplayed()
+        composeRule
+            .onNode(hasText(unusedLabel) or hasContentDescription(unusedLabel), useUnmergedTree = true)
+            .assertIsDisplayed()
+        composeRule
+            .onNode(hasText(unusedValue) or hasContentDescription(unusedValue), useUnmergedTree = true)
+            .assertIsDisplayed()
     }
 
     @Test

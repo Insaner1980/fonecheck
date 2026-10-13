@@ -270,7 +270,7 @@ class JourneyEvidenceTest {
                     }
                 }
                 val labels = ReportPdfRenderer(context).labels()
-                val text = ReportPdfContentBuilder.build(retest, labels).joinToString("\n") { it.text }
+                val text = ReportPdfContentBuilder.build(retest, labels).joinToString("\n") { it.allText }
                 assertTrue(text.contains(retest.stableId))
                 assertTrue(text.contains("1920 × 1080"))
                 assertTrue(text.contains("UTC"))

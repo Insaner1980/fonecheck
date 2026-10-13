@@ -13,6 +13,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -213,8 +214,10 @@ class RunAllResultsScreenTest {
                             DiagnosticStatus.NOT_TESTED,
                             -> R.string.run_all_not_completed
                         }
+                    val groupHeading = isHeading() and hasText(context.getString(group), ignoreCase = true)
+                    composeRule.onNode(hasScrollToIndexAction()).performScrollToNode(groupHeading)
                     composeRule
-                        .scrollToReportText(context.getString(group), ignoreCase = true)
+                        .onNode(groupHeading)
                         .performScrollTo()
                         .assertIsDisplayed()
                     val title = context.getString(R.string.home_cat_battery)

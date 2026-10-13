@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.insaner.fonecheck.ui.theme.FonecheckTheme
@@ -86,7 +87,7 @@ private fun SectionLabel(
     modifier: Modifier = Modifier,
 ) {
     Text(
-        text = text,
+        text = AnnotatedString(text),
         style = FonecheckTheme.type.sectionLabel,
         color = FonecheckTheme.colors.textMuted,
         modifier = modifier,

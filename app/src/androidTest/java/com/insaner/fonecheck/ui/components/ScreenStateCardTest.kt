@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -102,8 +103,10 @@ class ScreenStateCardTest {
 
     @Test
     fun exposesHeadingAndUrgentErrorAnnouncement() {
+        var errorHeading = ""
         composeRule.setContent {
             FonecheckTheme {
+                errorHeading = stringResource(R.string.state_error_title).uppercase(LocalLocale.current.platformLocale)
                 ScreenStateCard(
                     type = ScreenStateType.ERROR,
                     message = "Could not load",
@@ -112,7 +115,7 @@ class ScreenStateCardTest {
         }
 
         composeRule
-            .onNodeWithText("Error", useUnmergedTree = true)
+            .onNodeWithText(errorHeading, useUnmergedTree = true)
             .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
         composeRule
             .onNodeWithTag("screen_state_error")

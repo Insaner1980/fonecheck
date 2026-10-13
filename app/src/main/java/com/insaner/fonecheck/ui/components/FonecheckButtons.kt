@@ -11,6 +11,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.insaner.fonecheck.ui.theme.FonecheckSpacing
@@ -47,7 +48,7 @@ fun PrimaryButton(
             ),
         contentPadding = ButtonPadding,
     ) {
-        Text(text = label, style = FonecheckTheme.type.buttonLabel)
+        Text(text = AnnotatedString(label), style = FonecheckTheme.type.buttonLabel)
     }
 }
 
@@ -76,7 +77,7 @@ fun SecondaryButton(
         border = BorderStroke(ControlBorderWidth, FonecheckTheme.colors.textMuted),
         contentPadding = ButtonPadding,
     ) {
-        Text(text = label, style = FonecheckTheme.type.buttonLabel)
+        Text(text = AnnotatedString(label), style = FonecheckTheme.type.buttonLabel)
     }
 }
 
