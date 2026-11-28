@@ -57,7 +57,7 @@ jobs:
           build-mode: manual
       - name: Build Android sources for CodeQL
         run: ./gradlew :app:assembleDebug --no-daemon --console=plain || { bash tools/print-gradle-verification-report.sh; exit 1; }
-      - uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+      - uses: github/codeql-action/analyze@915412ff23e8b7659517e607487dbeae018f2934 # v4.39.5
         id: codeql-analyze
         with:
           category: "/language:java-kotlin"
